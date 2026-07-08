@@ -27,6 +27,7 @@
     "users": "Пользователи",
     "courses": "Курсы",
     "glossary": "Глоссарий",
+    "templates": "Шаблоны",
     "dashboard": "Главная"
   },
   "topics": {
@@ -127,7 +128,38 @@
     "labs": "Лаборатория / инструментальные",
     "caseQuestions": "Вопросы",
     "referenceAnalysis": "Эталонный разбор",
-    "publishedLocked": "Опубликовано — редактирование недоступно"
+    "publishedLocked": "Опубликовано — редактирование недоступно",
+    "presentation": "Презентация",
+    "generatePresentation": "Создать презентацию (AI)",
+    "slide": "Слайд",
+    "slideTitle": "Заголовок",
+    "bullets": "Тезисы",
+    "notes": "Заметки докладчика",
+    "imagePrompt": "Описание иллюстрации (на английском)",
+    "generateImage": "Создать изображение",
+    "regenerateImage": "Пересоздать изображение",
+    "imageIdle": "Нет изображения",
+    "imageRunning": "Генерация...",
+    "imageDone": "Готово",
+    "imageError": "Ошибка изображения",
+    "noImagePrompt": "У этого слайда нет описания иллюстрации",
+    "addSlide": "Добавить слайд",
+    "buildPptx": "Собрать PPTX",
+    "downloadPptx": "Скачать PPTX",
+    "pptxStale": "Слайды изменены — нужна пересборка",
+    "addBullet": "Добавить тезис"
+  },
+  "templates": {
+    "title": "Шаблоны презентаций",
+    "subtitle": "Бренд вуза: цвета и логотип",
+    "name": "Название",
+    "primaryColor": "Основной цвет (hex)",
+    "accentColor": "Акцентный цвет (hex)",
+    "isDefault": "Шаблон по умолчанию",
+    "logo": "Логотип",
+    "uploadLogo": "Загрузить логотип",
+    "default": "По умолчанию",
+    "addTemplate": "Добавить шаблон"
   },
   "glossary": {
     "title": "Глоссарий терминов",

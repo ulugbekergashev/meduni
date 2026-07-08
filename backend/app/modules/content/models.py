@@ -72,3 +72,28 @@ class ClinicalCase(Base):
     fmt: Mapped[str] = mapped_column(String(12), default="short")  # short / extended
     # Фактчек кейса: список {location, note, resolved}
     factcheck_json: Mapped[list] = mapped_column(JSON, default=list)
+
+
+class Presentation(Base):
+    __tablename__ = "presentations"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    content_item_id: Mapped[int] = mapped_column(ForeignKey("content_items.id"), unique=True, index=True)
+    # slides_json: [{title_uz, title_ru, bullets_uz[], bullets_ru[], notes_uz, notes_ru,
+    #                image_prompt, image_url|None, image_status}]
+    slides_json: Mapped[list] = mapped_column(JSON, default=list)
+    template_id: Mapped[int | None] = mapped_column(ForeignKey("presentation_templates.id"))
+    pptx_url: Mapped[str | None] = mapped_column(String(512))
+    pptx_stale: Mapped[bool] = mapped_column(Boolean, default=True)  # нужна пересборка после правок
+
+
+class PresentationTemplate(Base):
+    __tablename__ = "presentation_templates"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(128))
+    # Фирменные цвета вуза (hex без #)
+    primary_color: Mapped[str] = mapped_column(String(8), default="0D9488")
+    accent_color: Mapped[str] = mapped_column(String(8), default="0F172A")
+    logo_url: Mapped[str | None] = mapped_column(String(512))
+    is_default: Mapped[bool] = mapped_column(Boolean, default=False)

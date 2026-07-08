@@ -25,6 +25,15 @@ def full_path(rel_path: str) -> Path:
     return _root() / rel_path
 
 
+def safe_path(rel_path: str) -> Path | None:
+    """Путь под корнем хранилища или None (защита от path traversal)."""
+    root = _root().resolve()
+    target = (root / rel_path).resolve()
+    if root in target.parents and target.is_file():
+        return target
+    return None
+
+
 def read_text(rel_path: str) -> str:
     return full_path(rel_path).read_text(encoding="utf-8")
 

@@ -15,9 +15,15 @@
   `/teach/content/quiz/{id}` и `/teach/content/case/{id}`, чеклист готовности +
   approve/publish (нельзя утвердить неоткрытый контент или с нерешённым
   фактчеком; правка снимает утверждение), экспорт Moodle XML / GIFT / PDF.
-- M4–M8 — см. план, раздел 14.
+- **M4 (Презентации) — готов.** Генерация слайдов из конспекта (Presentation +
+  slides_json), рендер PPTX (python-pptx) по фирменному шаблону (цвета+логотип),
+  иллюстрации по одному слайду (бережём квоту), редактор
+  `/teach/content/presentation/{id}`, скачивание PPTX, админ-шаблоны
+  `/admin/templates`. Картинки: `AI_IMAGE_PROVIDER=pollinations` (Gemini image
+  НЕ во free tier). Медиа-раздача `GET /api/v1/media/{path}` с защитой от traversal.
+- M5–M8 — см. план, раздел 14.
 
-Следующий шаг M4: генерация презентаций (slides_json → PPTX по фирменному шаблону, иллюстрации).
+Следующий шаг M5: озвученное видео (сценарий → TTS uz/ru → ffmpeg: слайды+аудио+SRT).
 
 ## Стек
 
