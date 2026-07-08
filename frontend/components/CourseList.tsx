@@ -2,6 +2,8 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
+import { IconBook } from "./Icons";
+import { Badge, Card } from "./ui";
 import { api } from "@/lib/api";
 
 export type Course = {
@@ -14,6 +16,14 @@ export type Course = {
   groups: { id: number; name: string }[];
 };
 
+const coverPalette = [
+  "from-teal-500 to-emerald-600",
+  "from-sky-500 to-blue-600",
+  "from-violet-500 to-purple-600",
+  "from-rose-400 to-pink-600",
+  "from-amber-400 to-orange-500",
+];
+
 export default function CourseList() {
   const t = useTranslations("dash");
   const ta = useTranslations("admin");
@@ -25,26 +35,45 @@ export default function CourseList() {
 
   if (isLoading) return null;
   if (!courses?.length) {
-    return <p className="rounded-lg border border-dashed bg-white p-6 text-slate-500">{t("noCourses")}</p>;
+    return (
+      <div className="flex flex-col items-center rounded-xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center">
+        <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-teal-50 text-2xl text-teal-600">
+          <IconBook />
+        </div>
+        <p className="max-w-xs text-sm text-slate-500">{t("noCourses")}</p>
+      </div>
+    );
   }
+
   return (
-    <ul className="grid gap-3 sm:grid-cols-2">
-      {courses.map((course) => (
-        <li key={course.id} className="rounded-lg border bg-white p-4 shadow-sm">
-          <p className="font-semibold">
-            {locale === "ru" ? course.subject_name_ru : course.subject_name_uz}
-          </p>
-          <p className="mt-1 text-sm text-slate-500">
-            {ta("semester")} {course.semester} · {course.academic_year}
-          </p>
-          <p className="text-sm text-slate-500">{course.teacher_name}</p>
-          {course.groups.length > 0 && (
-            <p className="mt-1 text-xs text-slate-400">
-              {course.groups.map((g) => g.name).join(", ")}
-            </p>
-          )}
-        </li>
-      ))}
+    <ul className="grid gap-4 sm:grid-cols-2">
+      {courses.map((course) => {
+        const name = locale === "ru" ? course.subject_name_ru : course.subject_name_uz;
+        const cover = coverPalette[course.id % coverPalette.length];
+        return (
+          <li key={course.id}>
+            <Card className="overflow-hidden transition-shadow hover:shadow-md">
+              <div className={`flex h-20 items-end bg-gradient-to-br ${cover} px-4 pb-3`}>
+                <span className="line-clamp-1 text-lg font-bold text-white drop-shadow-sm">{name}</span>
+              </div>
+              <div className="space-y-2 px-4 py-3">
+                <p className="text-sm text-slate-600">{course.teacher_name}</p>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <Badge tone="teal">
+                    {ta("semester")} {course.semester}
+                  </Badge>
+                  <Badge tone="slate">{course.academic_year}</Badge>
+                  {course.groups.map((g) => (
+                    <Badge key={g.id} tone="slate">
+                      {g.name}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            </Card>
+          </li>
+        );
+      })}
     </ul>
   );
 }

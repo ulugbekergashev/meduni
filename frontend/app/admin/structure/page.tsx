@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import CrudTable from "@/components/CrudTable";
+import { PageHeader, cls } from "@/components/ui";
 import { api } from "@/lib/api";
 
 type Named = { id: number; name_uz: string; name_ru: string };
@@ -43,15 +44,16 @@ export default function StructurePage() {
 
   return (
     <div>
-      <h1 className="mb-4 text-2xl font-bold">{t("title")}</h1>
-      <div className="mb-4 flex gap-2 border-b">
+      <PageHeader title={t("title")} />
+      <div className="mb-5 inline-flex flex-wrap gap-1 rounded-xl bg-slate-100 p-1">
         {tabs.map(({ id, label }) => (
           <button
             key={id}
             onClick={() => setTab(id)}
-            className={`border-b-2 px-3 py-2 text-sm ${
-              tab === id ? "border-sky-600 font-semibold text-sky-700" : "border-transparent text-slate-500"
-            }`}
+            className={cls(
+              "rounded-lg px-3.5 py-1.5 text-sm font-medium transition-colors",
+              tab === id ? "bg-white text-teal-700 shadow-sm" : "text-slate-500 hover:text-slate-800",
+            )}
           >
             {label}
           </button>
