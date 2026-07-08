@@ -2,8 +2,9 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
+import Link from "next/link";
 import { IconBook } from "./Icons";
-import { Badge, Card } from "./ui";
+import { Badge, Card, cls } from "./ui";
 import { api } from "@/lib/api";
 
 export type Course = {
@@ -24,7 +25,7 @@ const coverPalette = [
   "from-amber-400 to-orange-500",
 ];
 
-export default function CourseList() {
+export default function CourseList({ hrefBase }: { hrefBase?: string }) {
   const t = useTranslations("dash");
   const ta = useTranslations("admin");
   const locale = useLocale();
@@ -50,27 +51,30 @@ export default function CourseList() {
       {courses.map((course) => {
         const name = locale === "ru" ? course.subject_name_ru : course.subject_name_uz;
         const cover = coverPalette[course.id % coverPalette.length];
+        const card = (
+          <Card className={cls("overflow-hidden transition-shadow hover:shadow-md", hrefBase && "cursor-pointer")}>
+            <div className={`flex h-20 items-end bg-gradient-to-br ${cover} px-4 pb-3`}>
+              <span className="line-clamp-1 text-lg font-bold text-white drop-shadow-sm">{name}</span>
+            </div>
+            <div className="space-y-2 px-4 py-3">
+              <p className="text-sm text-slate-600">{course.teacher_name}</p>
+              <div className="flex flex-wrap items-center gap-1.5">
+                <Badge tone="teal">
+                  {ta("semester")} {course.semester}
+                </Badge>
+                <Badge tone="slate">{course.academic_year}</Badge>
+                {course.groups.map((g) => (
+                  <Badge key={g.id} tone="slate">
+                    {g.name}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          </Card>
+        );
         return (
           <li key={course.id}>
-            <Card className="overflow-hidden transition-shadow hover:shadow-md">
-              <div className={`flex h-20 items-end bg-gradient-to-br ${cover} px-4 pb-3`}>
-                <span className="line-clamp-1 text-lg font-bold text-white drop-shadow-sm">{name}</span>
-              </div>
-              <div className="space-y-2 px-4 py-3">
-                <p className="text-sm text-slate-600">{course.teacher_name}</p>
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <Badge tone="teal">
-                    {ta("semester")} {course.semester}
-                  </Badge>
-                  <Badge tone="slate">{course.academic_year}</Badge>
-                  {course.groups.map((g) => (
-                    <Badge key={g.id} tone="slate">
-                      {g.name}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            </Card>
+            {hrefBase ? <Link href={`${hrefBase}/${course.id}`}>{card}</Link> : card}
           </li>
         );
       })}

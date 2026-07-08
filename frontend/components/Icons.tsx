@@ -1,4 +1,5 @@
 import type { SVGProps } from "react";
+import { cls } from "./ui";
 
 function Svg({ children, ...props }: SVGProps<SVGSVGElement>) {
   return (
@@ -99,6 +100,59 @@ export const IconKey = (p: SVGProps<SVGSVGElement>) => (
     <circle cx="7.5" cy="15.5" r="5.5" />
     <path d="M21 2l-9.6 9.6" />
     <path d="M15.5 7.5l3 3L22 7l-3-3" />
+  </Svg>
+);
+
+export const IconFile = (p: SVGProps<SVGSVGElement>) => (
+  <Svg {...p}>
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+    <path d="M14 2v6h6" />
+  </Svg>
+);
+
+export const IconSparkles = (p: SVGProps<SVGSVGElement>) => (
+  <Svg {...p}>
+    <path d="M12 3l1.9 4.8L18.7 9.7 13.9 11.6 12 16.4 10.1 11.6 5.3 9.7 10.1 7.8z" />
+    <path d="M19 15l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z" />
+  </Svg>
+);
+
+export const IconCheck = (p: SVGProps<SVGSVGElement>) => (
+  <Svg {...p}>
+    <path d="M20 6L9 17l-5-5" />
+  </Svg>
+);
+
+export const IconChevronRight = (p: SVGProps<SVGSVGElement>) => (
+  <Svg {...p}>
+    <path d="M9 18l6-6-6-6" />
+  </Svg>
+);
+
+export const IconArrowLeft = (p: SVGProps<SVGSVGElement>) => (
+  <Svg {...p}>
+    <path d="M19 12H5" />
+    <path d="M12 19l-7-7 7-7" />
+  </Svg>
+);
+
+export const IconArrowUp = (p: SVGProps<SVGSVGElement>) => (
+  <Svg {...p}>
+    <path d="M12 19V5" />
+    <path d="M5 12l7-7 7 7" />
+  </Svg>
+);
+
+export const IconLock = (p: SVGProps<SVGSVGElement>) => (
+  <Svg {...p}>
+    <rect x="3" y="11" width="18" height="11" rx="2" />
+    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+  </Svg>
+);
+
+export const IconSpinner = (p: SVGProps<SVGSVGElement>) => (
+  <Svg {...p} className={cls("animate-spin", p.className)}>
+    <path d="M21 12a9 9 0 1 1-6.2-8.5" />
   </Svg>
 );
 

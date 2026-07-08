@@ -13,6 +13,11 @@ class Settings(BaseSettings):
     ai_image_provider: str = "gemini"
     ai_tts_provider: str = "edge"
     gemini_api_key: str = ""
+    gemini_text_model: str = "gemini-2.5-flash"
+
+    storage_dir: str = "./storage"
+    jobs_sync: bool = False  # тесты: выполнять задачи синхронно
+    max_material_chars: int = 60_000  # обрезка текста материала для LLM
 
 
 settings = Settings()

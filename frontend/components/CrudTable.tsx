@@ -13,14 +13,33 @@ export type FieldSpec = {
   type?: "text" | "number" | "select";
   options?: { value: string | number; label: string }[];
   render?: (row: Record<string, unknown>) => React.ReactNode;
+  required?: boolean;
+  defaultValue?: string | number;
 };
 
-/** Универсальная CRUD-таблица для справочников (факультеты, кафедры, ...). */
-export default function CrudTable({ endpoint, fields }: { endpoint: string; fields: FieldSpec[] }) {
+/**
+ * Универсальная CRUD-таблица для справочников.
+ * endpoint — GET списка (может содержать ?query); createEndpoint / itemEndpoint —
+ * база для POST / PUT / DELETE (по умолчанию — endpoint без query-строки).
+ */
+export default function CrudTable({
+  endpoint,
+  createEndpoint,
+  fields,
+}: {
+  endpoint: string;
+  createEndpoint?: string;
+  fields: FieldSpec[];
+}) {
   const t = useTranslations("common");
   const queryClient = useQueryClient();
+  const itemBase = createEndpoint ?? endpoint.split("?")[0];
+  const defaults = () =>
+    Object.fromEntries(
+      fields.filter((f) => f.defaultValue !== undefined).map((f) => [f.key, String(f.defaultValue)]),
+    );
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [form, setForm] = useState<Record<string, string>>({});
+  const [form, setForm] = useState<Record<string, string>>(defaults);
   const [error, setError] = useState<string | null>(null);
 
   const { data: rows } = useQuery({
@@ -34,10 +53,10 @@ export default function CrudTable({ endpoint, fields }: { endpoint: string; fiel
   const save = useMutation({
     mutationFn: (payload: { id: number | null; body: Record<string, unknown> }) =>
       payload.id === null
-        ? api(endpoint, { method: "POST", body: payload.body })
-        : api(`${endpoint}/${payload.id}`, { method: "PUT", body: payload.body }),
+        ? api(itemBase, { method: "POST", body: payload.body })
+        : api(`${itemBase}/${payload.id}`, { method: "PUT", body: payload.body }),
     onSuccess: () => {
-      setForm({});
+      setForm(defaults());
       setEditingId(null);
       setError(null);
       invalidate();
@@ -46,7 +65,7 @@ export default function CrudTable({ endpoint, fields }: { endpoint: string; fiel
   });
 
   const remove = useMutation({
-    mutationFn: (id: number) => api(`${endpoint}/${id}`, { method: "DELETE" }),
+    mutationFn: (id: number) => api(`${itemBase}/${id}`, { method: "DELETE" }),
     onSuccess: invalidate,
     onError,
   });
@@ -56,8 +75,11 @@ export default function CrudTable({ endpoint, fields }: { endpoint: string; fiel
     const body: Record<string, unknown> = {};
     for (const field of fields) {
       const raw = form[field.key] ?? "";
-      body[field.key] =
-        field.type === "number" || field.type === "select" ? Number(raw) : raw;
+      if ((field.type === "number" || field.type === "select")) {
+        body[field.key] = raw === "" ? null : Number(raw);
+      } else {
+        body[field.key] = raw === "" ? null : raw;
+      }
     }
     save.mutate({ id: editingId, body });
   };
@@ -75,7 +97,7 @@ export default function CrudTable({ endpoint, fields }: { endpoint: string; fiel
             <Field key={field.key} label={field.label} className="w-full sm:w-auto">
               {field.type === "select" ? (
                 <Select
-                  required
+                  required={field.required !== false}
                   value={form[field.key] ?? ""}
                   onChange={(e) => setForm({ ...form, [field.key]: e.target.value })}
                   className="sm:w-52"
@@ -91,7 +113,7 @@ export default function CrudTable({ endpoint, fields }: { endpoint: string; fiel
                 </Select>
               ) : (
                 <Input
-                  required
+                  required={field.required !== false}
                   type={field.type ?? "text"}
                   value={form[field.key] ?? ""}
                   onChange={(e) => setForm({ ...form, [field.key]: e.target.value })}

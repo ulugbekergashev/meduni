@@ -1,6 +1,8 @@
 import os
 
 os.environ["DATABASE_URL"] = "sqlite://"  # in-memory до импорта приложения
+os.environ["JOBS_SYNC"] = "1"  # фоновые задачи — синхронно (ADR-0003)
+os.environ["STORAGE_DIR"] = "./test_storage"
 
 import pytest
 from fastapi.testclient import TestClient
