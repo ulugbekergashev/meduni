@@ -1,0 +1,66 @@
+{
+  "common": {
+    "appName": "MedUni AI",
+    "loading": "Загрузка...",
+    "save": "Сохранить",
+    "cancel": "Отмена",
+    "delete": "Удалить",
+    "edit": "Изменить",
+    "add": "Добавить",
+    "actions": "Действия",
+    "logout": "Выйти",
+    "empty": "Пока пусто",
+    "error": "Произошла ошибка"
+  },
+  "login": {
+    "title": "Вход в систему",
+    "email": "Email",
+    "password": "Пароль",
+    "submit": "Войти"
+  },
+  "nav": {
+    "structure": "Структура",
+    "users": "Пользователи",
+    "courses": "Курсы",
+    "dashboard": "Главная"
+  },
+  "admin": {
+    "title": "Панель администратора",
+    "faculties": "Факультеты",
+    "departments": "Кафедры",
+    "subjects": "Предметы",
+    "groups": "Группы",
+    "nameUz": "Название (uz)",
+    "nameRu": "Название (ru)",
+    "faculty": "Факультет",
+    "department": "Кафедра",
+    "subject": "Предмет",
+    "group": "Группа",
+    "yearOfStudy": "Курс (год)",
+    "description": "Описание",
+    "fullName": "Ф.И.О.",
+    "role": "Роль",
+    "roleAdmin": "Админ",
+    "roleTeacher": "Преподаватель",
+    "roleStudent": "Студент",
+    "phone": "Телефон",
+    "active": "Активен",
+    "inactive": "Заблокирован",
+    "newPassword": "Новый пароль",
+    "importXlsx": "Импорт XLSX",
+    "importHint": "Колонки: full_name, email, role, phone?, locale?, password?, group?",
+    "importResult": "Создано: {created}",
+    "teacher": "Преподаватель",
+    "semester": "Семестр",
+    "academicYear": "Учебный год",
+    "createCourse": "Создать курс",
+    "students": "Студенты"
+  },
+  "dash": {
+    "studentTitle": "Моё обучение",
+    "teacherTitle": "Мои курсы",
+    "myCourses": "Мои курсы",
+    "noCourses": "У вас пока нет курсов. Курсы назначает администратор.",
+    "welcome": "Добро пожаловать, {name}!"
+  }
+}

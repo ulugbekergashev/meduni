@@ -1,0 +1,66 @@
+{
+  "common": {
+    "appName": "MedUni AI",
+    "loading": "Yuklanmoqda...",
+    "save": "Saqlash",
+    "cancel": "Bekor qilish",
+    "delete": "Oʻchirish",
+    "edit": "Tahrirlash",
+    "add": "Qoʻshish",
+    "actions": "Amallar",
+    "logout": "Chiqish",
+    "empty": "Hozircha boʻsh",
+    "error": "Xatolik yuz berdi"
+  },
+  "login": {
+    "title": "Tizimga kirish",
+    "email": "Email",
+    "password": "Parol",
+    "submit": "Kirish"
+  },
+  "nav": {
+    "structure": "Tuzilma",
+    "users": "Foydalanuvchilar",
+    "courses": "Kurslar",
+    "dashboard": "Bosh sahifa"
+  },
+  "admin": {
+    "title": "Administrator paneli",
+    "faculties": "Fakultetlar",
+    "departments": "Kafedralar",
+    "subjects": "Fanlar",
+    "groups": "Guruhlar",
+    "nameUz": "Nomi (uz)",
+    "nameRu": "Nomi (ru)",
+    "faculty": "Fakultet",
+    "department": "Kafedra",
+    "subject": "Fan",
+    "group": "Guruh",
+    "yearOfStudy": "Bosqich",
+    "description": "Tavsif",
+    "fullName": "F.I.Sh.",
+    "role": "Rol",
+    "roleAdmin": "Admin",
+    "roleTeacher": "Oʻqituvchi",
+    "roleStudent": "Talaba",
+    "phone": "Telefon",
+    "active": "Faol",
+    "inactive": "Bloklangan",
+    "newPassword": "Yangi parol",
+    "importXlsx": "XLSX import",
+    "importHint": "Ustunlar: full_name, email, role, phone?, locale?, password?, group?",
+    "importResult": "Yaratildi: {created}",
+    "teacher": "Oʻqituvchi",
+    "semester": "Semestr",
+    "academicYear": "Oʻquv yili",
+    "createCourse": "Kurs yaratish",
+    "students": "Talabalar"
+  },
+  "dash": {
+    "studentTitle": "Mening oʻqishim",
+    "teacherTitle": "Mening kurslarim",
+    "myCourses": "Kurslarim",
+    "noCourses": "Sizda hali kurslar yoʻq. Kurslar admin tomonidan biriktiriladi.",
+    "welcome": "Xush kelibsiz, {name}!"
+  }
+}
