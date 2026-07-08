@@ -13,7 +13,7 @@
 | Слот | Провайдер (free) | Примечание |
 |---|---|---|
 | TextModel | **Google Gemini API free tier** (AI Studio ключ, модели gemini-2.x-flash) | Бесплатные лимиты запросов/день; structured output поддерживается. Резерв: Groq free tier, OpenRouter free-модели |
-| ImageModel | **Gemini image generation free tier**; резерв — Pollinations | Качества хватит для черновиков M4 |
+| ImageModel | **Pollinations** (бесплатно, без ключа) | Проверено на M4: Gemini image генерация НЕ входит во free tier (`generate_content_free_tier_requests, limit: 0`), поэтому по умолчанию `AI_IMAGE_PROVIDER=pollinations`. Gemini image (`gemini-2.5-flash-image`) / Nano Banana Pro — при переходе на платный ключ |
 | TTSModel | **edge-tts** (Microsoft Edge TTS, бесплатно, без ключа) | Есть голоса uz-UZ-MadinaNeural / uz-UZ-SardorNeural и ru-RU — ровно те, что в плане для Azure |
 
 Платные (Claude, Azure Speech, Nano Banana Pro) подключаются позже заменой значения `AI_TEXT_PROVIDER` / `AI_IMAGE_PROVIDER` / `AI_TTS_PROVIDER` в конфиге — интерфейсы уже совпадают.

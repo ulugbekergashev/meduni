@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     ai_tts_provider: str = "edge"
     gemini_api_key: str = ""
     gemini_text_model: str = "gemini-2.5-flash"
+    gemini_image_model: str = "gemini-2.5-flash-image"
 
     storage_dir: str = "./storage"
     jobs_sync: bool = False  # тесты: выполнять задачи синхронно

@@ -27,6 +27,7 @@
     "users": "Foydalanuvchilar",
     "courses": "Kurslar",
     "glossary": "Lugʻat",
+    "templates": "Shablonlar",
     "dashboard": "Bosh sahifa"
   },
   "topics": {
@@ -127,7 +128,38 @@
     "labs": "Laboratoriya / instrumental",
     "caseQuestions": "Savollar",
     "referenceAnalysis": "Etalon tahlil",
-    "publishedLocked": "Chop etilgan — tahrirlab boʻlmaydi"
+    "publishedLocked": "Chop etilgan — tahrirlab boʻlmaydi",
+    "presentation": "Prezentatsiya",
+    "generatePresentation": "Prezentatsiya yaratish (AI)",
+    "slide": "Slayd",
+    "slideTitle": "Sarlavha",
+    "bullets": "Tezislar",
+    "notes": "Maʼruzachi izohlari",
+    "imagePrompt": "Illyustratsiya tavsifi (ingliz tilida)",
+    "generateImage": "Rasm yaratish",
+    "regenerateImage": "Rasmni qayta yaratish",
+    "imageIdle": "Rasm yoʻq",
+    "imageRunning": "Yaratilmoqda...",
+    "imageDone": "Tayyor",
+    "imageError": "Rasm xatosi",
+    "noImagePrompt": "Bu slayd uchun rasm tavsifi yoʻq",
+    "addSlide": "Slayd qoʻshish",
+    "buildPptx": "PPTX yigʻish",
+    "downloadPptx": "PPTX yuklab olish",
+    "pptxStale": "Slaydlar oʻzgardi — qayta yigʻish kerak",
+    "addBullet": "Tezis qoʻshish"
+  },
+  "templates": {
+    "title": "Prezentatsiya shablonlari",
+    "subtitle": "Vuz brendi: ranglar va logotip",
+    "name": "Nomi",
+    "primaryColor": "Asosiy rang (hex)",
+    "accentColor": "Qoʻshimcha rang (hex)",
+    "isDefault": "Asosiy shablon",
+    "logo": "Logotip",
+    "uploadLogo": "Logotip yuklash",
+    "default": "Asosiy",
+    "addTemplate": "Shablon qoʻshish"
   },
   "glossary": {
     "title": "Atamalar lugʻati",

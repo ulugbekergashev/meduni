@@ -9,15 +9,19 @@ import { Badge, Button, Card, cls } from "./ui";
 import { api } from "@/lib/api";
 
 type ContentItem = { id: number; kind: string; status: string; factcheck_flags_resolved: boolean };
-type TopicContent = { quiz: ContentItem | null; case: ContentItem | null };
+type TopicContent = { quiz: ContentItem | null; case: ContentItem | null; presentation: ContentItem | null };
 type Job = { id: number; status: string; steps_json: { step: string; status: string }[]; error: string | null };
 
 const statusTone = { review: "amber", approved: "green", published: "teal", draft: "slate" } as const;
 
+const genLabel: Record<string, string> = {
+  quiz: "generateQuiz", case: "generateCase", presentation: "generatePresentation",
+};
+
 function ContentCard({
   kind, item, topicId, onChanged,
 }: {
-  kind: "quiz" | "case";
+  kind: "quiz" | "case" | "presentation";
   item: ContentItem | null;
   topicId: number;
   onChanged: () => void;
@@ -47,7 +51,7 @@ function ContentCard({
     mutationFn: () =>
       api<{ job_id: number }>(`/topics/${topicId}/${kind}/generate`, {
         method: "POST",
-        body: kind === "quiz" ? { count } : { fmt },
+        body: kind === "quiz" ? { count } : kind === "case" ? { fmt } : {},
       }),
     onSuccess: (res) => {
       setError(null);
@@ -74,14 +78,15 @@ function ContentCard({
       </div>
 
       <div className="flex flex-wrap items-end gap-2">
-        {kind === "quiz" ? (
+        {kind === "quiz" && (
           <label className="text-sm">
             <span className="mb-1 block text-xs text-slate-500">{t("questionCount")}</span>
             <input type="number" min={1} max={20} value={count}
                    onChange={(e) => setCount(Number(e.target.value))}
                    className="w-20 rounded-lg border border-slate-300 px-2 py-1.5 text-sm" />
           </label>
-        ) : (
+        )}
+        {kind === "case" && (
           <label className="text-sm">
             <span className="mb-1 block text-xs text-slate-500">{t("caseFormat")}</span>
             <select value={fmt} onChange={(e) => setFmt(e.target.value)}
@@ -94,7 +99,7 @@ function ContentCard({
         <Button onClick={() => generate.mutate()} disabled={generating}
                 variant={item ? "outline" : "primary"}>
           {generating ? <IconSpinner /> : <IconSparkles />}
-          {generating ? "..." : item ? t("regenerate") : t(kind === "quiz" ? "generateQuiz" : "generateCase")}
+          {generating ? "..." : item ? t("regenerate") : t(genLabel[kind] as never)}
         </Button>
         {item && !generating && (
           <Link href={editorHref}
@@ -122,6 +127,7 @@ export default function TopicContentSection({ topicId, enabled }: { topicId: num
     <div className={cls("grid gap-4 sm:grid-cols-2", !enabled && "pointer-events-none opacity-50")}>
       <ContentCard kind="quiz" item={data?.quiz ?? null} topicId={topicId} onChanged={onChanged} />
       <ContentCard kind="case" item={data?.case ?? null} topicId={topicId} onChanged={onChanged} />
+      <ContentCard kind="presentation" item={data?.presentation ?? null} topicId={topicId} onChanged={onChanged} />
     </div>
   );
 }

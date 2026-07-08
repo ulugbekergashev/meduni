@@ -35,5 +35,22 @@ def health():
     return {"status": "ok"}
 
 
+@app.get("/api/v1/media/{file_path:path}")
+def media(file_path: str):
+    """Отдача файлов иллюстраций/логотипов (dev; на сервере — presigned MinIO).
+    Медиа не секретно; защита от path traversal — в storage.safe_path."""
+    from fastapi import Response
+
+    from app.core import storage
+
+    path = storage.safe_path(file_path)
+    if path is None:
+        return Response(status_code=404)
+    ext = path.suffix.lower()
+    media_type = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg"}.get(ext, "application/octet-stream")
+    return Response(path.read_bytes(), media_type=media_type,
+                    headers={"Cache-Control": "max-age=3600"})
+
+
 for router in (auth_router, org_router, courses_router, topics_router, content_router):
     app.include_router(router, prefix="/api/v1")

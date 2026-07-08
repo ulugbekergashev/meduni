@@ -4,14 +4,21 @@ from fastapi import APIRouter
 from fastapi.responses import Response
 from sqlalchemy import select
 
-from app.core import jobs
+from pathlib import Path
+
+from fastapi import UploadFile
+
+from app.core import jobs, storage
 from app.core.deps import CurrentUser, DbSession, require_roles
 from app.core.errors import ApiError, not_found
-from app.modules.content import export, service
-from app.modules.content.models import ClinicalCase, ContentItem, Question, Quiz
+from app.modules.content import export, presentation_service, service
+from app.modules.content.models import (
+    ClinicalCase, ContentItem, Presentation, PresentationTemplate, Question, Quiz,
+)
 from app.modules.content.schemas import (
     CaseDetailOut, CaseUpdateIn, ContentItemOut, GenerateCaseIn, GenerateQuizIn,
-    QuestionOut, QuizDetailOut, QuizUpdateIn, ReadinessOut, TopicContentOut,
+    PresentationDetailOut, QuestionOut, QuizDetailOut, QuizUpdateIn, ReadinessOut,
+    SlidesUpdateIn, TemplateIn, TemplateOut, TopicContentOut,
 )
 from app.modules.topics.models import GenerationJob, Topic, TopicDigest
 from app.modules.topics.router import _topic_for_write  # переиспользуем проверку доступа
@@ -54,12 +61,12 @@ def _no_running_job(db: DbSession, topic_id: int, kind: str) -> None:
 @router.get("/topics/{topic_id}/content", response_model=TopicContentOut, dependencies=[staff_only])
 def topic_content(topic_id: int, user: CurrentUser, db: DbSession):
     _topic_for_write(db, topic_id, user)
-    quiz = db.scalar(select(ContentItem).where(ContentItem.topic_id == topic_id, ContentItem.kind == "quiz"))
-    case = db.scalar(select(ContentItem).where(ContentItem.topic_id == topic_id, ContentItem.kind == "case"))
-    return TopicContentOut(
-        quiz=ContentItemOut.model_validate(quiz) if quiz else None,
-        case=ContentItemOut.model_validate(case) if case else None,
-    )
+
+    def item(kind: str):
+        found = db.scalar(select(ContentItem).where(ContentItem.topic_id == topic_id, ContentItem.kind == kind))
+        return ContentItemOut.model_validate(found) if found else None
+
+    return TopicContentOut(quiz=item("quiz"), case=item("case"), presentation=item("presentation"))
 
 
 # --- Генерация ---------------------------------------------------------------
@@ -86,6 +93,18 @@ def generate_case(topic_id: int, body: GenerateCaseIn, user: CurrentUser, db: Db
     db.add(job)
     db.commit()
     jobs.submit(service.run_case_job, job.id, body.fmt)
+    return {"job_id": job.id}
+
+
+@router.post("/topics/{topic_id}/presentation/generate", status_code=202, dependencies=[staff_only])
+def generate_presentation(topic_id: int, user: CurrentUser, db: DbSession):
+    _topic_for_write(db, topic_id, user)
+    _require_approved_digest(db, topic_id)
+    _no_running_job(db, topic_id, "presentation")
+    job = GenerationJob(topic_id=topic_id, kind="presentation", created_by=user.id)
+    db.add(job)
+    db.commit()
+    jobs.submit(presentation_service.run_slides_job, job.id)
     return {"job_id": job.id}
 
 
@@ -268,3 +287,140 @@ def export_quiz(content_id: int, user: CurrentUser, db: DbSession, format: str =
         return Response(export.to_pdf(questions, title, lang), media_type="application/pdf",
                         headers={"Content-Disposition": f'attachment; filename="quiz_{content_id}.pdf"'})
     raise ApiError(422, "bad_format", "Format notoʻgʻri", "Неверный формат (moodle_xml|gift|pdf)")
+
+
+# --- Презентации (M4) --------------------------------------------------------
+
+
+@router.get("/presentations/{content_id}", response_model=PresentationDetailOut, dependencies=[staff_only])
+def get_presentation(content_id: int, user: CurrentUser, db: DbSession):
+    item = _content_for_write(db, content_id, user)
+    _mark_reviewed(db, item)
+    pres = db.scalar(select(Presentation).where(Presentation.content_item_id == item.id))
+    return PresentationDetailOut(
+        content=ContentItemOut.model_validate(item),
+        slides_json=pres.slides_json, template_id=pres.template_id,
+        pptx_url=pres.pptx_url, pptx_stale=pres.pptx_stale,
+    )
+
+
+@router.put("/presentations/{content_id}", response_model=PresentationDetailOut, dependencies=[staff_only])
+def update_presentation(content_id: int, body: SlidesUpdateIn, user: CurrentUser, db: DbSession):
+    item = _content_for_write(db, content_id, user)
+    if item.status == "published":
+        raise ApiError(409, "published_locked", "Chop etilgan kontent tahrirlanmaydi", "Опубликованный контент нельзя менять")
+    pres = db.scalar(select(Presentation).where(Presentation.content_item_id == item.id))
+    pres.slides_json = body.slides_json
+    pres.pptx_stale = True
+    item.edited_by_teacher = True
+    if item.status == "approved":
+        item.status = "review"
+        item.approved_at = None
+        item.approved_by = None
+    db.commit()
+    return get_presentation(content_id, user, db)
+
+
+@router.post("/presentations/{content_id}/slides/{slide_index}/image", status_code=202,
+             dependencies=[staff_only])
+def regenerate_slide_image(content_id: int, slide_index: int, user: CurrentUser, db: DbSession):
+    item = _content_for_write(db, content_id, user)
+    pres = db.scalar(select(Presentation).where(Presentation.content_item_id == item.id))
+    if slide_index >= len(pres.slides_json):
+        raise not_found("Slayd")
+    slides = list(pres.slides_json)
+    slide = dict(slides[slide_index])
+    if not (slide.get("image_prompt") or "").strip():
+        raise ApiError(422, "no_prompt", "Bu slaydda rasm tavsifi yoʻq", "У слайда нет описания иллюстрации")
+    slide["image_status"] = "running"
+    slides[slide_index] = slide
+    pres.slides_json = slides
+    db.commit()
+    jobs.submit(presentation_service.run_image_task, content_id, slide_index)
+    return {"ok": True}
+
+
+@router.post("/presentations/{content_id}/build", response_model=PresentationDetailOut,
+             dependencies=[staff_only])
+def build_presentation(content_id: int, user: CurrentUser, db: DbSession, lang: str = "ru"):
+    _content_for_write(db, content_id, user)
+    presentation_service.build_pptx(content_id, lang)
+    return get_presentation(content_id, user, db)
+
+
+@router.get("/presentations/{content_id}/download", dependencies=[staff_only])
+def download_presentation(content_id: int, user: CurrentUser, db: DbSession, lang: str = "ru"):
+    item = _content_for_write(db, content_id, user)
+    pres = db.scalar(select(Presentation).where(Presentation.content_item_id == item.id))
+    if pres.pptx_url is None or pres.pptx_stale:
+        presentation_service.build_pptx(content_id, lang)
+        db.refresh(pres)
+    data = storage.full_path(pres.pptx_url).read_bytes()
+    return Response(
+        data,
+        media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        headers={"Content-Disposition": f'attachment; filename="presentation_{content_id}.pptx"'},
+    )
+
+
+# --- Шаблоны презентаций (админ) ---------------------------------------------
+
+admin_only = require_roles("admin")
+
+
+@router.get("/presentation-templates", response_model=list[TemplateOut], dependencies=[staff_only])
+def list_templates(db: DbSession):
+    return db.scalars(select(PresentationTemplate).order_by(PresentationTemplate.id)).all()
+
+
+@router.post("/presentation-templates", response_model=TemplateOut, status_code=201, dependencies=[admin_only])
+def create_template(body: TemplateIn, db: DbSession):
+    if body.is_default:
+        for tpl in db.scalars(select(PresentationTemplate).where(PresentationTemplate.is_default == True)):  # noqa: E712
+            tpl.is_default = False
+    tpl = PresentationTemplate(**body.model_dump())
+    db.add(tpl)
+    db.commit()
+    return tpl
+
+
+@router.put("/presentation-templates/{template_id}", response_model=TemplateOut, dependencies=[admin_only])
+def update_template(template_id: int, body: TemplateIn, db: DbSession):
+    tpl = db.get(PresentationTemplate, template_id)
+    if tpl is None:
+        raise not_found()
+    if body.is_default:
+        for other in db.scalars(select(PresentationTemplate).where(PresentationTemplate.is_default == True)):  # noqa: E712
+            other.is_default = False
+    for key, value in body.model_dump().items():
+        setattr(tpl, key, value)
+    db.commit()
+    return tpl
+
+
+@router.post("/presentation-templates/{template_id}/logo", response_model=TemplateOut, dependencies=[admin_only])
+async def upload_template_logo(template_id: int, file: UploadFile, db: DbSession):
+    tpl = db.get(PresentationTemplate, template_id)
+    if tpl is None:
+        raise not_found()
+    ext = Path(file.filename or "").suffix.lstrip(".").lower()
+    if ext not in ("png", "jpg", "jpeg"):
+        raise ApiError(422, "bad_logo", "Faqat PNG/JPG", "Только PNG/JPG")
+    data = await file.read()
+    if tpl.logo_url:
+        storage.delete(tpl.logo_url)
+    tpl.logo_url = storage.save_bytes("templates", file.filename or "logo.png", data)
+    db.commit()
+    return tpl
+
+
+@router.delete("/presentation-templates/{template_id}", dependencies=[admin_only])
+def delete_template(template_id: int, db: DbSession):
+    tpl = db.get(PresentationTemplate, template_id)
+    if tpl is None:
+        raise not_found()
+    if tpl.logo_url:
+        storage.delete(tpl.logo_url)
+    db.delete(tpl)
+    db.commit()
+    return {"ok": True}
