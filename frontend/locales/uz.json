@@ -10,10 +10,14 @@
     "actions": "Amallar",
     "logout": "Chiqish",
     "empty": "Hozircha boʻsh",
-    "error": "Xatolik yuz berdi"
+    "error": "Xatolik yuz berdi",
+    "confirmDelete": "Oʻchirishni tasdiqlaysizmi?"
   },
   "login": {
     "title": "Tizimga kirish",
+    "subtitle": "Hisobingiz bilan davom eting",
+    "tagline": "Tibbiyot universiteti uchun AI oʻquv platformasi",
+    "taglineHint": "Prezentatsiyalar, video darslar, testlar va klinik keyslar — bitta tizimda",
     "email": "Email",
     "password": "Parol",
     "submit": "Kirish"

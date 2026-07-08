@@ -2,14 +2,13 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { IconLogo } from "@/components/Icons";
 import { getAccessToken } from "@/lib/api";
 import { homeFor, useMe } from "@/lib/useAuth";
 
 export default function Home() {
   const router = useRouter();
   const { data: me, isError } = useMe();
-  const t = useTranslations("common");
 
   useEffect(() => {
     if (!getAccessToken() || isError) {
@@ -19,5 +18,9 @@ export default function Home() {
     }
   }, [me, isError, router]);
 
-  return <p className="p-8 text-slate-500">{t("loading")}</p>;
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-slate-50">
+      <IconLogo className="animate-pulse text-5xl text-teal-600" />
+    </div>
+  );
 }

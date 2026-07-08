@@ -3,6 +3,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useRef, useState } from "react";
+import { IconKey, IconPlus, IconUpload } from "@/components/Icons";
+import { Avatar, Badge, Button, Card, Field, Input, PageHeader, Select, Table, cls, td, th } from "@/components/ui";
 import { api } from "@/lib/api";
 
 type UserRow = {
@@ -15,6 +17,8 @@ type UserRow = {
 };
 
 const emptyForm = { role: "student", full_name: "", email: "", password: "", phone: "" };
+
+const roleTones = { admin: "amber", teacher: "teal", student: "slate" } as const;
 
 export default function UsersPage() {
   const t = useTranslations("admin");
@@ -84,120 +88,136 @@ export default function UsersPage() {
 
   return (
     <div>
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold">{t("title")}</h1>
-        <div className="flex items-center gap-2 text-sm">
-          <label className="cursor-pointer rounded border px-3 py-1.5 hover:bg-slate-100">
-            {t("importXlsx")}
-            <input
-              ref={fileRef}
-              type="file"
-              accept=".xlsx"
-              className="hidden"
-              onChange={(e) => e.target.files?.[0] && importXlsx.mutate(e.target.files[0])}
-            />
-          </label>
-          <select
-            value={roleFilter}
-            onChange={(e) => setRoleFilter(e.target.value)}
-            className="rounded border bg-white px-2 py-1.5"
-          >
-            <option value="">{t("role")}: —</option>
-            {Object.entries(roleLabels).map(([value, label]) => (
-              <option key={value} value={value}>{label}</option>
-            ))}
-          </select>
-        </div>
-      </div>
-      <p className="mb-3 text-xs text-slate-400">{t("importHint")}</p>
+      <PageHeader
+        title={t("title")}
+        subtitle={t("importHint")}
+        actions={
+          <>
+            <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 hover:border-teal-500 hover:text-teal-700">
+              <IconUpload />
+              {t("importXlsx")}
+              <input
+                ref={fileRef}
+                type="file"
+                accept=".xlsx"
+                className="hidden"
+                onChange={(e) => e.target.files?.[0] && importXlsx.mutate(e.target.files[0])}
+              />
+            </label>
+            <Select
+              value={roleFilter}
+              onChange={(e) => setRoleFilter(e.target.value)}
+              className="w-auto"
+            >
+              <option value="">{t("role")}: —</option>
+              {Object.entries(roleLabels).map(([value, label]) => (
+                <option key={value} value={value}>{label}</option>
+              ))}
+            </Select>
+          </>
+        }
+      />
 
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          createUser.mutate();
-        }}
-        className="mb-4 flex flex-wrap items-end gap-2 text-sm"
-      >
-        <select
-          value={form.role}
-          onChange={(e) => setForm({ ...form, role: e.target.value })}
-          className="rounded border bg-white px-2 py-1.5"
+      <Card className="mb-4 p-4">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            createUser.mutate();
+          }}
+          className="flex flex-wrap items-end gap-3"
         >
-          {Object.entries(roleLabels).map(([value, label]) => (
-            <option key={value} value={value}>{label}</option>
-          ))}
-        </select>
-        <input required placeholder={t("fullName")} value={form.full_name}
-               onChange={(e) => setForm({ ...form, full_name: e.target.value })}
-               className="w-44 rounded border px-2 py-1.5" />
-        <input required type="email" placeholder="email" value={form.email}
-               onChange={(e) => setForm({ ...form, email: e.target.value })}
-               className="w-48 rounded border px-2 py-1.5" />
-        <input required type="text" placeholder={t("newPassword")} value={form.password}
-               onChange={(e) => setForm({ ...form, password: e.target.value })}
-               className="w-36 rounded border px-2 py-1.5" />
-        <input placeholder={t("phone")} value={form.phone}
-               onChange={(e) => setForm({ ...form, phone: e.target.value })}
-               className="w-36 rounded border px-2 py-1.5" />
-        <button type="submit" className="rounded bg-sky-600 px-3 py-1.5 text-white hover:bg-sky-700">
-          {tc("add")}
-        </button>
-      </form>
-
-      {message && <p className="mb-2 text-sm text-sky-700">{message}</p>}
-      {importErrors.length > 0 && (
-        <ul className="mb-3 max-h-40 overflow-y-auto rounded border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
-          {importErrors.map((err, i) => (
-            <li key={i}>{err}</li>
-          ))}
-        </ul>
-      )}
-
-      <div className="overflow-x-auto rounded-lg border bg-white">
-        <table className="w-full text-sm">
-          <thead className="bg-slate-100 text-left">
-            <tr>
-              <th className="px-3 py-2">#</th>
-              <th className="px-3 py-2">{t("fullName")}</th>
-              <th className="px-3 py-2">Email</th>
-              <th className="px-3 py-2">{t("role")}</th>
-              <th className="px-3 py-2">{t("active")}</th>
-              <th className="px-3 py-2 text-right">{tc("actions")}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users?.map((user) => (
-              <tr key={user.id} className="border-t">
-                <td className="px-3 py-2 text-slate-400">{user.id}</td>
-                <td className="px-3 py-2">{user.full_name}</td>
-                <td className="px-3 py-2">{user.email}</td>
-                <td className="px-3 py-2">{roleLabels[user.role] ?? user.role}</td>
-                <td className="px-3 py-2">
-                  <button
-                    onClick={() => toggleActive.mutate(user)}
-                    className={`rounded px-2 py-0.5 text-xs ${
-                      user.is_active ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
-                    }`}
-                  >
-                    {user.is_active ? t("active") : t("inactive")}
-                  </button>
-                </td>
-                <td className="px-3 py-2 text-right">
-                  <button
-                    onClick={() => {
-                      const password = window.prompt(t("newPassword"));
-                      if (password) resetPassword.mutate({ id: user.id, password });
-                    }}
-                    className="text-sky-600 hover:underline"
-                  >
-                    {t("newPassword")}
-                  </button>
-                </td>
-              </tr>
+          <Field label={t("role")}>
+            <Select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })}>
+              {Object.entries(roleLabels).map(([value, label]) => (
+                <option key={value} value={value}>{label}</option>
+              ))}
+            </Select>
+          </Field>
+          <Field label={t("fullName")} className="grow sm:grow-0">
+            <Input required value={form.full_name}
+                   onChange={(e) => setForm({ ...form, full_name: e.target.value })}
+                   className="sm:w-52" />
+          </Field>
+          <Field label="Email">
+            <Input required type="email" value={form.email}
+                   onChange={(e) => setForm({ ...form, email: e.target.value })}
+                   className="sm:w-56" placeholder="name@meduni.uz" />
+          </Field>
+          <Field label={t("newPassword")}>
+            <Input required value={form.password}
+                   onChange={(e) => setForm({ ...form, password: e.target.value })}
+                   className="sm:w-36" />
+          </Field>
+          <Field label={t("phone")}>
+            <Input value={form.phone}
+                   onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                   className="sm:w-36" placeholder="+998..." />
+          </Field>
+          <Button type="submit">
+            <IconPlus />
+            {tc("add")}
+          </Button>
+        </form>
+        {message && <p className="mt-3 rounded-lg bg-teal-50 px-3 py-2 text-sm text-teal-800">{message}</p>}
+        {importErrors.length > 0 && (
+          <ul className="mt-3 max-h-40 space-y-0.5 overflow-y-auto rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+            {importErrors.map((err, i) => (
+              <li key={i}>{err}</li>
             ))}
-          </tbody>
-        </table>
-      </div>
+          </ul>
+        )}
+      </Card>
+
+      <Table
+        head={
+          <>
+            <th className={th}>{t("fullName")}</th>
+            <th className={th}>Email</th>
+            <th className={th}>{t("role")}</th>
+            <th className={th}>{t("active")}</th>
+            <th className={cls(th, "text-right")}>{tc("actions")}</th>
+          </>
+        }
+      >
+        {users?.map((user) => (
+          <tr key={user.id} className={cls("hover:bg-slate-50/60", !user.is_active && "opacity-60")}>
+            <td className={td}>
+              <div className="flex items-center gap-2.5">
+                <Avatar name={user.full_name} size="sm" />
+                <span className="font-medium text-slate-800">{user.full_name}</span>
+              </div>
+            </td>
+            <td className={cls(td, "text-slate-500")}>{user.email}</td>
+            <td className={td}>
+              <Badge tone={roleTones[user.role as keyof typeof roleTones] ?? "slate"}>
+                {roleLabels[user.role] ?? user.role}
+              </Badge>
+            </td>
+            <td className={td}>
+              <Badge tone={user.is_active ? "green" : "red"} onClick={() => toggleActive.mutate(user)}>
+                {user.is_active ? t("active") : t("inactive")}
+              </Badge>
+            </td>
+            <td className={cls(td, "text-right")}>
+              <button
+                onClick={() => {
+                  const password = window.prompt(t("newPassword"));
+                  if (password) resetPassword.mutate({ id: user.id, password });
+                }}
+                title={t("newPassword")}
+                className="rounded-md p-1.5 text-slate-400 hover:bg-teal-50 hover:text-teal-600"
+              >
+                <IconKey />
+              </button>
+            </td>
+          </tr>
+        ))}
+        {users?.length === 0 && (
+          <tr>
+            <td colSpan={5} className="px-4 py-10 text-center text-sm text-slate-400">{tc("empty")}</td>
+          </tr>
+        )}
+      </Table>
     </div>
   );
 }

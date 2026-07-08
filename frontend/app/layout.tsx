@@ -1,12 +1,19 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
+import { Inter } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import Providers from "@/components/Providers";
 import "./globals.css";
 
+const inter = Inter({ subsets: ["latin", "cyrillic"], display: "swap" });
+
 export const metadata: Metadata = {
   title: "MedUni AI",
   description: "Tibbiyot universiteti oʻquv platformasi",
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0d9488",
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
@@ -15,7 +22,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
   return (
     <html lang={locale}>
-      <body className="antialiased">
+      <body className={inter.className}>
         <NextIntlClientProvider locale={locale} messages={messages}>
           <Providers>{children}</Providers>
         </NextIntlClientProvider>

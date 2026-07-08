@@ -2,6 +2,7 @@
 
 import { useLocale } from "next-intl";
 import { useRouter } from "next/navigation";
+import { cls } from "./ui";
 
 export default function LocaleSwitcher() {
   const locale = useLocale();
@@ -13,14 +14,15 @@ export default function LocaleSwitcher() {
   };
 
   return (
-    <div className="flex gap-1 text-sm">
+    <div className="inline-flex rounded-full border border-slate-200 bg-slate-100 p-0.5 text-xs font-medium">
       {(["uz", "ru"] as const).map((l) => (
         <button
           key={l}
           onClick={() => switchTo(l)}
-          className={`rounded px-2 py-1 ${
-            locale === l ? "bg-sky-600 text-white" : "text-slate-500 hover:bg-slate-100"
-          }`}
+          className={cls(
+            "rounded-full px-2.5 py-1 transition-colors",
+            locale === l ? "bg-white text-teal-700 shadow-sm" : "text-slate-500 hover:text-slate-700",
+          )}
         >
           {l === "uz" ? "Oʻz" : "Ру"}
         </button>

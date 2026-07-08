@@ -4,18 +4,19 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { api } from "@/lib/api";
+import { IconPencil, IconPlus, IconTrash } from "./Icons";
+import { Button, Card, Field, Input, Select, Table, cls, td, th } from "./ui";
 
-export type Field = {
+export type FieldSpec = {
   key: string;
   label: string;
   type?: "text" | "number" | "select";
   options?: { value: string | number; label: string }[];
-  /** как отобразить значение в таблице (по умолчанию — как есть) */
   render?: (row: Record<string, unknown>) => React.ReactNode;
 };
 
 /** Универсальная CRUD-таблица для справочников (факультеты, кафедры, ...). */
-export default function CrudTable({ endpoint, fields }: { endpoint: string; fields: Field[] }) {
+export default function CrudTable({ endpoint, fields }: { endpoint: string; fields: FieldSpec[] }) {
   const t = useTranslations("common");
   const queryClient = useQueryClient();
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -67,98 +68,107 @@ export default function CrudTable({ endpoint, fields }: { endpoint: string; fiel
   };
 
   return (
-    <div>
-      <form onSubmit={submit} className="mb-4 flex flex-wrap items-end gap-2">
-        {fields.map((field) => (
-          <label key={field.key} className="text-sm">
-            <span className="mb-1 block text-slate-500">{field.label}</span>
-            {field.type === "select" ? (
-              <select
-                required
-                value={form[field.key] ?? ""}
-                onChange={(e) => setForm({ ...form, [field.key]: e.target.value })}
-                className="rounded border bg-white px-2 py-1.5"
-              >
-                <option value="" disabled>
-                  —
-                </option>
-                {field.options?.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
+    <div className="space-y-4">
+      <Card className={cls("p-4", editingId !== null && "ring-2 ring-teal-500/30")}>
+        <form onSubmit={submit} className="flex flex-wrap items-end gap-3">
+          {fields.map((field) => (
+            <Field key={field.key} label={field.label} className="w-full sm:w-auto">
+              {field.type === "select" ? (
+                <Select
+                  required
+                  value={form[field.key] ?? ""}
+                  onChange={(e) => setForm({ ...form, [field.key]: e.target.value })}
+                  className="sm:w-52"
+                >
+                  <option value="" disabled>
+                    —
                   </option>
-                ))}
-              </select>
-            ) : (
-              <input
-                required
-                type={field.type ?? "text"}
-                value={form[field.key] ?? ""}
-                onChange={(e) => setForm({ ...form, [field.key]: e.target.value })}
-                className="w-40 rounded border px-2 py-1.5"
-              />
+                  {field.options?.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </Select>
+              ) : (
+                <Input
+                  required
+                  type={field.type ?? "text"}
+                  value={form[field.key] ?? ""}
+                  onChange={(e) => setForm({ ...form, [field.key]: e.target.value })}
+                  className="sm:w-52"
+                />
+              )}
+            </Field>
+          ))}
+          <div className="flex gap-2">
+            <Button type="submit">
+              <IconPlus className={cls(editingId !== null && "hidden")} />
+              {editingId === null ? t("add") : t("save")}
+            </Button>
+            {editingId !== null && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setEditingId(null);
+                  setForm({});
+                }}
+              >
+                {t("cancel")}
+              </Button>
             )}
-          </label>
-        ))}
-        <button type="submit" className="rounded bg-sky-600 px-3 py-1.5 text-sm text-white hover:bg-sky-700">
-          {editingId === null ? t("add") : t("save")}
-        </button>
-        {editingId !== null && (
-          <button
-            type="button"
-            onClick={() => {
-              setEditingId(null);
-              setForm({});
-            }}
-            className="rounded border px-3 py-1.5 text-sm"
-          >
-            {t("cancel")}
-          </button>
-        )}
-      </form>
-      {error && <p className="mb-3 text-sm text-red-600">{error}</p>}
-      <div className="overflow-x-auto rounded-lg border bg-white">
-        <table className="w-full text-sm">
-          <thead className="bg-slate-100 text-left">
-            <tr>
-              <th className="px-3 py-2">#</th>
-              {fields.map((f) => (
-                <th key={f.key} className="px-3 py-2">{f.label}</th>
-              ))}
-              <th className="px-3 py-2 text-right">{t("actions")}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows?.map((row) => (
-              <tr key={row.id as number} className="border-t">
-                <td className="px-3 py-2 text-slate-400">{row.id as number}</td>
-                {fields.map((f) => (
-                  <td key={f.key} className="px-3 py-2">
-                    {f.render ? f.render(row) : String(row[f.key] ?? "")}
-                  </td>
-                ))}
-                <td className="px-3 py-2 text-right">
-                  <button onClick={() => startEdit(row)} className="mr-2 text-sky-600 hover:underline">
-                    {t("edit")}
-                  </button>
-                  <button
-                    onClick={() => remove.mutate(row.id as number)}
-                    className="text-red-500 hover:underline"
-                  >
-                    {t("delete")}
-                  </button>
-                </td>
-              </tr>
+          </div>
+        </form>
+        {error && <p className="mt-3 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</p>}
+      </Card>
+
+      <Table
+        head={
+          <>
+            {fields.map((f) => (
+              <th key={f.key} className={th}>
+                {f.label}
+              </th>
             ))}
-            {rows?.length === 0 && (
-              <tr>
-                <td colSpan={fields.length + 2} className="px-3 py-6 text-center text-slate-400">
-                  {t("empty")}
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+            <th className={cls(th, "w-24 text-right")}>{t("actions")}</th>
+          </>
+        }
+      >
+        {rows?.map((row) => (
+          <tr key={row.id as number} className="hover:bg-slate-50/60">
+            {fields.map((f) => (
+              <td key={f.key} className={td}>
+                {f.render ? f.render(row) : String(row[f.key] ?? "")}
+              </td>
+            ))}
+            <td className={cls(td, "text-right")}>
+              <div className="inline-flex gap-1">
+                <button
+                  onClick={() => startEdit(row)}
+                  title={t("edit")}
+                  className="rounded-md p-1.5 text-slate-400 hover:bg-teal-50 hover:text-teal-600"
+                >
+                  <IconPencil />
+                </button>
+                <button
+                  onClick={() => window.confirm(t("confirmDelete")) && remove.mutate(row.id as number)}
+                  title={t("delete")}
+                  className="rounded-md p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-600"
+                >
+                  <IconTrash />
+                </button>
+              </div>
+            </td>
+          </tr>
+        ))}
+        {rows?.length === 0 && (
+          <tr>
+            <td colSpan={fields.length + 1} className="px-4 py-10 text-center text-sm text-slate-400">
+              {t("empty")}
+            </td>
+          </tr>
+        )}
+      </Table>
     </div>
   );
 }

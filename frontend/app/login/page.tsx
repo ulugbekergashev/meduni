@@ -3,9 +3,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { IconLogo } from "@/components/Icons";
+import LocaleSwitcher from "@/components/LocaleSwitcher";
+import { Button, Field, Input } from "@/components/ui";
 import { api, setTokens } from "@/lib/api";
 import { homeFor, type Me } from "@/lib/useAuth";
-import LocaleSwitcher from "@/components/LocaleSwitcher";
 
 export default function LoginPage() {
   const t = useTranslations("login");
@@ -35,44 +37,74 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
-      <form onSubmit={submit} className="w-full max-w-sm rounded-xl border bg-white p-6 shadow-sm">
-        <div className="mb-4 flex items-center justify-between">
-          <h1 className="text-xl font-bold text-sky-700">{tc("appName")}</h1>
-          <LocaleSwitcher />
+    <div className="flex min-h-screen">
+      {/* Брендовая панель (desktop) */}
+      <div className="relative hidden w-1/2 flex-col justify-between overflow-hidden bg-gradient-to-br from-teal-700 via-teal-800 to-slate-900 p-10 text-white lg:flex">
+        <div
+          aria-hidden
+          className="absolute inset-0 opacity-[0.07]"
+          style={{
+            backgroundImage:
+              "radial-gradient(circle at 1px 1px, white 1px, transparent 0)",
+            backgroundSize: "28px 28px",
+          }}
+        />
+        <div className="relative flex items-center gap-2.5">
+          <IconLogo className="text-3xl text-teal-300" />
+          <span className="text-xl font-bold tracking-tight">
+            {tc("appName")}
+            <span className="text-teal-300">.</span>
+          </span>
         </div>
-        <h2 className="mb-4 text-lg font-semibold">{t("title")}</h2>
-        <label className="mb-3 block text-sm">
-          {t("email")}
-          <input
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="mt-1 w-full rounded border px-3 py-2"
-            autoComplete="username"
-          />
-        </label>
-        <label className="mb-4 block text-sm">
-          {t("password")}
-          <input
-            type="password"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="mt-1 w-full rounded border px-3 py-2"
-            autoComplete="current-password"
-          />
-        </label>
-        {error && <p className="mb-3 text-sm text-red-600">{error}</p>}
-        <button
-          type="submit"
-          disabled={busy}
-          className="w-full rounded bg-sky-600 py-2 font-medium text-white hover:bg-sky-700 disabled:opacity-50"
-        >
-          {busy ? tc("loading") : t("submit")}
-        </button>
-      </form>
+        <div className="relative max-w-md">
+          <h2 className="text-3xl font-bold leading-snug">{t("tagline")}</h2>
+          <p className="mt-3 text-teal-100/80">{t("taglineHint")}</p>
+        </div>
+        <p className="relative text-xs text-teal-100/50">© {new Date().getFullYear()} MedUni AI</p>
+      </div>
+
+      {/* Форма */}
+      <div className="flex flex-1 items-center justify-center bg-slate-50 px-4 py-10">
+        <div className="w-full max-w-sm">
+          <div className="mb-8 flex items-center justify-between lg:justify-end">
+            <span className="flex items-center gap-2 lg:hidden">
+              <IconLogo className="text-2xl text-teal-600" />
+              <span className="text-lg font-bold">{tc("appName")}</span>
+            </span>
+            <LocaleSwitcher />
+          </div>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">{t("title")}</h1>
+          <p className="mb-6 mt-1 text-sm text-slate-500">{t("subtitle")}</p>
+          <form onSubmit={submit} className="space-y-4">
+            <Field label={t("email")}>
+              <Input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                autoComplete="username"
+                placeholder="name@meduni.uz"
+              />
+            </Field>
+            <Field label={t("password")}>
+              <Input
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete="current-password"
+                placeholder="••••••••"
+              />
+            </Field>
+            {error && (
+              <p className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</p>
+            )}
+            <Button type="submit" disabled={busy} className="w-full justify-center py-2.5">
+              {busy ? tc("loading") : t("submit")}
+            </Button>
+          </form>
+        </div>
+      </div>
     </div>
   );
 }
