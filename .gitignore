@@ -16,6 +16,7 @@ out/
 *.local
 backend/dev.db
 backend/storage/
+backend/test_storage/
 
 # IDE / OS
 .vscode/

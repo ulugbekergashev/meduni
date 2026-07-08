@@ -20,7 +20,7 @@ export default function TeacherDashboard() {
       nav={[{ href: "/teach", label: tn("dashboard"), icon: <IconHome /> }]}
     >
       <PageHeader title={t("teacherTitle")} subtitle={t("welcome", { name: me.full_name })} />
-      <CourseList />
+      <CourseList hrefBase="/teach/courses" />
     </Shell>
   );
 }
