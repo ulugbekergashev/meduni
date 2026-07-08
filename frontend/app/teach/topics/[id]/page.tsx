@@ -10,6 +10,7 @@ import {
   IconArrowLeft, IconCheck, IconFile, IconHome, IconLock, IconSparkles, IconSpinner, IconTrash, IconUpload,
 } from "@/components/Icons";
 import Shell from "@/components/Shell";
+import TopicContentSection from "@/components/TopicContentSection";
 import { Badge, Button, Card, cls } from "@/components/ui";
 import { api } from "@/lib/api";
 import { useRequireRole } from "@/lib/useAuth";
@@ -247,15 +248,17 @@ export default function TopicConstructor() {
         )}
       </section>
 
-      {/* Шаг 3: заглушка следующих этапов */}
+      {/* Шаг 3: генерация теста и кейса (доступно после утверждения конспекта) */}
       <section>
-        <h2 className="mb-3 flex items-center gap-2 text-lg font-semibold text-slate-400">
-          <IconLock className="text-slate-300" /> {t("step3")}
+        <h2 className={cls("mb-1 flex items-center gap-2 text-lg font-semibold",
+          digest?.approved_by_teacher ? "text-slate-800" : "text-slate-400")}>
+          {digest?.approved_by_teacher ? <IconSparkles className="text-teal-600" /> : <IconLock className="text-slate-300" />}
+          {t("step3")}
         </h2>
-        <Card className="flex items-center gap-3 px-4 py-5 text-sm text-slate-400">
-          <IconLock className="text-slate-300" />
+        <p className="mb-3 text-sm text-slate-400">
           {digest?.approved_by_teacher ? t("nextStepLocked") : t("approvedHint")}
-        </Card>
+        </p>
+        <TopicContentSection topicId={topicId} enabled={!!digest?.approved_by_teacher} />
       </section>
     </Shell>
   );

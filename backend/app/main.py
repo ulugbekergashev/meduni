@@ -5,11 +5,13 @@ from fastapi import FastAPI
 from app.core.db import Base, engine
 from app.modules.auth.router import router as auth_router
 from app.modules.courses.router import router as courses_router
+from app.modules.content.router import router as content_router
 from app.modules.org.router import router as org_router
 from app.modules.topics.router import router as topics_router
 
 # Импорт моделей, чтобы Base.metadata знал все таблицы
 from app.modules.auth import models as _auth_models  # noqa: F401
+from app.modules.content import models as _content_models  # noqa: F401
 from app.modules.courses import models as _courses_models  # noqa: F401
 from app.modules.org import models as _org_models  # noqa: F401
 from app.modules.topics import models as _topics_models  # noqa: F401
@@ -33,5 +35,5 @@ def health():
     return {"status": "ok"}
 
 
-for router in (auth_router, org_router, courses_router, topics_router):
+for router in (auth_router, org_router, courses_router, topics_router, content_router):
     app.include_router(router, prefix="/api/v1")
