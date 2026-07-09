@@ -16,6 +16,30 @@ export function clearTokens() {
   localStorage.removeItem("refresh_token");
 }
 
+/**
+ * Скачивание файла с авторизацией. Прямая навигация браузера (window.open / href)
+ * не отправляет JWT из localStorage → 401. Поэтому качаем fetch-ем с заголовком,
+ * получаем blob и триггерим сохранение.
+ */
+export async function downloadFile(path: string, filename: string): Promise<void> {
+  const token = getAccessToken();
+  const res = await fetch(`${BASE}${path}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  if (!res.ok) {
+    throw new ApiError("download_failed", `HTTP ${res.status}`);
+  }
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
 async function tryRefresh(): Promise<boolean> {
   const refresh = localStorage.getItem("refresh_token");
   if (!refresh) return false;

@@ -9,7 +9,7 @@ import { IconArrowLeft, IconFile, IconHome, IconPlus, IconSparkles, IconSpinner,
 import ReadinessPanel from "@/components/ReadinessPanel";
 import Shell from "@/components/Shell";
 import { Badge, Button, Card, cls } from "@/components/ui";
-import { api } from "@/lib/api";
+import { api, downloadFile } from "@/lib/api";
 import { useRequireRole } from "@/lib/useAuth";
 
 type Slide = {
@@ -99,7 +99,8 @@ export default function PresentationEditorPage() {
 
   if (!me || !data) return null;
   const published = data.content.status === "published";
-  const download = () => window.open(`/api/v1/presentations/${contentId}/download?lang=ru`, "_blank");
+  const download = () =>
+    downloadFile(`/presentations/${contentId}/download?lang=ru`, `presentation_${contentId}.pptx`);
 
   return (
     <Shell me={me} variant="sidebar" nav={[{ href: "/teach", label: tn("dashboard"), icon: <IconHome /> }]}>

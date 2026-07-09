@@ -10,7 +10,7 @@ import LessonQuiz from "@/components/lesson/LessonQuiz";
 import { IconArrowLeft, IconCheck, IconFile } from "@/components/Icons";
 import Shell from "@/components/Shell";
 import { Badge, Card, cls } from "@/components/ui";
-import { api } from "@/lib/api";
+import { api, downloadFile } from "@/lib/api";
 import { useRequireRole } from "@/lib/useAuth";
 
 type Bilingual = { uz: string; ru: string };
@@ -109,10 +109,13 @@ export default function LessonPage() {
       {activeTab === "presentation" && data.presentation && (
         <div className="space-y-4">
           <div className="flex justify-end">
-            <a href={`/api/v1/presentations/${data.presentation.content_id}/download?lang=${locale}`}
-               className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:border-teal-500 hover:text-teal-700">
+            <button
+              onClick={() => downloadFile(
+                `/presentations/${data.presentation!.content_id}/download?lang=${locale}`,
+                `presentation_${data.presentation!.content_id}.pptx`)}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:border-teal-500 hover:text-teal-700">
               <IconFile /> {t("downloadPptx")}
-            </a>
+            </button>
           </div>
           {data.presentation.slides_json.map((slide, i) => (
             <Card key={i} className="p-5">

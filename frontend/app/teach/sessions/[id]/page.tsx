@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 import { IconCheck, IconHome, IconQr } from "@/components/Icons";
 import Shell from "@/components/Shell";
 import { Avatar, Badge, Button, Card, cls } from "@/components/ui";
-import { api } from "@/lib/api";
+import { api, downloadFile } from "@/lib/api";
 import { useRequireRole } from "@/lib/useAuth";
 
 type Row = { student_id: number; student_name: string; status: string | null; method: string | null };
@@ -65,10 +65,13 @@ export default function SessionScreen() {
         </h1>
         <div className="flex items-center gap-2">
           <span className="text-sm text-slate-500">{t("presentOf", { present: data.present_count, total: data.total })}</span>
-          <a href={`/api/v1/courses/${data.session.course_id}/attendance.xlsx`}
-             className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:border-teal-500">
+          <button
+            onClick={() => downloadFile(
+              `/courses/${data.session.course_id}/attendance.xlsx`,
+              `attendance_${data.session.course_id}.xlsx`)}
+            className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:border-teal-500">
             {t("exportJournal")}
-          </a>
+          </button>
           <Button variant={open ? "outline" : "primary"} onClick={() => toggleOpen.mutate(!open)}>
             {open ? t("close") : t("open")}
           </Button>
