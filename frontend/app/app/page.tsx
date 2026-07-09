@@ -17,7 +17,7 @@ export default function StudentDashboard() {
         <p className="mt-1 text-sm text-teal-100">{t("studentTitle")}</p>
       </div>
       <h2 className="mb-3 text-lg font-semibold text-slate-800">{t("myCourses")}</h2>
-      <CourseList />
+      <CourseList hrefBase="/app/courses" />
     </Shell>
   );
 }
