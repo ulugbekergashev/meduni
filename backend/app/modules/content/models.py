@@ -97,3 +97,18 @@ class PresentationTemplate(Base):
     accent_color: Mapped[str] = mapped_column(String(8), default="0F172A")
     logo_url: Mapped[str | None] = mapped_column(String(512))
     is_default: Mapped[bool] = mapped_column(Boolean, default=False)
+
+
+class Video(Base):
+    __tablename__ = "videos"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    content_item_id: Mapped[int] = mapped_column(ForeignKey("content_items.id"), unique=True, index=True)
+    language: Mapped[str] = mapped_column(String(4), default="ru")  # uz / ru — озвучка одного языка
+    # script_json: [{slide_index, text}] — текст озвучки по слайдам
+    script_json: Mapped[list] = mapped_column(JSON, default=list)
+    voice_id: Mapped[str | None] = mapped_column(String(64))
+    mp4_url: Mapped[str | None] = mapped_column(String(512))
+    srt_url: Mapped[str | None] = mapped_column(String(512))
+    duration_sec: Mapped[int] = mapped_column(default=0)
+    video_stale: Mapped[bool] = mapped_column(Boolean, default=True)

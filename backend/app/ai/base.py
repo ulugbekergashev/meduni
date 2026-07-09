@@ -16,6 +16,12 @@ class ImageModel(ABC):
         """Генерирует изображение (PNG-байты) по текстовому промпту."""
 
 
+class TTSModel(ABC):
+    @abstractmethod
+    def synthesize(self, text: str, voice: str) -> bytes:
+        """Озвучивает текст, возвращает аудио (MP3-байты)."""
+
+
 def get_text_model() -> TextModel:
     if settings.ai_text_provider == "gemini":
         from app.ai.providers.gemini import GeminiTextModel
@@ -34,3 +40,11 @@ def get_image_model() -> ImageModel:
 
         return PollinationsImageModel()
     raise ValueError(f"Неизвестный image AI-провайдер: {settings.ai_image_provider}")
+
+
+def get_tts_model() -> TTSModel:
+    if settings.ai_tts_provider == "edge":
+        from app.ai.providers.tts_edge import EdgeTTSModel
+
+        return EdgeTTSModel()
+    raise ValueError(f"Неизвестный TTS-провайдер: {settings.ai_tts_provider}")
