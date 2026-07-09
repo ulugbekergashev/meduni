@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from app.core.db import Base, engine
 from app.modules.auth.router import router as auth_router
 from app.modules.courses.router import router as courses_router
+from app.modules.analytics.router import router as analytics_router
 from app.modules.attendance.router import router as attendance_router
 from app.modules.content.router import router as content_router
 from app.modules.gamification.router import router as gamification_router
@@ -14,6 +15,7 @@ from app.modules.public.router import router as public_router
 from app.modules.topics.router import router as topics_router
 
 # Импорт моделей, чтобы Base.metadata знал все таблицы
+from app.modules.analytics import models as _analytics_models  # noqa: F401
 from app.modules.attendance import models as _attendance_models  # noqa: F401
 from app.modules.auth import models as _auth_models  # noqa: F401
 from app.modules.content import models as _content_models  # noqa: F401
@@ -73,5 +75,5 @@ def media(file_path: str):
 
 for router in (auth_router, org_router, courses_router, topics_router,
                content_router, learning_router, public_router,
-               attendance_router, gamification_router):
+               attendance_router, gamification_router, analytics_router):
     app.include_router(router, prefix="/api/v1")

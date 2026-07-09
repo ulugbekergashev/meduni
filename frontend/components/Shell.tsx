@@ -10,7 +10,12 @@ import { IconLogo, IconLogOut } from "./Icons";
 import LocaleSwitcher from "./LocaleSwitcher";
 import { Avatar, cls } from "./ui";
 
-export type NavItem = { href: string; label: string; icon?: ReactNode };
+export type NavItem = { href: string; label: string; icon?: ReactNode; exact?: boolean };
+
+function isActive(pathname: string, item: NavItem): boolean {
+  if (item.exact) return pathname === item.href;
+  return pathname === item.href || pathname.startsWith(item.href + "/");
+}
 
 function Logo() {
   const t = useTranslations("common");
@@ -51,7 +56,7 @@ function NavLinks({ nav, orientation }: { nav: NavItem[]; orientation: "vertical
   return (
     <>
       {nav.map((item) => {
-        const active = pathname.startsWith(item.href);
+        const active = isActive(pathname, item);
         return (
           <Link
             key={item.href}

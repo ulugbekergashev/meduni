@@ -29,6 +29,7 @@
     "glossary": "Lugʻat",
     "templates": "Shablonlar",
     "xp": "XP",
+    "auditNav": "Audit",
     "dashboard": "Bosh sahifa"
   },
   "topics": {
@@ -376,5 +377,32 @@
     "streak_bonus": "Seriya bonusi",
     "save": "Saqlash",
     "saved": "Saqlandi"
+  },
+  "analytics": {
+    "dashboard": "Boshqaruv paneli",
+    "students": "Talabalar",
+    "teachers": "Oʻqituvchilar",
+    "courses": "Kurslar",
+    "topicsPublished": "Chop etilgan mavzular",
+    "contentPublished": "Chop etilgan kontent",
+    "pendingCases": "Tekshirishdagi keyslar",
+    "tokensMonth": "Bu oygi AI tokenlar",
+    "aiUsage": "AI xarajati (kafedralar boʻyicha)",
+    "department": "Kafedra",
+    "tokens": "Tokenlar",
+    "generations": "Generatsiyalar",
+    "quota": "Oylik kvota (token)",
+    "noLimit": "Cheksiz",
+    "saveQuota": "Saqlash",
+    "audit": "Audit jurnali",
+    "actor": "Kim",
+    "action": "Amal",
+    "when": "Qachon",
+    "tasks": "Vazifalar",
+    "casesToReview": "{n} keys tekshirishni kutmoqda",
+    "contentToApprove": "{n} kontent tasdiqlashni kutmoqda",
+    "noTasks": "Yangi vazifalar yoʻq",
+    "heatmap": "Guruh progressi",
+    "openHeatmap": "Progress xaritasi"
   }
 }

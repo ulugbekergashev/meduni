@@ -218,6 +218,9 @@ def generate_digest(topic_id: int, user: CurrentUser, db: DbSession):
                        "Avval material yuklang (parsing tugagan boʻlishi kerak)",
                        "Сначала загрузите материал (парсинг должен завершиться)")
 
+    from app.modules.analytics.service import check_quota
+    check_quota(db, topic_id)
+
     job = GenerationJob(topic_id=topic_id, kind="digest", created_by=user.id)
     db.add(job)
     db.commit()

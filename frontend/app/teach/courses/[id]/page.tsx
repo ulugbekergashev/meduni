@@ -8,6 +8,7 @@ import { useState } from "react";
 import {
   IconArrowLeft, IconArrowUp, IconChevronRight, IconHome, IconPlus, IconQr, IconTrash,
 } from "@/components/Icons";
+import ProgressHeatmap from "@/components/ProgressHeatmap";
 import Shell from "@/components/Shell";
 import UnlockRuleEditor from "@/components/UnlockRuleEditor";
 import { Badge, Button, Card, Field, Input, PageHeader, cls } from "@/components/ui";
@@ -214,6 +215,10 @@ export default function TeacherCoursePage() {
             </Link>
           ))}
         </div>
+      </div>
+
+      <div className="mt-8">
+        <ProgressHeatmap courseId={courseId} />
       </div>
 
       <div className="mt-8">
