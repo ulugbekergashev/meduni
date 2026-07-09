@@ -56,6 +56,11 @@ def _no_running_job(db: DbSession, topic_id: int, kind: str) -> None:
         raise ApiError(409, "job_running", "Generatsiya ketmoqda", "Генерация уже идёт")
 
 
+def _check_quota(db: DbSession, topic_id: int) -> None:
+    from app.modules.analytics.service import check_quota
+    check_quota(db, topic_id)
+
+
 # --- Сводка по теме ----------------------------------------------------------
 
 
@@ -79,6 +84,7 @@ def generate_quiz(topic_id: int, body: GenerateQuizIn, user: CurrentUser, db: Db
     _topic_for_write(db, topic_id, user)
     _require_approved_digest(db, topic_id)
     _no_running_job(db, topic_id, "quiz")
+    _check_quota(db, topic_id)
     job = GenerationJob(topic_id=topic_id, kind="quiz", created_by=user.id)
     db.add(job)
     db.commit()
@@ -91,6 +97,7 @@ def generate_case(topic_id: int, body: GenerateCaseIn, user: CurrentUser, db: Db
     _topic_for_write(db, topic_id, user)
     _require_approved_digest(db, topic_id)
     _no_running_job(db, topic_id, "case")
+    _check_quota(db, topic_id)
     job = GenerationJob(topic_id=topic_id, kind="case", created_by=user.id)
     db.add(job)
     db.commit()
@@ -103,6 +110,7 @@ def generate_presentation(topic_id: int, user: CurrentUser, db: DbSession):
     _topic_for_write(db, topic_id, user)
     _require_approved_digest(db, topic_id)
     _no_running_job(db, topic_id, "presentation")
+    _check_quota(db, topic_id)
     job = GenerationJob(topic_id=topic_id, kind="presentation", created_by=user.id)
     db.add(job)
     db.commit()
@@ -379,6 +387,7 @@ def generate_video_script(topic_id: int, body: GenerateVideoIn, user: CurrentUse
         raise ApiError(409, "no_presentation",
                        "Avval prezentatsiya (slaydlar) yarating", "Сначала создайте презентацию (слайды)")
     _no_running_job(db, topic_id, "video")
+    _check_quota(db, topic_id)
     if body.language not in ("uz", "ru"):
         raise ApiError(422, "bad_lang", "Til uz yoki ru", "Язык uz или ru")
     job = GenerationJob(topic_id=topic_id, kind="video", created_by=user.id)

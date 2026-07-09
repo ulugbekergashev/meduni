@@ -29,6 +29,7 @@
     "glossary": "Глоссарий",
     "templates": "Шаблоны",
     "xp": "XP",
+    "auditNav": "Аудит",
     "dashboard": "Главная"
   },
   "topics": {
@@ -376,5 +377,32 @@
     "streak_bonus": "Бонус серии",
     "save": "Сохранить",
     "saved": "Сохранено"
+  },
+  "analytics": {
+    "dashboard": "Панель управления",
+    "students": "Студенты",
+    "teachers": "Преподаватели",
+    "courses": "Курсы",
+    "topicsPublished": "Опубликовано тем",
+    "contentPublished": "Опубликовано контента",
+    "pendingCases": "Кейсы на проверке",
+    "tokensMonth": "AI-токены за месяц",
+    "aiUsage": "Расход AI (по кафедрам)",
+    "department": "Кафедра",
+    "tokens": "Токены",
+    "generations": "Генерации",
+    "quota": "Месячная квота (токены)",
+    "noLimit": "Без лимита",
+    "saveQuota": "Сохранить",
+    "audit": "Журнал аудита",
+    "actor": "Кто",
+    "action": "Действие",
+    "when": "Когда",
+    "tasks": "Задачи",
+    "casesToReview": "{n} кейсов ждут проверки",
+    "contentToApprove": "{n} контента ждёт утверждения",
+    "noTasks": "Новых задач нет",
+    "heatmap": "Прогресс группы",
+    "openHeatmap": "Карта прогресса"
   }
 }
