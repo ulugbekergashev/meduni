@@ -181,6 +181,15 @@ def submit_quiz(attempt_id: int, body: QuizSubmitIn, user: CurrentUser, db: DbSe
     attempt.score_pct = score
     attempt.passed = score >= quiz.pass_threshold
     attempt.finished_at = datetime.now(timezone.utc)
+
+    # XP: за сдачу теста и за 100% (идемпотентно по quiz_id)
+    if attempt.passed:
+        from app.modules.gamification.service import award
+        topic = db.get(Topic, db.get(ContentItem, quiz.content_item_id).topic_id)
+        course_id = topic.course_id if topic else None
+        award(db, user.id, course_id, "quiz_passed", ref_id=quiz.id)
+        if score >= 100.0:
+            award(db, user.id, course_id, "quiz_perfect", ref_id=quiz.id)
     db.commit()
 
     used = db.scalars(select(QuizAttempt).where(
@@ -222,6 +231,8 @@ def submit_case(content_id: int, body: CaseSubmitIn, user: CurrentUser, db: DbSe
     if existing:
         raise ApiError(409, "already_submitted", "Keys allaqachon yuborilgan", "Кейс уже отправлен")
     db.add(CaseAttempt(case_id=case.id, student_id=user.id, answers_json=body.answers))
+    from app.modules.gamification.service import award
+    award(db, user.id, topic.course_id, "case_submitted", ref_id=case.id)
     db.commit()
     return {"ok": True, "reference_analysis": case.case_json.get("reference_analysis")}
 
