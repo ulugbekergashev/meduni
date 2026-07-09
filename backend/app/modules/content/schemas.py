@@ -80,10 +80,30 @@ class CaseDetailOut(BaseModel):
 
 
 class TopicContentOut(BaseModel):
-    """Сводка контента темы для конструктора: статусы теста, кейса и презентации."""
+    """Сводка контента темы для конструктора: статусы теста, кейса, презентации, видео."""
     quiz: ContentItemOut | None = None
     case: ContentItemOut | None = None
     presentation: ContentItemOut | None = None
+    video: ContentItemOut | None = None
+
+
+class GenerateVideoIn(BaseModel):
+    language: str = "ru"  # uz / ru
+
+
+class VideoDetailOut(BaseModel):
+    content: ContentItemOut
+    language: str
+    script_json: list
+    voice_id: str | None = None
+    mp4_url: str | None = None
+    srt_url: str | None = None
+    duration_sec: int
+    video_stale: bool
+
+
+class ScriptUpdateIn(BaseModel):
+    script_json: list
 
 
 class PresentationDetailOut(BaseModel):

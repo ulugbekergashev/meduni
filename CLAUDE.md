@@ -21,9 +21,15 @@
   `/teach/content/presentation/{id}`, скачивание PPTX, админ-шаблоны
   `/admin/templates`. Картинки: `AI_IMAGE_PROVIDER=pollinations` (Gemini image
   НЕ во free tier). Медиа-раздача `GET /api/v1/media/{path}` с защитой от traversal.
-- M5–M8 — см. план, раздел 14.
+- **M5 (Видео) — готов.** Сценарий озвучки из слайдов презентации (Video +
+  script_json, требует готовую презентацию), TTS через edge-tts (uz-UZ-Madina /
+  ru-RU-Svetlana, бесплатно), сборка MP4 через ffmpeg (слайды-PNG рендерятся
+  Pillow + аудио по слайдам + SRT-субтитры), редактор
+  `/teach/content/video/{id}` с плеером и прогрессом сборки. ffmpeg — по пути
+  `FFMPEG_PATH` в .env (у dev — winget shim). Медиа отдаёт mp4/srt.
+- M6–M8 — см. план, раздел 14.
 
-Следующий шаг M5: озвученное видео (сценарий → TTS uz/ru → ffmpeg: слайды+аудио+SRT).
+Следующий шаг M6: студенческий контур (страницы курса/урока, плеер, прохождение тестов/кейсов, unlock-правила).
 
 ## Стек
 

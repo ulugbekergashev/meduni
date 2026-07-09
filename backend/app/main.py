@@ -47,7 +47,10 @@ def media(file_path: str):
     if path is None:
         return Response(status_code=404)
     ext = path.suffix.lower()
-    media_type = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg"}.get(ext, "application/octet-stream")
+    media_type = {
+        ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
+        ".mp4": "video/mp4", ".srt": "text/plain; charset=utf-8", ".mp3": "audio/mpeg",
+    }.get(ext, "application/octet-stream")
     return Response(path.read_bytes(), media_type=media_type,
                     headers={"Cache-Control": "max-age=3600"})
 

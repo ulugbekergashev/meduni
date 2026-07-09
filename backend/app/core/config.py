@@ -20,5 +20,10 @@ class Settings(BaseSettings):
     jobs_sync: bool = False  # тесты: выполнять задачи синхронно
     max_material_chars: int = 60_000  # обрезка текста материала для LLM
 
+    # M5: видео
+    ffmpeg_path: str = "ffmpeg"  # или полный путь к ffmpeg.exe
+    tts_voice_uz: str = "uz-UZ-MadinaNeural"
+    tts_voice_ru: str = "ru-RU-SvetlanaNeural"
+
 
 settings = Settings()

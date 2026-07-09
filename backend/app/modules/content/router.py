@@ -11,14 +11,15 @@ from fastapi import UploadFile
 from app.core import jobs, storage
 from app.core.deps import CurrentUser, DbSession, require_roles
 from app.core.errors import ApiError, not_found
-from app.modules.content import export, presentation_service, service
+from app.modules.content import export, presentation_service, service, video_service
 from app.modules.content.models import (
-    ClinicalCase, ContentItem, Presentation, PresentationTemplate, Question, Quiz,
+    ClinicalCase, ContentItem, Presentation, PresentationTemplate, Question, Quiz, Video,
 )
 from app.modules.content.schemas import (
     CaseDetailOut, CaseUpdateIn, ContentItemOut, GenerateCaseIn, GenerateQuizIn,
-    PresentationDetailOut, QuestionOut, QuizDetailOut, QuizUpdateIn, ReadinessOut,
-    SlidesUpdateIn, TemplateIn, TemplateOut, TopicContentOut,
+    GenerateVideoIn, PresentationDetailOut, QuestionOut, QuizDetailOut, QuizUpdateIn,
+    ReadinessOut, ScriptUpdateIn, SlidesUpdateIn, TemplateIn, TemplateOut,
+    TopicContentOut, VideoDetailOut,
 )
 from app.modules.topics.models import GenerationJob, Topic, TopicDigest
 from app.modules.topics.router import _topic_for_write  # переиспользуем проверку доступа
@@ -66,7 +67,8 @@ def topic_content(topic_id: int, user: CurrentUser, db: DbSession):
         found = db.scalar(select(ContentItem).where(ContentItem.topic_id == topic_id, ContentItem.kind == kind))
         return ContentItemOut.model_validate(found) if found else None
 
-    return TopicContentOut(quiz=item("quiz"), case=item("case"), presentation=item("presentation"))
+    return TopicContentOut(quiz=item("quiz"), case=item("case"),
+                           presentation=item("presentation"), video=item("video"))
 
 
 # --- Генерация ---------------------------------------------------------------
@@ -361,6 +363,70 @@ def download_presentation(content_id: int, user: CurrentUser, db: DbSession, lan
         media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation",
         headers={"Content-Disposition": f'attachment; filename="presentation_{content_id}.pptx"'},
     )
+
+
+# --- Видео (M5) --------------------------------------------------------------
+
+
+@router.post("/topics/{topic_id}/video/generate", status_code=202, dependencies=[staff_only])
+def generate_video_script(topic_id: int, body: GenerateVideoIn, user: CurrentUser, db: DbSession):
+    _topic_for_write(db, topic_id, user)
+    _require_approved_digest(db, topic_id)
+    pres = db.scalar(select(ContentItem).where(
+        ContentItem.topic_id == topic_id, ContentItem.kind == "presentation"
+    ))
+    if pres is None:
+        raise ApiError(409, "no_presentation",
+                       "Avval prezentatsiya (slaydlar) yarating", "Сначала создайте презентацию (слайды)")
+    _no_running_job(db, topic_id, "video")
+    if body.language not in ("uz", "ru"):
+        raise ApiError(422, "bad_lang", "Til uz yoki ru", "Язык uz или ru")
+    job = GenerationJob(topic_id=topic_id, kind="video", created_by=user.id)
+    db.add(job)
+    db.commit()
+    jobs.submit(video_service.run_script_job, job.id, body.language)
+    return {"job_id": job.id}
+
+
+@router.get("/videos/{content_id}", response_model=VideoDetailOut, dependencies=[staff_only])
+def get_video(content_id: int, user: CurrentUser, db: DbSession):
+    item = _content_for_write(db, content_id, user)
+    _mark_reviewed(db, item)
+    video = db.scalar(select(Video).where(Video.content_item_id == item.id))
+    return VideoDetailOut(
+        content=ContentItemOut.model_validate(item),
+        language=video.language, script_json=video.script_json, voice_id=video.voice_id,
+        mp4_url=video.mp4_url, srt_url=video.srt_url, duration_sec=video.duration_sec,
+        video_stale=video.video_stale,
+    )
+
+
+@router.put("/videos/{content_id}", response_model=VideoDetailOut, dependencies=[staff_only])
+def update_video_script(content_id: int, body: ScriptUpdateIn, user: CurrentUser, db: DbSession):
+    item = _content_for_write(db, content_id, user)
+    if item.status == "published":
+        raise ApiError(409, "published_locked", "Chop etilgan kontent tahrirlanmaydi", "Опубликованный контент нельзя менять")
+    video = db.scalar(select(Video).where(Video.content_item_id == item.id))
+    video.script_json = body.script_json
+    video.video_stale = True  # сценарий изменён — нужна пересборка
+    item.edited_by_teacher = True
+    if item.status == "approved":
+        item.status = "review"
+        item.approved_at = None
+        item.approved_by = None
+    db.commit()
+    return get_video(content_id, user, db)
+
+
+@router.post("/videos/{content_id}/build", status_code=202, dependencies=[staff_only])
+def build_video(content_id: int, user: CurrentUser, db: DbSession):
+    item = _content_for_write(db, content_id, user)
+    _no_running_job(db, item.topic_id, "video_build")
+    job = GenerationJob(topic_id=item.topic_id, kind="video_build", created_by=user.id)
+    db.add(job)
+    db.commit()
+    jobs.submit(video_service.run_build_video, job.id)
+    return {"job_id": job.id}
 
 
 # --- Шаблоны презентаций (админ) ---------------------------------------------

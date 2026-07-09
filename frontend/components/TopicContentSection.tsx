@@ -9,19 +9,23 @@ import { Badge, Button, Card, cls } from "./ui";
 import { api } from "@/lib/api";
 
 type ContentItem = { id: number; kind: string; status: string; factcheck_flags_resolved: boolean };
-type TopicContent = { quiz: ContentItem | null; case: ContentItem | null; presentation: ContentItem | null };
+type TopicContent = {
+  quiz: ContentItem | null; case: ContentItem | null;
+  presentation: ContentItem | null; video: ContentItem | null;
+};
 type Job = { id: number; status: string; steps_json: { step: string; status: string }[]; error: string | null };
 
 const statusTone = { review: "amber", approved: "green", published: "teal", draft: "slate" } as const;
 
 const genLabel: Record<string, string> = {
-  quiz: "generateQuiz", case: "generateCase", presentation: "generatePresentation",
+  quiz: "generateQuiz", case: "generateCase",
+  presentation: "generatePresentation", video: "generateVideo",
 };
 
 function ContentCard({
   kind, item, topicId, onChanged,
 }: {
-  kind: "quiz" | "case" | "presentation";
+  kind: "quiz" | "case" | "presentation" | "video";
   item: ContentItem | null;
   topicId: number;
   onChanged: () => void;
@@ -30,6 +34,7 @@ function ContentCard({
   const [jobId, setJobId] = useState<number | null>(null);
   const [count, setCount] = useState(5);
   const [fmt, setFmt] = useState("short");
+  const [language, setLanguage] = useState("ru");
   const [error, setError] = useState<string | null>(null);
 
   useQuery({
@@ -51,7 +56,7 @@ function ContentCard({
     mutationFn: () =>
       api<{ job_id: number }>(`/topics/${topicId}/${kind}/generate`, {
         method: "POST",
-        body: kind === "quiz" ? { count } : kind === "case" ? { fmt } : {},
+        body: kind === "quiz" ? { count } : kind === "case" ? { fmt } : kind === "video" ? { language } : {},
       }),
     onSuccess: (res) => {
       setError(null);
@@ -96,6 +101,16 @@ function ContentCard({
             </select>
           </label>
         )}
+        {kind === "video" && (
+          <label className="text-sm">
+            <span className="mb-1 block text-xs text-slate-500">{t("videoLanguage")}</span>
+            <select value={language} onChange={(e) => setLanguage(e.target.value)}
+                    className="rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm">
+              <option value="ru">Русский</option>
+              <option value="uz">Oʻzbekcha</option>
+            </select>
+          </label>
+        )}
         <Button onClick={() => generate.mutate()} disabled={generating}
                 variant={item ? "outline" : "primary"}>
           {generating ? <IconSpinner /> : <IconSparkles />}
@@ -128,6 +143,7 @@ export default function TopicContentSection({ topicId, enabled }: { topicId: num
       <ContentCard kind="quiz" item={data?.quiz ?? null} topicId={topicId} onChanged={onChanged} />
       <ContentCard kind="case" item={data?.case ?? null} topicId={topicId} onChanged={onChanged} />
       <ContentCard kind="presentation" item={data?.presentation ?? null} topicId={topicId} onChanged={onChanged} />
+      <ContentCard kind="video" item={data?.video ?? null} topicId={topicId} onChanged={onChanged} />
     </div>
   );
 }
