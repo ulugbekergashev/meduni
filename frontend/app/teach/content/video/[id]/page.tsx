@@ -26,7 +26,7 @@ type VideoDetail = {
 type Job = { id: number; status: string; steps_json: { step: string; status: string }[]; error: string | null };
 
 export default function VideoEditorPage() {
-  const { me } = useRequireRole("teacher");
+  const { me } = useRequireRole(["teacher", "admin"]);
   const t = useTranslations("content");
   const tn = useTranslations("nav");
   const params = useParams();

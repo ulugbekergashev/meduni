@@ -13,7 +13,7 @@ import { useRequireRole } from "@/lib/useAuth";
 type Tasks = { pending_cases: number; content_in_review: number };
 
 export default function TeacherDashboard() {
-  const { me } = useRequireRole("teacher");
+  const { me } = useRequireRole(["teacher", "admin"]);
   const t = useTranslations("dash");
   const tn = useTranslations("nav");
   const tr = useTranslations("review");

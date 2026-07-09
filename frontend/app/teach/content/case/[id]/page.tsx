@@ -39,7 +39,7 @@ function TA({ value, onChange, placeholder }: { value: string; onChange: (v: str
 }
 
 export default function CaseEditorPage() {
-  const { me } = useRequireRole("teacher");
+  const { me } = useRequireRole(["teacher", "admin"]);
   const t = useTranslations("content");
   const tn = useTranslations("nav");
   const params = useParams();

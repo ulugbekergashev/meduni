@@ -66,7 +66,7 @@ function ReviewCard({ item, onReviewed }: { item: ReviewItem; onReviewed: () => 
 }
 
 export default function CaseReviewPage() {
-  const { me } = useRequireRole("teacher");
+  const { me } = useRequireRole(["teacher", "admin"]);
   const t = useTranslations("review");
   const tn = useTranslations("nav");
   const queryClient = useQueryClient();

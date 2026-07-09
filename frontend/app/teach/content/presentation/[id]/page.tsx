@@ -57,7 +57,7 @@ function BulletList({ items, disabled, onChange, addLabel }: {
 }
 
 export default function PresentationEditorPage() {
-  const { me } = useRequireRole("teacher");
+  const { me } = useRequireRole(["teacher", "admin"]);
   const t = useTranslations("content");
   const tn = useTranslations("nav");
   const params = useParams();

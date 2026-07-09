@@ -26,20 +26,24 @@ export function useMe() {
   });
 }
 
-/** Клиентский guard страницы: редиректит на /login или на «свой» кабинет. */
-export function useRequireRole(role: Me["role"]) {
+/** Клиентский guard страницы: редиректит на /login или на «свой» кабинет.
+ *  Принимает одну роль или список допустимых ролей. */
+export function useRequireRole(role: Me["role"] | Me["role"][]) {
   const router = useRouter();
   const { data: me, isLoading } = useMe();
+  const roles = Array.isArray(role) ? role : [role];
+  const rolesKey = roles.join(",");
 
   useEffect(() => {
     if (!getAccessToken()) {
       router.replace("/login");
       return;
     }
-    if (!isLoading && me && me.role !== role) {
+    if (!isLoading && me && !roles.includes(me.role)) {
       router.replace(homeFor(me.role));
     }
-  }, [me, isLoading, role, router]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [me, isLoading, rolesKey, router]);
 
-  return { me: me?.role === role ? me : undefined, isLoading };
+  return { me: me && roles.includes(me.role) ? me : undefined, isLoading };
 }

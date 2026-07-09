@@ -2,9 +2,10 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
+import Link from "next/link";
 import { useState } from "react";
 import type { Course } from "@/components/CourseList";
-import { IconPlus, IconTrash } from "@/components/Icons";
+import { IconChevronRight, IconPlus, IconTrash } from "@/components/Icons";
 import { Badge, Button, Card, Field, Input, PageHeader, Select, Table, cls, td, th } from "@/components/ui";
 import { api } from "@/lib/api";
 
@@ -136,8 +137,12 @@ export default function CoursesPage() {
       >
         {courses?.map((course) => (
           <tr key={course.id} className="hover:bg-slate-50/60">
-            <td className={cls(td, "font-medium text-slate-800")}>
-              {locale === "ru" ? course.subject_name_ru : course.subject_name_uz}
+            <td className={cls(td, "font-medium")}>
+              <Link href={`/teach/courses/${course.id}`}
+                    className="inline-flex items-center gap-1 text-teal-700 hover:underline">
+                {locale === "ru" ? course.subject_name_ru : course.subject_name_uz}
+                <IconChevronRight className="text-sm text-slate-400" />
+              </Link>
             </td>
             <td className={cls(td, "text-slate-500")}>{course.teacher_name}</td>
             <td className={td}>{course.semester}</td>
