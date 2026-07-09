@@ -9,6 +9,7 @@ import {
   IconArrowLeft, IconArrowUp, IconChevronRight, IconHome, IconPlus, IconTrash,
 } from "@/components/Icons";
 import Shell from "@/components/Shell";
+import UnlockRuleEditor from "@/components/UnlockRuleEditor";
 import { Badge, Button, Card, Field, Input, PageHeader, cls } from "@/components/ui";
 import { api } from "@/lib/api";
 import { useRequireRole } from "@/lib/useAuth";
@@ -26,6 +27,7 @@ export default function TeacherCoursePage() {
   const t = useTranslations("topics");
   const tc = useTranslations("common");
   const tn = useTranslations("nav");
+  const tu = useTranslations("unlock");
   const locale = useLocale();
   const params = useParams();
   const courseId = Number(params.id);
@@ -60,6 +62,13 @@ export default function TeacherCoursePage() {
     mutationFn: (ids: number[]) =>
       api("/topics/reorder", { method: "PATCH", body: { course_id: courseId, topic_ids: ids } }),
     onSuccess: invalidate,
+  });
+
+  const togglePublish = useMutation({
+    mutationFn: (topic: Topic) =>
+      api(`/topics/${topic.id}/${topic.status === "published" ? "unpublish" : "publish"}`, { method: "POST" }),
+    onSuccess: invalidate,
+    onError: (err: Error) => setError(err.message),
   });
 
   const move = (index: number, dir: -1 | 1) => {
@@ -126,7 +135,8 @@ export default function TeacherCoursePage() {
                     {locale === "ru" ? topic.title_uz : topic.title_ru}
                   </p>
                 </Link>
-                <Badge tone={topic.status === "published" ? "green" : "slate"}>
+                <Badge tone={topic.status === "published" ? "green" : "slate"}
+                       onClick={() => togglePublish.mutate(topic)}>
                   {topic.status === "published" ? "published" : "draft"}
                 </Badge>
                 <div className="flex items-center gap-0.5">
@@ -166,6 +176,11 @@ export default function TeacherCoursePage() {
           ))}
         </ol>
       )}
+
+      <div className="mt-8">
+        <UnlockRuleEditor endpoint={`/courses/${courseId}/default-unlock-rule`}
+                          title={tu("defaultRule")} />
+      </div>
     </Shell>
   );
 }

@@ -106,6 +106,32 @@ def update_topic(topic_id: int, body: TopicIn, user: CurrentUser, db: DbSession)
     return topic
 
 
+@router.post("/topics/{topic_id}/publish", response_model=TopicOut, dependencies=[staff_only])
+def publish_topic(topic_id: int, user: CurrentUser, db: DbSession):
+    """Открывает тему студентам. Публиковать можно, если есть хотя бы один
+    опубликованный элемент контента (иначе урок пустой)."""
+    topic = _topic_for_write(db, topic_id, user)
+    from app.modules.content.models import ContentItem
+
+    has_published = db.scalar(select(ContentItem).where(
+        ContentItem.topic_id == topic_id, ContentItem.status == "published"))
+    if not has_published:
+        raise ApiError(409, "no_published_content",
+                       "Avval kamida bitta kontentni chop eting",
+                       "Сначала опубликуйте хотя бы один элемент контента")
+    topic.status = "published"
+    db.commit()
+    return topic
+
+
+@router.post("/topics/{topic_id}/unpublish", response_model=TopicOut, dependencies=[staff_only])
+def unpublish_topic(topic_id: int, user: CurrentUser, db: DbSession):
+    topic = _topic_for_write(db, topic_id, user)
+    topic.status = "draft"
+    db.commit()
+    return topic
+
+
 @router.delete("/topics/{topic_id}", dependencies=[staff_only])
 def delete_topic(topic_id: int, user: CurrentUser, db: DbSession):
     topic = _topic_for_write(db, topic_id, user)
