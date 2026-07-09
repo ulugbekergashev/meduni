@@ -9,7 +9,7 @@ import { IconArrowLeft, IconCheck, IconHome, IconPlus, IconSparkles, IconTrash }
 import ReadinessPanel from "@/components/ReadinessPanel";
 import Shell from "@/components/Shell";
 import { Badge, Button, Card, cls } from "@/components/ui";
-import { api } from "@/lib/api";
+import { api, downloadFile } from "@/lib/api";
 import { useRequireRole } from "@/lib/useAuth";
 
 type Bilingual = { uz: string; ru: string };
@@ -100,7 +100,8 @@ export default function QuizEditorPage() {
   if (!me || !data) return null;
   const published = data.content.status === "published";
   const download = (format: string) => {
-    window.open(`/api/v1/quizzes/${contentId}/export?format=${format}&lang=ru`, "_blank");
+    const ext = format === "moodle_xml" ? "xml" : format === "gift" ? "gift.txt" : "pdf";
+    downloadFile(`/quizzes/${contentId}/export?format=${format}&lang=ru`, `quiz_${contentId}.${ext}`);
   };
 
   return (
