@@ -107,6 +107,9 @@ def recompute_course(db: Session, student_id: int, course_id: int) -> list[dict]
             state = "completed"
             if progress.completed_at is None:
                 progress.completed_at = datetime.now(timezone.utc)
+                # XP за завершение темы (идемпотентно по topic_id)
+                from app.modules.gamification.service import award
+                award(db, student_id, course_id, "lesson_completed", ref_id=topic.id)
         elif available:
             state = "in_progress" if facts["any_activity"] else "available"
         else:

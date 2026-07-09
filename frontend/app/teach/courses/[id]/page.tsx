@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState } from "react";
 import {
-  IconArrowLeft, IconArrowUp, IconChevronRight, IconHome, IconPlus, IconTrash,
+  IconArrowLeft, IconArrowUp, IconChevronRight, IconHome, IconPlus, IconQr, IconTrash,
 } from "@/components/Icons";
 import Shell from "@/components/Shell";
 import UnlockRuleEditor from "@/components/UnlockRuleEditor";
@@ -28,6 +28,7 @@ export default function TeacherCoursePage() {
   const tc = useTranslations("common");
   const tn = useTranslations("nav");
   const tu = useTranslations("unlock");
+  const ta = useTranslations("attend");
   const locale = useLocale();
   const params = useParams();
   const courseId = Number(params.id);
@@ -69,6 +70,18 @@ export default function TeacherCoursePage() {
       api(`/topics/${topic.id}/${topic.status === "published" ? "unpublish" : "publish"}`, { method: "POST" }),
     onSuccess: invalidate,
     onError: (err: Error) => setError(err.message),
+  });
+
+  const { data: sessions } = useQuery({
+    queryKey: ["course-sessions", courseId],
+    queryFn: () => api<{ id: number; room: string | null; starts_at: string; attendance_open: boolean }[]>(
+      `/courses/${courseId}/sessions`),
+    enabled: !!me,
+  });
+
+  const createSession = useMutation({
+    mutationFn: () => api<{ id: number }>("/sessions", { method: "POST", body: { course_id: courseId } }),
+    onSuccess: (s) => { window.location.href = `/teach/sessions/${s.id}`; },
   });
 
   const move = (index: number, dir: -1 | 1) => {
@@ -176,6 +189,32 @@ export default function TeacherCoursePage() {
           ))}
         </ol>
       )}
+
+      {/* Занятия (посещаемость) */}
+      <div className="mt-8">
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-800">
+            <IconQr className="text-teal-600" /> {ta("sessions")}
+          </h2>
+          <Button onClick={() => createSession.mutate()} disabled={createSession.isPending}>
+            <IconPlus /> {ta("newSession")}
+          </Button>
+        </div>
+        <div className="space-y-2">
+          {sessions?.map((s) => (
+            <Link key={s.id} href={`/teach/sessions/${s.id}`}>
+              <Card className="flex items-center justify-between p-3 transition-shadow hover:shadow-md">
+                <span className="text-sm text-slate-700">
+                  {new Date(s.starts_at).toLocaleString()} {s.room && `· ${s.room}`}
+                </span>
+                <Badge tone={s.attendance_open ? "green" : "slate"}>
+                  {s.attendance_open ? ta("openBadge") : ta("closedBadge")}
+                </Badge>
+              </Card>
+            </Link>
+          ))}
+        </div>
+      </div>
 
       <div className="mt-8">
         <UnlockRuleEditor endpoint={`/courses/${courseId}/default-unlock-rule`}

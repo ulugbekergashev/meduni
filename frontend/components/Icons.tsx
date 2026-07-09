@@ -156,6 +156,50 @@ export const IconSpinner = (p: SVGProps<SVGSVGElement>) => (
   </Svg>
 );
 
+export const IconQr = (p: SVGProps<SVGSVGElement>) => (
+  <Svg {...p}>
+    <rect x="3" y="3" width="7" height="7" rx="1" />
+    <rect x="14" y="3" width="7" height="7" rx="1" />
+    <rect x="3" y="14" width="7" height="7" rx="1" />
+    <path d="M14 14h3v3M21 14v7M17 21h4M14 17v4" />
+  </Svg>
+);
+
+export const IconFlame = (p: SVGProps<SVGSVGElement>) => (
+  <Svg {...p}>
+    <path d="M12 2c1 3 4 4.5 4 8a4 4 0 1 1-8 0c0-1.5.5-2.5 1-3 .5 2 2 2.5 2 2.5C10 7 12 4 12 2z" />
+  </Svg>
+);
+
+export const IconTrophy = (p: SVGProps<SVGSVGElement>) => (
+  <Svg {...p}>
+    <path d="M6 4h12v4a6 6 0 0 1-12 0z" />
+    <path d="M6 6H3v1a3 3 0 0 0 3 3M18 6h3v1a3 3 0 0 1-3 3" />
+    <path d="M12 14v4M8 21h8M9 21v-3h6v3" />
+  </Svg>
+);
+
+export const IconCamera = (p: SVGProps<SVGSVGElement>) => (
+  <Svg {...p}>
+    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+    <circle cx="12" cy="13" r="4" />
+  </Svg>
+);
+
+export const IconCalendar = (p: SVGProps<SVGSVGElement>) => (
+  <Svg {...p}>
+    <rect x="3" y="4" width="18" height="18" rx="2" />
+    <path d="M16 2v4M8 2v4M3 10h18" />
+  </Svg>
+);
+
+export const IconUser = (p: SVGProps<SVGSVGElement>) => (
+  <Svg {...p}>
+    <circle cx="12" cy="8" r="4" />
+    <path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1" />
+  </Svg>
+);
+
 /** Логотип: медицинский крест в скруглённом квадрате */
 export const IconLogo = (p: SVGProps<SVGSVGElement>) => (
   <svg viewBox="0 0 24 24" fill="currentColor" width="1em" height="1em" {...p}>
