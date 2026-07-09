@@ -28,7 +28,7 @@ type TopicDetail = {
 const parseTone = { done: "green", error: "red", running: "amber", pending: "slate" } as const;
 
 export default function TopicConstructor() {
-  const { me } = useRequireRole("teacher");
+  const { me } = useRequireRole(["teacher", "admin"]);
   const t = useTranslations("topics");
   const tc = useTranslations("common");
   const tn = useTranslations("nav");

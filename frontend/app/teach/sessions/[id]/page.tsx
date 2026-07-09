@@ -18,7 +18,7 @@ const statusTone = { present: "green", late: "amber", absent: "red", excused: "s
 const cycle = ["present", "late", "absent", "excused"];
 
 export default function SessionScreen() {
-  const { me } = useRequireRole("teacher");
+  const { me } = useRequireRole(["teacher", "admin"]);
   const t = useTranslations("attend");
   const tn = useTranslations("nav");
   const params = useParams();

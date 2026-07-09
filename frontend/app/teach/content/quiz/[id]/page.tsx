@@ -42,7 +42,7 @@ function TA({ value, onChange, placeholder, className }: {
 }
 
 export default function QuizEditorPage() {
-  const { me } = useRequireRole("teacher");
+  const { me } = useRequireRole(["teacher", "admin"]);
   const t = useTranslations("content");
   const tn = useTranslations("nav");
   const params = useParams();

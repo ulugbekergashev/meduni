@@ -24,7 +24,7 @@ type Topic = {
 };
 
 export default function TeacherCoursePage() {
-  const { me } = useRequireRole("teacher");
+  const { me } = useRequireRole(["teacher", "admin"]);
   const t = useTranslations("topics");
   const tc = useTranslations("common");
   const tn = useTranslations("nav");
