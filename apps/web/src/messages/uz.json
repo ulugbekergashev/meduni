@@ -11,6 +11,7 @@
     "dashboard": "Bosh sahifa",
     "structure": "Tuzilma",
     "users": "Foydalanuvchilar",
+    "courses": "Kurslar",
     "logout": "Chiqish"
   },
   "dashboard": {
@@ -158,6 +159,41 @@
       "resultErrors": "{n} ta xato",
       "row": "qator",
       "close": "Yopish"
+    }
+  },
+  "courses": {
+    "title": "Kurslar",
+    "subtitle": "Kurs = fan + oʻqituvchi + guruh(lar) + semestr. Guruh talabalari avtomatik yoziladi.",
+    "create": "Kurs yaratish",
+    "subject": "Fan",
+    "selectSubject": "Fanni tanlang",
+    "teacher": "Oʻqituvchi",
+    "selectTeacher": "Oʻqituvchini tanlang",
+    "semester": "Semestr",
+    "academicYear": "Oʻquv yili",
+    "academicYearPlaceholder": "2026/2027",
+    "groups": "Guruhlar",
+    "students": "Talabalar",
+    "topics": "Mavzular",
+    "status": "Holat",
+    "actions": "Amallar",
+    "noSubjects": "Avval fan qoʻshing (Tuzilma boʻlimi).",
+    "noTeachers": "Avval oʻqituvchi qoʻshing (Foydalanuvchilar boʻlimi).",
+    "noGroups": "Avval guruh qoʻshing (Tuzilma boʻlimi).",
+    "empty": "Hali kurs yoʻq. Fan, oʻqituvchi va guruhni tanlab kurs yarating.",
+    "created": "Kurs yaratildi. {n} talaba yozildi.",
+    "confirmDelete": "Bu kursni oʻchirasizmi? Yozilganlar ham oʻchadi.",
+    "confirmDeleteTitle": "Kursni oʻchirish",
+    "detail": {
+      "back": "← Kurslar",
+      "info": "Kurs maʼlumoti",
+      "enrolledStudents": "Yozilgan talabalar",
+      "manageGroups": "Guruhlarni boshqarish",
+      "saveGroups": "Guruhlarni saqlash",
+      "topicCount": "Mavzular soni",
+      "noStudents": "Hali talaba yozilmagan.",
+      "statusActive": "Faol",
+      "statusDropped": "Chiqarilgan"
     }
   }
 }

@@ -10,6 +10,8 @@ import { DepartmentsTab } from "./pages/admin/structure/DepartmentsTab";
 import { SubjectsTab } from "./pages/admin/structure/SubjectsTab";
 import { GroupsTab } from "./pages/admin/structure/GroupsTab";
 import { UsersPage } from "./pages/admin/users/UsersPage";
+import { CoursesPage } from "./pages/admin/courses/CoursesPage";
+import { CourseDetail } from "./pages/admin/courses/CourseDetail";
 import { TeachShell } from "./pages/teach/TeachShell";
 import { TeachDashboard } from "./pages/teach/TeachDashboard";
 import { StudentShell } from "./pages/student/StudentShell";
@@ -38,6 +40,8 @@ export function App() {
           <Route path="groups" element={<GroupsTab />} />
         </Route>
         <Route path="users" element={<UsersPage />} />
+        <Route path="courses" element={<CoursesPage />} />
+        <Route path="courses/:id" element={<CourseDetail />} />
       </Route>
 
       <Route

@@ -18,6 +18,11 @@ enum Locale {
   ru
 }
 
+enum EnrollmentStatus {
+  ACTIVE
+  DROPPED
+}
+
 model User {
   id             Int             @id @default(autoincrement())
   fullName       String
@@ -30,6 +35,8 @@ model User {
   groupId        Int?
   group          StudentGroup?   @relation(fields: [groupId], references: [id])
   teacherProfile TeacherProfile?
+  taughtCourses  Course[]        @relation("CourseTeacher")
+  enrollments    Enrollment[]
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
 
@@ -85,6 +92,7 @@ model Subject {
   nameRu       String
   description  String?
   createdAt    DateTime   @default(now())
+  courses      Course[]
 
   @@unique([departmentId, nameUz])
   @@unique([departmentId, nameRu])
@@ -95,11 +103,51 @@ model StudentGroup {
   id          Int      @id @default(autoincrement())
   facultyId   Int
   faculty     Faculty  @relation(fields: [facultyId], references: [id])
-  name        String
-  yearOfStudy Int
-  createdAt   DateTime @default(now())
-  students    User[]
+  name         String
+  yearOfStudy  Int
+  createdAt    DateTime      @default(now())
+  students     User[]
+  courseGroups CourseGroup[]
 
   @@unique([facultyId, name])
   @@map("student_groups")
+}
+
+model Course {
+  id           Int           @id @default(autoincrement())
+  subjectId    Int
+  subject      Subject       @relation(fields: [subjectId], references: [id])
+  teacherId    Int
+  teacher      User          @relation("CourseTeacher", fields: [teacherId], references: [id])
+  semester     Int
+  academicYear String
+  createdAt    DateTime      @default(now())
+  courseGroups CourseGroup[]
+  enrollments  Enrollment[]
+
+  @@map("courses")
+}
+
+model CourseGroup {
+  id       Int          @id @default(autoincrement())
+  courseId Int
+  course   Course       @relation(fields: [courseId], references: [id])
+  groupId  Int
+  group    StudentGroup @relation(fields: [groupId], references: [id])
+
+  @@unique([courseId, groupId])
+  @@map("course_groups")
+}
+
+model Enrollment {
+  id        Int              @id @default(autoincrement())
+  studentId Int
+  student   User             @relation(fields: [studentId], references: [id])
+  courseId  Int
+  course    Course           @relation(fields: [courseId], references: [id])
+  status    EnrollmentStatus @default(ACTIVE)
+  createdAt DateTime         @default(now())
+
+  @@unique([studentId, courseId])
+  @@map("enrollments")
 }
