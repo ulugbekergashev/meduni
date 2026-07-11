@@ -176,9 +176,25 @@ Tayyor:
   (`topics/sessions/progress/settings`), har tab ALOHIDA route/komponent
   (`course/*Tab.tsx`, hozircha placeholder — Modul 5/13/15/10 to'ldiradi), faqat
   ochiq tab mount bo'ladi. Modullik: karkas hech qanday biznes-ma'lumot yuklamaydi.
+- **Modul 5 — O'qituvchi: Mavzular + Material (tayyor).** Prisma: Topic
+  (DRAFT|PUBLISHED, orderIndex, unlockRuleJson?), SourceMaterial (ParseStatus
+  PENDING|PROCESSING|DONE|ERROR, parseError kod). Backend (TEACHER, egalik):
+  `/api/v1/topics` (list?courseId, create[orderIndex avto], patch, delete,
+  `PATCH /reorder`, `GET /:id` detali+materiallar+`digestUnlocked`),
+  `/api/v1/materials` (`GET /:id`, `/:id/text`, `POST /:id/retry`, delete),
+  `POST /topics/:id/materials` (multipart). Fayl → local storage
+  (`apps/api/storage/`, gitignore, traversal himoya `lib/storage.ts`), fon-parse
+  (setImmediate, `officeparser` — pdf/docx/pptx/txt/md → `toText()`), matnsiz
+  PDF → ERROR `SCANNED`. Mount: `/api/v1/topics` va `/materials` org-router'dan
+  OLDIN. Frontend: Mavzular tabi (qo'shish, ↑↓ reorder, status pill, o'chirish,
+  → konstruktor); mavzu konstruktori `/teach/topics/:id` (ALOHIDA sahifa, karkas
+  ichida emas): 5-qadamli progress-trek + 1-bo'lim Materiallar to'liq ishlaydi
+  (drag-drop dropzone, 2s polling status, ajratilgan matnni ko'rish modali,
+  retry/delete) + qolgan bo'limlar qulfli placeholder. Material DONE bo'lsa
+  Konspekt qadami ochilishga tayyor (`digestUnlocked`). Admin kurs detali endi
+  haqiqiy mavzu sonini ko'rsatadi.
 
 Keyingilar (men har biriga prompt beraman):
-5. O'qituvchi: mavzular + material
 6. O'qituvchi: konspekt (AI, qulf 1)
 7. Test + keys generatsiya
 8. Prezentatsiya + rasmlar

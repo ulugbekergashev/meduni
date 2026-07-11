@@ -23,6 +23,18 @@ enum EnrollmentStatus {
   DROPPED
 }
 
+enum TopicStatus {
+  DRAFT
+  PUBLISHED
+}
+
+enum ParseStatus {
+  PENDING
+  PROCESSING
+  DONE
+  ERROR
+}
+
 model User {
   id             Int             @id @default(autoincrement())
   fullName       String
@@ -34,11 +46,12 @@ model User {
   isActive       Boolean         @default(true)
   groupId        Int?
   group          StudentGroup?   @relation(fields: [groupId], references: [id])
-  teacherProfile TeacherProfile?
-  taughtCourses  Course[]        @relation("CourseTeacher")
-  enrollments    Enrollment[]
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
+  teacherProfile    TeacherProfile?
+  taughtCourses     Course[]         @relation("CourseTeacher")
+  enrollments       Enrollment[]
+  uploadedMaterials SourceMaterial[]
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
 
   @@map("users")
 }
@@ -124,8 +137,41 @@ model Course {
   createdAt    DateTime      @default(now())
   courseGroups CourseGroup[]
   enrollments  Enrollment[]
+  topics       Topic[]
 
   @@map("courses")
+}
+
+model Topic {
+  id             Int              @id @default(autoincrement())
+  courseId       Int
+  course         Course           @relation(fields: [courseId], references: [id])
+  titleUz        String
+  titleRu        String
+  orderIndex     Int
+  status         TopicStatus      @default(DRAFT)
+  unlockRuleJson Json?
+  createdAt      DateTime         @default(now())
+  materials      SourceMaterial[]
+
+  @@map("topics")
+}
+
+model SourceMaterial {
+  id            Int         @id @default(autoincrement())
+  topicId       Int
+  topic         Topic       @relation(fields: [topicId], references: [id])
+  fileUrl       String
+  fileName      String
+  fileType      String
+  parsedTextUrl String?
+  parseStatus   ParseStatus @default(PENDING)
+  parseError    String?
+  uploadedById  Int
+  uploadedBy    User        @relation(fields: [uploadedById], references: [id])
+  createdAt     DateTime    @default(now())
+
+  @@map("source_materials")
 }
 
 model CourseGroup {

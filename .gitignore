@@ -19,6 +19,7 @@ dist/
 backend/dev.db
 backend/storage/
 backend/test_storage/
+apps/api/storage/
 
 # IDE / OS
 .vscode/

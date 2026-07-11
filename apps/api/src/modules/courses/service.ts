@@ -194,7 +194,7 @@ export async function listCourseStudents(id: number) {
 export async function getCourseDetail(id: number) {
   const out = await getCourseOut(id);
   const students = await listCourseStudents(id);
-  const topicCount = 0; // темы появятся в модуле 5
+  const topicCount = await prisma.topic.count({ where: { courseId: id } });
   return { ...out, students, topicCount };
 }
 
