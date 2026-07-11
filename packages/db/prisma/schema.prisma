@@ -19,18 +19,34 @@ enum Locale {
 }
 
 model User {
-  id           Int      @id @default(autoincrement())
-  fullName     String
-  email        String   @unique
-  phone        String?
-  passwordHash String
-  role         Role
-  locale       Locale   @default(uz)
-  isActive     Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id             Int             @id @default(autoincrement())
+  fullName       String
+  email          String          @unique
+  phone          String?
+  passwordHash   String
+  role           Role
+  locale         Locale          @default(uz)
+  isActive       Boolean         @default(true)
+  groupId        Int?
+  group          StudentGroup?   @relation(fields: [groupId], references: [id])
+  teacherProfile TeacherProfile?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
 
   @@map("users")
+}
+
+model TeacherProfile {
+  id           Int        @id @default(autoincrement())
+  userId       Int        @unique
+  user         User       @relation(fields: [userId], references: [id])
+  departmentId Int
+  department   Department @relation(fields: [departmentId], references: [id])
+  position     String?
+  bio          String?
+  createdAt    DateTime   @default(now())
+
+  @@map("teacher_profiles")
 }
 
 model Faculty {
@@ -54,6 +70,7 @@ model Department {
   nameRu    String
   createdAt DateTime  @default(now())
   subjects  Subject[]
+  teachers  TeacherProfile[]
 
   @@unique([facultyId, nameUz])
   @@unique([facultyId, nameRu])
@@ -81,6 +98,7 @@ model StudentGroup {
   name        String
   yearOfStudy Int
   createdAt   DateTime @default(now())
+  students    User[]
 
   @@unique([facultyId, name])
   @@map("student_groups")

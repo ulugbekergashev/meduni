@@ -10,6 +10,7 @@
   "nav": {
     "dashboard": "Главная",
     "structure": "Структура",
+    "users": "Пользователи",
     "logout": "Выйти"
   },
   "dashboard": {
@@ -85,5 +86,78 @@
     "editDepartment": "Редактировать кафедру",
     "editSubject": "Редактировать предмет",
     "editGroup": "Редактировать группу"
+  },
+  "users": {
+    "title": "Пользователи",
+    "subtitle": "Добавьте студентов и преподавателей (регистрации нет)",
+    "addUser": "Добавить пользователя",
+    "excelImport": "Excel импорт",
+    "searchPlaceholder": "Поиск по имени или email",
+    "roleFilter": {
+      "all": "Все",
+      "student": "Студент",
+      "teacher": "Преподаватель"
+    },
+    "role": {
+      "admin": "Админ",
+      "teacher": "Преподаватель",
+      "student": "Студент"
+    },
+    "form": {
+      "selectRole": "Роль",
+      "student": "Студент",
+      "teacher": "Преподаватель",
+      "fullName": "ФИО (полное имя)",
+      "email": "Email",
+      "phone": "Телефон (необязательно)",
+      "language": "Язык",
+      "group": "Группа",
+      "selectGroup": "Выберите группу",
+      "department": "Кафедра",
+      "selectDepartment": "Выберите кафедру",
+      "position": "Должность (необязательно)",
+      "password": "Пароль",
+      "passwordHint": "Оставьте пустым — создастся автоматически",
+      "noGroupsHint": "Сначала добавьте группу (раздел Структура).",
+      "noDepartmentsHint": "Сначала добавьте кафедру (раздел Структура)."
+    },
+    "table": {
+      "name": "ФИО",
+      "email": "Email",
+      "role": "Роль",
+      "active": "Активен",
+      "actions": "Действия"
+    },
+    "empty": "Пока нет пользователей. Добавьте или импортируйте из Excel.",
+    "editUser": "Редактировать пользователя",
+    "password": {
+      "title": "Пароль создан",
+      "hint": "Скопируйте и передайте пользователю:",
+      "copy": "Копировать",
+      "copied": "Скопировано",
+      "close": "Закрыть"
+    },
+    "reset": {
+      "action": "Сбросить пароль",
+      "title": "Сброс пароля",
+      "confirm": "Создать новый пароль для этого пользователя?",
+      "confirmBtn": "Новый пароль"
+    },
+    "pagination": {
+      "prev": "Назад",
+      "next": "Далее",
+      "pageOf": "{page} / {total}"
+    },
+    "import": {
+      "title": "Excel импорт",
+      "columns": "Столбцы: fullName, email, role, phone, locale, group",
+      "note": "role — STUDENT или TEACHER. group — название группы (например 101-A). Преподаватель через импорт не добавляется.",
+      "choose": "Выбрать файл",
+      "importing": "Загрузка...",
+      "resultAdded": "Добавлено: {n}",
+      "resultErrors": "Ошибок: {n}",
+      "row": "строка",
+      "close": "Закрыть"
+    }
   }
 }

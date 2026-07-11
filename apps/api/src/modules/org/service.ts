@@ -199,7 +199,7 @@ export async function listGroups(facultyId?: number) {
   const rows = await prisma.studentGroup.findMany({
     where: facultyId ? { facultyId } : undefined,
     orderBy: { id: "asc" },
-    include: { faculty: true },
+    include: { faculty: true, _count: { select: { students: true } } },
   });
   return rows.map((g) => ({
     id: g.id,
@@ -208,7 +208,7 @@ export async function listGroups(facultyId?: number) {
     yearOfStudy: g.yearOfStudy,
     facultyNameUz: g.faculty.nameUz,
     facultyNameRu: g.faculty.nameRu,
-    studentCount: 0, // студентов пока нет (модуль 2)
+    studentCount: g._count.students,
   }));
 }
 
@@ -244,5 +244,13 @@ export async function updateGroup(
 export async function deleteGroup(id: number) {
   const existing = await prisma.studentGroup.findUnique({ where: { id } });
   if (!existing) throw notFound("Guruh");
+  const studentCount = await prisma.user.count({ where: { groupId: id } });
+  if (studentCount > 0) {
+    throw conflict(
+      "HAS_CHILDREN",
+      `Oʻchirib boʻlmaydi: bu guruhda ${studentCount} ta talaba bor`,
+      `Нельзя удалить: в этой группе ${studentCount} студентов`
+    );
+  }
   await prisma.studentGroup.delete({ where: { id } });
 }
