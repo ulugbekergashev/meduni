@@ -6,7 +6,13 @@ import { Badge, Button, Card, Icon, Select, Spinner, useToast } from "@meduni/ui
 import { Field } from "../../../components/Field";
 import { apiErrorMessage } from "../../../lib/api";
 import { useLocale } from "../../../lib/useLocale";
-import { useGenerateCase, useGenerateQuiz, type ContentSummary, type TopicDetail } from "./api";
+import {
+  useGenerateCase,
+  useGeneratePresentation,
+  useGenerateQuiz,
+  type ContentSummary,
+  type TopicDetail,
+} from "./api";
 
 function LangSelect({ value, onChange }: { value: "uz" | "ru"; onChange: (v: "uz" | "ru") => void }) {
   return (
@@ -151,6 +157,59 @@ function CaseCard({ topic }: { topic: TopicDetail }) {
   );
 }
 
+function PresentationCard({ topic }: { topic: TopicDetail }) {
+  const { t } = useTranslation(undefined, { keyPrefix: "generate" });
+  const locale = useLocale();
+  const { show } = useToast();
+  const navigate = useNavigate();
+  const gen = useGeneratePresentation(topic.id);
+  const existing = topic.content.find((c) => c.kind === "presentation");
+
+  const [language, setLanguage] = useState<"uz" | "ru">(locale);
+
+  return (
+    <Card className="flex flex-col gap-4">
+      <div className="flex items-center gap-2">
+        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-violet-soft text-violet">
+          <Icon icon={Presentation} size={18} />
+        </div>
+        <h3 className="text-section font-bold text-ink">{t("presentationTitle")}</h3>
+      </div>
+
+      {gen.isPending ? (
+        <div className="flex items-center gap-2 py-2 text-[13px] text-ink-soft">
+          <Spinner size={16} /> {t("generatingSlides")}
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label={t("template")}>
+              <Select disabled>
+                <option>{t("templateDefault")}</option>
+              </Select>
+            </Field>
+            <Field label={t("language")}>
+              <LangSelect value={language} onChange={setLanguage} />
+            </Field>
+          </div>
+          <p className="text-[12px] text-ink-faint">{t("imagesNote")}</p>
+          {gen.isError && <p className="text-[13px] text-rose">{apiErrorMessage(gen.error, locale) ?? t("error")}</p>}
+          <Button
+            icon={<Icon icon={Sparkles} size={16} />}
+            onClick={() => gen.mutate({ language }, { onSuccess: () => show(t("ready")) })}
+          >
+            {existing ? t("regenerate") : t("generatePresentation")}
+          </Button>
+        </>
+      )}
+
+      {existing && !gen.isPending && (
+        <ReadyRow summary={existing} onEdit={() => navigate(`/teach/content/${existing.id}`)} />
+      )}
+    </Card>
+  );
+}
+
 function SoonCard({ title, icon }: { title: string; icon: typeof Film }) {
   const { t } = useTranslation(undefined, { keyPrefix: "generate" });
   return (
@@ -172,7 +231,7 @@ export function GenerateSection({ topic }: { topic: TopicDetail }) {
     <div className="grid gap-4 sm:grid-cols-2">
       <QuizCard topic={topic} />
       <CaseCard topic={topic} />
-      <SoonCard title={t("presentationTitle")} icon={Presentation} />
+      <PresentationCard topic={topic} />
       <SoonCard title={t("videoTitle")} icon={Film} />
     </div>
   );

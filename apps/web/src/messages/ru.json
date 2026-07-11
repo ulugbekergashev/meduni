@@ -132,10 +132,38 @@
     "regenerate": "Пересоздать",
     "generatingQuiz": "Составление вопросов…",
     "generatingCase": "Составление кейса…",
+    "generatingSlides": "Составление слайдов…",
+    "template": "Шаблон",
+    "templateDefault": "Университет (стандарт)",
+    "generatePresentation": "Сгенерировать презентацию",
+    "imagesNote": "Слайды + медицинские изображения создаются автоматически",
     "ready": "Готово",
     "edit": "Редактировать",
     "error": "Не создано, повторите",
     "edited": "Отредактировано"
+  },
+  "presEditor": {
+    "back": "← Конструктор",
+    "title": "Редактор презентации",
+    "downloadPptx": "Скачать PowerPoint",
+    "downloadPdf": "Скачать PDF",
+    "generateImages": "Создать изображения",
+    "slideTitle": "Заголовок слайда",
+    "bullets": "Тезисы",
+    "speakerNotes": "Заметки докладчика",
+    "layout": "Макет",
+    "regenerateImage": "Другое изображение",
+    "deleteSlide": "Удалить слайд",
+    "save": "Сохранить",
+    "saved": "Сохранено",
+    "addBullet": "Добавить тезис",
+    "imageStatus": {
+      "pending": "В очереди",
+      "processing": "Рисуется…",
+      "done": "Готово",
+      "error": "Ошибка"
+    },
+    "noImage": "Нет изображения"
   },
   "quizEditor": {
     "back": "← Конструктор",

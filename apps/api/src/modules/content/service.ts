@@ -10,6 +10,7 @@ import {
   type CaseJson,
   type DigestJson,
   type QuizGen,
+  type Slide,
 } from "../../ai/types";
 import { quizSystemPrompt, quizUserContent } from "../../ai/prompts/quiz";
 import { caseSystemPrompt, caseUserContent } from "../../ai/prompts/case";
@@ -30,6 +31,7 @@ async function topicForTeacher(topicId: number, teacherId: number) {
 const contentInclude = {
   quiz: { include: { questions: { orderBy: { orderIndex: "asc" } } } },
   clinicalCase: true,
+  presentation: true,
   approvedBy: true,
 } satisfies Prisma.ContentItemInclude;
 
@@ -75,6 +77,25 @@ function toContentOut(item: ContentFull) {
       : null,
     clinicalCase: item.clinicalCase
       ? { caseJson: item.clinicalCase.caseJson as unknown as CaseJson, format: item.clinicalCase.format }
+      : null,
+    presentation: item.presentation
+      ? {
+          id: item.presentation.id,
+          templateId: item.presentation.templateId,
+          slides: (item.presentation.slidesJson as unknown as Slide[]).map((slide, si) => ({
+            id: slide.id,
+            layout: slide.layout,
+            title: slide.title,
+            bullets: slide.bullets,
+            speakerNotes: slide.speakerNotes,
+            imageSlots: slide.imageSlots.map((slot, sloti) => ({
+              prompt: slot.prompt,
+              status: slot.status,
+              // Expose a media URL (not the internal storage path) only when ready.
+              url: slot.status === "DONE" ? `/api/v1/presentations/${item.presentation!.id}/image/${si}/${sloti}` : null,
+            })),
+          })),
+        }
       : null,
   };
 }
@@ -233,6 +254,24 @@ export async function updateContent(contentId: number, teacherId: number, body: 
       where: { contentItemId: contentId },
       data: { caseJson: parsed.data as object },
     });
+    await prisma.contentItem.update({ where: { id: contentId }, data: { editedByTeacher: true } });
+  } else if (item.kind === "PRESENTATION") {
+    const b = body as { slides: { id: string; layout: Slide["layout"]; title: string; bullets: string[]; speakerNotes: string }[] };
+    if (!b || !Array.isArray(b.slides)) throw badRequest("Slaydlar notoʻgʻri", "Неверные слайды");
+    const pres = item.presentation!;
+    const stored = pres.slidesJson as unknown as Slide[];
+    const byId = new Map(stored.map((s) => [s.id, s]));
+    // Only text/layout comes from the client; image slots stay server-managed
+    // (matched by stable slide id, so deletion/reorder can't corrupt them).
+    const merged: Slide[] = b.slides.map((s) => ({
+      id: s.id,
+      layout: s.layout,
+      title: s.title,
+      bullets: s.bullets,
+      speakerNotes: s.speakerNotes,
+      imageSlots: byId.get(s.id)?.imageSlots ?? [],
+    }));
+    await prisma.presentation.update({ where: { contentItemId: contentId }, data: { slidesJson: merged as object } });
     await prisma.contentItem.update({ where: { id: contentId }, data: { editedByTeacher: true } });
   } else {
     throw badRequest("Bu kontent turi hali tahrirlanmaydi", "Этот тип контента пока не редактируется");

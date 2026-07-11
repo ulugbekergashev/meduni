@@ -112,3 +112,56 @@ export const caseResponseSchema = {
   },
   required: ["complaints", "anamnesis", "objectiveStatus", "labData", "questions", "referenceAnswer"],
 };
+
+// ---------- Presentation slides ----------
+
+export const SLIDE_LAYOUTS = ["TITLE", "TWO_BLOCK", "THREE_BLOCK", "BODY_DIAGRAM", "IMAGE_LEFT", "BULLETS"] as const;
+export type SlideLayout = (typeof SLIDE_LAYOUTS)[number];
+export type SlotStatus = "PENDING" | "PROCESSING" | "DONE" | "ERROR";
+
+export interface ImageSlot {
+  prompt: string;
+  url: string | null;
+  status: SlotStatus;
+}
+
+export interface Slide {
+  id: string;
+  layout: SlideLayout;
+  title: string;
+  bullets: string[];
+  speakerNotes: string;
+  imageSlots: ImageSlot[];
+}
+
+// What Gemini returns (one image prompt per slide; empty => no image).
+export const slideGenSchema = z.object({
+  layout: z.enum(SLIDE_LAYOUTS),
+  title: z.string(),
+  bullets: z.array(z.string()),
+  speakerNotes: z.string(),
+  imagePrompt: z.string(),
+});
+export const slidesGenSchema = z.object({ slides: z.array(slideGenSchema) });
+export type SlidesGen = z.infer<typeof slidesGenSchema>;
+
+export const slidesResponseSchema = {
+  type: Type.OBJECT,
+  properties: {
+    slides: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          layout: { type: Type.STRING, enum: SLIDE_LAYOUTS as unknown as string[] },
+          title: { type: Type.STRING },
+          bullets: { type: Type.ARRAY, items: { type: Type.STRING } },
+          speakerNotes: { type: Type.STRING },
+          imagePrompt: { type: Type.STRING },
+        },
+        required: ["layout", "title", "bullets", "speakerNotes", "imagePrompt"],
+      },
+    },
+  },
+  required: ["slides"],
+};

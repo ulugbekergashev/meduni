@@ -3,6 +3,7 @@ import { z, type ZodTypeAny } from "zod";
 import { badRequest, notFound } from "../../lib/errors";
 import { requireRoles } from "../../middleware/rbac";
 import * as svc from "./service";
+import * as pres from "./presentation";
 
 const wrap =
   (fn: RequestHandler): RequestHandler =>
@@ -30,6 +31,10 @@ const genCaseSchema = z.object({
   language: z.enum(["uz", "ru"]),
   format: z.enum(["SHORT", "EXTENDED"]).default("SHORT"),
 });
+const genPresSchema = z.object({
+  language: z.enum(["uz", "ru"]),
+  templateId: z.number().int().positive().optional().nullable(),
+});
 
 // Generation lives on the topic (topicsRouter mounts this at /api/v1/topics).
 export const generateRouter = Router();
@@ -49,6 +54,14 @@ generateRouter.post(
   )
 );
 
+generateRouter.post(
+  "/:id/generate/presentation",
+  wrap(async (req, res) => {
+    const contentId = await pres.generatePresentation(parseId(req.params.id), req.user!.id, parseBody(genPresSchema, req.body));
+    res.json(await svc.getContent(contentId, req.user!.id));
+  })
+);
+
 // Content read/edit/approve at /api/v1/content.
 export const contentRouter = Router();
 contentRouter.use(requireRoles("TEACHER"));
@@ -63,4 +76,64 @@ contentRouter.put(
 contentRouter.post(
   "/:id/approve",
   wrap(async (req, res) => res.json(await svc.approveContent(parseId(req.params.id), req.user!.id)))
+);
+
+// Presentation images, media, and exports at /api/v1/presentations.
+export const presentationsRouter = Router();
+presentationsRouter.use(requireRoles("TEACHER"));
+
+presentationsRouter.post(
+  "/:id/generate-images",
+  wrap(async (req, res) => {
+    await pres.generateAllImages(parseId(req.params.id), req.user!.id);
+    res.json({ ok: true });
+  })
+);
+
+presentationsRouter.post(
+  "/:id/regenerate-image/:slideIndex/:slotIndex",
+  wrap(async (req, res) => {
+    await pres.regenerateOneImage(
+      parseId(req.params.id),
+      req.user!.id,
+      Number(req.params.slideIndex),
+      Number(req.params.slotIndex)
+    );
+    res.json({ ok: true });
+  })
+);
+
+presentationsRouter.get(
+  "/:id/image/:slideIndex/:slotIndex",
+  wrap(async (req, res) => {
+    const buf = await pres.getSlotImage(
+      parseId(req.params.id),
+      req.user!.id,
+      Number(req.params.slideIndex),
+      Number(req.params.slotIndex)
+    );
+    res.setHeader("Content-Type", "image/png");
+    res.setHeader("Cache-Control", "no-store");
+    res.send(buf);
+  })
+);
+
+presentationsRouter.get(
+  "/:id/pptx",
+  wrap(async (req, res) => {
+    const buf = await pres.exportPptx(parseId(req.params.id), req.user!.id);
+    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.presentationml.presentation");
+    res.setHeader("Content-Disposition", `attachment; filename="presentation-${req.params.id}.pptx"`);
+    res.send(buf);
+  })
+);
+
+presentationsRouter.get(
+  "/:id/pdf",
+  wrap(async (req, res) => {
+    const buf = await pres.exportPdf(parseId(req.params.id), req.user!.id);
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `attachment; filename="presentation-${req.params.id}.pdf"`);
+    res.send(buf);
+  })
 );

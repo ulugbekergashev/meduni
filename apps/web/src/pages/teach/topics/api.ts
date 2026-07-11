@@ -85,6 +85,30 @@ export interface CaseJson {
   referenceAnswer: string[];
 }
 
+export type SlideLayout = "TITLE" | "TWO_BLOCK" | "THREE_BLOCK" | "BODY_DIAGRAM" | "IMAGE_LEFT" | "BULLETS";
+export type SlotStatus = "PENDING" | "PROCESSING" | "DONE" | "ERROR";
+
+export interface ImageSlot {
+  prompt: string;
+  status: SlotStatus;
+  url: string | null;
+}
+
+export interface Slide {
+  id: string;
+  layout: SlideLayout;
+  title: string;
+  bullets: string[];
+  speakerNotes: string;
+  imageSlots: ImageSlot[];
+}
+
+export interface PresentationContent {
+  id: number;
+  templateId: number | null;
+  slides: Slide[];
+}
+
 export interface ContentFull {
   id: number;
   topicId: number;
@@ -95,6 +119,7 @@ export interface ContentFull {
   editedByTeacher: boolean;
   quiz: { passThreshold: number; maxAttempts: number; questions: QuizQuestion[] } | null;
   clinicalCase: { caseJson: CaseJson; format: "SHORT" | "EXTENDED" } | null;
+  presentation: PresentationContent | null;
 }
 
 // ---- Topics ----
@@ -237,7 +262,46 @@ export function useGenerateCase(topicId: number) {
 }
 
 export function useContent(id: number) {
-  return useQuery({ queryKey: ["content", id], queryFn: () => api<ContentFull>(`/api/v1/content/${id}`) });
+  return useQuery({
+    queryKey: ["content", id],
+    queryFn: () => api<ContentFull>(`/api/v1/content/${id}`),
+    // Poll while any presentation image slot is still being generated.
+    refetchInterval: (query) => {
+      const data = query.state.data as ContentFull | undefined;
+      const busy = data?.presentation?.slides.some((s) =>
+        s.imageSlots.some((slot) => slot.status === "PENDING" || slot.status === "PROCESSING")
+      );
+      return busy ? 2000 : false;
+    },
+  });
+}
+
+export const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
+
+export function useGeneratePresentation(topicId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: { language: "uz" | "ru"; templateId?: number | null }) =>
+      api<ContentFull>(`/api/v1/topics/${topicId}/generate/presentation`, { method: "POST", body: JSON.stringify(body) }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["topic", topicId] }),
+  });
+}
+
+export function useGenerateImages(presentationId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api(`/api/v1/presentations/${presentationId}/generate-images`, { method: "POST" }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["content"] }),
+  });
+}
+
+export function useRegenerateImage(presentationId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ slideIndex, slotIndex }: { slideIndex: number; slotIndex: number }) =>
+      api(`/api/v1/presentations/${presentationId}/regenerate-image/${slideIndex}/${slotIndex}`, { method: "POST" }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["content"] }),
+  });
 }
 
 export function useUpdateContent(id: number) {

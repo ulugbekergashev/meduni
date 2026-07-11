@@ -93,3 +93,52 @@ export async function generateStructured<T>(opts: GenerateOpts): Promise<T> {
 
   throw toApiError(lastErr);
 }
+
+const IMAGE_MODEL = "gemini-3-pro-image-preview";
+
+export interface GeneratedImage {
+  buffer: Buffer;
+  mimeType: string;
+}
+
+/** Generates a single image via Nano Banana Pro. Logs one AiUsage row. */
+export async function generateImage(prompt: string, opts: { kind: string; topicId?: number }): Promise<GeneratedImage> {
+  const ai = getClient();
+  try {
+    const res = await withTimeout(
+      ai.models.generateContent({
+        model: IMAGE_MODEL,
+        contents: prompt,
+        config: { responseModalities: ["IMAGE"] },
+      }),
+      TIMEOUT_MS
+    );
+
+    const usage = res.usageMetadata;
+    await prisma.aiUsage
+      .create({
+        data: {
+          kind: opts.kind,
+          topicId: opts.topicId ?? null,
+          model: IMAGE_MODEL,
+          promptTokens: usage?.promptTokenCount ?? 0,
+          completionTokens: usage?.candidatesTokenCount ?? 0,
+          totalTokens: usage?.totalTokenCount ?? 0,
+        },
+      })
+      .catch(() => {});
+
+    const parts = res.candidates?.[0]?.content?.parts ?? [];
+    const imgPart = parts.find((p) => p.inlineData?.data);
+    if (!imgPart?.inlineData?.data) {
+      throw new ApiError(502, "ai_no_image", "Rasm yaratilmadi", "Изображение не создано");
+    }
+    return {
+      buffer: Buffer.from(imgPart.inlineData.data, "base64"),
+      mimeType: imgPart.inlineData.mimeType ?? "image/png",
+    };
+  } catch (err) {
+    if (err instanceof ApiError) throw err;
+    throw toApiError(err);
+  }
+}

@@ -40,6 +40,13 @@ export async function readFileBuffer(relPath: string): Promise<Buffer> {
   return readFile(abs(relPath));
 }
 
+export async function saveBytes(relPath: string, buffer: Buffer): Promise<string> {
+  const full = abs(relPath);
+  await mkdir(path.dirname(full), { recursive: true });
+  await writeFile(full, buffer);
+  return relPath;
+}
+
 export async function readText(relPath: string): Promise<string> {
   return readFile(abs(relPath), "utf8");
 }
