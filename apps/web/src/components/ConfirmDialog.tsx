@@ -8,6 +8,10 @@ interface ConfirmDialogProps {
   /** Backend error (e.g. delete-guard) to surface inside the dialog. */
   errorMessage?: string | null;
   loading?: boolean;
+  /** Confirm button label (defaults to common "delete"). */
+  confirmLabel?: string;
+  /** Confirm button style (defaults to danger). */
+  confirmVariant?: "danger" | "primary";
   onConfirm: () => void;
   onClose: () => void;
 }
@@ -18,6 +22,8 @@ export function ConfirmDialog({
   message,
   errorMessage,
   loading,
+  confirmLabel,
+  confirmVariant = "danger",
   onConfirm,
   onClose,
 }: ConfirmDialogProps) {
@@ -37,8 +43,8 @@ export function ConfirmDialog({
         <Button variant="ghost" size="md" onClick={onClose} disabled={loading}>
           {t("cancel")}
         </Button>
-        <Button variant="danger" size="md" onClick={onConfirm} disabled={loading}>
-          {t("delete")}
+        <Button variant={confirmVariant} size="md" onClick={onConfirm} disabled={loading}>
+          {confirmLabel ?? t("delete")}
         </Button>
       </div>
     </Modal>

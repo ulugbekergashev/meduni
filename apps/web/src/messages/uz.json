@@ -10,6 +10,7 @@
   "nav": {
     "dashboard": "Bosh sahifa",
     "structure": "Tuzilma",
+    "users": "Foydalanuvchilar",
     "logout": "Chiqish"
   },
   "dashboard": {
@@ -85,5 +86,78 @@
     "editDepartment": "Kafedrani tahrirlash",
     "editSubject": "Fanni tahrirlash",
     "editGroup": "Guruhni tahrirlash"
+  },
+  "users": {
+    "title": "Foydalanuvchilar",
+    "subtitle": "Talaba va oʻqituvchilarni qoʻshing (roʻyxatdan oʻtish yoʻq)",
+    "addUser": "Foydalanuvchi qoʻshish",
+    "excelImport": "Excel import",
+    "searchPlaceholder": "Ism yoki email boʻyicha qidirish",
+    "roleFilter": {
+      "all": "Barchasi",
+      "student": "Talaba",
+      "teacher": "Oʻqituvchi"
+    },
+    "role": {
+      "admin": "Admin",
+      "teacher": "Oʻqituvchi",
+      "student": "Talaba"
+    },
+    "form": {
+      "selectRole": "Rol",
+      "student": "Talaba",
+      "teacher": "Oʻqituvchi",
+      "fullName": "FISH (toʻliq ism)",
+      "email": "Email",
+      "phone": "Telefon (ixtiyoriy)",
+      "language": "Til",
+      "group": "Guruh",
+      "selectGroup": "Guruhni tanlang",
+      "department": "Kafedra",
+      "selectDepartment": "Kafedrani tanlang",
+      "position": "Lavozim (ixtiyoriy)",
+      "password": "Parol",
+      "passwordHint": "Boʻsh qoldirsangiz — avtomatik yaratiladi",
+      "noGroupsHint": "Avval guruh qoʻshing (Tuzilma boʻlimi).",
+      "noDepartmentsHint": "Avval kafedra qoʻshing (Tuzilma boʻlimi)."
+    },
+    "table": {
+      "name": "FISH",
+      "email": "Email",
+      "role": "Rol",
+      "active": "Faol",
+      "actions": "Amallar"
+    },
+    "empty": "Hali foydalanuvchi yoʻq. Qoʻshing yoki Excel import qiling.",
+    "editUser": "Foydalanuvchini tahrirlash",
+    "password": {
+      "title": "Parol yaratildi",
+      "hint": "Nusxa oling va foydalanuvchiga bering:",
+      "copy": "Nusxalash",
+      "copied": "Nusxalandi",
+      "close": "Yopish"
+    },
+    "reset": {
+      "action": "Parolni tiklash",
+      "title": "Parolni tiklash",
+      "confirm": "Bu foydalanuvchi uchun yangi parol yaratasizmi?",
+      "confirmBtn": "Yangi parol"
+    },
+    "pagination": {
+      "prev": "Oldingi",
+      "next": "Keyingi",
+      "pageOf": "{page} / {total}"
+    },
+    "import": {
+      "title": "Excel import",
+      "columns": "Ustunlar: fullName, email, role, phone, locale, group",
+      "note": "role — STUDENT yoki TEACHER. group — guruh nomi (masalan 101-A). Oʻqituvchi import orqali qoʻshilmaydi.",
+      "choose": "Fayl tanlash",
+      "importing": "Yuklanmoqda...",
+      "resultAdded": "{n} ta qoʻshildi",
+      "resultErrors": "{n} ta xato",
+      "row": "qator",
+      "close": "Yopish"
+    }
   }
 }

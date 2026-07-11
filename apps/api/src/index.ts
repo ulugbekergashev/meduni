@@ -6,6 +6,7 @@ import { authMiddleware } from "./middleware/auth";
 import { errorMiddleware } from "./middleware/error";
 import { authRouter } from "./modules/auth/router";
 import { orgRouter } from "./modules/org/router";
+import { usersRouter } from "./modules/users/router";
 
 const app = express();
 
@@ -17,6 +18,7 @@ app.use(authMiddleware);
 app.get("/health", (_req, res) => res.json({ ok: true }));
 app.use("/auth", authRouter);
 app.use("/api/v1", orgRouter);
+app.use("/api/v1/users", usersRouter);
 
 app.use(errorMiddleware);
 

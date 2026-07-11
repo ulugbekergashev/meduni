@@ -139,9 +139,20 @@ Tayyor:
   `HAS_CHILDREN` (aniq son bilan). Frontend umumiy qismlar: `lib/crud.ts`,
   `components/{AsyncSection,ConfirmDialog,DataTable,TabNav,Field}.tsx`,
   `@meduni/ui`ga `Select` qo'shildi. To'rt holat + toast + tasdiq modali.
+- **Modul 2 — Admin: Foydalanuvchilar (tayyor).** Prisma: `User.groupId?` +
+  `TeacherProfile` (departmentId majburiy). Backend `apps/api/src/modules/users/`
+  (`/api/v1/users`, `requireRoles("ADMIN")`): list (pagination+rol filtri+
+  ism/email qidiruv), create (avto-parol argon2, rolga qarab groupId/departmentId
+  majburiy, email band → 409 `DUPLICATE_EMAIL`), patch, `toggle-active`
+  (o'chirish YO'Q — nofaol qilinadi), `reset-password`, XLSX import (multer +
+  **exceljs** — xlsx high-severity vuln sababli almashtirildi), har qator
+  validatsiya + hisobot. Frontend `/admin/users`: rol filtri, qidiruv (debounce),
+  dinamik forma (rol→guruh/kafedra), parol ko'rsatish modali (nusxalash), jadval
+  (Avatar + rol Badge + faol Toggle), pagination, Excel import modali.
+  `@meduni/ui`ga `Badge`+`Toggle` qo'shildi. Guruhlar endi haqiqiy talaba sonini
+  ko'rsatadi.
 
 Keyingilar (men har biriga prompt beraman):
-2. Admin: foydalanuvchilar
 3. Admin: kurslar
 4. O'qituvchi: kurs sahifasi (4 tab karkas)
 5. O'qituvchi: mavzular + material
