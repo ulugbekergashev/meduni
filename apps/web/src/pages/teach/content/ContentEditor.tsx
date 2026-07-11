@@ -4,6 +4,7 @@ import { Card, Spinner } from "@meduni/ui";
 import { useContent } from "../topics/api";
 import { QuizEditor } from "./QuizEditor";
 import { CaseEditor } from "./CaseEditor";
+import { PresentationEditor } from "./PresentationEditor";
 
 export function ContentEditor() {
   const { id } = useParams();
@@ -28,5 +29,6 @@ export function ContentEditor() {
   const c = content.data;
   if (c.kind === "quiz" && c.quiz) return <QuizEditor content={c} />;
   if (c.kind === "case" && c.clinicalCase) return <CaseEditor content={c} />;
+  if (c.kind === "presentation" && c.presentation) return <PresentationEditor content={c} />;
   return null;
 }

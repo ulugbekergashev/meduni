@@ -201,6 +201,7 @@ model ContentItem {
   createdAt       DateTime      @default(now())
   quiz            Quiz?
   clinicalCase    ClinicalCase?
+  presentation    Presentation?
 
   @@unique([topicId, kind])
   @@map("content_items")
@@ -241,6 +242,18 @@ model ClinicalCase {
   format        CaseFormat  @default(SHORT)
 
   @@map("clinical_cases")
+}
+
+model Presentation {
+  id            Int         @id @default(autoincrement())
+  contentItemId Int         @unique
+  contentItem   ContentItem @relation(fields: [contentItemId], references: [id])
+  slidesJson    Json
+  pptxUrl       String?
+  pdfUrl        String?
+  templateId    Int?
+
+  @@map("presentations")
 }
 
 model TopicDigest {

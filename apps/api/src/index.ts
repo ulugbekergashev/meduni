@@ -10,7 +10,7 @@ import { usersRouter } from "./modules/users/router";
 import { coursesRouter } from "./modules/courses/router";
 import { teachCoursesRouter } from "./modules/courses/teachRouter";
 import { topicsRouter, materialsRouter } from "./modules/topics/router";
-import { generateRouter, contentRouter } from "./modules/content/router";
+import { generateRouter, contentRouter, presentationsRouter } from "./modules/content/router";
 
 const app = express();
 
@@ -29,6 +29,7 @@ app.use("/api/v1/topics", topicsRouter);
 app.use("/api/v1/topics", generateRouter);
 app.use("/api/v1/materials", materialsRouter);
 app.use("/api/v1/content", contentRouter);
+app.use("/api/v1/presentations", presentationsRouter);
 app.use("/api/v1/users", usersRouter);
 app.use("/api/v1/courses", coursesRouter);
 app.use("/api/v1", orgRouter);

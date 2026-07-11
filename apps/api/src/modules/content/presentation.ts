@@ -1,0 +1,259 @@
+import { randomUUID } from "crypto";
+import PptxGenJS from "pptxgenjs";
+import PDFDocument from "pdfkit";
+import type { Prisma } from "../../lib/prisma";
+import { prisma } from "../../lib/prisma";
+import { ApiError, notFound } from "../../lib/errors";
+import { readFileBuffer, saveBytes } from "../../lib/storage";
+import { generateImage, generateStructured } from "../../ai/gemini";
+import { slidesGenSchema, slidesResponseSchema, type DigestJson, type Slide, type SlidesGen } from "../../ai/types";
+import { slidesSystemPrompt, slidesUserContent } from "../../ai/prompts/slides";
+import { imagePromptForSlide } from "../../ai/prompts/images";
+
+function forbidden(): ApiError {
+  return new ApiError(403, "forbidden", "Bu sizning kursingiz emas", "Это не ваш курс");
+}
+
+// ---------- Ownership ----------
+
+async function topicForTeacher(topicId: number, teacherId: number) {
+  const topic = await prisma.topic.findUnique({ where: { id: topicId }, include: { course: true, digest: true } });
+  if (!topic) throw notFound("Mavzu");
+  if (topic.course.teacherId !== teacherId) throw forbidden();
+  return topic;
+}
+
+const presInclude = {
+  contentItem: { include: { topic: { include: { course: true } } } },
+} satisfies Prisma.PresentationInclude;
+
+type PresFull = Prisma.PresentationGetPayload<{ include: typeof presInclude }>;
+
+async function presentationForTeacher(presentationId: number, teacherId: number): Promise<PresFull> {
+  const pres = await prisma.presentation.findUnique({ where: { id: presentationId }, include: presInclude });
+  if (!pres) throw notFound("Prezentatsiya");
+  if (pres.contentItem.topic.course.teacherId !== teacherId) throw forbidden();
+  return pres;
+}
+
+function slidesOf(pres: { slidesJson: unknown }): Slide[] {
+  return pres.slidesJson as unknown as Slide[];
+}
+
+// ---------- Generate slide structure ----------
+
+export async function generatePresentation(
+  topicId: number,
+  teacherId: number,
+  opts: { language: "uz" | "ru"; templateId?: number | null }
+) {
+  const topic = await topicForTeacher(topicId, teacherId);
+  if (!topic.digest || !topic.digest.approvedByTeacher) {
+    throw new ApiError(403, "digest_not_approved", "Avval konspektni tasdiqlang", "Сначала утвердите конспект");
+  }
+  const digest = topic.digest.digestJson as unknown as DigestJson;
+
+  const gen = await generateStructured<SlidesGen>({
+    systemInstruction: slidesSystemPrompt(opts.language),
+    userContent: slidesUserContent(digest),
+    responseSchema: slidesResponseSchema,
+    kind: "slides",
+    topicId,
+  });
+  const parsed = slidesGenSchema.safeParse(gen);
+  const raw = (parsed.success ? parsed.data : gen).slides;
+
+  const slides: Slide[] = raw.map((s) => ({
+    id: randomUUID(),
+    layout: s.layout,
+    title: s.title,
+    bullets: s.bullets,
+    speakerNotes: s.speakerNotes,
+    imageSlots: s.imagePrompt?.trim() ? [{ prompt: s.imagePrompt.trim(), url: null, status: "PENDING" }] : [],
+  }));
+
+  const existing = await prisma.contentItem.findUnique({ where: { topicId_kind: { topicId, kind: "PRESENTATION" } } });
+
+  const content = await prisma.$transaction(async (tx) => {
+    const item = existing
+      ? await tx.contentItem.update({
+          where: { id: existing.id },
+          data: { language: opts.language, status: "DRAFT", editedByTeacher: false, version: { increment: 1 } },
+        })
+      : await tx.contentItem.create({ data: { topicId, kind: "PRESENTATION", language: opts.language, status: "DRAFT" } });
+
+    await tx.presentation.upsert({
+      where: { contentItemId: item.id },
+      create: { contentItemId: item.id, slidesJson: slides as object, templateId: opts.templateId ?? null },
+      update: { slidesJson: slides as object, templateId: opts.templateId ?? null, pptxUrl: null, pdfUrl: null },
+    });
+    return item;
+  });
+
+  return content.id;
+}
+
+// ---------- Image generation (background) ----------
+
+async function updateSlot(
+  presentationId: number,
+  slideIndex: number,
+  slotIndex: number,
+  patch: Partial<{ url: string | null; status: Slide["imageSlots"][number]["status"] }>
+) {
+  const pres = await prisma.presentation.findUnique({ where: { id: presentationId } });
+  if (!pres) return;
+  const slides = slidesOf(pres);
+  const slot = slides[slideIndex]?.imageSlots[slotIndex];
+  if (!slot) return;
+  Object.assign(slot, patch);
+  await prisma.presentation.update({ where: { id: presentationId }, data: { slidesJson: slides as object } });
+}
+
+async function runImageJob(presentationId: number, topicId: number, lang: "uz" | "ru", targets: { s: number; slot: number }[]) {
+  for (const { s, slot } of targets) {
+    await updateSlot(presentationId, s, slot, { status: "PROCESSING" });
+    try {
+      const pres = await prisma.presentation.findUnique({ where: { id: presentationId } });
+      if (!pres) return;
+      const slide = slidesOf(pres)[s];
+      const slotObj = slide?.imageSlots[slot];
+      if (!slotObj) continue;
+      const prompt = imagePromptForSlide(slide, slotObj.prompt, lang);
+      const img = await generateImage(prompt, { kind: "image", topicId });
+      const rel = await saveBytes(`topics/${topicId}/presentation/${presentationId}/s${s}_slot${slot}.png`, img.buffer);
+      await updateSlot(presentationId, s, slot, { url: rel, status: "DONE" });
+    } catch {
+      await updateSlot(presentationId, s, slot, { status: "ERROR" });
+    }
+  }
+}
+
+export async function generateAllImages(presentationId: number, teacherId: number) {
+  const pres = await presentationForTeacher(presentationId, teacherId);
+  const topicId = pres.contentItem.topicId;
+  const lang = pres.contentItem.language;
+  const slides = slidesOf(pres);
+  const targets: { s: number; slot: number }[] = [];
+  slides.forEach((slide, s) =>
+    slide.imageSlots.forEach((slot, i) => {
+      if (slot.status !== "DONE") targets.push({ s, slot: i });
+    })
+  );
+  // Mark queued as pending immediately so the UI shows progress.
+  for (const t of targets) await updateSlot(presentationId, t.s, t.slot, { status: "PENDING" });
+  setImmediate(() => void runImageJob(presentationId, topicId, lang, targets));
+}
+
+export async function regenerateOneImage(
+  presentationId: number,
+  teacherId: number,
+  slideIndex: number,
+  slotIndex: number
+) {
+  const pres = await presentationForTeacher(presentationId, teacherId);
+  const topicId = pres.contentItem.topicId;
+  const lang = pres.contentItem.language;
+  await updateSlot(presentationId, slideIndex, slotIndex, { status: "PENDING", url: null });
+  setImmediate(() => void runImageJob(presentationId, topicId, lang, [{ s: slideIndex, slot: slotIndex }]));
+}
+
+// ---------- Media ----------
+
+export async function getSlotImage(presentationId: number, teacherId: number, slideIndex: number, slotIndex: number) {
+  const pres = await presentationForTeacher(presentationId, teacherId);
+  const slot = slidesOf(pres)[slideIndex]?.imageSlots[slotIndex];
+  if (!slot?.url) throw notFound("Rasm");
+  return readFileBuffer(slot.url);
+}
+
+// ---------- Exports (branded default template) ----------
+
+const BRAND = "0F9E8E";
+const INK = "0F172A";
+
+async function slotImageDataUri(url: string | null): Promise<string | null> {
+  if (!url) return null;
+  try {
+    const buf = await readFileBuffer(url);
+    return `data:image/png;base64,${buf.toString("base64")}`;
+  } catch {
+    return null;
+  }
+}
+
+export async function exportPptx(presentationId: number, teacherId: number): Promise<Buffer> {
+  const pres = await presentationForTeacher(presentationId, teacherId);
+  const slides = slidesOf(pres);
+
+  const pptx = new PptxGenJS();
+  pptx.defineLayout({ name: "MEDUNI", width: 13.333, height: 7.5 });
+  pptx.layout = "MEDUNI";
+
+  for (const slide of slides) {
+    const s = pptx.addSlide();
+    s.background = { color: "F7F8FA" };
+    const img = await slotImageDataUri(slide.imageSlots[0]?.url ?? null);
+
+    if (slide.layout === "TITLE") {
+      s.addShape(pptx.ShapeType.rect, { x: 0, y: 2.8, w: 13.333, h: 0.12, fill: { color: BRAND } });
+      s.addText(slide.title, { x: 0.8, y: 1.8, w: 11.7, h: 1, fontSize: 40, bold: true, color: INK });
+      if (img) s.addImage({ data: img, x: 9.5, y: 3.4, w: 3, h: 3, sizing: { type: "contain", w: 3, h: 3 } });
+    } else {
+      s.addShape(pptx.ShapeType.rect, { x: 0, y: 0, w: 13.333, h: 1.1, fill: { color: BRAND } });
+      s.addText(slide.title, { x: 0.6, y: 0.15, w: 12, h: 0.8, fontSize: 26, bold: true, color: "FFFFFF" });
+      const textW = img ? 7 : 12;
+      s.addText(
+        slide.bullets.map((b) => ({ text: b, options: { bullet: true } })),
+        { x: 0.6, y: 1.4, w: textW, h: 5.6, fontSize: 16, color: INK, valign: "top", lineSpacingMultiple: 1.3 }
+      );
+      if (img) s.addImage({ data: img, x: 7.9, y: 1.4, w: 5, h: 5, sizing: { type: "contain", w: 5, h: 5 } });
+    }
+    if (slide.speakerNotes) s.addNotes(slide.speakerNotes);
+  }
+
+  const out = (await pptx.write({ outputType: "nodebuffer" })) as Buffer;
+  return out;
+}
+
+export async function exportPdf(presentationId: number, teacherId: number): Promise<Buffer> {
+  const pres = await presentationForTeacher(presentationId, teacherId);
+  const slides = slidesOf(pres);
+
+  return new Promise<Buffer>(async (resolve, reject) => {
+    try {
+      const doc = new PDFDocument({ size: [960, 540], margin: 0 });
+      const chunks: Buffer[] = [];
+      doc.on("data", (c) => chunks.push(c as Buffer));
+      doc.on("end", () => resolve(Buffer.concat(chunks)));
+
+      let first = true;
+      for (const slide of slides) {
+        if (!first) doc.addPage({ size: [960, 540], margin: 0 });
+        first = false;
+        doc.rect(0, 0, 960, 540).fill("#F7F8FA");
+        doc.rect(0, 0, 960, 70).fill(`#${BRAND}`);
+        doc.fillColor("#FFFFFF").fontSize(24).text(slide.title, 40, 22, { width: 880 });
+
+        const buf = slide.imageSlots[0]?.url ? await readFileBuffer(slide.imageSlots[0].url).catch(() => null) : null;
+        const textW = buf ? 520 : 880;
+        doc.fillColor(`#${INK}`).fontSize(15);
+        let y = 100;
+        for (const b of slide.bullets) {
+          doc.text(`•  ${b}`, 40, y, { width: textW });
+          y = doc.y + 8;
+        }
+        if (buf) {
+          try {
+            doc.image(buf, 580, 100, { fit: [340, 380] });
+          } catch {
+            /* skip unrenderable image */
+          }
+        }
+      }
+      doc.end();
+    } catch (e) {
+      reject(e);
+    }
+  });
+}

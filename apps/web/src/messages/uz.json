@@ -132,10 +132,38 @@
     "regenerate": "Qayta generatsiya",
     "generatingQuiz": "Savollar tuzilmoqda…",
     "generatingCase": "Keys tuzilmoqda…",
+    "generatingSlides": "Slaydlar tuzilmoqda…",
+    "template": "Shablon",
+    "templateDefault": "Universitet (standart)",
+    "generatePresentation": "Prezentatsiya generatsiya qilish",
+    "imagesNote": "Slaydlar + tibbiy rasmlar avtomatik yasaladi",
     "ready": "Tayyor",
     "edit": "Tahrirlash",
     "error": "Yaratilmadi, qayta urinish",
     "edited": "Tahrirlangan"
+  },
+  "presEditor": {
+    "back": "← Konstruktor",
+    "title": "Prezentatsiya tahrirlagichi",
+    "downloadPptx": "PowerPoint yuklab olish",
+    "downloadPdf": "PDF yuklab olish",
+    "generateImages": "Rasmlarni yasash",
+    "slideTitle": "Slayd sarlavhasi",
+    "bullets": "Tezislar",
+    "speakerNotes": "Maʼruzachi izohi",
+    "layout": "Layout",
+    "regenerateImage": "Boshqa rasm chiz",
+    "deleteSlide": "Slaydni oʻchirish",
+    "save": "Saqlash",
+    "saved": "Saqlandi",
+    "addBullet": "Tezis qoʻshish",
+    "imageStatus": {
+      "pending": "Navbatda",
+      "processing": "Chizilmoqda…",
+      "done": "Tayyor",
+      "error": "Xato"
+    },
+    "noImage": "Rasm yoʻq"
   },
   "quizEditor": {
     "back": "← Konstruktor",

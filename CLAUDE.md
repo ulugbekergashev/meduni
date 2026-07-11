@@ -228,8 +228,25 @@ Tayyor:
   balli); Keys tahrirlagichi (bloklar + savol-etalon juftliklari). Real Gemini
   bilan tekshirildi (5 MCQ + klinik keys, o'zbekcha, tibbiy to'g'ri, manbadan).
 
+- **Modul 8 — O'qituvchi: Prezentatsiya + Rasmlar (kod tayyor; real rasm pulli
+  kalitni kutmoqda).** Prisma: Presentation (contentItemId unique, slidesJson,
+  pptxUrl?, pdfUrl?, templateId?). AI: `ai/prompts/slides.ts` (konspektdan slayd
+  strukturasi — layout TITLE/TWO_BLOCK/THREE_BLOCK/BODY_DIAGRAM/IMAGE_LEFT/BULLETS,
+  NotebookLM uslubi), `ai/prompts/images/` (Nano Banana Pro prompt shablonlari,
+  layout+til bo'yicha), `gemini.ts::generateImage` (gemini-3-pro-image-preview,
+  responseModalities:["IMAGE"], usage log). Slaydda barqaror `id` (tahrirda rasm
+  saqlanadi). Backend content module: `POST /topics/:id/generate/presentation`
+  (konspekt approved shart), `/api/v1/presentations/:id/{generate-images,
+  regenerate-image/:s/:slot,image/:s/:slot [media], pptx, pdf}`. Rasm generatsiyasi
+  fon-job (setImmediate, slot status PENDING→PROCESSING→DONE/ERROR, 2s polling).
+  Eksport: **pptxgenjs** (redaktlanadigan PPTX, brend shabloni) + **pdfkit**.
+  Frontend: Prezentatsiya kartasi + tahrirlagich (`PresentationEditor`: slayd
+  ro'yxati, sarlavha/tezis/izoh tahrir, rasm sloti preview+qayta-chizish, slayd
+  o'chirish, PDF/PPTX yuklab olish). Slayd+PPTX+PDF **tekshirildi** (matn kaliti);
+  fon-job 429'ni ERROR bilan to'g'ri boshqaradi. ⚠️ **Real Nano Banana Pro rasmlari
+  free-tier'da 429 (rasm kvotasi yo'q) — pulli kalit kelganda sifat tekshiriladi.**
+
 Keyingilar (men har biriga prompt beraman):
-8. Prezentatsiya + rasmlar
 9. Video
 10. Faktcheck + chop etish (qulf 2)
 11. Talaba: mavzu yo'li
