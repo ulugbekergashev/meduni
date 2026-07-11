@@ -14,6 +14,11 @@ import { CoursesPage } from "./pages/admin/courses/CoursesPage";
 import { CourseDetail } from "./pages/admin/courses/CourseDetail";
 import { TeachShell } from "./pages/teach/TeachShell";
 import { TeachDashboard } from "./pages/teach/TeachDashboard";
+import { TeacherCourseShell } from "./pages/teach/course/TeacherCourseShell";
+import { TopicsTab } from "./pages/teach/course/TopicsTab";
+import { SessionsTab } from "./pages/teach/course/SessionsTab";
+import { ProgressTab } from "./pages/teach/course/ProgressTab";
+import { SettingsTab } from "./pages/teach/course/SettingsTab";
 import { StudentShell } from "./pages/student/StudentShell";
 import { StudentDashboard } from "./pages/student/StudentDashboard";
 
@@ -53,6 +58,13 @@ export function App() {
         }
       >
         <Route index element={<TeachDashboard />} />
+        <Route path="courses/:id" element={<TeacherCourseShell />}>
+          <Route index element={<Navigate to="topics" replace />} />
+          <Route path="topics" element={<TopicsTab />} />
+          <Route path="sessions" element={<SessionsTab />} />
+          <Route path="progress" element={<ProgressTab />} />
+          <Route path="settings" element={<SettingsTab />} />
+        </Route>
       </Route>
 
       <Route
