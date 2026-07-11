@@ -10,6 +10,8 @@ venv/
 node_modules/
 .next/
 out/
+dist/
+*.tsbuildinfo
 
 # Env & local data
 .env

@@ -1,0 +1,27 @@
+:root {
+  --bg: #f7f8fa;
+  --surface: #ffffff;
+  --ink: #0f172a;
+  --ink-soft: #64748b;
+  --ink-faint: #94a3b8;
+  --line: #e9edf2;
+
+  --brand: #0f9e8e;
+  --brand-soft: #e6f5f3;
+  --brand-deep: #0b7a6e;
+
+  --blue: #2563eb;
+  --blue-soft: #eaf1fe;
+  --violet: #7c3aed;
+  --violet-soft: #f1ebfe;
+  --amber: #d97706;
+  --amber-soft: #fcf2e2;
+  --rose: #e11d48;
+  --rose-soft: #fde9ee;
+  --emerald: #059669;
+  --emerald-soft: #e4f6ef;
+
+  --radius-card: 16px;
+  --radius-control: 10px;
+  --radius-pill: 20px;
+}
