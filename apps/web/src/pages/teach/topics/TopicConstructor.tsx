@@ -1,10 +1,11 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { BookOpen, Check, FileStack, Lock } from "lucide-react";
+import { BookOpen, Check, FileStack, Lock, Sparkles } from "lucide-react";
 import { Badge, Card, Icon, Spinner, cls } from "@meduni/ui";
 import { useLocale } from "../../../lib/useLocale";
 import { MaterialsSection } from "./MaterialsSection";
 import { DigestSection } from "./DigestSection";
+import { GenerateSection } from "./GenerateSection";
 import { useTopicDetail } from "./api";
 
 type StepState = "done" | "current" | "locked";
@@ -157,17 +158,10 @@ export function TopicConstructor() {
       {/* Section 3 — Generatsiya: first lock — needs an APPROVED digest */}
       <section className="mt-6">
         {topic.generateUnlocked ? (
-          <Card>
-            <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-soft text-brand-deep">
-                <span className="text-[13px] font-bold">3</span>
-              </div>
-              <div>
-                <p className="text-section font-bold text-ink">{t("sections.generate")}</p>
-                <p className="text-[12.5px] text-ink-soft">{t("generateSoon")}</p>
-              </div>
-            </div>
-          </Card>
+          <>
+            <SectionHeader n={3} icon={Sparkles} title={t("sections.generate")} />
+            <GenerateSection topic={topic} />
+          </>
         ) : (
           <LockedSection n={3} titleKey="sections.generate" hintKey="sectionLocked.generate" />
         )}

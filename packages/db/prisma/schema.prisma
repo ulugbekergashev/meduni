@@ -35,6 +35,31 @@ enum ParseStatus {
   ERROR
 }
 
+enum ContentKind {
+  QUIZ
+  CASE
+  PRESENTATION
+  VIDEO
+}
+
+enum ContentStatus {
+  DRAFT
+  REVIEW
+  APPROVED
+  PUBLISHED
+}
+
+enum Difficulty {
+  RECALL
+  UNDERSTAND
+  APPLY
+}
+
+enum CaseFormat {
+  SHORT
+  EXTENDED
+}
+
 model User {
   id             Int             @id @default(autoincrement())
   fullName       String
@@ -50,6 +75,7 @@ model User {
   taughtCourses     Course[]         @relation("CourseTeacher")
   enrollments       Enrollment[]
   uploadedMaterials SourceMaterial[]
+  approvedContent   ContentItem[]    @relation("ContentApprover")
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
 
@@ -154,8 +180,67 @@ model Topic {
   createdAt      DateTime         @default(now())
   materials      SourceMaterial[]
   digest         TopicDigest?
+  contentItems   ContentItem[]
 
   @@map("topics")
+}
+
+model ContentItem {
+  id              Int           @id @default(autoincrement())
+  topicId         Int
+  topic           Topic         @relation(fields: [topicId], references: [id])
+  kind            ContentKind
+  language        Locale
+  status          ContentStatus @default(DRAFT)
+  approvedById    Int?
+  approvedBy      User?         @relation("ContentApprover", fields: [approvedById], references: [id])
+  approvedAt      DateTime?
+  version         Int           @default(1)
+  reviewOpenedAt  DateTime?
+  editedByTeacher Boolean       @default(false)
+  createdAt       DateTime      @default(now())
+  quiz            Quiz?
+  clinicalCase    ClinicalCase?
+
+  @@unique([topicId, kind])
+  @@map("content_items")
+}
+
+model Quiz {
+  id            Int         @id @default(autoincrement())
+  contentItemId Int         @unique
+  contentItem   ContentItem @relation(fields: [contentItemId], references: [id])
+  passThreshold Int         @default(70)
+  maxAttempts   Int         @default(1)
+  settingsJson  Json?
+  questions     Question[]
+
+  @@map("quizzes")
+}
+
+model Question {
+  id             Int        @id @default(autoincrement())
+  quizId         Int
+  quiz           Quiz       @relation(fields: [quizId], references: [id])
+  text           String
+  optionsJson    Json
+  correctIndex   Int
+  explanationJson Json
+  difficulty     Difficulty @default(RECALL)
+  sourceFragment String?
+  orderIndex     Int
+
+  @@map("questions")
+}
+
+model ClinicalCase {
+  id            Int         @id @default(autoincrement())
+  contentItemId Int         @unique
+  contentItem   ContentItem @relation(fields: [contentItemId], references: [id])
+  caseJson      Json
+  format        CaseFormat  @default(SHORT)
+
+  @@map("clinical_cases")
 }
 
 model TopicDigest {
