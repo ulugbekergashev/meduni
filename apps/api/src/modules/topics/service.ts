@@ -3,6 +3,11 @@ import { prisma } from "../../lib/prisma";
 import { ApiError, badRequest, notFound } from "../../lib/errors";
 import { deletePath, readText, readFileBuffer, saveMaterialFile, saveParsedText } from "../../lib/storage";
 import { extractText, fileTypeFromName, parseErrorMessages, type ParseErrorCode } from "./parse";
+import { generateStructured } from "../../ai/gemini";
+import { digestSchema, digestResponseSchema, type DigestJson } from "../../ai/types";
+import { digestSystemPrompt, digestUserContent } from "../../ai/prompts/digest";
+
+const MAX_MATERIAL_CHARS = 100_000;
 
 // ---------- Ownership ----------
 
@@ -124,11 +129,111 @@ export async function getTopicDetail(id: number, teacherId: number) {
     where: { topicId: id },
     orderBy: { id: "asc" },
   });
+  const digest = await prisma.topicDigest.findUnique({ where: { topicId: id } });
   return {
     ...toTopicOut(topic),
     materials: materials.map(toMaterialOut),
-    // Lock gate for the next section (Konspekt, Module 6).
+    // Lock gate for section 2 (Konspekt): needs a parsed material.
     digestUnlocked: materials.some((m) => m.parseStatus === "DONE"),
+    digest: digest
+      ? {
+          digestJson: digest.digestJson as unknown as DigestJson,
+          version: digest.version,
+          approvedByTeacher: digest.approvedByTeacher,
+        }
+      : null,
+    // Lock gate for section 3 (Generatsiya) — first control point.
+    generateUnlocked: digest?.approvedByTeacher === true,
+  };
+}
+
+// ---------- Digest (AI, first lock) ----------
+
+async function collectMaterialText(topicId: number): Promise<string> {
+  const materials = await prisma.sourceMaterial.findMany({
+    where: { topicId, parseStatus: "DONE" },
+    orderBy: { id: "asc" },
+  });
+  const parts: string[] = [];
+  for (const m of materials) {
+    if (m.parsedTextUrl) parts.push(await readText(m.parsedTextUrl));
+  }
+  return parts.join("\n\n---\n\n").slice(0, MAX_MATERIAL_CHARS);
+}
+
+export async function generateDigest(topicId: number, teacherId: number) {
+  await topicForTeacher(topicId, teacherId);
+
+  const doneCount = await prisma.sourceMaterial.count({ where: { topicId, parseStatus: "DONE" } });
+  if (doneCount === 0) {
+    throw badRequest("Avval material yuklang", "Сначала загрузите материал");
+  }
+
+  const teacher = await prisma.user.findUnique({ where: { id: teacherId } });
+  const lang = teacher?.locale === "ru" ? "ru" : "uz";
+  const materialText = await collectMaterialText(topicId);
+
+  const raw = await generateStructured<DigestJson>({
+    systemInstruction: digestSystemPrompt(lang),
+    userContent: digestUserContent(materialText),
+    responseSchema: digestResponseSchema,
+    kind: "digest",
+    topicId,
+  });
+
+  // Coerce/validate the model output into our shape (never trust it blindly).
+  const parsed = digestSchema.safeParse(raw);
+  const digestJson: DigestJson = parsed.success ? parsed.data : raw;
+
+  const existing = await prisma.topicDigest.findUnique({ where: { topicId } });
+  const digest = await prisma.topicDigest.upsert({
+    where: { topicId },
+    create: { topicId, digestJson: digestJson as object, version: 1, approvedByTeacher: false },
+    update: {
+      digestJson: digestJson as object,
+      version: (existing?.version ?? 0) + 1,
+      approvedByTeacher: false,
+    },
+  });
+  return { digestJson: digest.digestJson as unknown as DigestJson, version: digest.version, approvedByTeacher: false };
+}
+
+export async function getDigest(topicId: number, teacherId: number) {
+  await topicForTeacher(topicId, teacherId);
+  const digest = await prisma.topicDigest.findUnique({ where: { topicId } });
+  if (!digest) return null;
+  return {
+    digestJson: digest.digestJson as unknown as DigestJson,
+    version: digest.version,
+    approvedByTeacher: digest.approvedByTeacher,
+  };
+}
+
+export async function updateDigest(topicId: number, teacherId: number, input: unknown) {
+  await topicForTeacher(topicId, teacherId);
+  const parsed = digestSchema.safeParse(input);
+  if (!parsed.success) throw badRequest("Konspekt tuzilishi notoʻgʻri", "Неверная структура конспекта");
+
+  const existing = await prisma.topicDigest.findUnique({ where: { topicId } });
+  if (!existing) throw notFound("Konspekt");
+
+  // Editing un-approves — must be re-approved (first control point).
+  const digest = await prisma.topicDigest.update({
+    where: { topicId },
+    data: { digestJson: parsed.data as object, version: existing.version + 1, approvedByTeacher: false },
+  });
+  return { digestJson: digest.digestJson as unknown as DigestJson, version: digest.version, approvedByTeacher: false };
+}
+
+export async function approveDigest(topicId: number, teacherId: number) {
+  await topicForTeacher(topicId, teacherId);
+  const existing = await prisma.topicDigest.findUnique({ where: { topicId } });
+  if (!existing) throw notFound("Konspekt");
+  const digest = await prisma.topicDigest.update({ where: { topicId }, data: { approvedByTeacher: true } });
+  return {
+    digestJson: digest.digestJson as unknown as DigestJson,
+    version: digest.version,
+    approvedByTeacher: true,
   };
 }
 

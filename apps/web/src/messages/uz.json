@@ -78,11 +78,39 @@
       "publish": "Chop etish va tasdiqlash"
     },
     "sectionLocked": {
-      "digest": "Kamida bitta material tayyor boʻlgach ochiladi (Modul 6).",
-      "generate": "Konspekt tasdiqlangach ochiladi (Modul 7).",
+      "digest": "Kamida bitta material tayyor boʻlgach ochiladi.",
+      "generate": "Konspekt tasdiqlangach ochiladi (qulf 1).",
       "factcheck": "Kontent generatsiya qilingach ochiladi (Modul 10).",
       "publish": "Faktcheck tugagach ochiladi (Modul 10)."
-    }
+    },
+    "generateSoon": "Konspekt tasdiqlangan. Generatsiya moduli (Modul 7) da qoʻshiladi."
+  },
+  "digest": {
+    "generate": "Konspekt tuzish",
+    "regenerate": "Qayta tuzish",
+    "generateHint": "AI yuklangan materialdan asosiy nuqtalarni ajratadi.",
+    "generating": "Material oʻqilmoqda… Konspekt tuzilmoqda…",
+    "generateError": "Konspekt yaratilmadi, qayta urinib koʻring.",
+    "objectives": "Oʻquv maqsadlari",
+    "concepts": "Asosiy tushunchalar",
+    "terms": "Atamalar",
+    "facts": "Faktlar",
+    "dosages": "Dozalar va protokollar",
+    "dosagesNote": "Tibbiy nozik — materialdagi aniq raqamlar.",
+    "imageIdeas": "Rasm gʻoyalari",
+    "termRu": "Ruscha",
+    "termUz": "Oʻzbekcha",
+    "termLat": "Lotincha",
+    "addItem": "Qoʻshish",
+    "addRow": "Qator qoʻshish",
+    "empty": "—",
+    "save": "Oʻzgarishlarni saqlash",
+    "saved": "Konspekt saqlandi",
+    "approveWarning": "Tasdiqlagach, barcha generatsiya shu konspektga asoslanadi. Keyinroq oʻzgartirsangiz — qayta tasdiqlash kerak.",
+    "approve": "Konspektni tasdiqlash",
+    "approved": "Konspekt tasdiqlangan",
+    "approvedToast": "Konspekt tasdiqlandi",
+    "saveBeforeApprove": "Tasdiqlashdan oldin oʻzgarishlarni saqlang."
   },
   "materials": {
     "dropzone": "Faylni tanlang yoki torting",
