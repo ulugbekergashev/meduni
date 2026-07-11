@@ -9,6 +9,7 @@ import { orgRouter } from "./modules/org/router";
 import { usersRouter } from "./modules/users/router";
 import { coursesRouter } from "./modules/courses/router";
 import { teachCoursesRouter } from "./modules/courses/teachRouter";
+import { topicsRouter, materialsRouter } from "./modules/topics/router";
 
 const app = express();
 
@@ -23,6 +24,8 @@ app.use("/auth", authRouter);
 // prefix (and carries an ADMIN guard), so it must come LAST or it would
 // intercept /api/v1/teach/* and 403 teachers before they reach their router.
 app.use("/api/v1/teach", teachCoursesRouter);
+app.use("/api/v1/topics", topicsRouter);
+app.use("/api/v1/materials", materialsRouter);
 app.use("/api/v1/users", usersRouter);
 app.use("/api/v1/courses", coursesRouter);
 app.use("/api/v1", orgRouter);
