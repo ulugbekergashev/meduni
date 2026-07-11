@@ -1,0 +1,87 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  TEACHER
+  STUDENT
+}
+
+enum Locale {
+  uz
+  ru
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  fullName     String
+  email        String   @unique
+  phone        String?
+  passwordHash String
+  role         Role
+  locale       Locale   @default(uz)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("users")
+}
+
+model Faculty {
+  id          Int            @id @default(autoincrement())
+  nameUz      String
+  nameRu      String
+  createdAt   DateTime       @default(now())
+  departments Department[]
+  groups      StudentGroup[]
+
+  @@unique([nameUz])
+  @@unique([nameRu])
+  @@map("faculties")
+}
+
+model Department {
+  id        Int       @id @default(autoincrement())
+  facultyId Int
+  faculty   Faculty   @relation(fields: [facultyId], references: [id])
+  nameUz    String
+  nameRu    String
+  createdAt DateTime  @default(now())
+  subjects  Subject[]
+
+  @@unique([facultyId, nameUz])
+  @@unique([facultyId, nameRu])
+  @@map("departments")
+}
+
+model Subject {
+  id           Int        @id @default(autoincrement())
+  departmentId Int
+  department   Department @relation(fields: [departmentId], references: [id])
+  nameUz       String
+  nameRu       String
+  description  String?
+  createdAt    DateTime   @default(now())
+
+  @@unique([departmentId, nameUz])
+  @@unique([departmentId, nameRu])
+  @@map("subjects")
+}
+
+model StudentGroup {
+  id          Int      @id @default(autoincrement())
+  facultyId   Int
+  faculty     Faculty  @relation(fields: [facultyId], references: [id])
+  name        String
+  yearOfStudy Int
+  createdAt   DateTime @default(now())
+
+  @@unique([facultyId, name])
+  @@map("student_groups")
+}
