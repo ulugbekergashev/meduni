@@ -1,6 +1,6 @@
 import type { Prisma } from "../../lib/prisma";
 import { prisma } from "../../lib/prisma";
-import { badRequest, conflict, notFound } from "../../lib/errors";
+import { ApiError, badRequest, notFound } from "../../lib/errors";
 
 const courseInclude = {
   subject: { include: { department: true } },
@@ -196,4 +196,25 @@ export async function getCourseDetail(id: number) {
   const students = await listCourseStudents(id);
   const topicCount = 0; // темы появятся в модуле 5
   return { ...out, students, topicCount };
+}
+
+// ---------- Teacher-facing (own courses only) ----------
+
+export async function listTeacherCourses(teacherId: number) {
+  const rows = await prisma.course.findMany({
+    where: { teacherId },
+    orderBy: { id: "asc" },
+    include: courseInclude,
+  });
+  return rows.map(toCourseOut);
+}
+
+/** Lightweight course metadata for the teacher course shell (no students list). */
+export async function getTeacherCourseMeta(courseId: number, teacherId: number) {
+  const c = await prisma.course.findUnique({ where: { id: courseId }, include: courseInclude });
+  if (!c) throw notFound("Kurs");
+  if (c.teacherId !== teacherId) {
+    throw new ApiError(403, "forbidden", "Bu sizning kursingiz emas", "Это не ваш курс");
+  }
+  return toCourseOut(c);
 }

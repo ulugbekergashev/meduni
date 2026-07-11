@@ -163,9 +163,21 @@ Tayyor:
   (skrinshot muammosi hal), Toast enrollment sonini ko'rsatadi; detal sahifa
   `/admin/courses/:id` (stat tiles + guruh boshqaruvi + yozilgan talabalar).
   `@meduni/ui`ga `ChipSelect` qo'shildi.
+- **Modul 4 — O'qituvchi: Kurs sahifasi karkasi (tayyor).** Backend
+  `apps/api/src/modules/courses/teachRouter.ts` (`/api/v1/teach/courses`,
+  `requireRoles("TEACHER")`): `GET /courses` (faqat o'ziga biriktirilgan),
+  `GET /courses/:id` — **faqat metama'lumot** (talabalar/mavzular YO'Q), egasi
+  bo'lmasa 403 "Bu sizning kursingiz emas". ⚠️ **Mount tartibi:** org router
+  `/api/v1` generic prefiksda + ADMIN guard, shuning uchun u index.ts'da ENG
+  OXIRIDA turishi shart (aks holda `/api/v1/teach/*` ni ushlab teacher'ni 403
+  qiladi). Frontend: `/teach` — o'z kurslari kartalar; `/teach/courses/:id` —
+  yengil karkas (`TeacherCourseShell`): shapka faqat metama'lumot (tab almashsa
+  qayta yuklanmaydi, query courseId bilan keyed), URL-driven tab-bar
+  (`topics/sessions/progress/settings`), har tab ALOHIDA route/komponent
+  (`course/*Tab.tsx`, hozircha placeholder — Modul 5/13/15/10 to'ldiradi), faqat
+  ochiq tab mount bo'ladi. Modullik: karkas hech qanday biznes-ma'lumot yuklamaydi.
 
 Keyingilar (men har biriga prompt beraman):
-4. O'qituvchi: kurs sahifasi (4 tab karkas)
 5. O'qituvchi: mavzular + material
 6. O'qituvchi: konspekt (AI, qulf 1)
 7. Test + keys generatsiya

@@ -8,6 +8,7 @@ import { authRouter } from "./modules/auth/router";
 import { orgRouter } from "./modules/org/router";
 import { usersRouter } from "./modules/users/router";
 import { coursesRouter } from "./modules/courses/router";
+import { teachCoursesRouter } from "./modules/courses/teachRouter";
 
 const app = express();
 
@@ -18,9 +19,13 @@ app.use(authMiddleware);
 
 app.get("/health", (_req, res) => res.json({ ok: true }));
 app.use("/auth", authRouter);
-app.use("/api/v1", orgRouter);
+// Specific routers first; the org router is mounted on the generic /api/v1
+// prefix (and carries an ADMIN guard), so it must come LAST or it would
+// intercept /api/v1/teach/* and 403 teachers before they reach their router.
+app.use("/api/v1/teach", teachCoursesRouter);
 app.use("/api/v1/users", usersRouter);
 app.use("/api/v1/courses", coursesRouter);
+app.use("/api/v1", orgRouter);
 
 app.use(errorMiddleware);
 
