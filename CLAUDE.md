@@ -194,8 +194,24 @@ Tayyor:
   Konspekt qadami ochilishga tayyor (`digestUnlocked`). Admin kurs detali endi
   haqiqiy mavzu sonini ko'rsatadi.
 
+- **Modul 6 — O'qituvchi: Konspekt (AI, birinchi qulf) (tayyor).** Birinchi Gemini
+  integratsiyasi. AI qatlami `apps/api/src/ai/`: `gemini.ts` (`generateStructured`
+  — `@google/genai`, `gemini-2.5-flash`, `responseSchema` bilan strukturaланган
+  JSON, **thinking OFF** [thinkingBudget:0 — ~5s, ~2.6x kam token], timeout+retry,
+  token log → `AiUsage`), `prompts/digest.ts` (system: FAQAT materialdan, doza/fakt
+  ixtiro qilmaydi, uz-lotin + ru+lat atamalar, JSON-only), `types.ts` (zod +
+  responseSchema). Prisma: TopicDigest (topicId unique, digestJson, version,
+  approvedByTeacher), AiUsage. Backend (topics router):
+  `POST /topics/:id/digest/generate` (material DONE bo'lmasa 400), `GET/PUT
+  /digest`, `POST /digest/approve`. **Birinchi qulf:** PUT (tahrir) →
+  approvedByTeacher=false; approve → true; `generateUnlocked` = approved.
+  Frontend: konstruktor 2-bo'lim `DigestSection` (generate/progress → tahrirlanadi:
+  maqsad/tushuncha/atama-jadval/fakt/**doza-amber**/rasm — EditableList+TermsTable,
+  Save[dirty] → un-approve, approve bloki ogohlantirish bilan); 3-bo'lim
+  (Generatsiya) approve bo'lguncha qulfli. AI faqat materialdan (dozalar aynan
+  manbadan — tekshirildi). GEMINI_API_KEY `apps/api/.env`da.
+
 Keyingilar (men har biriga prompt beraman):
-6. O'qituvchi: konspekt (AI, qulf 1)
 7. Test + keys generatsiya
 8. Prezentatsiya + rasmlar
 9. Video

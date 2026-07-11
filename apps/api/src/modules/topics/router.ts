@@ -89,6 +89,27 @@ topicsRouter.post(
   })
 );
 
+// Digest (AI konspekt, first control point)
+topicsRouter.post(
+  "/:id/digest/generate",
+  wrap(async (req, res) => res.json(await svc.generateDigest(parseId(req.params.id), req.user!.id)))
+);
+
+topicsRouter.get(
+  "/:id/digest",
+  wrap(async (req, res) => res.json(await svc.getDigest(parseId(req.params.id), req.user!.id)))
+);
+
+topicsRouter.put(
+  "/:id/digest",
+  wrap(async (req, res) => res.json(await svc.updateDigest(parseId(req.params.id), req.user!.id, req.body)))
+);
+
+topicsRouter.post(
+  "/:id/digest/approve",
+  wrap(async (req, res) => res.json(await svc.approveDigest(parseId(req.params.id), req.user!.id)))
+);
+
 // ---- Materials router (/api/v1/materials) ----
 
 export const materialsRouter = Router();

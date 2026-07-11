@@ -26,9 +26,32 @@ export interface Material {
   createdAt: string;
 }
 
+export interface Term {
+  ru: string;
+  uz: string;
+  lat: string;
+}
+
+export interface DigestJson {
+  objectives: string[];
+  concepts: string[];
+  terms: Term[];
+  facts: string[];
+  dosages: string[];
+  imageIdeas: string[];
+}
+
+export interface Digest {
+  digestJson: DigestJson;
+  version: number;
+  approvedByTeacher: boolean;
+}
+
 export interface TopicDetail extends TopicRow {
   materials: Material[];
   digestUnlocked: boolean;
+  digest: Digest | null;
+  generateUnlocked: boolean;
 }
 
 // ---- Topics ----
@@ -121,4 +144,31 @@ export function useDeleteMaterial(topicId: number) {
 
 export function fetchMaterialText(id: number) {
   return api<{ text: string }>(`/api/v1/materials/${id}/text`);
+}
+
+// ---- Digest (AI konspekt) ----
+
+export function useGenerateDigest(topicId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api<Digest>(`/api/v1/topics/${topicId}/digest/generate`, { method: "POST" }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["topic", topicId] }),
+  });
+}
+
+export function useUpdateDigest(topicId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (digestJson: DigestJson) =>
+      api<Digest>(`/api/v1/topics/${topicId}/digest`, { method: "PUT", body: JSON.stringify(digestJson) }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["topic", topicId] }),
+  });
+}
+
+export function useApproveDigest(topicId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api<Digest>(`/api/v1/topics/${topicId}/digest/approve`, { method: "POST" }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["topic", topicId] }),
+  });
 }

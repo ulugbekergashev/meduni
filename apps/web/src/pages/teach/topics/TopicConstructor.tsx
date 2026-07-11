@@ -1,19 +1,20 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Check, FileStack, Lock } from "lucide-react";
+import { BookOpen, Check, FileStack, Lock } from "lucide-react";
 import { Badge, Card, Icon, Spinner, cls } from "@meduni/ui";
 import { useLocale } from "../../../lib/useLocale";
 import { MaterialsSection } from "./MaterialsSection";
+import { DigestSection } from "./DigestSection";
 import { useTopicDetail } from "./api";
 
 type StepState = "done" | "current" | "locked";
 
-function ProgressTrack({ materialDone }: { materialDone: boolean }) {
+function ProgressTrack({ materialDone, digestApproved }: { materialDone: boolean; digestApproved: boolean }) {
   const { t } = useTranslation(undefined, { keyPrefix: "constructor.steps" });
   const steps: { key: string; state: StepState }[] = [
     { key: "material", state: materialDone ? "done" : "current" },
-    { key: "digest", state: "locked" },
-    { key: "generate", state: "locked" },
+    { key: "digest", state: digestApproved ? "done" : materialDone ? "current" : "locked" },
+    { key: "generate", state: digestApproved ? "current" : "locked" },
     { key: "factcheck", state: "locked" },
     { key: "publish", state: "locked" },
   ];
@@ -49,7 +50,20 @@ function ProgressTrack({ materialDone }: { materialDone: boolean }) {
   );
 }
 
-function LockedSection({ titleKey, hintKey }: { titleKey: string; hintKey: string }) {
+function SectionHeader({ n, icon, title }: { n: number; icon: typeof Lock; title: string }) {
+  return (
+    <div className="mb-3 flex items-center gap-2">
+      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-soft text-brand-deep">
+        <Icon icon={icon} size={16} />
+      </div>
+      <h2 className="text-section font-bold text-ink">
+        {n}. {title}
+      </h2>
+    </div>
+  );
+}
+
+function LockedSection({ n, titleKey, hintKey }: { n: number; titleKey: string; hintKey: string }) {
   const { t } = useTranslation(undefined, { keyPrefix: "constructor" });
   return (
     <Card className="opacity-70">
@@ -58,7 +72,9 @@ function LockedSection({ titleKey, hintKey }: { titleKey: string; hintKey: strin
           <Icon icon={Lock} size={16} />
         </div>
         <div>
-          <p className="text-section font-bold text-ink-soft">{t(titleKey)}</p>
+          <p className="text-section font-bold text-ink-soft">
+            {n}. {t(titleKey)}
+          </p>
           <p className="text-[12.5px] text-ink-faint">{t(hintKey)}</p>
         </div>
       </div>
@@ -117,26 +133,50 @@ export function TopicConstructor() {
 
       {/* Progress track */}
       <Card className="mt-6">
-        <ProgressTrack materialDone={topic.digestUnlocked} />
+        <ProgressTrack materialDone={topic.digestUnlocked} digestApproved={topic.generateUnlocked} />
       </Card>
 
       {/* Section 1 — Materials (fully working) */}
       <section className="mt-6">
-        <div className="mb-3 flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-soft text-brand-deep">
-            <Icon icon={FileStack} size={16} />
-          </div>
-          <h2 className="text-section font-bold text-ink">1. {t("sections.materials")}</h2>
-        </div>
+        <SectionHeader n={1} icon={FileStack} title={t("sections.materials")} />
         <MaterialsSection topicId={topicId} materials={topic.materials} />
       </section>
 
-      {/* Locked sections (next modules) */}
+      {/* Section 2 — Konspekt (digest): unlocks once a material is DONE */}
+      <section className="mt-6">
+        {topic.digestUnlocked ? (
+          <>
+            <SectionHeader n={2} icon={BookOpen} title={t("sections.digest")} />
+            <DigestSection topic={topic} />
+          </>
+        ) : (
+          <LockedSection n={2} titleKey="sections.digest" hintKey="sectionLocked.digest" />
+        )}
+      </section>
+
+      {/* Section 3 — Generatsiya: first lock — needs an APPROVED digest */}
+      <section className="mt-6">
+        {topic.generateUnlocked ? (
+          <Card>
+            <div className="flex items-center gap-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-soft text-brand-deep">
+                <span className="text-[13px] font-bold">3</span>
+              </div>
+              <div>
+                <p className="text-section font-bold text-ink">{t("sections.generate")}</p>
+                <p className="text-[12.5px] text-ink-soft">{t("generateSoon")}</p>
+              </div>
+            </div>
+          </Card>
+        ) : (
+          <LockedSection n={3} titleKey="sections.generate" hintKey="sectionLocked.generate" />
+        )}
+      </section>
+
+      {/* Remaining locked sections */}
       <div className="mt-6 space-y-3">
-        <LockedSection titleKey="sections.digest" hintKey="sectionLocked.digest" />
-        <LockedSection titleKey="sections.generate" hintKey="sectionLocked.generate" />
-        <LockedSection titleKey="sections.factcheck" hintKey="sectionLocked.factcheck" />
-        <LockedSection titleKey="sections.publish" hintKey="sectionLocked.publish" />
+        <LockedSection n={4} titleKey="sections.factcheck" hintKey="sectionLocked.factcheck" />
+        <LockedSection n={5} titleKey="sections.publish" hintKey="sectionLocked.publish" />
       </div>
     </div>
   );

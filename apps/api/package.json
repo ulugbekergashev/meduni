@@ -8,6 +8,7 @@
     "start": "node dist/index.js"
   },
   "dependencies": {
+    "@google/genai": "^2.11.0",
     "@meduni/db": "*",
     "argon2": "^0.41.1",
     "cookie-parser": "^1.4.7",
