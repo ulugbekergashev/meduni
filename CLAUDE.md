@@ -151,9 +151,20 @@ Tayyor:
   (Avatar + rol Badge + faol Toggle), pagination, Excel import modali.
   `@meduni/ui`ga `Badge`+`Toggle` qo'shildi. Guruhlar endi haqiqiy talaba sonini
   ko'rsatadi.
+- **Modul 3 — Admin: Kurslar (tayyor).** Prisma: Course/CourseGroup/Enrollment
+  (`EnrollmentStatus` ACTIVE|DROPPED). Backend `apps/api/src/modules/courses/`
+  (`/api/v1/courses`, `requireRoles("ADMIN")`): create → **avtomatik enrollment**
+  (guruh STUDENT'lari ACTIVE bilan yoziladi, idempotent upsert); patch → guruh
+  qo'shsa yozadi, olib tashlasa DROPPED qiladi (o'chirmaydi, tarixi qoladi);
+  teacherId faqat role=TEACHER (aks holda 400); `studentCount` faqat ACTIVE'ni
+  sanaydi (filtered `_count`); `GET /:id` detali (talabalar+status) + `/:id/students`.
+  Frontend `/admin/courses`: yaratish formasi (fan+kafedra, o'qituvchi, semestr,
+  o'quv yili, guruhlar chip), jadval — qatorlar semestr/guruh bilan farqlanadi
+  (skrinshot muammosi hal), Toast enrollment sonini ko'rsatadi; detal sahifa
+  `/admin/courses/:id` (stat tiles + guruh boshqaruvi + yozilgan talabalar).
+  `@meduni/ui`ga `ChipSelect` qo'shildi.
 
 Keyingilar (men har biriga prompt beraman):
-3. Admin: kurslar
 4. O'qituvchi: kurs sahifasi (4 tab karkas)
 5. O'qituvchi: mavzular + material
 6. O'qituvchi: konspekt (AI, qulf 1)
