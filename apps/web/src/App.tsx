@@ -20,6 +20,7 @@ import { SessionsTab } from "./pages/teach/course/SessionsTab";
 import { ProgressTab } from "./pages/teach/course/ProgressTab";
 import { SettingsTab } from "./pages/teach/course/SettingsTab";
 import { TopicConstructor } from "./pages/teach/topics/TopicConstructor";
+import { ContentEditor } from "./pages/teach/content/ContentEditor";
 import { StudentShell } from "./pages/student/StudentShell";
 import { StudentDashboard } from "./pages/student/StudentDashboard";
 
@@ -68,6 +69,7 @@ export function App() {
         </Route>
         {/* Topic constructor — separate page, NOT inside the course shell */}
         <Route path="topics/:id" element={<TopicConstructor />} />
+        <Route path="content/:id" element={<ContentEditor />} />
       </Route>
 
       <Route

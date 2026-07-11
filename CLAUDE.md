@@ -211,8 +211,24 @@ Tayyor:
   (Generatsiya) approve bo'lguncha qulfli. AI faqat materialdan (dozalar aynan
   manbadan — tekshirildi). GEMINI_API_KEY `apps/api/.env`da.
 
+- **Modul 7 — O'qituvchi: Test + Klinik keys generatsiya (tayyor).** Konstruktor
+  3-bo'lim (Generatsiya). Prisma: ContentItem (kind QUIZ|CASE|PRESENTATION|VIDEO,
+  status DRAFT|REVIEW|APPROVED|PUBLISHED, `@@unique([topicId,kind])`, editedByTeacher,
+  approvedBy), Quiz (passThreshold, maxAttempts), Question (options/explanation Json,
+  correctIndex, difficulty RECALL|UNDERSTAND|APPLY, sourceFragment), ClinicalCase
+  (caseJson, format SHORT|EXTENDED). AI: `ai/prompts/quiz.ts` + `case.ts`
+  (+ responseSchema/zod `types.ts`) — FAQAT tasdiqlangan konspektdan. Backend
+  content module (`apps/api/src/modules/content/`): generate routes topics router'ida
+  (`POST /topics/:id/generate/{quiz,case}` — konspekt tasdiqlanmasa **403
+  digest_not_approved**), `/api/v1/content/:id` (GET/PUT[editedByTeacher=true]/
+  approve). Topic detail'da `content[]` xulosasi. Frontend: Generatsiya bo'limi
+  4 karta (Test/Keys ishlaydi — savol soni/qiyinlik/til, format/til sozlamalari;
+  Prezentatsiya/Video "tez orada"); Test tahrirlagichi `/teach/content/:id`
+  (savol/variant/izoh, to'g'ri javob yashil, qiyinlik badge, o'z savoli, o'tish
+  balli); Keys tahrirlagichi (bloklar + savol-etalon juftliklari). Real Gemini
+  bilan tekshirildi (5 MCQ + klinik keys, o'zbekcha, tibbiy to'g'ri, manbadan).
+
 Keyingilar (men har biriga prompt beraman):
-7. Test + keys generatsiya
 8. Prezentatsiya + rasmlar
 9. Video
 10. Faktcheck + chop etish (qulf 2)

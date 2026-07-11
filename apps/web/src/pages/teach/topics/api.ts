@@ -47,11 +47,54 @@ export interface Digest {
   approvedByTeacher: boolean;
 }
 
+export type ContentKind = "quiz" | "case" | "presentation" | "video";
+export type ContentStatus = "draft" | "review" | "approved" | "published";
+export type Difficulty = "RECALL" | "UNDERSTAND" | "APPLY";
+
+export interface ContentSummary {
+  id: number;
+  kind: ContentKind;
+  status: ContentStatus;
+  editedByTeacher: boolean;
+}
+
 export interface TopicDetail extends TopicRow {
   materials: Material[];
   digestUnlocked: boolean;
   digest: Digest | null;
   generateUnlocked: boolean;
+  content: ContentSummary[];
+}
+
+export interface QuizQuestion {
+  id?: number;
+  text: string;
+  options: string[];
+  correctIndex: number;
+  explanations: string[];
+  difficulty: Difficulty;
+  sourceFragment: string | null;
+}
+
+export interface CaseJson {
+  complaints: string;
+  anamnesis: string;
+  objectiveStatus: string;
+  labData: string;
+  questions: string[];
+  referenceAnswer: string[];
+}
+
+export interface ContentFull {
+  id: number;
+  topicId: number;
+  kind: ContentKind;
+  language: "uz" | "ru";
+  status: ContentStatus;
+  version: number;
+  editedByTeacher: boolean;
+  quiz: { passThreshold: number; maxAttempts: number; questions: QuizQuestion[] } | null;
+  clinicalCase: { caseJson: CaseJson; format: "SHORT" | "EXTENDED" } | null;
 }
 
 // ---- Topics ----
@@ -170,5 +213,40 @@ export function useApproveDigest(topicId: number) {
   return useMutation({
     mutationFn: () => api<Digest>(`/api/v1/topics/${topicId}/digest/approve`, { method: "POST" }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["topic", topicId] }),
+  });
+}
+
+// ---- Content generation & editing ----
+
+export function useGenerateQuiz(topicId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: { language: "uz" | "ru"; questionCount: number; difficulty: string }) =>
+      api<ContentFull>(`/api/v1/topics/${topicId}/generate/quiz`, { method: "POST", body: JSON.stringify(body) }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["topic", topicId] }),
+  });
+}
+
+export function useGenerateCase(topicId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: { language: "uz" | "ru"; format: "SHORT" | "EXTENDED" }) =>
+      api<ContentFull>(`/api/v1/topics/${topicId}/generate/case`, { method: "POST", body: JSON.stringify(body) }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["topic", topicId] }),
+  });
+}
+
+export function useContent(id: number) {
+  return useQuery({ queryKey: ["content", id], queryFn: () => api<ContentFull>(`/api/v1/content/${id}`) });
+}
+
+export function useUpdateContent(id: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: unknown) => api<ContentFull>(`/api/v1/content/${id}`, { method: "PUT", body: JSON.stringify(body) }),
+    onSuccess: (c) => {
+      qc.invalidateQueries({ queryKey: ["content", id] });
+      qc.invalidateQueries({ queryKey: ["topic", c.topicId] });
+    },
   });
 }

@@ -130,6 +130,7 @@ export async function getTopicDetail(id: number, teacherId: number) {
     orderBy: { id: "asc" },
   });
   const digest = await prisma.topicDigest.findUnique({ where: { topicId: id } });
+  const content = await prisma.contentItem.findMany({ where: { topicId: id } });
   return {
     ...toTopicOut(topic),
     materials: materials.map(toMaterialOut),
@@ -144,6 +145,12 @@ export async function getTopicDetail(id: number, teacherId: number) {
       : null,
     // Lock gate for section 3 (Generatsiya) — first control point.
     generateUnlocked: digest?.approvedByTeacher === true,
+    content: content.map((c) => ({
+      id: c.id,
+      kind: c.kind.toLowerCase(),
+      status: c.status.toLowerCase(),
+      editedByTeacher: c.editedByTeacher,
+    })),
   };
 }
 
