@@ -18,6 +18,7 @@
     "templates": "Shablonlar",
     "ai": "AI monitoring",
     "audit": "Audit",
+    "caseReview": "Keys tekshiruvi",
     "logout": "Chiqish"
   },
   "adminHome": {
@@ -45,6 +46,8 @@
     "termRu": "Termin (ru)", "termUz": "Termin (uz)", "termLat": "Lotincha",
     "add": "Qoʻshish", "added": "Qoʻshildi", "dupError": "Bu termin allaqachon bor",
     "empty": "Bu kafedrada hali atama yoʻq. Qoʻshing yoki Excel import qiling.",
+    "teacherSubtitle": "Oʻz kafedrangiz atamalari. Bu lugʻat siz yaratgan har bir AI materialga qoʻshiladi.",
+    "emptyTeacher": "Hali atama yoʻq. Yangi termin qoʻshing.",
     "deleteTitle": "Terminni oʻchirish", "deleteConfirm": "\"{{term}}\" oʻchirilsinmi?", "deleted": "Oʻchirildi"
   },
   "templates": {
@@ -126,6 +129,8 @@
     "empty": "Sizga hali kurs biriktirilmagan. Admin biriktiradi.",
     "students": "talaba",
     "semester": "semestr",
+    "semesterN": "{{n}}-semestr",
+    "studentsN": "{{n}} talaba",
     "hello": "Salom",
     "tasks": "Vazifalar",
     "allDone": "Hammasi bajarilgan! Vazifa yoʻq.",

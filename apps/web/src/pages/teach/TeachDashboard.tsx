@@ -78,24 +78,30 @@ export function TeachDashboard() {
               const avg = dash.data?.courses.find((d) => d.id === c.id)?.avgProgress ?? 0;
               return (
                 <li key={c.id}>
-                  <Card interactive onClick={() => navigate(`/teach/courses/${c.id}`)} className="h-full">
-                    <div className="mb-3 flex h-14 items-end rounded-control bg-gradient-to-br from-brand to-brand-deep px-3 pb-2">
-                      <span className="line-clamp-1 text-[15px] font-bold text-white">{pickName(locale, c.subjectNameUz, c.subjectNameRu)}</span>
+                  <Card interactive onClick={() => navigate(`/teach/courses/${c.id}`)} className="flex h-full flex-col gap-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <h3 className="line-clamp-2 text-[16px] font-bold leading-snug text-ink">{pickName(locale, c.subjectNameUz, c.subjectNameRu)}</h3>
+                        <p className="mt-0.5 text-[12px] text-ink-faint">{c.academicYear}</p>
+                      </div>
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand-deep">
+                        <Icon icon={BookOpen} size={18} />
+                      </div>
                     </div>
-                    <div className="flex flex-wrap items-center gap-1.5 text-[12px] text-ink-soft">
-                      <span className="rounded-pill bg-brand-soft px-2 py-0.5 font-semibold text-brand-deep">{t("semester")} {c.semester}</span>
+                    <div className="flex flex-wrap gap-1.5 text-[12px]">
+                      <span className="rounded-pill bg-brand-soft px-2 py-0.5 font-semibold text-brand-deep">{t("semesterN", { n: c.semester })}</span>
                       {c.groups.map((g) => (
-                        <span key={g.id} className="rounded-pill bg-slate-100 px-2 py-0.5">{g.name}</span>
+                        <span key={g.id} className="rounded-pill bg-slate-100 px-2 py-0.5 text-ink-soft">{g.name}</span>
                       ))}
                     </div>
-                    <div className="mt-3 flex items-center justify-between gap-2">
-                      <span className="flex items-center gap-1.5 text-[13px] text-ink-soft">
-                        <Icon icon={Users} size={15} /> {c.studentCount} {t("students")}
-                      </span>
-                      <span className="text-[12px] font-semibold text-ink-soft">{t("avgProgress")}: {avg}%</span>
-                    </div>
-                    <div className="mt-2 h-1.5 w-full overflow-hidden rounded-pill bg-bg">
-                      <div className="h-full rounded-pill bg-brand" style={{ width: `${Math.max(avg, 2)}%` }} />
+                    <div className="mt-auto space-y-1.5 pt-1">
+                      <div className="flex items-center justify-between text-[12.5px] text-ink-soft">
+                        <span className="inline-flex items-center gap-1.5"><Icon icon={Users} size={14} /> {t("studentsN", { n: c.studentCount })}</span>
+                        <span className="font-semibold text-ink">{avg}%</span>
+                      </div>
+                      <div className="h-1.5 w-full overflow-hidden rounded-pill bg-bg">
+                        <div className="h-full rounded-pill bg-gradient-to-r from-brand to-brand-deep transition-all" style={{ width: `${Math.max(avg, 2)}%` }} />
+                      </div>
                     </div>
                   </Card>
                 </li>

@@ -66,17 +66,19 @@ export function TeacherCourseShell() {
       </button>
       <h1 className="mt-3 text-h1 font-bold text-ink">{pickName(locale, c.subjectNameUz, c.subjectNameRu)}</h1>
       <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13.5px] text-ink-soft">
-        <span>{c.groups.map((g) => g.name).join(", ") || "—"}</span>
-        <span>·</span>
-        <span>
-          {c.semester}-{t("semester")}
-        </span>
+        {c.groups.length > 0 && (
+          <>
+            <span className="inline-flex items-center gap-1">
+              <Icon icon={Users} size={14} /> {c.groups.map((g) => g.name).join(", ")}
+            </span>
+            <span>·</span>
+          </>
+        )}
+        <span>{t("semesterN", { n: c.semester })}</span>
         <span>·</span>
         <span>{c.academicYear}</span>
         <span>·</span>
-        <span className="inline-flex items-center gap-1">
-          <Icon icon={Users} size={14} /> {c.studentCount} {t("students")}
-        </span>
+        <span>{t("studentsN", { n: c.studentCount })}</span>
       </div>
 
       {/* Tab bar (URL-driven) */}
