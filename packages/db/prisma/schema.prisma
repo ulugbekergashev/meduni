@@ -102,6 +102,7 @@ model User {
   approvedContent   ContentItem[]    @relation("ContentApprover")
   auditLogs         AuditLog[]
   progress          Progress[]
+  overriddenProgress Progress[]      @relation("ProgressOverrider")
   quizAttempts      QuizAttempt[]
   caseAttempts      CaseAttempt[]    @relation("CaseStudent")
   reviewedCases     CaseAttempt[]    @relation("CaseReviewer")
@@ -240,6 +241,9 @@ model Progress {
   videoPositionSec Int           @default(0)
   slidesViewed     Boolean       @default(false)
   completedAt      DateTime?
+  overriddenAt     DateTime?
+  overriddenById   Int?
+  overriddenBy     User?         @relation("ProgressOverrider", fields: [overriddenById], references: [id])
   updatedAt        DateTime      @updatedAt
 
   @@unique([studentId, topicId])
