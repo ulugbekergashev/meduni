@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { RequireRole } from "./components/RequireRole";
+import { AccountSettings } from "./components/AccountSettings";
 import { RoleRedirect } from "./pages/RoleRedirect";
 import { Login } from "./pages/Login";
 import { AdminShell } from "./pages/admin/AdminShell";
@@ -66,6 +67,7 @@ export function App() {
         <Route path="templates" element={<TemplatesPage />} />
         <Route path="ai" element={<AiMonitoringPage />} />
         <Route path="audit" element={<AuditPage />} />
+        <Route path="settings" element={<AccountSettings />} />
       </Route>
 
       <Route
@@ -92,6 +94,7 @@ export function App() {
         <Route path="content/:id" element={<ContentEditor />} />
         <Route path="cases/review" element={<CaseReviewQueue />} />
         <Route path="glossary" element={<TeachGlossaryPage />} />
+        <Route path="settings" element={<AccountSettings />} />
       </Route>
 
       <Route
