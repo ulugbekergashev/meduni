@@ -100,7 +100,7 @@ export function computeTopics(course: CourseWithTopics, factsByTopic: Map<number
 
 /** Gather every fact the unlock engine needs for a student across a course's topics,
  *  in a few batched queries: progress rows, best quiz scores, case submissions. */
-async function studentFactsMap(studentId: number, course: CourseWithTopics): Promise<Map<number, FullFacts>> {
+export async function studentFactsMap(studentId: number, course: CourseWithTopics): Promise<Map<number, FullFacts>> {
   const topicIds = course.topics.map((t) => t.id);
   const map = new Map<number, FullFacts>();
   if (topicIds.length === 0) return map;
