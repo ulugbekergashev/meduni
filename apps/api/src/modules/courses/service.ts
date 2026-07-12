@@ -209,6 +209,47 @@ export async function listTeacherCourses(teacherId: number) {
   return rows.map(toCourseOut);
 }
 
+/** Groups the teacher teaches (via their courses) — with students and subjects. */
+export async function listTeacherGroups(teacherId: number) {
+  const cgs = await prisma.courseGroup.findMany({
+    where: { course: { teacherId } },
+    include: { group: { include: { faculty: true } }, course: { include: { subject: true } } },
+  });
+
+  const map = new Map<number, { group: (typeof cgs)[number]["group"]; subjects: Map<string, { uz: string; ru: string }> }>();
+  for (const cg of cgs) {
+    if (!map.has(cg.groupId)) map.set(cg.groupId, { group: cg.group, subjects: new Map() });
+    map.get(cg.groupId)!.subjects.set(cg.course.subject.nameUz, { uz: cg.course.subject.nameUz, ru: cg.course.subject.nameRu });
+  }
+
+  const groupIds = [...map.keys()];
+  const students = groupIds.length
+    ? await prisma.user.findMany({
+        where: { role: "STUDENT", isActive: true, groupId: { in: groupIds } },
+        select: { id: true, fullName: true, email: true, groupId: true },
+        orderBy: { fullName: "asc" },
+      })
+    : [];
+  const byGroup = new Map<number, typeof students>();
+  for (const s of students) {
+    if (!byGroup.has(s.groupId!)) byGroup.set(s.groupId!, []);
+    byGroup.get(s.groupId!)!.push(s);
+  }
+
+  return [...map.values()]
+    .map(({ group, subjects }) => ({
+      id: group.id,
+      name: group.name,
+      yearOfStudy: group.yearOfStudy,
+      facultyNameUz: group.faculty.nameUz,
+      facultyNameRu: group.faculty.nameRu,
+      subjects: [...subjects.values()],
+      students: (byGroup.get(group.id) ?? []).map((s) => ({ id: s.id, fullName: s.fullName, email: s.email })),
+      studentCount: (byGroup.get(group.id) ?? []).length,
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
 /** Lightweight course metadata for the teacher course shell (no students list). */
 export async function getTeacherCourseMeta(courseId: number, teacherId: number) {
   const c = await prisma.course.findUnique({ where: { id: courseId }, include: courseInclude });

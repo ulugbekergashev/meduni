@@ -25,6 +25,21 @@ export function useTeachCourses() {
   });
 }
 
+export interface TeachGroup {
+  id: number;
+  name: string;
+  yearOfStudy: number;
+  facultyNameUz: string;
+  facultyNameRu: string;
+  subjects: { uz: string; ru: string }[];
+  students: { id: number; fullName: string; email: string }[];
+  studentCount: number;
+}
+
+export function useTeachGroups() {
+  return useQuery({ queryKey: ["teach-groups"], queryFn: () => api<TeachGroup[]>("/api/v1/teach/groups") });
+}
+
 /** Lightweight metadata for the course shell — keyed by id so it stays cached across tab switches. */
 export function useTeachCourseMeta(id: number) {
   return useQuery({

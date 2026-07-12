@@ -6,6 +6,7 @@ import { AsyncSection } from "../../components/AsyncSection";
 import { pickName, useLocale } from "../../lib/useLocale";
 import { useMe } from "../../lib/auth";
 import { useTeachCourses, useTeachDashboard } from "./api";
+import { CourseCard } from "./CourseCard";
 
 function StatTile({ icon, value, label, tone }: { icon: typeof Users; value: string | number; label: string; tone: string }) {
   return (
@@ -124,9 +125,12 @@ export function TeachDashboard() {
         </section>
       )}
 
-      {/* Courses */}
+      {/* Courses preview (full list lives in the Courses module) */}
       <section className="mt-8">
-        <h2 className="mb-3 text-section font-bold text-ink">{t("myCourses")}</h2>
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-section font-bold text-ink">{t("myCourses")}</h2>
+          <button onClick={() => navigate("/teach/courses")} className="text-[13px] font-semibold text-brand-deep hover:underline">{t("seeAll")} →</button>
+        </div>
         <AsyncSection
           isLoading={list.isLoading}
           isError={list.isError}
@@ -136,39 +140,9 @@ export function TeachDashboard() {
           onRetry={() => list.refetch()}
         >
           <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {courses.map((c) => {
-              const avg = dash.data?.courses.find((d) => d.id === c.id)?.avgProgress ?? 0;
-              return (
-                <li key={c.id}>
-                  <Card interactive onClick={() => navigate(`/teach/courses/${c.id}`)} className="flex h-full flex-col gap-3">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <h3 className="line-clamp-2 text-[16px] font-bold leading-snug text-ink">{pickName(locale, c.subjectNameUz, c.subjectNameRu)}</h3>
-                        <p className="mt-0.5 text-[12px] text-ink-faint">{c.academicYear}</p>
-                      </div>
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand-deep">
-                        <Icon icon={BookOpen} size={18} />
-                      </div>
-                    </div>
-                    <div className="flex flex-wrap gap-1.5 text-[12px]">
-                      <span className="rounded-pill bg-brand-soft px-2 py-0.5 font-semibold text-brand-deep">{t("semesterN", { n: c.semester })}</span>
-                      {c.groups.map((g) => (
-                        <span key={g.id} className="rounded-pill bg-slate-100 px-2 py-0.5 text-ink-soft">{g.name}</span>
-                      ))}
-                    </div>
-                    <div className="mt-auto space-y-1.5 pt-1">
-                      <div className="flex items-center justify-between text-[12.5px] text-ink-soft">
-                        <span className="inline-flex items-center gap-1.5"><Icon icon={Users} size={14} /> {t("studentsN", { n: c.studentCount })}</span>
-                        <span className="font-semibold text-ink">{avg}%</span>
-                      </div>
-                      <div className="h-1.5 w-full overflow-hidden rounded-pill bg-bg">
-                        <div className="h-full rounded-pill bg-gradient-to-r from-brand to-brand-deep transition-all" style={{ width: `${Math.max(avg, 2)}%` }} />
-                      </div>
-                    </div>
-                  </Card>
-                </li>
-              );
-            })}
+            {courses.slice(0, 3).map((c) => (
+              <li key={c.id}><CourseCard course={c} avgProgress={dash.data?.courses.find((d) => d.id === c.id)?.avgProgress ?? 0} /></li>
+            ))}
           </ul>
         </AsyncSection>
       </section>

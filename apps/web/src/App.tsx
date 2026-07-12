@@ -18,6 +18,8 @@ import { AiMonitoringPage } from "./pages/admin/ai/AiMonitoringPage";
 import { AuditPage } from "./pages/admin/audit/AuditPage";
 import { TeachShell } from "./pages/teach/TeachShell";
 import { TeachDashboard } from "./pages/teach/TeachDashboard";
+import { TeachCoursesPage } from "./pages/teach/TeachCoursesPage";
+import { TeachGroupsPage } from "./pages/teach/TeachGroupsPage";
 import { TeacherCourseShell } from "./pages/teach/course/TeacherCourseShell";
 import { TopicsTab } from "./pages/teach/course/TopicsTab";
 import { SessionsTab } from "./pages/teach/course/SessionsTab";
@@ -74,6 +76,8 @@ export function App() {
         }
       >
         <Route index element={<TeachDashboard />} />
+        <Route path="courses" element={<TeachCoursesPage />} />
+        <Route path="groups" element={<TeachGroupsPage />} />
         <Route path="courses/:id" element={<TeacherCourseShell />}>
           <Route index element={<Navigate to="topics" replace />} />
           <Route path="topics" element={<TopicsTab />} />

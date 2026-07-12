@@ -19,7 +19,15 @@
     "ai": "AI monitoring",
     "audit": "Audit",
     "caseReview": "Keys tekshiruvi",
+    "groups": "Guruhlar",
     "logout": "Chiqish"
+  },
+  "groups": {
+    "title": "Mening guruhlarim",
+    "subtitle": "Siz dars beradigan guruhlar va ulardagi talabalar.",
+    "empty": "Sizga hali guruh biriktirilmagan.",
+    "yearN": "{{n}}-kurs",
+    "noStudents": "Bu guruhda talaba yoʻq."
   },
   "adminHome": {
     "hello": "Salom",
@@ -141,6 +149,8 @@
     "statAvgProgress": "Oʻrtacha progress",
     "statAttendance": "Oʻrtacha davomat",
     "myGroups": "Mening guruhlarim",
+    "coursesSubtitle": "Sizga biriktirilgan barcha kurslar.",
+    "seeAll": "Barchasi",
     "upcoming": "Yaqin darslar",
     "allDone": "Hammasi bajarilgan! Vazifa yoʻq.",
     "casesToReview": "keys tekshiruvni kutmoqda",
