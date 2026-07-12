@@ -119,3 +119,93 @@ export interface TeachDashboard {
 export function useTeachDashboard() {
   return useQuery({ queryKey: ["teach-dashboard"], queryFn: () => api<TeachDashboard>("/api/v1/teach/dashboard") });
 }
+
+// ---------------- Case review queue (Module 14) ----------------
+
+export type ReviewStatus = "PENDING" | "REVIEWED";
+
+export interface QueueItem {
+  id: number;
+  studentName: string;
+  courseId: number;
+  subjectNameUz: string;
+  subjectNameRu: string;
+  topicId: number;
+  topicUz: string;
+  topicRu: string;
+  submittedAt: string;
+  reviewedAt: string | null;
+  score: number | null;
+  status: ReviewStatus;
+}
+
+export interface ReviewFilters {
+  courses: { id: number; nameUz: string; nameRu: string }[];
+  topics: { id: number; courseId: number; titleUz: string; titleRu: string }[];
+}
+
+export interface CaseReviewDetail {
+  id: number;
+  studentName: string;
+  courseId: number;
+  subjectNameUz: string;
+  subjectNameRu: string;
+  topicUz: string;
+  topicRu: string;
+  blocks: { complaints: string; anamnesis: string; objectiveStatus: string; labData: string };
+  questions: string[];
+  referenceAnswer: string[];
+  answers: string[];
+  submittedAt: string;
+  score: number | null;
+  feedback: string | null;
+  reviewedAt: string | null;
+  status: ReviewStatus;
+}
+
+export interface QueueQuery {
+  courseId?: number;
+  topicId?: number;
+  status: "PENDING" | "REVIEWED" | "all";
+  search: string;
+  sort: "oldest" | "newest";
+}
+
+export function useReviewQueue(q: QueueQuery) {
+  const params = new URLSearchParams();
+  if (q.courseId) params.set("courseId", String(q.courseId));
+  if (q.topicId) params.set("topicId", String(q.topicId));
+  params.set("status", q.status);
+  if (q.search.trim()) params.set("search", q.search.trim());
+  params.set("sort", q.sort);
+  return useQuery({
+    queryKey: ["review-queue", q],
+    queryFn: () => api<QueueItem[]>(`/api/v1/teach/cases/review?${params.toString()}`),
+  });
+}
+
+export function useReviewFilters() {
+  return useQuery({ queryKey: ["review-filters"], queryFn: () => api<ReviewFilters>("/api/v1/teach/cases/filters") });
+}
+
+export function useCaseReviewDetail(id: number | null) {
+  return useQuery({
+    queryKey: ["case-review", id],
+    queryFn: () => api<CaseReviewDetail>(`/api/v1/teach/cases/${id}`),
+    enabled: id !== null,
+    retry: false,
+  });
+}
+
+export function useReviewCase() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (b: { id: number; score: number; feedback: string }) =>
+      api(`/api/v1/teach/cases/${b.id}/review`, { method: "POST", body: JSON.stringify({ score: b.score, feedback: b.feedback }) }),
+    onSuccess: (_d, b) => {
+      qc.invalidateQueries({ queryKey: ["review-queue"] });
+      qc.invalidateQueries({ queryKey: ["case-review", b.id] });
+      qc.invalidateQueries({ queryKey: ["teach-dashboard"] });
+    },
+  });
+}

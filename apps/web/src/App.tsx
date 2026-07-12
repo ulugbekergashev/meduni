@@ -21,7 +21,7 @@ import { ProgressTab } from "./pages/teach/course/ProgressTab";
 import { SettingsTab } from "./pages/teach/course/SettingsTab";
 import { TopicConstructor } from "./pages/teach/topics/TopicConstructor";
 import { ContentEditor } from "./pages/teach/content/ContentEditor";
-import { ReviewPlaceholder } from "./pages/teach/ReviewPlaceholder";
+import { CaseReviewQueue } from "./pages/teach/CaseReviewQueue";
 import { StudentShell } from "./pages/student/StudentShell";
 import { StudentDashboard } from "./pages/student/StudentDashboard";
 import { CoursePath } from "./pages/student/CoursePath";
@@ -73,7 +73,7 @@ export function App() {
         {/* Topic constructor — separate page, NOT inside the course shell */}
         <Route path="topics/:id" element={<TopicConstructor />} />
         <Route path="content/:id" element={<ContentEditor />} />
-        <Route path="review" element={<ReviewPlaceholder />} />
+        <Route path="cases/review" element={<CaseReviewQueue />} />
       </Route>
 
       <Route

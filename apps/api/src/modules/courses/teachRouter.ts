@@ -3,6 +3,7 @@ import { notFound } from "../../lib/errors";
 import { requireRoles } from "../../middleware/rbac";
 import * as svc from "./service";
 import * as progress from "./progress";
+import * as review from "./review";
 
 export const teachCoursesRouter = Router();
 teachCoursesRouter.use(requireRoles("TEACHER"));
@@ -34,6 +35,39 @@ teachCoursesRouter.get(
 teachCoursesRouter.get(
   "/courses/:id/progress",
   wrap(async (req, res) => res.json(await progress.getCourseProgress(parseId(req.params.id), req.user!.id)))
+);
+
+// ---------- Clinical-case review queue ----------
+
+teachCoursesRouter.get(
+  "/cases/review",
+  wrap(async (req, res) =>
+    res.json(
+      await review.listReviewQueue(req.user!.id, {
+        courseId: req.query.courseId ? Number(req.query.courseId) : undefined,
+        topicId: req.query.topicId ? Number(req.query.topicId) : undefined,
+        status: (req.query.status as "PENDING" | "REVIEWED" | "all") || undefined,
+        search: typeof req.query.search === "string" ? req.query.search : undefined,
+        sort: req.query.sort === "newest" ? "newest" : "oldest",
+      })
+    )
+  )
+);
+
+teachCoursesRouter.get("/cases/filters", wrap(async (req, res) => res.json(await review.reviewFilters(req.user!.id))));
+
+teachCoursesRouter.get(
+  "/cases/:id",
+  wrap(async (req, res) => res.json(await review.getCaseAttemptForReview(req.user!.id, parseId(req.params.id))))
+);
+
+teachCoursesRouter.post(
+  "/cases/:id/review",
+  wrap(async (req, res) => {
+    const score = Number(req.body?.score);
+    const feedback = typeof req.body?.feedback === "string" ? req.body.feedback : "";
+    res.json(await review.reviewCase(req.user!.id, parseId(req.params.id), score, feedback));
+  })
 );
 
 // Manual unlock override (audited).
