@@ -97,8 +97,11 @@ export function CourseDetail() {
         {pickName(locale, c.subjectNameUz, c.subjectNameRu)}
       </h1>
       <p className="mt-1 text-[13.5px] text-ink-soft">
-        {pickName(locale, c.departmentNameUz, c.departmentNameRu)} · {c.teacherName} · {t("semester")} {c.semester} ·{" "}
-        {c.academicYear}
+        {pickName(locale, c.departmentNameUz, c.departmentNameRu)} ·{" "}
+        <button onClick={() => navigate(`/admin/users/${c.teacherId}`)} className="font-medium text-brand-deep hover:underline">
+          {c.teacherName}
+        </button>{" "}
+        · {t("semester")} {c.semester} · {c.academicYear}
       </p>
 
       {/* Stat tiles */}

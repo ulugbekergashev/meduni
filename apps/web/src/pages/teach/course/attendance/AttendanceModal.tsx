@@ -6,11 +6,11 @@ import { useLocale } from "../../../../lib/useLocale";
 import { useMarkAttendance, useRoster, type AttStatus } from "../../api";
 import { STATUS_META, STATUSES, fmtDate } from "./meta";
 
-export function AttendanceModal({ courseId, sessionId, onClose }: { courseId: number; sessionId: number; onClose: () => void }) {
+export function AttendanceModal({ courseId, sessionId, groupId, onClose }: { courseId: number; sessionId: number; groupId?: number; onClose: () => void }) {
   const { t } = useTranslation(undefined, { keyPrefix: "attendance" });
   const locale = useLocale();
   const { show } = useToast();
-  const rosterQ = useRoster(sessionId);
+  const rosterQ = useRoster(sessionId, groupId);
   const mark = useMarkAttendance(courseId);
   const [marks, setMarks] = useState<Record<number, AttStatus | null>>({});
   const [search, setSearch] = useState("");

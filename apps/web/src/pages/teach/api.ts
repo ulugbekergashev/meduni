@@ -40,6 +40,24 @@ export function useTeachGroups() {
   return useQuery({ queryKey: ["teach-groups"], queryFn: () => api<TeachGroup[]>("/api/v1/teach/groups") });
 }
 
+export function useTeachGroup(groupId: number) {
+  return useQuery({ queryKey: ["teach-group", groupId], queryFn: () => api<TeachGroup>(`/api/v1/teach/groups/${groupId}`), retry: false });
+}
+
+export interface CourseGroupStat {
+  groupId: number;
+  name: string;
+  yearOfStudy: number;
+  facultyNameUz: string;
+  facultyNameRu: string;
+  studentCount: number;
+  avgProgress: number;
+}
+
+export function useCourseGroupsStats(courseId: number) {
+  return useQuery({ queryKey: ["course-groups", courseId], queryFn: () => api<CourseGroupStat[]>(`/api/v1/teach/courses/${courseId}/groups`) });
+}
+
 export interface StudentDetailTopic {
   id: number;
   titleUz: string;
@@ -66,7 +84,7 @@ export interface StudentDetailCourse {
   topics: StudentDetailTopic[];
 }
 export interface StudentDetail {
-  student: { id: number; fullName: string; email: string; groupName: string | null };
+  student: { id: number; fullName: string; email: string; groupId: number | null; groupName: string | null };
   courses: StudentDetailCourse[];
 }
 
@@ -213,6 +231,7 @@ export interface TeachDashboard {
   upcomingSessions: {
     id: number;
     courseId: number;
+    groupId: number | null;
     date: string;
     subjectNameUz: string;
     subjectNameRu: string;
@@ -361,6 +380,7 @@ export interface DateRange {
   from?: string;
   to?: string;
   search?: string;
+  groupId?: number;
 }
 
 export function useSessions(courseId: number, range: DateRange) {
@@ -406,10 +426,10 @@ export function useDeleteSession(courseId: number) {
   });
 }
 
-export function useRoster(sessionId: number | null) {
+export function useRoster(sessionId: number | null, groupId?: number) {
   return useQuery({
-    queryKey: ["roster", sessionId],
-    queryFn: () => api<RosterData>(`/api/v1/teach/sessions/${sessionId}/roster`),
+    queryKey: ["roster", sessionId, groupId],
+    queryFn: () => api<RosterData>(`/api/v1/teach/sessions/${sessionId}/roster${groupId ? `?groupId=${groupId}` : ""}`),
     enabled: sessionId !== null,
     retry: false,
   });
@@ -433,5 +453,6 @@ export function useAttendanceReport(courseId: number, range: DateRange) {
   if (range.from) p.set("from", range.from);
   if (range.to) p.set("to", range.to);
   if (range.search?.trim()) p.set("search", range.search.trim());
+  if (range.groupId) p.set("groupId", String(range.groupId));
   return useQuery({ queryKey: ["att-report", courseId, range], queryFn: () => api<AttReport>(`/api/v1/teach/courses/${courseId}/attendance-report?${p}`) });
 }

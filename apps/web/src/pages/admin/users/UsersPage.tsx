@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { KeyRound, Pencil, Search, Upload, UserPlus, Users } from "lucide-react";
 import { Badge, Button, Icon, Input, Toggle, cls, useToast, type BadgeTone } from "@meduni/ui";
@@ -136,10 +137,10 @@ export function UsersPage() {
             {items.map((u) => (
               <tr key={u.id} className="border-b border-line last:border-0">
                 <td className="px-4 py-3">
-                  <div className="flex items-center gap-3">
+                  <Link to={`/admin/users/${u.id}`} className="flex items-center gap-3 hover:underline">
                     <Avatar name={u.fullName} />
                     <span className="font-medium text-ink">{u.fullName}</span>
-                  </div>
+                  </Link>
                 </td>
                 <td className="px-4 py-3 text-ink-soft">{u.email}</td>
                 <td className="px-4 py-3">

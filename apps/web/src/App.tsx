@@ -11,6 +11,7 @@ import { DepartmentsTab } from "./pages/admin/structure/DepartmentsTab";
 import { SubjectsTab } from "./pages/admin/structure/SubjectsTab";
 import { GroupsTab } from "./pages/admin/structure/GroupsTab";
 import { UsersPage } from "./pages/admin/users/UsersPage";
+import { UserProfilePage } from "./pages/admin/users/UserProfilePage";
 import { CoursesPage } from "./pages/admin/courses/CoursesPage";
 import { CourseDetail } from "./pages/admin/courses/CourseDetail";
 import { GlossaryPage } from "./pages/admin/glossary/GlossaryPage";
@@ -24,8 +25,9 @@ import { TeachGroupsPage } from "./pages/teach/TeachGroupsPage";
 import { StudentDetailPage } from "./pages/teach/StudentDetailPage";
 import { TeacherCourseShell } from "./pages/teach/course/TeacherCourseShell";
 import { TopicsTab } from "./pages/teach/course/TopicsTab";
-import { SessionsTab } from "./pages/teach/course/SessionsTab";
+import { CourseGroupsTab } from "./pages/teach/course/CourseGroupsTab";
 import { SyllabusTab } from "./pages/teach/course/SyllabusTab";
+import { GroupProfile } from "./pages/teach/group/GroupProfile";
 import { ProgressTab } from "./pages/teach/course/ProgressTab";
 import { SettingsTab } from "./pages/teach/course/SettingsTab";
 import { TopicConstructor } from "./pages/teach/topics/TopicConstructor";
@@ -62,6 +64,7 @@ export function App() {
           <Route path="groups" element={<GroupsTab />} />
         </Route>
         <Route path="users" element={<UsersPage />} />
+        <Route path="users/:id" element={<UserProfilePage />} />
         <Route path="courses" element={<CoursesPage />} />
         <Route path="courses/:id" element={<CourseDetail />} />
         <Route path="glossary" element={<GlossaryPage />} />
@@ -82,12 +85,15 @@ export function App() {
         <Route index element={<TeachDashboard />} />
         <Route path="courses" element={<TeachCoursesPage />} />
         <Route path="groups" element={<TeachGroupsPage />} />
+        <Route path="groups/:id" element={<GroupProfile />} />
         <Route path="students/:id" element={<StudentDetailPage />} />
         <Route path="courses/:id" element={<TeacherCourseShell />}>
           <Route index element={<Navigate to="topics" replace />} />
           <Route path="topics" element={<TopicsTab />} />
           <Route path="syllabus" element={<SyllabusTab />} />
-          <Route path="sessions" element={<SessionsTab />} />
+          <Route path="groups" element={<CourseGroupsTab />} />
+          {/* Attendance moved to the group profile; old links land on topics. */}
+          <Route path="sessions" element={<Navigate to="../topics" replace />} />
           <Route path="progress" element={<ProgressTab />} />
           <Route path="settings" element={<SettingsTab />} />
         </Route>

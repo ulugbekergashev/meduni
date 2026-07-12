@@ -38,6 +38,18 @@ teachCoursesRouter.get(
   wrap(async (req, res) => res.json(await svc.listTeacherGroups(req.user!.id)))
 );
 
+// One group's profile (info + students + this teacher's courses).
+teachCoursesRouter.get(
+  "/groups/:id",
+  wrap(async (req, res) => res.json(await svc.getTeacherGroup(parseId(req.params.id), req.user!.id)))
+);
+
+// Groups a course is taught in, with per-group stats (course profile tab).
+teachCoursesRouter.get(
+  "/courses/:id/groups",
+  wrap(async (req, res) => res.json(await progress.getCourseGroupsStats(parseId(req.params.id), req.user!.id)))
+);
+
 // One student's full picture (attendance + progress + tests + cases).
 teachCoursesRouter.get(
   "/students/:id",
@@ -101,11 +113,16 @@ teachCoursesRouter.post(
 
 // Report BEFORE the generic /sessions/:id routes are fine (different prefix); also
 // place .xlsx before the plain report so the literal path matches first.
+const qnum = (v: unknown): number | undefined => {
+  const n = Number(v);
+  return Number.isInteger(n) && n > 0 ? n : undefined;
+};
+
 teachCoursesRouter.get(
   "/courses/:id/attendance-report.xlsx",
   wrap(async (req, res) => {
     const view = req.query.view === "list" ? "list" : "matrix";
-    const buf = await attendance.exportAttendance(parseId(req.params.id), req.user!.id, view, { from: qs(req.query.from), to: qs(req.query.to) });
+    const buf = await attendance.exportAttendance(parseId(req.params.id), req.user!.id, view, { from: qs(req.query.from), to: qs(req.query.to), groupId: qnum(req.query.groupId) });
     res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
     res.setHeader("Content-Disposition", `attachment; filename="attendance-${req.params.id}-${view}.xlsx"`);
     res.send(buf);
@@ -115,11 +132,13 @@ teachCoursesRouter.get(
 teachCoursesRouter.get(
   "/courses/:id/attendance-report",
   wrap(async (req, res) =>
-    res.json(await attendance.attendanceReport(parseId(req.params.id), req.user!.id, { from: qs(req.query.from), to: qs(req.query.to), search: qs(req.query.search) }))
+    res.json(
+      await attendance.attendanceReport(parseId(req.params.id), req.user!.id, { from: qs(req.query.from), to: qs(req.query.to), search: qs(req.query.search), groupId: qnum(req.query.groupId) })
+    )
   )
 );
 
-teachCoursesRouter.get("/sessions/:id/roster", wrap(async (req, res) => res.json(await attendance.getRoster(parseId(req.params.id), req.user!.id))));
+teachCoursesRouter.get("/sessions/:id/roster", wrap(async (req, res) => res.json(await attendance.getRoster(parseId(req.params.id), req.user!.id, qnum(req.query.groupId)))));
 
 teachCoursesRouter.post(
   "/sessions/:id/attendance",

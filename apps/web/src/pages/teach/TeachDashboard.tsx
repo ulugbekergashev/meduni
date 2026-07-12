@@ -110,7 +110,7 @@ export function TeachDashboard() {
           <h2 className="mb-3 text-section font-bold text-ink">{t("upcoming")}</h2>
           <div className="space-y-2">
             {dash.data.upcomingSessions.map((s) => (
-              <button key={s.id} onClick={() => navigate(`/teach/courses/${s.courseId}/sessions`)} className="flex w-full items-center gap-3 rounded-card border border-line bg-surface p-3 text-left transition-all hover:-translate-y-0.5 hover:shadow-sm">
+              <button key={s.id} onClick={() => navigate(s.groupId ? `/teach/groups/${s.groupId}?tab=sessions` : `/teach/courses/${s.courseId}`)} className="flex w-full items-center gap-3 rounded-card border border-line bg-surface p-3 text-left transition-all hover:-translate-y-0.5 hover:shadow-sm">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand-deep">
                   <Icon icon={CalendarDays} size={18} />
                 </div>

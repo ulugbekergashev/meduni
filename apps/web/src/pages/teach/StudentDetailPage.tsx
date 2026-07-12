@@ -106,7 +106,15 @@ export function StudentDetailPage() {
                 <div className="min-w-0">
                   <h1 className="text-h1 font-bold text-ink">{d.student.fullName}</h1>
                   <p className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[12.5px] text-ink-faint">
-                    {d.student.groupName && <span className="inline-flex items-center gap-1"><Icon icon={Users} size={12} /> {d.student.groupName}</span>}
+                    {d.student.groupName && (
+                      d.student.groupId ? (
+                        <button onClick={() => navigate(`/teach/groups/${d.student.groupId}`)} className="inline-flex items-center gap-1 text-brand-deep hover:underline">
+                          <Icon icon={Users} size={12} /> {d.student.groupName}
+                        </button>
+                      ) : (
+                        <span className="inline-flex items-center gap-1"><Icon icon={Users} size={12} /> {d.student.groupName}</span>
+                      )
+                    )}
                     <span className="inline-flex items-center gap-1"><Icon icon={Mail} size={12} /> {d.student.email}</span>
                   </p>
                 </div>

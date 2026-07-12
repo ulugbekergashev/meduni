@@ -12,7 +12,7 @@ import { AttendanceModal } from "./AttendanceModal";
 
 const statusTone: Record<SessionRow["status"], BadgeTone> = { UNMARKED: "slate", PARTIAL: "amber", FULL: "emerald" };
 
-export function SessionsView({ courseId }: { courseId: number }) {
+export function SessionsView({ courseId, groupId }: { courseId: number; groupId?: number }) {
   const { t } = useTranslation(undefined, { keyPrefix: "attendance" });
   const locale = useLocale();
   const { show } = useToast();
@@ -86,7 +86,7 @@ export function SessionsView({ courseId }: { courseId: number }) {
       </div>
 
       {editing !== null && <SessionModal courseId={courseId} edit={editing === "new" ? null : editing} onClose={() => setEditing(null)} />}
-      {marking !== null && <AttendanceModal courseId={courseId} sessionId={marking} onClose={() => setMarking(null)} />}
+      {marking !== null && <AttendanceModal courseId={courseId} sessionId={marking} groupId={groupId} onClose={() => setMarking(null)} />}
       <ConfirmDialog
         open={confirmDel !== null}
         title={t("deleteTitle")}
