@@ -80,6 +80,11 @@ topicsRouter.delete(
   })
 );
 
+topicsRouter.put(
+  "/:id/unlock-rule",
+  wrap(async (req, res) => res.json(await svc.setTopicUnlockRule(parseId(req.params.id), req.body?.unlockRuleJson, req.user!.id)))
+);
+
 topicsRouter.post(
   "/:id/materials",
   upload.single("file"),

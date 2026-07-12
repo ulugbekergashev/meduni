@@ -69,6 +69,14 @@ enum VideoBuildStatus {
   ERROR
 }
 
+enum FactcheckStatus {
+  NONE
+  CHECKING
+  FLAGGED
+  CLEAN
+  RESOLVED
+}
+
 model User {
   id             Int             @id @default(autoincrement())
   fullName       String
@@ -85,10 +93,24 @@ model User {
   enrollments       Enrollment[]
   uploadedMaterials SourceMaterial[]
   approvedContent   ContentItem[]    @relation("ContentApprover")
+  auditLogs         AuditLog[]
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
 
   @@map("users")
+}
+
+model AuditLog {
+  id          Int      @id @default(autoincrement())
+  actorId     Int
+  actor       User     @relation(fields: [actorId], references: [id])
+  action      String
+  entity      String
+  entityId    Int
+  detailsJson Json?
+  createdAt   DateTime @default(now())
+
+  @@map("audit_logs")
 }
 
 model TeacherProfile {
@@ -167,12 +189,13 @@ model Course {
   subject      Subject       @relation(fields: [subjectId], references: [id])
   teacherId    Int
   teacher      User          @relation("CourseTeacher", fields: [teacherId], references: [id])
-  semester     Int
-  academicYear String
-  createdAt    DateTime      @default(now())
-  courseGroups CourseGroup[]
-  enrollments  Enrollment[]
-  topics       Topic[]
+  semester              Int
+  academicYear          String
+  defaultUnlockRuleJson Json?
+  createdAt             DateTime      @default(now())
+  courseGroups          CourseGroup[]
+  enrollments           Enrollment[]
+  topics                Topic[]
 
   @@map("courses")
 }
@@ -201,13 +224,16 @@ model ContentItem {
   kind            ContentKind
   language        Locale
   status          ContentStatus @default(DRAFT)
-  approvedById    Int?
-  approvedBy      User?         @relation("ContentApprover", fields: [approvedById], references: [id])
-  approvedAt      DateTime?
-  version         Int           @default(1)
-  reviewOpenedAt  DateTime?
-  editedByTeacher Boolean       @default(false)
-  createdAt       DateTime      @default(now())
+  approvedById       Int?
+  approvedBy         User?           @relation("ContentApprover", fields: [approvedById], references: [id])
+  approvedAt         DateTime?
+  version            Int             @default(1)
+  reviewOpenedAt     DateTime?
+  editedByTeacher    Boolean         @default(false)
+  factcheckFlagsJson Json?
+  factcheckStatus    FactcheckStatus @default(NONE)
+  factcheckedAt      DateTime?
+  createdAt          DateTime        @default(now())
   quiz            Quiz?
   clinicalCase    ClinicalCase?
   presentation    Presentation?

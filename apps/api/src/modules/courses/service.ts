@@ -216,5 +216,18 @@ export async function getTeacherCourseMeta(courseId: number, teacherId: number) 
   if (c.teacherId !== teacherId) {
     throw new ApiError(403, "forbidden", "Bu sizning kursingiz emas", "Это не ваш курс");
   }
-  return toCourseOut(c);
+  return { ...toCourseOut(c), defaultUnlockRuleJson: c.defaultUnlockRuleJson ?? null };
+}
+
+export async function updateCourseSettings(courseId: number, teacherId: number, defaultUnlockRuleJson: unknown) {
+  const c = await prisma.course.findUnique({ where: { id: courseId } });
+  if (!c) throw notFound("Kurs");
+  if (c.teacherId !== teacherId) {
+    throw new ApiError(403, "forbidden", "Bu sizning kursingiz emas", "Это не ваш курс");
+  }
+  await prisma.course.update({
+    where: { id: courseId },
+    data: { defaultUnlockRuleJson: (defaultUnlockRuleJson ?? null) as object },
+  });
+  return { ok: true };
 }

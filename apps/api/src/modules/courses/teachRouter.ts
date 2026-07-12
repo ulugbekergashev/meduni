@@ -28,3 +28,11 @@ teachCoursesRouter.get(
   "/courses/:id",
   wrap(async (req, res) => res.json(await svc.getTeacherCourseMeta(parseId(req.params.id), req.user!.id)))
 );
+
+// Course-level default unlock rule (Settings tab).
+teachCoursesRouter.put(
+  "/courses/:id/settings",
+  wrap(async (req, res) =>
+    res.json(await svc.updateCourseSettings(parseId(req.params.id), req.user!.id, req.body?.defaultUnlockRuleJson))
+  )
+);
