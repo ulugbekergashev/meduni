@@ -156,6 +156,16 @@ teachCoursesRouter.get(
   wrap(async (req, res) => res.json(await svc.getTeacherCourseMeta(parseId(req.params.id), req.user!.id)))
 );
 
+// Syllabus (o'quv rejasi).
+teachCoursesRouter.get(
+  "/courses/:id/syllabus",
+  wrap(async (req, res) => res.json(await svc.getSyllabus(parseId(req.params.id), req.user!.id)))
+);
+teachCoursesRouter.put(
+  "/courses/:id/syllabus",
+  wrap(async (req, res) => res.json(await svc.saveSyllabus(parseId(req.params.id), req.user!.id, req.body ?? {})))
+);
+
 // Course-level default unlock rule (Settings tab).
 teachCoursesRouter.put(
   "/courses/:id/settings",

@@ -29,6 +29,28 @@
     "yearN": "{{n}}-kurs",
     "noStudents": "Bu guruhda talaba yoʻq."
   },
+  "syllabus": {
+    "subtitle": "Kurs oʻquv rejasi: maqsadlar, mavzular boʻyicha soatlar va adabiyot.",
+    "totalHours": "Jami soat",
+    "description": "Kurs tavsifi",
+    "descriptionPlaceholder": "Kurs nima haqida, kimlar uchun...",
+    "objectives": "Maqsadlar",
+    "objectivePlaceholder": "Masalan: yurak kasalliklarini tashxislashni oʻrgatish",
+    "addObjective": "Maqsad qoʻshish",
+    "literature": "Adabiyot",
+    "literaturePlaceholder": "Muallif, kitob nomi, yil",
+    "addLiterature": "Manba qoʻshish",
+    "topicsPlan": "Mavzular rejasi",
+    "noTopics": "Avval Mavzular tabida mavzu qoʻshing.",
+    "topic": "Mavzu",
+    "hours": "Soat",
+    "note": "Tavsif",
+    "notePlaceholder": "Qisqacha izoh...",
+    "save": "Saqlash",
+    "saved": "Reja saqlandi",
+    "loadError": "Reja yuklanmadi",
+    "note2": "Mavzular Mavzular tabidan olinadi."
+  },
   "adminHome": {
     "hello": "Salom",
     "students": "Talabalar", "studentsHint": "faol hisoblar",
@@ -164,6 +186,7 @@
     "notFound": "Bu kurs topilmadi yoki sizga ruxsat yoʻq",
     "tabs": {
       "topics": "Mavzular",
+      "syllabus": "Reja",
       "sessions": "Darslar",
       "progress": "Progress",
       "settings": "Sozlamalar"

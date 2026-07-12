@@ -258,6 +258,7 @@ model Course {
   semester              Int
   academicYear          String
   defaultUnlockRuleJson Json?
+  syllabusJson          Json?
   createdAt             DateTime      @default(now())
   courseGroups          CourseGroup[]
   enrollments           Enrollment[]
@@ -276,6 +277,8 @@ model Topic {
   orderIndex     Int
   status         TopicStatus      @default(DRAFT)
   unlockRuleJson Json?
+  hours          Int              @default(0)
+  syllabusNote   String?
   createdAt      DateTime         @default(now())
   materials      SourceMaterial[]
   digest         TopicDigest?
