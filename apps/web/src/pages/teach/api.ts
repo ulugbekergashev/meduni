@@ -40,6 +40,42 @@ export function useTeachGroups() {
   return useQuery({ queryKey: ["teach-groups"], queryFn: () => api<TeachGroup[]>("/api/v1/teach/groups") });
 }
 
+export interface SyllabusTopic {
+  id: number;
+  titleUz: string;
+  titleRu: string;
+  orderIndex: number;
+  hours: number;
+  note: string;
+}
+export interface Syllabus {
+  courseId: number;
+  subjectNameUz: string;
+  subjectNameRu: string;
+  description: string;
+  objectives: string[];
+  literature: string[];
+  topics: SyllabusTopic[];
+  totalHours: number;
+}
+export interface SyllabusSave {
+  description: string;
+  objectives: string[];
+  literature: string[];
+  topics: { id: number; hours: number; note: string }[];
+}
+
+export function useSyllabus(courseId: number) {
+  return useQuery({ queryKey: ["syllabus", courseId], queryFn: () => api<Syllabus>(`/api/v1/teach/courses/${courseId}/syllabus`), retry: false });
+}
+export function useSaveSyllabus(courseId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: SyllabusSave) => api(`/api/v1/teach/courses/${courseId}/syllabus`, { method: "PUT", body: JSON.stringify(body) }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["syllabus", courseId] }),
+  });
+}
+
 /** Lightweight metadata for the course shell — keyed by id so it stays cached across tab switches. */
 export function useTeachCourseMeta(id: number) {
   return useQuery({

@@ -23,6 +23,7 @@ import { TeachGroupsPage } from "./pages/teach/TeachGroupsPage";
 import { TeacherCourseShell } from "./pages/teach/course/TeacherCourseShell";
 import { TopicsTab } from "./pages/teach/course/TopicsTab";
 import { SessionsTab } from "./pages/teach/course/SessionsTab";
+import { SyllabusTab } from "./pages/teach/course/SyllabusTab";
 import { ProgressTab } from "./pages/teach/course/ProgressTab";
 import { SettingsTab } from "./pages/teach/course/SettingsTab";
 import { TopicConstructor } from "./pages/teach/topics/TopicConstructor";
@@ -81,6 +82,7 @@ export function App() {
         <Route path="courses/:id" element={<TeacherCourseShell />}>
           <Route index element={<Navigate to="topics" replace />} />
           <Route path="topics" element={<TopicsTab />} />
+          <Route path="syllabus" element={<SyllabusTab />} />
           <Route path="sessions" element={<SessionsTab />} />
           <Route path="progress" element={<ProgressTab />} />
           <Route path="settings" element={<SettingsTab />} />

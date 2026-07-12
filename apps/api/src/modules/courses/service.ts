@@ -260,6 +260,77 @@ export async function getTeacherCourseMeta(courseId: number, teacherId: number) 
   return { ...toCourseOut(c), defaultUnlockRuleJson: c.defaultUnlockRuleJson ?? null };
 }
 
+// ---------- Syllabus (o'quv rejasi) ----------
+
+interface SyllabusMeta {
+  description: string;
+  objectives: string[];
+  literature: string[];
+}
+
+function emptyMeta(): SyllabusMeta {
+  return { description: "", objectives: [], literature: [] };
+}
+
+export async function getSyllabus(courseId: number, teacherId: number) {
+  const course = await prisma.course.findUnique({
+    where: { id: courseId },
+    include: { subject: true, topics: { orderBy: { orderIndex: "asc" } } },
+  });
+  if (!course) throw notFound("Kurs");
+  if (course.teacherId !== teacherId) throw new ApiError(403, "forbidden", "Bu sizning kursingiz emas", "Это не ваш курс");
+
+  const meta = { ...emptyMeta(), ...((course.syllabusJson as Partial<SyllabusMeta> | null) ?? {}) };
+  const topics = course.topics.map((t) => ({
+    id: t.id,
+    titleUz: t.titleUz,
+    titleRu: t.titleRu,
+    orderIndex: t.orderIndex,
+    hours: t.hours,
+    note: t.syllabusNote ?? "",
+  }));
+  return {
+    courseId,
+    subjectNameUz: course.subject.nameUz,
+    subjectNameRu: course.subject.nameRu,
+    description: meta.description,
+    objectives: meta.objectives,
+    literature: meta.literature,
+    topics,
+    totalHours: topics.reduce((s, t) => s + (t.hours || 0), 0),
+  };
+}
+
+export async function saveSyllabus(
+  courseId: number,
+  teacherId: number,
+  body: { description?: string; objectives?: string[]; literature?: string[]; topics?: { id: number; hours?: number; note?: string }[] }
+) {
+  const course = await prisma.course.findUnique({ where: { id: courseId }, include: { topics: { select: { id: true } } } });
+  if (!course) throw notFound("Kurs");
+  if (course.teacherId !== teacherId) throw new ApiError(403, "forbidden", "Bu sizning kursingiz emas", "Это не ваш курс");
+
+  const meta: SyllabusMeta = {
+    description: (body.description ?? "").trim(),
+    objectives: (body.objectives ?? []).map((s) => s.trim()).filter(Boolean),
+    literature: (body.literature ?? []).map((s) => s.trim()).filter(Boolean),
+  };
+
+  const ownTopicIds = new Set(course.topics.map((t) => t.id));
+  await prisma.$transaction([
+    prisma.course.update({ where: { id: courseId }, data: { syllabusJson: meta as object } }),
+    ...(body.topics ?? [])
+      .filter((t) => ownTopicIds.has(t.id))
+      .map((t) =>
+        prisma.topic.update({
+          where: { id: t.id },
+          data: { hours: Math.max(0, Math.round(t.hours ?? 0)), syllabusNote: (t.note ?? "").trim() || null },
+        })
+      ),
+  ]);
+  return { ok: true };
+}
+
 export async function updateCourseSettings(courseId: number, teacherId: number, defaultUnlockRuleJson: unknown) {
   const c = await prisma.course.findUnique({ where: { id: courseId } });
   if (!c) throw notFound("Kurs");

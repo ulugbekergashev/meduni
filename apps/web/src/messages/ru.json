@@ -29,6 +29,28 @@
     "yearN": "{{n}}-й курс",
     "noStudents": "В этой группе нет студентов."
   },
+  "syllabus": {
+    "subtitle": "Учебный план курса: цели, часы по темам и литература.",
+    "totalHours": "Всего часов",
+    "description": "Описание курса",
+    "descriptionPlaceholder": "О чём курс, для кого...",
+    "objectives": "Цели",
+    "objectivePlaceholder": "Например: научить диагностике болезней сердца",
+    "addObjective": "Добавить цель",
+    "literature": "Литература",
+    "literaturePlaceholder": "Автор, название книги, год",
+    "addLiterature": "Добавить источник",
+    "topicsPlan": "План тем",
+    "noTopics": "Сначала добавьте темы во вкладке «Темы».",
+    "topic": "Тема",
+    "hours": "Часы",
+    "note": "Описание",
+    "notePlaceholder": "Краткое примечание...",
+    "save": "Сохранить",
+    "saved": "План сохранён",
+    "loadError": "Не удалось загрузить план",
+    "note2": "Темы берутся из вкладки «Темы»."
+  },
   "adminHome": {
     "hello": "Здравствуйте",
     "students": "Студенты", "studentsHint": "активные аккаунты",
@@ -164,6 +186,7 @@
     "notFound": "Курс не найден или у вас нет доступа",
     "tabs": {
       "topics": "Темы",
+      "syllabus": "План",
       "sessions": "Занятия",
       "progress": "Прогресс",
       "settings": "Настройки"

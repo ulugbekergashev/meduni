@@ -86,6 +86,7 @@ export function TeacherCourseShell() {
         <TabNav
           items={[
             { to: `${base}/topics`, label: t("tabs.topics") },
+            { to: `${base}/syllabus`, label: t("tabs.syllabus") },
             { to: `${base}/sessions`, label: t("tabs.sessions") },
             { to: `${base}/progress`, label: t("tabs.progress") },
             { to: `${base}/settings`, label: t("tabs.settings") },
