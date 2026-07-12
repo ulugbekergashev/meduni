@@ -84,6 +84,13 @@ enum ProgressState {
   COMPLETED
 }
 
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+  EXCUSED
+}
+
 model User {
   id             Int             @id @default(autoincrement())
   fullName       String
@@ -106,6 +113,9 @@ model User {
   quizAttempts      QuizAttempt[]
   caseAttempts      CaseAttempt[]    @relation("CaseStudent")
   reviewedCases     CaseAttempt[]    @relation("CaseReviewer")
+  createdSessions   LessonSession[]  @relation("SessionCreator")
+  attendanceMarked  Attendance[]     @relation("AttendanceMarker")
+  attendanceRecords Attendance[]     @relation("AttendanceStudent")
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
 
@@ -208,6 +218,7 @@ model Course {
   courseGroups          CourseGroup[]
   enrollments           Enrollment[]
   topics                Topic[]
+  sessions              LessonSession[]
 
   @@map("courses")
 }
@@ -226,8 +237,41 @@ model Topic {
   digest         TopicDigest?
   contentItems   ContentItem[]
   progress       Progress[]
+  sessions       LessonSession[]
 
   @@map("topics")
+}
+
+model LessonSession {
+  id          Int          @id @default(autoincrement())
+  courseId    Int
+  course      Course       @relation(fields: [courseId], references: [id])
+  topicId     Int?
+  topic       Topic?       @relation(fields: [topicId], references: [id])
+  date        DateTime
+  title       String?
+  room        String?
+  createdById Int
+  createdBy   User         @relation("SessionCreator", fields: [createdById], references: [id])
+  createdAt   DateTime     @default(now())
+  attendance  Attendance[]
+
+  @@map("lesson_sessions")
+}
+
+model Attendance {
+  id         Int              @id @default(autoincrement())
+  sessionId  Int
+  session    LessonSession    @relation(fields: [sessionId], references: [id])
+  studentId  Int
+  student    User             @relation("AttendanceStudent", fields: [studentId], references: [id])
+  status     AttendanceStatus
+  markedById Int
+  markedBy   User             @relation("AttendanceMarker", fields: [markedById], references: [id])
+  markedAt   DateTime         @updatedAt
+
+  @@unique([sessionId, studentId])
+  @@map("attendance")
 }
 
 model Progress {
