@@ -14,7 +14,66 @@
     "courses": "Kurslar",
     "attendance": "Davomat",
     "profile": "Profil",
+    "glossary": "Lugʻat",
+    "templates": "Shablonlar",
+    "ai": "AI monitoring",
+    "audit": "Audit",
     "logout": "Chiqish"
+  },
+  "adminHome": {
+    "hello": "Salom",
+    "students": "Talabalar", "studentsHint": "faol hisoblar",
+    "teachers": "Oʻqituvchilar", "teachersHint": "kafedralar boʻyicha",
+    "courses": "Kurslar", "coursesHint": "joriy semestr",
+    "publishedTopics": "Chop etilgan mavzular", "publishedTopicsHint": "talabalarga ochiq",
+    "publishedContent": "Chop etilgan kontent", "publishedContentHint": "test, keys, video",
+    "attention": "Diqqat talab qiladi",
+    "allClear": "Hammasi joyida. Diqqat talab qiladigan narsa yoʻq.",
+    "casesToReview": "keys tekshiruvda", "contentToApprove": "kontent tasdiqda", "overQuota": "kvotasi tugagan kafedra",
+    "aiThisMonth": "AI sarfi — bu oy",
+    "tokens": "tokenlar", "images": "rasmlar", "cost": "narx",
+    "activity7d": "Faollik — 7 kun",
+    "contentCreated": "yaratilgan kontent", "activeStudents": "faol talaba"
+  },
+  "glossary": {
+    "title": "Lugʻat",
+    "subtitle": "Oʻzbek tibbiy terminologiyasi. Bu lugʻat har AI generatsiyaga qoʻshiladi — barcha materialda atamalar bir xil boʻladi.",
+    "search": "Qidiruv...",
+    "import": "Excel import",
+    "imported": "Import: {{added}} qoʻshildi, {{skipped}} oʻtkazib yuborildi",
+    "importError": "Import xatosi",
+    "termRu": "Termin (ru)", "termUz": "Termin (uz)", "termLat": "Lotincha",
+    "add": "Qoʻshish", "added": "Qoʻshildi", "dupError": "Bu termin allaqachon bor",
+    "empty": "Bu kafedrada hali atama yoʻq. Qoʻshing yoki Excel import qiling.",
+    "deleteTitle": "Terminni oʻchirish", "deleteConfirm": "\"{{term}}\" oʻchirilsinmi?", "deleted": "Oʻchirildi"
+  },
+  "templates": {
+    "title": "Shablonlar",
+    "subtitle": "Prezentatsiyalar universitet brendida boʻlsin — ranglar, logo.",
+    "newTemplate": "Yangi shablon",
+    "name": "Nom", "namePlaceholder": "Masalan: Universitet brendi",
+    "primary": "Asosiy rang", "secondary": "Ikkilamchi rang",
+    "add": "Qoʻshish", "created": "Shablon yaratildi", "empty": "Hali shablon yoʻq. Yangi shablon qoʻshing.",
+    "default": "Standart", "makeDefault": "Standart qilish", "defaultSet": "Standart qilindi",
+    "deleteTitle": "Shablonni oʻchirish", "deleteConfirm": "\"{{name}}\" oʻchirilsinmi?", "deleted": "Oʻchirildi"
+  },
+  "ai": {
+    "title": "AI monitoring",
+    "subtitle": "AI sarfini kuzating va kafedralarga oylik kvota qoʻying.",
+    "thisMonth": "Bu oy sarfi",
+    "tokens": "Tokenlar", "images": "Rasmlar", "cost": "Narx",
+    "byKind": "Tur boʻyicha", "byDept": "Kafedralar boʻyicha",
+    "dept": "Kafedra", "quotaUse": "Kvota", "quota": "Kvota", "setQuota": "Kvota sozlash",
+    "editQuota": "Kvotani sozlash", "zeroUnlimited": "0 = cheklovsiz",
+    "tokenLimit": "Oylik token limiti", "imageLimit": "Oylik rasm limiti", "costLimit": "Oylik narx limiti ($)",
+    "cancel": "Bekor", "save": "Saqlash", "saved": "Kvota saqlandi"
+  },
+  "audit": {
+    "title": "Audit",
+    "subtitle": "Muhim harakatlar tarixi: chop etish, baholash, yoʻqlama, kvota.",
+    "actor": "Foydalanuvchi...", "allActions": "Barcha harakatlar",
+    "time": "Vaqt", "who": "Kim", "action": "Harakat", "object": "Obyekt", "details": "Tafsilot", "view": "Koʻrish",
+    "empty": "Hali audit yozuvi yoʻq."
   },
   "attendanceMe": {
     "title": "Mening davomatim",

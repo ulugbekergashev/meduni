@@ -4,6 +4,8 @@ import { ApiError, badRequest, notFound } from "../../lib/errors";
 import { deletePath, readText, readFileBuffer, saveMaterialFile, saveParsedText } from "../../lib/storage";
 import { extractText, fileTypeFromName, parseErrorMessages, type ParseErrorCode } from "./parse";
 import { generateStructured } from "../../ai/gemini";
+import { assertQuota } from "../../ai/quota";
+import { departmentForTopic, getGlossaryForDepartment, glossaryBlock } from "../../ai/glossary";
 import { digestSchema, digestResponseSchema, type DigestJson } from "../../ai/types";
 import { digestSystemPrompt, digestUserContent } from "../../ai/prompts/digest";
 
@@ -193,12 +195,18 @@ export async function generateDigest(topicId: number, teacherId: number) {
   const lang = teacher?.locale === "ru" ? "ru" : "uz";
   const materialText = await collectMaterialText(topicId);
 
+  const departmentId = await departmentForTopic(topicId);
+  await assertQuota(departmentId);
+  const glossary = glossaryBlock(await getGlossaryForDepartment(departmentId));
+
   const raw = await generateStructured<DigestJson>({
-    systemInstruction: digestSystemPrompt(lang),
+    systemInstruction: digestSystemPrompt(lang) + glossary,
     userContent: digestUserContent(materialText),
     responseSchema: digestResponseSchema,
-    kind: "digest",
+    kind: "DIGEST",
     topicId,
+    departmentId,
+    userId: teacherId,
   });
 
   // Coerce/validate the model output into our shape (never trust it blindly).

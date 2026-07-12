@@ -3,8 +3,12 @@ import multer from "multer";
 import { z, type ZodTypeAny } from "zod";
 import { badRequest, notFound } from "../../lib/errors";
 import { requireRoles } from "../../middleware/rbac";
+import { prisma } from "../../lib/prisma";
 import { importUsers } from "./import";
 import * as svc from "./service";
+
+const audit = (actorId: number, action: string, entityId: number, details?: object) =>
+  prisma.auditLog.create({ data: { actorId, action, entity: "User", entityId, detailsJson: details ?? undefined } }).catch(() => {});
 
 export const usersRouter = Router();
 usersRouter.use(requireRoles("ADMIN"));
@@ -70,7 +74,9 @@ usersRouter.get(
 usersRouter.post(
   "/",
   wrap(async (req, res) => {
-    res.status(201).json(await svc.createUser(parseBody(createSchema, req.body)));
+    const created = await svc.createUser(parseBody(createSchema, req.body));
+    await audit(req.user!.id, "CREATE_USER", created.id, { role: created.role, email: created.email });
+    res.status(201).json(created);
   })
 );
 
@@ -86,7 +92,9 @@ usersRouter.patch(
 usersRouter.post(
   "/:id/toggle-active",
   wrap(async (req, res) => {
-    res.json(await svc.toggleActive(parseId(req.params.id)));
+    const u = await svc.toggleActive(parseId(req.params.id));
+    await audit(req.user!.id, u.isActive ? "ACTIVATE_USER" : "DEACTIVATE_USER", u.id);
+    res.json(u);
   })
 );
 

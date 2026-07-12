@@ -116,6 +116,8 @@ model User {
   createdSessions   LessonSession[]  @relation("SessionCreator")
   attendanceMarked  Attendance[]     @relation("AttendanceMarker")
   attendanceRecords Attendance[]     @relation("AttendanceStudent")
+  glossaryTerms     Glossary[]       @relation("GlossaryCreator")
+  aiUsage           AiUsage[]
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
 
@@ -170,10 +172,52 @@ model Department {
   createdAt DateTime  @default(now())
   subjects  Subject[]
   teachers  TeacherProfile[]
+  glossary  Glossary[]
+  aiUsage   AiUsage[]
+  aiQuota   AiQuota?
 
   @@unique([facultyId, nameUz])
   @@unique([facultyId, nameRu])
   @@map("departments")
+}
+
+model Glossary {
+  id           Int        @id @default(autoincrement())
+  departmentId Int
+  department   Department @relation(fields: [departmentId], references: [id])
+  termRu       String
+  termUz       String
+  termLat      String?
+  approved     Boolean    @default(true)
+  createdById  Int
+  createdBy    User       @relation("GlossaryCreator", fields: [createdById], references: [id])
+  createdAt    DateTime   @default(now())
+
+  @@unique([departmentId, termRu])
+  @@map("glossary")
+}
+
+model PresentationTemplate {
+  id            Int      @id @default(autoincrement())
+  name          String
+  pptxMasterUrl String?
+  colorsJson    Json
+  logoUrl       String?
+  isDefault     Boolean  @default(false)
+  createdAt     DateTime @default(now())
+
+  @@map("presentation_templates")
+}
+
+model AiQuota {
+  id                Int        @id @default(autoincrement())
+  departmentId      Int        @unique
+  department        Department @relation(fields: [departmentId], references: [id])
+  monthlyTokenLimit Int        @default(0) // 0 = unlimited
+  monthlyImageLimit Int        @default(0)
+  monthlyCostLimit  Float      @default(0)
+
+  @@map("ai_quotas")
 }
 
 model Subject {
@@ -436,15 +480,23 @@ model TopicDigest {
 }
 
 model AiUsage {
-  id               Int      @id @default(autoincrement())
+  id               Int         @id @default(autoincrement())
   kind             String
   topicId          Int?
+  departmentId     Int?
+  department       Department? @relation(fields: [departmentId], references: [id])
+  userId           Int?
+  user             User?       @relation(fields: [userId], references: [id])
   model            String
-  promptTokens     Int      @default(0)
-  completionTokens Int      @default(0)
-  totalTokens      Int      @default(0)
-  createdAt        DateTime @default(now())
+  promptTokens     Int         @default(0)
+  completionTokens Int         @default(0)
+  totalTokens      Int         @default(0)
+  images           Int         @default(0)
+  ttsChars         Int         @default(0)
+  costUsd          Float       @default(0)
+  createdAt        DateTime    @default(now())
 
+  @@index([departmentId, createdAt])
   @@map("ai_usage")
 }
 

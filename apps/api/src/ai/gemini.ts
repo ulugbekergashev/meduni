@@ -1,6 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
-import { prisma } from "../lib/prisma";
 import { ApiError } from "../lib/errors";
+import { recordAiUsage } from "./usage";
 
 const MODEL = "gemini-2.5-flash";
 const TIMEOUT_MS = 90_000;
@@ -42,6 +42,8 @@ export interface GenerateOpts {
   responseSchema: unknown;
   kind: string;
   topicId?: number;
+  departmentId?: number | null;
+  userId?: number | null;
 }
 
 /** Calls Gemini for structured JSON, logs token usage, retries transient failures. */
@@ -68,18 +70,15 @@ export async function generateStructured<T>(opts: GenerateOpts): Promise<T> {
       );
 
       const usage = res.usageMetadata;
-      await prisma.aiUsage
-        .create({
-          data: {
-            kind: opts.kind,
-            topicId: opts.topicId ?? null,
-            model: MODEL,
-            promptTokens: usage?.promptTokenCount ?? 0,
-            completionTokens: usage?.candidatesTokenCount ?? 0,
-            totalTokens: usage?.totalTokenCount ?? 0,
-          },
-        })
-        .catch(() => {});
+      await recordAiUsage({
+        kind: opts.kind,
+        model: MODEL,
+        topicId: opts.topicId,
+        departmentId: opts.departmentId,
+        userId: opts.userId,
+        promptTokens: usage?.promptTokenCount ?? 0,
+        completionTokens: usage?.candidatesTokenCount ?? 0,
+      });
 
       const text = res.text ?? "";
       return JSON.parse(text) as T;
@@ -102,7 +101,10 @@ export interface GeneratedImage {
 }
 
 /** Generates a single image via Nano Banana Pro. Logs one AiUsage row. */
-export async function generateImage(prompt: string, opts: { kind: string; topicId?: number }): Promise<GeneratedImage> {
+export async function generateImage(
+  prompt: string,
+  opts: { kind: string; topicId?: number; departmentId?: number | null; userId?: number | null }
+): Promise<GeneratedImage> {
   const ai = getClient();
   try {
     const res = await withTimeout(
@@ -115,18 +117,16 @@ export async function generateImage(prompt: string, opts: { kind: string; topicI
     );
 
     const usage = res.usageMetadata;
-    await prisma.aiUsage
-      .create({
-        data: {
-          kind: opts.kind,
-          topicId: opts.topicId ?? null,
-          model: IMAGE_MODEL,
-          promptTokens: usage?.promptTokenCount ?? 0,
-          completionTokens: usage?.candidatesTokenCount ?? 0,
-          totalTokens: usage?.totalTokenCount ?? 0,
-        },
-      })
-      .catch(() => {});
+    await recordAiUsage({
+      kind: opts.kind,
+      model: IMAGE_MODEL,
+      topicId: opts.topicId,
+      departmentId: opts.departmentId,
+      userId: opts.userId,
+      promptTokens: usage?.promptTokenCount ?? 0,
+      completionTokens: usage?.candidatesTokenCount ?? 0,
+      images: 1,
+    });
 
     const parts = res.candidates?.[0]?.content?.parts ?? [];
     const imgPart = parts.find((p) => p.inlineData?.data);
