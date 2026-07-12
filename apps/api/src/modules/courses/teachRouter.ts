@@ -4,6 +4,7 @@ import { requireRoles } from "../../middleware/rbac";
 import * as svc from "./service";
 import * as progress from "./progress";
 import * as review from "./review";
+import * as attendance from "./attendance";
 
 export const teachCoursesRouter = Router();
 teachCoursesRouter.use(requireRoles("TEACHER"));
@@ -69,6 +70,56 @@ teachCoursesRouter.post(
     res.json(await review.reviewCase(req.user!.id, parseId(req.params.id), score, feedback));
   })
 );
+
+// ---------- Attendance (sessions + marking + report) ----------
+
+const qs = (v: unknown): string | undefined => (typeof v === "string" && v ? v : undefined);
+
+teachCoursesRouter.get(
+  "/courses/:id/sessions",
+  wrap(async (req, res) =>
+    res.json(await attendance.listSessions(parseId(req.params.id), req.user!.id, { from: qs(req.query.from), to: qs(req.query.to), search: qs(req.query.search) }))
+  )
+);
+
+teachCoursesRouter.post(
+  "/courses/:id/sessions",
+  wrap(async (req, res) => res.json(await attendance.createSession(parseId(req.params.id), req.user!.id, req.body ?? {})))
+);
+
+// Report BEFORE the generic /sessions/:id routes are fine (different prefix); also
+// place .xlsx before the plain report so the literal path matches first.
+teachCoursesRouter.get(
+  "/courses/:id/attendance-report.xlsx",
+  wrap(async (req, res) => {
+    const view = req.query.view === "list" ? "list" : "matrix";
+    const buf = await attendance.exportAttendance(parseId(req.params.id), req.user!.id, view, { from: qs(req.query.from), to: qs(req.query.to) });
+    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    res.setHeader("Content-Disposition", `attachment; filename="attendance-${req.params.id}-${view}.xlsx"`);
+    res.send(buf);
+  })
+);
+
+teachCoursesRouter.get(
+  "/courses/:id/attendance-report",
+  wrap(async (req, res) =>
+    res.json(await attendance.attendanceReport(parseId(req.params.id), req.user!.id, { from: qs(req.query.from), to: qs(req.query.to), search: qs(req.query.search) }))
+  )
+);
+
+teachCoursesRouter.get("/sessions/:id/roster", wrap(async (req, res) => res.json(await attendance.getRoster(parseId(req.params.id), req.user!.id))));
+
+teachCoursesRouter.post(
+  "/sessions/:id/attendance",
+  wrap(async (req, res) => res.json(await attendance.markAttendance(parseId(req.params.id), req.user!.id, req.body?.marks ?? [])))
+);
+
+teachCoursesRouter.patch(
+  "/sessions/:id",
+  wrap(async (req, res) => res.json(await attendance.updateSession(parseId(req.params.id), req.user!.id, req.body ?? {})))
+);
+
+teachCoursesRouter.delete("/sessions/:id", wrap(async (req, res) => res.json(await attendance.deleteSession(parseId(req.params.id), req.user!.id))));
 
 // Manual unlock override (audited).
 teachCoursesRouter.post(

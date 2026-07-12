@@ -209,3 +209,109 @@ export function useReviewCase() {
     },
   });
 }
+
+// ---------------- Attendance (Module 15) ----------------
+
+export type AttStatus = "PRESENT" | "ABSENT" | "LATE" | "EXCUSED";
+
+export interface SessionRow {
+  id: number;
+  date: string;
+  title: string | null;
+  titleUz: string | null;
+  titleRu: string | null;
+  topicId: number | null;
+  room: string | null;
+  markedCount: number;
+  rosterSize: number;
+  status: "UNMARKED" | "PARTIAL" | "FULL";
+}
+
+export interface RosterData {
+  session: { id: number; date: string; title: string | null; topicId: number | null; room: string | null; groupName: string | null };
+  students: { id: number; fullName: string; status: AttStatus | null }[];
+}
+
+export interface AttReport {
+  sessions: { id: number; date: string; title: string | null; titleUz: string | null; titleRu: string | null }[];
+  students: {
+    id: number;
+    fullName: string;
+    cells: Record<number, AttStatus>;
+    present: number;
+    absent: number;
+    late: number;
+    excused: number;
+    attendancePct: number | null;
+  }[];
+}
+
+export interface DateRange {
+  from?: string;
+  to?: string;
+  search?: string;
+}
+
+export function useSessions(courseId: number, range: DateRange) {
+  const p = new URLSearchParams();
+  if (range.from) p.set("from", range.from);
+  if (range.to) p.set("to", range.to);
+  if (range.search?.trim()) p.set("search", range.search.trim());
+  return useQuery({ queryKey: ["sessions", courseId, range], queryFn: () => api<SessionRow[]>(`/api/v1/teach/courses/${courseId}/sessions?${p}`) });
+}
+
+export function useCreateSession(courseId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (b: { date: string; title?: string; topicId?: number | null; room?: string }) =>
+      api(`/api/v1/teach/courses/${courseId}/sessions`, { method: "POST", body: JSON.stringify(b) }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["sessions", courseId] }),
+  });
+}
+
+export function useUpdateSession(courseId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (b: { id: number; date?: string; title?: string; topicId?: number | null; room?: string }) =>
+      api(`/api/v1/teach/sessions/${b.id}`, { method: "PATCH", body: JSON.stringify(b) }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["sessions", courseId] }),
+  });
+}
+
+export function useDeleteSession(courseId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => api(`/api/v1/teach/sessions/${id}`, { method: "DELETE" }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["sessions", courseId] }),
+  });
+}
+
+export function useRoster(sessionId: number | null) {
+  return useQuery({
+    queryKey: ["roster", sessionId],
+    queryFn: () => api<RosterData>(`/api/v1/teach/sessions/${sessionId}/roster`),
+    enabled: sessionId !== null,
+    retry: false,
+  });
+}
+
+export function useMarkAttendance(courseId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (b: { sessionId: number; marks: { studentId: number; status: AttStatus }[] }) =>
+      api(`/api/v1/teach/sessions/${b.sessionId}/attendance`, { method: "POST", body: JSON.stringify({ marks: b.marks }) }),
+    onSuccess: (_d, b) => {
+      qc.invalidateQueries({ queryKey: ["sessions", courseId] });
+      qc.invalidateQueries({ queryKey: ["roster", b.sessionId] });
+      qc.invalidateQueries({ queryKey: ["att-report", courseId] });
+    },
+  });
+}
+
+export function useAttendanceReport(courseId: number, range: DateRange) {
+  const p = new URLSearchParams();
+  if (range.from) p.set("from", range.from);
+  if (range.to) p.set("to", range.to);
+  if (range.search?.trim()) p.set("search", range.search.trim());
+  return useQuery({ queryKey: ["att-report", courseId, range], queryFn: () => api<AttReport>(`/api/v1/teach/courses/${courseId}/attendance-report?${p}`) });
+}

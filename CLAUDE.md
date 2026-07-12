@@ -392,8 +392,35 @@ Tayyor:
   **Zanjir yopildi**: talaba topshirdi→o'qituvchi baholadi→talaba ko'rdi→mavzu tugadi→
   keyingisi ochildi.
 
+- **Modul 15 — O'qituvchi: Yo'qlama (tayyor).** Kurs karkasining "Darslar" tabi
+  (Modul 4 placeholder o'rnida). SODDA, qo'lда belgilanadi — **QR YO'Q**. Prisma:
+  `LessonSession` (courseId, topicId?, date, title?, room?, createdBy),
+  `Attendance` (sessionId, studentId, status PRESENT|ABSENT|LATE|EXCUSED, markedBy,
+  markedAt@updatedAt; @@unique sessionId+studentId), `AttendanceStatus` enum.
+  Backend `modules/courses/attendance.ts` (TEACHER, o'z kursi): sessions CRUD
+  (`GET/POST /teach/courses/:id/sessions` [from/to/search], `PATCH/DELETE
+  /teach/sessions/:id` — o'chirish Attendance'ni ham o'chiradi), `GET /teach/
+  sessions/:id/roster` (ACTIVE talabalar + joriy status + guruh nomi), `POST
+  /teach/sessions/:id/attendance {marks[]}` (**bulk upsert** + AuditLog
+  MARK_ATTENDANCE), `GET /teach/courses/:id/attendance-report` (talaba×dars
+  matritsasi + jamlanma + **davomat% = (present+late)/marked**), `.xlsx` eksport
+  (matrix|list, **exceljs**). session ro'yxatда markedCount/rosterSize/status
+  (UNMARKED|PARTIAL|FULL). Teacher dashboard'ga **upcomingSessions** qo'shildi
+  (Modul 13 va'dasi). ⚠️ `.xlsx` route `/attendance-report`dan OLDIN; `/sessions/:id/
+  {roster,attendance}` `/sessions/:id`dan OLDIN. Frontend `SessionsTab` — ikki
+  ички-tab (?sub=): **Darslar** (sana oralig'i[def joriy oy]+qidiruv+Excel+
+  "Yangi dars"; jadval Sana|Mavzu|Xona|Belgilangan|Holat pill|amallar; session
+  modali [sana majburiy, matn YOKI mavzudan, xona]; **yo'qlama modali** — "Hammasini
+  Keldi" tez tugma + 4 rangli status tugma per talaba [Keldi=emerald/Kelmadi=rose/
+  Kechikdi=amber/Sababli=blue] + qidiruv + "X/Y belgilandi"; o'chirish tasdig'i) +
+  **Hisobot** (matrix[chap ustun **sticky**, K/KM/KCH/S rangli belgi, oxirgi ustun
+  kelmadi]|list[per-status sanoq + davomat% **<75 rose**, saralash]). **To'liq
+  tekshirildi**: 21/21 HTTP e2e — sessions CRUD, roster, bulk mark, re-mark+audit,
+  report% (late=keldi), ownership 403, ikkala xlsx, delete cascade; tsc+build toza.
+  Demo: teacher.m11demo@meduni.uz/student123 — 3 dars (1 topic-linked, 1 partial),
+  6 talaba turli davomatда (Fayzullaev 0%, Bobojonov 33%).
+
 Keyingilar (men har biriga prompt beraman):
-15. Yo'qlama
 16. Talaba: davomat + profil
 17. Admin: lug'at, shablon, AI monitoring, audit
 

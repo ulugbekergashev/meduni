@@ -208,18 +208,36 @@ export async function getTeacherDashboard(teacherId: number) {
     });
   }
 
-  const [casesToReview, contentToApprove] = await Promise.all([
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+
+  const [casesToReview, contentToApprove, upcoming] = await Promise.all([
     prisma.caseAttempt.count({
       where: { reviewedAt: null, clinicalCase: { contentItem: { topic: { course: { teacherId } } } } },
     }),
     prisma.contentItem.count({
       where: { status: { in: ["DRAFT", "REVIEW"] }, topic: { course: { teacherId } } },
     }),
+    prisma.lessonSession.findMany({
+      where: { course: { teacherId }, date: { gte: startOfToday } },
+      orderBy: { date: "asc" },
+      take: 5,
+      include: { course: { include: { subject: true } }, topic: true },
+    }),
   ]);
 
   return {
     courses: courseCards,
     tasks: { casesToReview, contentToApprove, studentsBehind },
+    upcomingSessions: upcoming.map((s) => ({
+      id: s.id,
+      courseId: s.courseId,
+      date: s.date,
+      subjectNameUz: s.course.subject.nameUz,
+      subjectNameRu: s.course.subject.nameRu,
+      title: s.title ?? s.topic?.titleUz ?? null,
+      room: s.room,
+    })),
   };
 }
 
