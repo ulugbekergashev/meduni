@@ -60,6 +60,15 @@ enum CaseFormat {
   EXTENDED
 }
 
+enum VideoBuildStatus {
+  PENDING
+  SCRIPT
+  TTS
+  RENDER
+  DONE
+  ERROR
+}
+
 model User {
   id             Int             @id @default(autoincrement())
   fullName       String
@@ -202,9 +211,27 @@ model ContentItem {
   quiz            Quiz?
   clinicalCase    ClinicalCase?
   presentation    Presentation?
+  video           Video?
 
   @@unique([topicId, kind])
   @@map("content_items")
+}
+
+model Video {
+  id            Int              @id @default(autoincrement())
+  contentItemId Int              @unique
+  contentItem   ContentItem      @relation(fields: [contentItemId], references: [id])
+  scriptJson    Json
+  audioUrl      String?
+  mp4Url        String?
+  srtUrl        String?
+  durationSec   Int?
+  voiceId       String?
+  language      Locale
+  buildStatus   VideoBuildStatus @default(PENDING)
+  errorStage    String?
+
+  @@map("videos")
 }
 
 model Quiz {

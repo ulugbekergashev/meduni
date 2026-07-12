@@ -109,6 +109,25 @@ export interface PresentationContent {
   slides: Slide[];
 }
 
+export type VideoBuildStatus = "pending" | "script" | "tts" | "render" | "done" | "error";
+
+export interface ScriptSegment {
+  slideIndex: number;
+  narration: string;
+  durationSec: number;
+}
+
+export interface VideoContent {
+  id: number;
+  buildStatus: VideoBuildStatus;
+  errorStage: string | null;
+  voiceId: string | null;
+  durationSec: number | null;
+  script: ScriptSegment[];
+  hasMp4: boolean;
+  hasSrt: boolean;
+}
+
 export interface ContentFull {
   id: number;
   topicId: number;
@@ -120,6 +139,7 @@ export interface ContentFull {
   quiz: { passThreshold: number; maxAttempts: number; questions: QuizQuestion[] } | null;
   clinicalCase: { caseJson: CaseJson; format: "SHORT" | "EXTENDED" } | null;
   presentation: PresentationContent | null;
+  video: VideoContent | null;
 }
 
 // ---- Topics ----
@@ -265,13 +285,15 @@ export function useContent(id: number) {
   return useQuery({
     queryKey: ["content", id],
     queryFn: () => api<ContentFull>(`/api/v1/content/${id}`),
-    // Poll while any presentation image slot is still being generated.
+    // Poll while presentation images or a video build are still in progress.
     refetchInterval: (query) => {
       const data = query.state.data as ContentFull | undefined;
-      const busy = data?.presentation?.slides.some((s) =>
+      const imgBusy = data?.presentation?.slides.some((s) =>
         s.imageSlots.some((slot) => slot.status === "PENDING" || slot.status === "PROCESSING")
       );
-      return busy ? 2000 : false;
+      const vidBusy =
+        data?.video && ["pending", "script", "tts", "render"].includes(data.video.buildStatus);
+      return imgBusy || vidBusy ? 2000 : false;
     },
   });
 }
@@ -300,6 +322,23 @@ export function useRegenerateImage(presentationId: number) {
   return useMutation({
     mutationFn: ({ slideIndex, slotIndex }: { slideIndex: number; slotIndex: number }) =>
       api(`/api/v1/presentations/${presentationId}/regenerate-image/${slideIndex}/${slotIndex}`, { method: "POST" }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["content"] }),
+  });
+}
+
+export function useGenerateVideo(topicId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: { language: "uz" | "ru"; voice: "male" | "female" }) =>
+      api<ContentFull>(`/api/v1/topics/${topicId}/generate/video`, { method: "POST", body: JSON.stringify(body) }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["topic", topicId] }),
+  });
+}
+
+export function useRebuildVideo(videoId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api(`/api/v1/videos/${videoId}/rebuild`, { method: "POST" }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["content"] }),
   });
 }

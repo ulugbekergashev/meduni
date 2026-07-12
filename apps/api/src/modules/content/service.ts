@@ -11,6 +11,7 @@ import {
   type DigestJson,
   type QuizGen,
   type Slide,
+  type ScriptSegment,
 } from "../../ai/types";
 import { quizSystemPrompt, quizUserContent } from "../../ai/prompts/quiz";
 import { caseSystemPrompt, caseUserContent } from "../../ai/prompts/case";
@@ -32,6 +33,7 @@ const contentInclude = {
   quiz: { include: { questions: { orderBy: { orderIndex: "asc" } } } },
   clinicalCase: true,
   presentation: true,
+  video: true,
   approvedBy: true,
 } satisfies Prisma.ContentItemInclude;
 
@@ -95,6 +97,18 @@ function toContentOut(item: ContentFull) {
               url: slot.status === "DONE" ? `/api/v1/presentations/${item.presentation!.id}/image/${si}/${sloti}` : null,
             })),
           })),
+        }
+      : null,
+    video: item.video
+      ? {
+          id: item.video.id,
+          buildStatus: item.video.buildStatus.toLowerCase(),
+          errorStage: item.video.errorStage,
+          voiceId: item.video.voiceId,
+          durationSec: item.video.durationSec,
+          script: item.video.scriptJson as unknown as ScriptSegment[],
+          hasMp4: !!item.video.mp4Url,
+          hasSrt: !!item.video.srtUrl,
         }
       : null,
   };
@@ -272,6 +286,13 @@ export async function updateContent(contentId: number, teacherId: number, body: 
       imageSlots: byId.get(s.id)?.imageSlots ?? [],
     }));
     await prisma.presentation.update({ where: { contentItemId: contentId }, data: { slidesJson: merged as object } });
+    await prisma.contentItem.update({ where: { id: contentId }, data: { editedByTeacher: true } });
+  } else if (item.kind === "VIDEO") {
+    const b = body as { script: { slideIndex: number; narration: string }[] };
+    if (!b || !Array.isArray(b.script)) throw badRequest("Skript notoʻgʻri", "Неверный скрипт");
+    // Only narration text is editable; durations are re-measured on rebuild.
+    const segs: ScriptSegment[] = b.script.map((s) => ({ slideIndex: s.slideIndex, narration: s.narration, durationSec: 0 }));
+    await prisma.video.update({ where: { contentItemId: contentId }, data: { scriptJson: segs as object } });
     await prisma.contentItem.update({ where: { id: contentId }, data: { editedByTeacher: true } });
   } else {
     throw badRequest("Bu kontent turi hali tahrirlanmaydi", "Этот тип контента пока не редактируется");

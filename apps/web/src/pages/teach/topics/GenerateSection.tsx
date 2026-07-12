@@ -7,9 +7,11 @@ import { Field } from "../../../components/Field";
 import { apiErrorMessage } from "../../../lib/api";
 import { useLocale } from "../../../lib/useLocale";
 import {
+  useContent,
   useGenerateCase,
   useGeneratePresentation,
   useGenerateQuiz,
+  useGenerateVideo,
   type ContentSummary,
   type TopicDetail,
 } from "./api";
@@ -210,29 +212,110 @@ function PresentationCard({ topic }: { topic: TopicDetail }) {
   );
 }
 
-function SoonCard({ title, icon }: { title: string; icon: typeof Film }) {
-  const { t } = useTranslation(undefined, { keyPrefix: "generate" });
+function VideoStages({ status }: { status: string }) {
+  const { t } = useTranslation(undefined, { keyPrefix: "generate.vStep" });
+  const order = ["script", "tts", "render"];
+  const idx = order.indexOf(status);
   return (
-    <Card className="flex flex-col gap-4 opacity-60">
+    <div className="space-y-1.5">
+      {order.map((step, i) => {
+        const done = idx > i;
+        const active = status === step;
+        return (
+          <div key={step} className="flex items-center gap-2 text-[13px]">
+            {done ? (
+              <Icon icon={Check} size={15} className="text-emerald" />
+            ) : active ? (
+              <Spinner size={13} />
+            ) : (
+              <span className="h-[13px] w-[13px] rounded-full border border-line" />
+            )}
+            <span className={done ? "text-emerald" : active ? "text-ink" : "text-ink-faint"}>{t(step)}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function VideoCard({ topic }: { topic: TopicDetail }) {
+  const { t } = useTranslation(undefined, { keyPrefix: "generate" });
+  const locale = useLocale();
+  const { show } = useToast();
+  const navigate = useNavigate();
+  const gen = useGenerateVideo(topic.id);
+  const summary = topic.content.find((c) => c.kind === "video");
+  const hasPresentation = topic.content.some((c) => c.kind === "presentation");
+
+  const [language, setLanguage] = useState<"uz" | "ru">(locale);
+  const [voice, setVoice] = useState<"male" | "female">("female");
+
+  // When a video exists, watch its build status.
+  const detail = useContent(summary?.id ?? 0);
+  const video = summary ? detail.data?.video : null;
+  const building = video && ["pending", "script", "tts", "render"].includes(video.buildStatus);
+  const errored = video?.buildStatus === "error";
+
+  return (
+    <Card className="flex flex-col gap-4">
       <div className="flex items-center gap-2">
-        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-bg text-ink-faint">
-          <Icon icon={icon} size={18} />
+        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-soft text-blue">
+          <Icon icon={Film} size={18} />
         </div>
-        <h3 className="text-section font-bold text-ink-soft">{title}</h3>
+        <h3 className="text-section font-bold text-ink">{t("videoTitle")}</h3>
       </div>
-      <p className="text-[12.5px] text-ink-faint">{t("soon")}</p>
+
+      {!hasPresentation ? (
+        <p className="text-[13px] text-amber">{t("needPresentation")}</p>
+      ) : building ? (
+        <VideoStages status={video!.buildStatus} />
+      ) : (
+        <>
+          {!summary && (
+            <>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label={t("voice")}>
+                  <Select value={voice} onChange={(e) => setVoice(e.target.value as "male" | "female")}>
+                    <option value="female">{t("voiceFemale")}</option>
+                    <option value="male">{t("voiceMale")}</option>
+                  </Select>
+                </Field>
+                <Field label={t("language")}>
+                  <LangSelect value={language} onChange={setLanguage} />
+                </Field>
+              </div>
+              <p className="text-[12px] text-ink-faint">{t("videoNote")}</p>
+            </>
+          )}
+          {(gen.isError || errored) && (
+            <p className="text-[13px] text-rose">
+              {errored ? t("vError", { stage: video!.errorStage ?? "" }) : apiErrorMessage(gen.error, locale) ?? t("error")}
+            </p>
+          )}
+          {!summary || errored ? (
+            <Button
+              icon={<Icon icon={Sparkles} size={16} />}
+              onClick={() => gen.mutate({ language, voice }, { onSuccess: () => show(t("ready")) })}
+              disabled={gen.isPending}
+            >
+              {errored ? t("regenerate") : t("generateVideo")}
+            </Button>
+          ) : (
+            <ReadyRow summary={summary} onEdit={() => navigate(`/teach/content/${summary.id}`)} />
+          )}
+        </>
+      )}
     </Card>
   );
 }
 
 export function GenerateSection({ topic }: { topic: TopicDetail }) {
-  const { t } = useTranslation(undefined, { keyPrefix: "generate" });
   return (
     <div className="grid gap-4 sm:grid-cols-2">
       <QuizCard topic={topic} />
       <CaseCard topic={topic} />
       <PresentationCard topic={topic} />
-      <SoonCard title={t("videoTitle")} icon={Film} />
+      <VideoCard topic={topic} />
     </div>
   );
 }

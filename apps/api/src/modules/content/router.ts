@@ -4,6 +4,7 @@ import { badRequest, notFound } from "../../lib/errors";
 import { requireRoles } from "../../middleware/rbac";
 import * as svc from "./service";
 import * as pres from "./presentation";
+import * as video from "./video";
 
 const wrap =
   (fn: RequestHandler): RequestHandler =>
@@ -35,6 +36,10 @@ const genPresSchema = z.object({
   language: z.enum(["uz", "ru"]),
   templateId: z.number().int().positive().optional().nullable(),
 });
+const genVideoSchema = z.object({
+  language: z.enum(["uz", "ru"]),
+  voice: z.enum(["male", "female"]).default("female"),
+});
 
 // Generation lives on the topic (topicsRouter mounts this at /api/v1/topics).
 export const generateRouter = Router();
@@ -58,6 +63,14 @@ generateRouter.post(
   "/:id/generate/presentation",
   wrap(async (req, res) => {
     const contentId = await pres.generatePresentation(parseId(req.params.id), req.user!.id, parseBody(genPresSchema, req.body));
+    res.json(await svc.getContent(contentId, req.user!.id));
+  })
+);
+
+generateRouter.post(
+  "/:id/generate/video",
+  wrap(async (req, res) => {
+    const contentId = await video.generateVideo(parseId(req.params.id), req.user!.id, parseBody(genVideoSchema, req.body));
     res.json(await svc.getContent(contentId, req.user!.id));
   })
 );
@@ -134,6 +147,37 @@ presentationsRouter.get(
     const buf = await pres.exportPdf(parseId(req.params.id), req.user!.id);
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader("Content-Disposition", `attachment; filename="presentation-${req.params.id}.pdf"`);
+    res.send(buf);
+  })
+);
+
+// Video rebuild + media at /api/v1/videos.
+export const videosRouter = Router();
+videosRouter.use(requireRoles("TEACHER"));
+
+videosRouter.post(
+  "/:id/rebuild",
+  wrap(async (req, res) => {
+    await video.rebuildVideo(parseId(req.params.id), req.user!.id);
+    res.json({ ok: true });
+  })
+);
+
+videosRouter.get(
+  "/:id/mp4",
+  wrap(async (req, res) => {
+    const buf = await video.getVideoMedia(parseId(req.params.id), req.user!.id, "mp4");
+    res.setHeader("Content-Type", "video/mp4");
+    res.setHeader("Accept-Ranges", "bytes");
+    res.send(buf);
+  })
+);
+
+videosRouter.get(
+  "/:id/srt",
+  wrap(async (req, res) => {
+    const buf = await video.getVideoMedia(parseId(req.params.id), req.user!.id, "srt");
+    res.setHeader("Content-Type", "text/plain; charset=utf-8");
     res.send(buf);
   })
 );

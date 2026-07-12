@@ -246,8 +246,26 @@ Tayyor:
   fon-job 429'ni ERROR bilan to'g'ri boshqaradi. ⚠️ **Real Nano Banana Pro rasmlari
   free-tier'da 429 (rasm kvotasi yo'q) — pulli kalit kelganda sifat tekshiriladi.**
 
+- **Modul 9 — O'qituvchi: Video generatsiya (tayyor).** TTS: **edge-tts**
+  (uz-UZ-Madina/Sardor, ru-RU-Svetlana/Dmitry — Azure ovozlari, bepul, kalitsiz;
+  Aisha/Azure Speech kalitlari yo'q edi). Prisma: Video (scriptJson, audioUrl?,
+  mp4Url?, srtUrl?, durationSec?, voiceId?, buildStatus PENDING|SCRIPT|TTS|RENDER|
+  DONE|ERROR, errorStage?). AI: `ai/prompts/videoScript.ts` (slaydlardan so'zlashuv
+  uslubidagi narration — slaydni o'qib bermaydi). Pipeline (`modules/content/
+  video.ts`, fon-job setImmediate, bosqichma-bosqich, idempotent): SCRIPT (Gemini)
+  → TTS (edge-tts per segment, `lib/exec.ts` python child_process, SRT'dan
+  davomiylik) → RENDER (slayd→PNG `sharp`+SVG, ffmpeg concat + audio → MP4, SRT).
+  Har bosqich alohida saqlanadi; rebuild SCRIPT'ni o'tkazib TTS+RENDER qayta
+  ishlaydi. Backend: `POST /topics/:id/generate/video` (prezentatsiya yo'q →
+  400), `/api/v1/videos/:id/{rebuild,mp4,srt}`, PUT content (skript tahriri).
+  Frontend: Video kartasi (til/ovoz, bosqichli progress Skript→Ovoz→Montaj);
+  Video tahrirlagich (`VideoEditor`: pleyer+VTT subtitr, skript textarea'lar,
+  "qayta ovozlash va montaj", MP4/SRT yuklab olish). **To'liq tekshirildi**:
+  real MP4 (H.264 1920x1080 + AAC) + SRT, narration tabiiy o'zbekcha va
+  so'zlashuv uslubida. `lib/exec.ts` (FFMPEG_PATH). ffmpeg+edge-tts+sharp server'da
+  bo'lishi shart (prod eslatma). ⚠️ Modul 8 real rasmlari hali pulli kalit kutmoqda.
+
 Keyingilar (men har biriga prompt beraman):
-9. Video
 10. Faktcheck + chop etish (qulf 2)
 11. Talaba: mavzu yo'li
 12. Talaba: mavzu o'tish
