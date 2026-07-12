@@ -1,6 +1,7 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ChevronDown, GraduationCap, Mail, Users2 } from "lucide-react";
+import { BarChart3, CalendarCheck, ChevronDown, GraduationCap, Mail, NotebookPen, Users2 } from "lucide-react";
 import { Card, Icon, cls } from "@meduni/ui";
 import { AsyncSection } from "../../components/AsyncSection";
 import { useLocale, pickName } from "../../lib/useLocale";
@@ -9,6 +10,7 @@ import { useTeachGroups, type TeachGroup } from "./api";
 function GroupCard({ group }: { group: TeachGroup }) {
   const { t } = useTranslation(undefined, { keyPrefix: "groups" });
   const locale = useLocale();
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
 
   return (
@@ -29,14 +31,36 @@ function GroupCard({ group }: { group: TeachGroup }) {
         <Icon icon={ChevronDown} size={18} className={cls("shrink-0 text-ink-faint transition-transform", open && "rotate-180")} />
       </button>
 
-      {/* Subjects this teacher gives the group */}
-      {group.subjects.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 px-4 pb-3">
-          {group.subjects.map((s) => (
-            <span key={s.uz} className="rounded-pill bg-brand-soft px-2 py-0.5 text-[12px] font-medium text-brand-deep">{pickName(locale, s.uz, s.ru)}</span>
-          ))}
-        </div>
-      )}
+      {/* Courses with quick actions: Jurnal / Yo'qlama / Progress */}
+      <div className="space-y-2 px-4 pb-3">
+        {group.courses.length === 0 ? (
+          <p className="text-[12.5px] text-ink-faint">{t("noCourses")}</p>
+        ) : (
+          group.courses.map((c) => (
+            <div key={c.id} className="flex flex-wrap items-center gap-2 rounded-control border border-line bg-bg px-3 py-2">
+              <span className="min-w-0 flex-1 truncate text-[13px] font-semibold text-ink">{pickName(locale, c.nameUz, c.nameRu)}</span>
+              <button
+                onClick={() => navigate(`/teach/courses/${c.id}/sessions?sub=journal`)}
+                className="inline-flex items-center gap-1 rounded-control bg-brand-soft px-2.5 py-1 text-[12px] font-semibold text-brand-deep transition-colors hover:bg-brand/10"
+              >
+                <Icon icon={NotebookPen} size={13} /> {t("journal")}
+              </button>
+              <button
+                onClick={() => navigate(`/teach/courses/${c.id}/sessions`)}
+                className="inline-flex items-center gap-1 rounded-control bg-amber-soft px-2.5 py-1 text-[12px] font-semibold text-amber transition-colors hover:bg-amber/10"
+              >
+                <Icon icon={CalendarCheck} size={13} /> {t("attendance")}
+              </button>
+              <button
+                onClick={() => navigate(`/teach/courses/${c.id}/progress`)}
+                className="inline-flex items-center gap-1 rounded-control bg-blue-soft px-2.5 py-1 text-[12px] font-semibold text-blue transition-colors hover:bg-blue/10"
+              >
+                <Icon icon={BarChart3} size={13} /> {t("progress")}
+              </button>
+            </div>
+          ))
+        )}
+      </div>
 
       {open && (
         <div className="border-t border-line">

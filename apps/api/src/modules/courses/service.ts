@@ -216,10 +216,10 @@ export async function listTeacherGroups(teacherId: number) {
     include: { group: { include: { faculty: true } }, course: { include: { subject: true } } },
   });
 
-  const map = new Map<number, { group: (typeof cgs)[number]["group"]; subjects: Map<string, { uz: string; ru: string }> }>();
+  const map = new Map<number, { group: (typeof cgs)[number]["group"]; courses: Map<number, { id: number; nameUz: string; nameRu: string }> }>();
   for (const cg of cgs) {
-    if (!map.has(cg.groupId)) map.set(cg.groupId, { group: cg.group, subjects: new Map() });
-    map.get(cg.groupId)!.subjects.set(cg.course.subject.nameUz, { uz: cg.course.subject.nameUz, ru: cg.course.subject.nameRu });
+    if (!map.has(cg.groupId)) map.set(cg.groupId, { group: cg.group, courses: new Map() });
+    map.get(cg.groupId)!.courses.set(cg.course.id, { id: cg.course.id, nameUz: cg.course.subject.nameUz, nameRu: cg.course.subject.nameRu });
   }
 
   const groupIds = [...map.keys()];
@@ -237,13 +237,13 @@ export async function listTeacherGroups(teacherId: number) {
   }
 
   return [...map.values()]
-    .map(({ group, subjects }) => ({
+    .map(({ group, courses }) => ({
       id: group.id,
       name: group.name,
       yearOfStudy: group.yearOfStudy,
       facultyNameUz: group.faculty.nameUz,
       facultyNameRu: group.faculty.nameRu,
-      subjects: [...subjects.values()],
+      courses: [...courses.values()],
       students: (byGroup.get(group.id) ?? []).map((s) => ({ id: s.id, fullName: s.fullName, email: s.email })),
       studentCount: (byGroup.get(group.id) ?? []).length,
     }))

@@ -25,12 +25,15 @@ function Matrix({ report }: { report: AttReport }) {
             <tr key={st.id} className="hover:bg-bg">
               <td className="sticky left-0 z-10 max-w-[150px] truncate border-b border-r border-line bg-surface px-3 py-1.5 font-medium text-ink" title={st.fullName}>{st.fullName}</td>
               {report.sessions.map((s) => {
-                const status = st.cells[s.id];
+                const cell = st.cells[s.id];
                 return (
                   <td key={s.id} className="border-b border-line p-0.5 text-center">
-                    {status ? (
-                      <span className={cls("inline-flex h-6 min-w-[26px] items-center justify-center rounded px-1 text-[10px] font-bold", STATUS_META[status].solid)} title={t(`status.${status}`)}>
-                        {STATUS_META[status].short}
+                    {cell ? (
+                      <span
+                        className={cls("inline-flex h-6 min-w-[26px] items-center justify-center rounded px-1 text-[10px] font-bold", STATUS_META[cell.status].solid)}
+                        title={t(`status.${cell.status}`) + (cell.grade !== null ? ` · ${cell.grade}` : "")}
+                      >
+                        {cell.grade !== null ? cell.grade : STATUS_META[cell.status].short}
                       </span>
                     ) : (
                       <span className="text-ink-faint/50">–</span>
@@ -68,6 +71,9 @@ function ListView({ report, sort }: { report: AttReport; sort: "pct" | "name" })
               <span className="text-amber">{t("status.LATE")}: <b>{s.late}</b></span>
               <span className="text-blue">{t("status.EXCUSED")}: <b>{s.excused}</b></span>
             </div>
+            <span className="text-[12.5px] text-ink-soft">
+              {t("avgGrade")}: <b className="tabular-nums text-ink">{s.avgGrade ?? "—"}</b>
+            </span>
             <span className={cls("min-w-[52px] text-right text-[15px] font-bold tabular-nums", low ? "text-rose" : "text-ink")}>
               {s.attendancePct !== null ? `${s.attendancePct}%` : "—"}
             </span>

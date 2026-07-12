@@ -31,7 +31,7 @@ export interface TeachGroup {
   yearOfStudy: number;
   facultyNameUz: string;
   facultyNameRu: string;
-  subjects: { uz: string; ru: string }[];
+  courses: { id: number; nameUz: string; nameRu: string }[];
   students: { id: number; fullName: string; email: string }[];
   studentCount: number;
 }
@@ -300,7 +300,12 @@ export interface SessionRow {
 
 export interface RosterData {
   session: { id: number; date: string; title: string | null; topicId: number | null; room: string | null; groupName: string | null };
-  students: { id: number; fullName: string; status: AttStatus | null }[];
+  students: { id: number; fullName: string; status: AttStatus | null; grade: number | null }[];
+}
+
+export interface AttCell {
+  status: AttStatus;
+  grade: number | null;
 }
 
 export interface AttReport {
@@ -308,12 +313,13 @@ export interface AttReport {
   students: {
     id: number;
     fullName: string;
-    cells: Record<number, AttStatus>;
+    cells: Record<number, AttCell>;
     present: number;
     absent: number;
     late: number;
     excused: number;
     attendancePct: number | null;
+    avgGrade: number | null;
   }[];
 }
 
@@ -336,7 +342,10 @@ export function useCreateSession(courseId: number) {
   return useMutation({
     mutationFn: (b: { date: string; title?: string; topicId?: number | null; room?: string }) =>
       api(`/api/v1/teach/courses/${courseId}/sessions`, { method: "POST", body: JSON.stringify(b) }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["sessions", courseId] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["sessions", courseId] });
+      qc.invalidateQueries({ queryKey: ["att-report", courseId] }); // journal columns
+    },
   });
 }
 
@@ -345,7 +354,10 @@ export function useUpdateSession(courseId: number) {
   return useMutation({
     mutationFn: (b: { id: number; date?: string; title?: string; topicId?: number | null; room?: string }) =>
       api(`/api/v1/teach/sessions/${b.id}`, { method: "PATCH", body: JSON.stringify(b) }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["sessions", courseId] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["sessions", courseId] });
+      qc.invalidateQueries({ queryKey: ["att-report", courseId] });
+    },
   });
 }
 
@@ -353,7 +365,10 @@ export function useDeleteSession(courseId: number) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: number) => api(`/api/v1/teach/sessions/${id}`, { method: "DELETE" }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["sessions", courseId] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["sessions", courseId] });
+      qc.invalidateQueries({ queryKey: ["att-report", courseId] });
+    },
   });
 }
 
@@ -369,7 +384,7 @@ export function useRoster(sessionId: number | null) {
 export function useMarkAttendance(courseId: number) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (b: { sessionId: number; marks: { studentId: number; status: AttStatus }[] }) =>
+    mutationFn: (b: { sessionId: number; marks: { studentId: number; status: AttStatus; grade?: number | null }[] }) =>
       api(`/api/v1/teach/sessions/${b.sessionId}/attendance`, { method: "POST", body: JSON.stringify({ marks: b.marks }) }),
     onSuccess: (_d, b) => {
       qc.invalidateQueries({ queryKey: ["sessions", courseId] });
