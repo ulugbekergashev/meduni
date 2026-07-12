@@ -23,9 +23,9 @@ async function ownSession(sessionId: number, teacherId: number) {
   return session;
 }
 
-async function activeStudents(courseId: number) {
+async function activeStudents(courseId: number, groupId?: number) {
   const enr = await prisma.enrollment.findMany({
-    where: { courseId, status: "ACTIVE" },
+    where: { courseId, status: "ACTIVE", ...(groupId ? { student: { groupId } } : {}) },
     include: { student: true },
     orderBy: { student: { fullName: "asc" } },
   });
@@ -119,10 +119,10 @@ export async function deleteSession(sessionId: number, teacherId: number) {
 
 // ---------- Roster + marking ----------
 
-export async function getRoster(sessionId: number, teacherId: number) {
+export async function getRoster(sessionId: number, teacherId: number, groupId?: number) {
   const session = await ownSession(sessionId, teacherId);
   const [students, marks, group] = await Promise.all([
-    activeStudents(session.courseId),
+    activeStudents(session.courseId, groupId),
     prisma.attendance.findMany({ where: { sessionId } }),
     prisma.course.findUnique({ where: { id: session.courseId }, include: { courseGroups: { include: { group: true } } } }),
   ]);
@@ -197,7 +197,7 @@ interface ReportStudent {
   avgGrade: number | null;
 }
 
-async function buildReport(courseId: number, teacherId: number, opts: { from?: string; to?: string }) {
+async function buildReport(courseId: number, teacherId: number, opts: { from?: string; to?: string; groupId?: number }) {
   await ownCourse(courseId, teacherId);
   const range = dateRange(opts.from, opts.to);
   const sessions = await prisma.lessonSession.findMany({
@@ -206,7 +206,7 @@ async function buildReport(courseId: number, teacherId: number, opts: { from?: s
     include: { topic: true },
   });
   const sessionIds = sessions.map((s) => s.id);
-  const students = await activeStudents(courseId);
+  const students = await activeStudents(courseId, opts.groupId);
 
   const marks = sessionIds.length
     ? await prisma.attendance.findMany({ where: { sessionId: { in: sessionIds }, studentId: { in: students.map((s) => s.id) } } })
@@ -241,7 +241,7 @@ async function buildReport(courseId: number, teacherId: number, opts: { from?: s
   };
 }
 
-export async function attendanceReport(courseId: number, teacherId: number, opts: { from?: string; to?: string; search?: string }) {
+export async function attendanceReport(courseId: number, teacherId: number, opts: { from?: string; to?: string; search?: string; groupId?: number }) {
   const report = await buildReport(courseId, teacherId, opts);
   let students = report.students;
   if (opts.search?.trim()) students = students.filter((s) => s.fullName.toLowerCase().includes(opts.search!.trim().toLowerCase()));
@@ -250,7 +250,7 @@ export async function attendanceReport(courseId: number, teacherId: number, opts
 
 const shortLabel: Record<Status, string> = { PRESENT: "K", ABSENT: "KM", LATE: "KCH", EXCUSED: "S" };
 
-export async function exportAttendance(courseId: number, teacherId: number, view: "matrix" | "list", opts: { from?: string; to?: string }): Promise<Buffer> {
+export async function exportAttendance(courseId: number, teacherId: number, view: "matrix" | "list", opts: { from?: string; to?: string; groupId?: number }): Promise<Buffer> {
   const course = await ownCourse(courseId, teacherId);
   const report = await buildReport(courseId, teacherId, opts);
   const wb = new ExcelJS.Workbook();

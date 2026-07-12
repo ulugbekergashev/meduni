@@ -84,16 +84,16 @@ function ListView({ report, sort }: { report: AttReport; sort: "pct" | "name" })
   );
 }
 
-export function ReportView({ courseId }: { courseId: number }) {
+export function ReportView({ courseId, groupId }: { courseId: number; groupId?: number }) {
   const { t } = useTranslation(undefined, { keyPrefix: "attendance" });
   const [range, setRange] = useState(monthRange());
   const [search, setSearch] = useState("");
   const [view, setView] = useState<"matrix" | "list">("matrix");
   const [sort, setSort] = useState<"pct" | "name">("pct");
 
-  const q = useAttendanceReport(courseId, { ...range, search });
+  const q = useAttendanceReport(courseId, { ...range, search, groupId });
   const report = q.data;
-  const exportUrl = `${API_URL}/api/v1/teach/courses/${courseId}/attendance-report.xlsx?view=${view}&from=${range.from}&to=${range.to}`;
+  const exportUrl = `${API_URL}/api/v1/teach/courses/${courseId}/attendance-report.xlsx?view=${view}&from=${range.from}&to=${range.to}${groupId ? `&groupId=${groupId}` : ""}`;
 
   return (
     <div>

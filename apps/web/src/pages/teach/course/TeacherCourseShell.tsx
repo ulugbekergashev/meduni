@@ -69,7 +69,15 @@ export function TeacherCourseShell() {
         {c.groups.length > 0 && (
           <>
             <span className="inline-flex items-center gap-1">
-              <Icon icon={Users} size={14} /> {c.groups.map((g) => g.name).join(", ")}
+              <Icon icon={Users} size={14} />
+              {c.groups.map((g, i) => (
+                <span key={g.id}>
+                  <button onClick={() => navigate(`/teach/groups/${g.id}`)} className="font-medium text-brand-deep hover:underline">
+                    {g.name}
+                  </button>
+                  {i < c.groups.length - 1 && ", "}
+                </span>
+              ))}
             </span>
             <span>·</span>
           </>
@@ -87,8 +95,8 @@ export function TeacherCourseShell() {
           items={[
             { to: `${base}/topics`, label: t("tabs.topics") },
             { to: `${base}/syllabus`, label: t("tabs.syllabus") },
-            { to: `${base}/sessions`, label: t("tabs.sessions") },
-            { to: `${base}/progress`, label: t("tabs.progress") },
+            { to: `${base}/groups`, label: t("tabs.groups") },
+            { to: `${base}/progress`, label: t("tabs.results") },
             { to: `${base}/settings`, label: t("tabs.settings") },
           ]}
         />

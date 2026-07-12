@@ -48,12 +48,44 @@
   },
   "groups": {
     "title": "Mening guruhlarim",
-    "subtitle": "Guruhni oching, talabani bosing — uning davomati, statistikasi va ishlari koʻrinadi.",
+    "subtitle": "Guruhni bosing — profili ochiladi: talabalar, jurnal, davomat.",
     "empty": "Sizga hali guruh biriktirilmagan.",
     "yearN": "{{n}}-kurs",
+    "studentsN": "{{n}} talaba"
+  },
+  "groupProfile": {
+    "back": "← Guruhlar",
+    "yearN": "{{n}}-kurs",
+    "studentsN": "{{n}} talaba",
     "noStudents": "Bu guruhda talaba yoʻq.",
-    "noCourses": "Kursni admin biriktiradi.",
-    "journalOf": "{{name}} — jurnal"
+    "noCourses": "Bu guruhga hali kurs biriktirilmagan (admin biriktiradi).",
+    "tabs": {
+      "students": "Talabalar",
+      "journal": "Jurnal",
+      "sessions": "Darslar",
+      "report": "Hisobot"
+    }
+  },
+  "courseGroups": {
+    "subtitle": "Bu kurs qaysi guruhlarda oʻtiladi. Guruhni bosing — profili (talabalar, jurnal, davomat).",
+    "empty": "Kursga hali guruh biriktirilmagan (admin biriktiradi).",
+    "yearN": "{{n}}-kurs",
+    "studentsN": "{{n}} talaba"
+  },
+  "userProfile": {
+    "back": "← Foydalanuvchilar",
+    "kind": { "teacher": "Oʻqituvchi", "student": "Talaba", "admin": "Administrator" },
+    "inactive": "Nofaol",
+    "phone": "Telefon",
+    "group": "Guruh",
+    "department": "Kafedra",
+    "courses": "Kurslar",
+    "students": "Talabalar",
+    "publishedTopics": "Chop etilgan mavzular",
+    "attendance": "Davomat",
+    "teacherCourses": "Olib boradigan kurslari",
+    "studentCourses": "Yozilgan kurslari",
+    "noCourses": "Hali kurs yoʻq."
   },
   "studentDetail": {
     "back": "← Guruhlar",
@@ -241,7 +273,9 @@
     "notFound": "Bu kurs topilmadi yoki sizga ruxsat yoʻq",
     "tabs": {
       "topics": "Mavzular",
-      "syllabus": "Reja",
+      "syllabus": "Dastur",
+      "groups": "Guruhlar",
+      "results": "Natijalar",
       "sessions": "Darslar",
       "progress": "Progress",
       "settings": "Sozlamalar"
@@ -813,6 +847,7 @@
     "details": "Batafsil",
     "manualUnlock": "Qoʻlda ochish",
     "unlocked": "Mavzu ochildi",
+    "openProfile": "Profil",
     "neverActive": "harakatsiz",
     "today": "bugun",
     "daysAgo": "{{count}} kun oldin",

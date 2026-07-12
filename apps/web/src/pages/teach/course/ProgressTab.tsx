@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { AlertTriangle, Download, GraduationCap, LayoutGrid, List, Search, TrendingUp, Unlock, Users } from "lucide-react";
 import { Badge, Button, Card, Icon, Modal, Spinner, cls, useToast } from "@meduni/ui";
@@ -71,6 +71,7 @@ function StudentModal({ student, topics, courseId, onClose }: { student: Progres
   const { t } = useTranslation(undefined, { keyPrefix: "progress" });
   const locale = useLocale();
   const { show } = useToast();
+  const navigate = useNavigate();
   const unlock = useManualUnlock(courseId);
   const byTopic = new Map(student.cells.map((c) => [c.topicId, c]));
 
@@ -80,6 +81,9 @@ function StudentModal({ student, topics, courseId, onClose }: { student: Progres
         <span className="text-ink-soft">{t("overall")}: <span className="font-bold text-ink">{student.overallPct}%</span></span>
         <span className="text-ink-soft">{t("avgTest")}: <span className="font-bold text-ink">{student.avgQuizScore ?? "—"}%</span></span>
         <LastActive iso={student.lastActiveAt} />
+        <button onClick={() => navigate(`/teach/students/${student.id}`)} className="ml-auto font-semibold text-brand-deep hover:underline">
+          {t("openProfile")} →
+        </button>
       </div>
 
       <div className="max-h-[55vh] space-y-2 overflow-y-auto">

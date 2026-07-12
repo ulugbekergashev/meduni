@@ -81,13 +81,13 @@ function CellModal({ courseId, target, onClose }: { courseId: number; target: Ce
   );
 }
 
-export function JournalView({ courseId }: { courseId: number }) {
+export function JournalView({ courseId, groupId }: { courseId: number; groupId?: number }) {
   const { t } = useTranslation(undefined, { keyPrefix: "journal" });
   const [range, setRange] = useState(monthRange());
   const [target, setTarget] = useState<CellTarget | null>(null);
   const [newSession, setNewSession] = useState(false);
 
-  const q = useAttendanceReport(courseId, range);
+  const q = useAttendanceReport(courseId, { ...range, groupId });
   const report = q.data;
 
   return (

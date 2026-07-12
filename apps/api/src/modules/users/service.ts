@@ -206,3 +206,94 @@ export async function resetPassword(id: number) {
   await prisma.user.update({ where: { id }, data: { passwordHash: await argon2.hash(password) } });
   return { password };
 }
+
+// ---------- Role-aware profile page (admin) ----------
+
+export async function getUserProfile(id: number) {
+  const user = await prisma.user.findUnique({ where: { id }, include: withRelations });
+  if (!user) throw notFound("Foydalanuvchi");
+  const base = toUserOut(user);
+
+  if (user.role === "TEACHER") {
+    const courses = await prisma.course.findMany({
+      where: { teacherId: id },
+      include: {
+        subject: true,
+        courseGroups: { include: { group: true } },
+        _count: { select: { enrollments: { where: { status: "ACTIVE" } } } },
+      },
+      orderBy: { id: "asc" },
+    });
+    const publishedTopics = await prisma.topic.count({
+      where: { course: { teacherId: id }, contentItems: { some: { status: "PUBLISHED" } } },
+    });
+    const distinctStudents = await prisma.enrollment.findMany({
+      where: { status: "ACTIVE", course: { teacherId: id } },
+      distinct: ["studentId"],
+      select: { studentId: true },
+    });
+    return {
+      ...base,
+      kind: "teacher" as const,
+      stats: { courses: courses.length, students: distinctStudents.length, publishedTopics },
+      courses: courses.map((c) => ({
+        id: c.id,
+        subjectNameUz: c.subject.nameUz,
+        subjectNameRu: c.subject.nameRu,
+        semester: c.semester,
+        academicYear: c.academicYear,
+        groups: c.courseGroups.map((cg) => cg.group.name),
+        studentCount: c._count.enrollments,
+      })),
+    };
+  }
+
+  if (user.role === "STUDENT") {
+    const enrollments = await prisma.enrollment.findMany({
+      where: { studentId: id, status: "ACTIVE" },
+      include: { course: { include: { subject: true } } },
+      orderBy: { courseId: "asc" },
+    });
+    // Progress per course: COMPLETED topics / published topics (from persisted Progress rows).
+    const progressRows = await prisma.progress.findMany({ where: { studentId: id, state: "COMPLETED" }, select: { topic: { select: { courseId: true } } } });
+    const completedByCourse = new Map<number, number>();
+    for (const p of progressRows) {
+      completedByCourse.set(p.topic.courseId, (completedByCourse.get(p.topic.courseId) ?? 0) + 1);
+    }
+    const topicTotals = await prisma.topic.groupBy({
+      by: ["courseId"],
+      where: { courseId: { in: enrollments.map((e) => e.courseId) }, contentItems: { some: { status: "PUBLISHED" } } },
+      _count: true,
+    });
+    const totalByCourse = new Map(topicTotals.map((t) => [t.courseId, t._count]));
+
+    const att = await prisma.attendance.groupBy({ by: ["status"], where: { studentId: id }, _count: true });
+    let present = 0, late = 0, marked = 0;
+    for (const a of att) {
+      marked += a._count;
+      if (a.status === "PRESENT") present += a._count;
+      else if (a.status === "LATE") late += a._count;
+    }
+
+    return {
+      ...base,
+      kind: "student" as const,
+      attendancePct: marked === 0 ? null : Math.round(((present + late) / marked) * 100),
+      courses: enrollments.map((e) => {
+        const total = totalByCourse.get(e.courseId) ?? 0;
+        const done = completedByCourse.get(e.courseId) ?? 0;
+        return {
+          id: e.courseId,
+          subjectNameUz: e.course.subject.nameUz,
+          subjectNameRu: e.course.subject.nameRu,
+          semester: e.course.semester,
+          completed: done,
+          total,
+          progressPct: total === 0 ? 0 : Math.round((done / total) * 100),
+        };
+      }),
+    };
+  }
+
+  return { ...base, kind: "admin" as const };
+}

@@ -70,6 +70,14 @@ usersRouter.get(
   })
 );
 
+// Profile page (role-aware) ----------------------------------------------
+usersRouter.get(
+  "/:id/profile",
+  wrap(async (req, res) => {
+    res.json(await svc.getUserProfile(parseId(req.params.id)));
+  })
+);
+
 // Create ----------------------------------------------------------------
 usersRouter.post(
   "/",

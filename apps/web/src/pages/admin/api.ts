@@ -127,6 +127,45 @@ export function useAudit(q: { actor: string; action: string; from: string; to: s
   return useQuery({ queryKey: ["audit", q], queryFn: () => api<AuditResult>(`/api/v1/admin/audit?${p}`) });
 }
 
+// ---------------- User profile (role-aware) ----------------
+export interface TeacherProfileCourse {
+  id: number;
+  subjectNameUz: string;
+  subjectNameRu: string;
+  semester: number;
+  academicYear: string;
+  groups: string[];
+  studentCount: number;
+}
+export interface StudentProfileCourse {
+  id: number;
+  subjectNameUz: string;
+  subjectNameRu: string;
+  semester: number;
+  completed: number;
+  total: number;
+  progressPct: number;
+}
+export interface UserProfile {
+  id: number;
+  fullName: string;
+  email: string;
+  phone: string | null;
+  role: string;
+  isActive: boolean;
+  groupName: string | null;
+  departmentNameUz: string | null;
+  departmentNameRu: string | null;
+  position: string | null;
+  kind: "teacher" | "student" | "admin";
+  stats?: { courses: number; students: number; publishedTopics: number };
+  courses?: (TeacherProfileCourse | StudentProfileCourse)[];
+  attendancePct?: number | null;
+}
+export function useUserProfile(id: number) {
+  return useQuery({ queryKey: ["user-profile", id], queryFn: () => api<UserProfile>(`/api/v1/users/${id}/profile`), retry: false });
+}
+
 // ---------------- Dashboard stats ----------------
 export interface AdminStats {
   counts: { students: number; teachers: number; courses: number; publishedTopics: number; publishedContent: number };

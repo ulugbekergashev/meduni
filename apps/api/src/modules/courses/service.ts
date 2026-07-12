@@ -209,6 +209,37 @@ export async function listTeacherCourses(teacherId: number) {
   return rows.map(toCourseOut);
 }
 
+/** One group's profile for a teacher: info + students + this teacher's courses with it.
+ *  Ownership: the teacher must have at least one course attached to the group. */
+export async function getTeacherGroup(groupId: number, teacherId: number) {
+  const cgs = await prisma.courseGroup.findMany({
+    where: { groupId, course: { teacherId } },
+    include: { course: { include: { subject: true } } },
+  });
+  if (cgs.length === 0) {
+    throw new ApiError(403, "forbidden", "Bu sizning guruhingiz emas", "Это не ваша группа");
+  }
+  const group = await prisma.studentGroup.findUnique({ where: { id: groupId }, include: { faculty: true } });
+  if (!group) throw notFound("Guruh");
+
+  const students = await prisma.user.findMany({
+    where: { role: "STUDENT", isActive: true, groupId },
+    select: { id: true, fullName: true, email: true },
+    orderBy: { fullName: "asc" },
+  });
+
+  return {
+    id: group.id,
+    name: group.name,
+    yearOfStudy: group.yearOfStudy,
+    facultyNameUz: group.faculty.nameUz,
+    facultyNameRu: group.faculty.nameRu,
+    courses: cgs.map((cg) => ({ id: cg.course.id, nameUz: cg.course.subject.nameUz, nameRu: cg.course.subject.nameRu })),
+    students,
+    studentCount: students.length,
+  };
+}
+
 /** Groups the teacher teaches (via their courses) — with students and subjects. */
 export async function listTeacherGroups(teacherId: number) {
   const cgs = await prisma.courseGroup.findMany({

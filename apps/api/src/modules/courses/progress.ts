@@ -186,6 +186,35 @@ export async function manualUnlock(courseId: number, teacherId: number, studentI
   return { ok: true };
 }
 
+// ---------- Groups a course is taught in (course profile "Guruhlar" tab) ----------
+
+export async function getCourseGroupsStats(courseId: number, teacherId: number) {
+  const course = await ownCourse(courseId, teacherId);
+  const { students } = await buildMatrix(course);
+
+  const [cgs, users] = await Promise.all([
+    prisma.courseGroup.findMany({ where: { courseId }, include: { group: { include: { faculty: true } } } }),
+    students.length
+      ? prisma.user.findMany({ where: { id: { in: students.map((s) => s.id) } }, select: { id: true, groupId: true } })
+      : Promise.resolve([]),
+  ]);
+  const groupOf = new Map(users.map((u) => [u.id, u.groupId]));
+
+  return cgs.map((cg) => {
+    const rows = students.filter((s) => groupOf.get(s.id) === cg.groupId);
+    const avgProgress = rows.length ? Math.round(rows.reduce((a, r) => a + r.overallPct, 0) / rows.length) : 0;
+    return {
+      groupId: cg.groupId,
+      name: cg.group.name,
+      yearOfStudy: cg.group.yearOfStudy,
+      facultyNameUz: cg.group.faculty.nameUz,
+      facultyNameRu: cg.group.faculty.nameRu,
+      studentCount: rows.length,
+      avgProgress,
+    };
+  });
+}
+
 // ---------- Single student detail (from the group) ----------
 
 /** Everything a teacher needs about one student across their own courses:
@@ -268,7 +297,7 @@ export async function getStudentDetail(teacherId: number, studentId: number) {
   }
 
   return {
-    student: { id: student.id, fullName: student.fullName, email: student.email, groupName: student.group?.name ?? null },
+    student: { id: student.id, fullName: student.fullName, email: student.email, groupId: student.groupId, groupName: student.group?.name ?? null },
     courses,
   };
 }
@@ -303,7 +332,7 @@ export async function getTeacherDashboard(teacherId: number) {
   const [casesToReview, contentToApprove, upcoming, distinctStudents, courseGroups, publishedTopics, totalTopics, publishedContent, casesReviewed, attMarks] = await Promise.all([
     prisma.caseAttempt.count({ where: { reviewedAt: null, clinicalCase: { contentItem: { topic: { course: { teacherId } } } } } }),
     prisma.contentItem.count({ where: { status: { in: ["DRAFT", "REVIEW"] }, topic: { course: { teacherId } } } }),
-    prisma.lessonSession.findMany({ where: { course: { teacherId }, date: { gte: startOfToday } }, orderBy: { date: "asc" }, take: 5, include: { course: { include: { subject: true } }, topic: true } }),
+    prisma.lessonSession.findMany({ where: { course: { teacherId }, date: { gte: startOfToday } }, orderBy: { date: "asc" }, take: 5, include: { course: { include: { subject: true, courseGroups: true } }, topic: true } }),
     prisma.enrollment.findMany({ where: { courseId: inCourses, status: "ACTIVE" }, distinct: ["studentId"], select: { studentId: true } }),
     prisma.courseGroup.findMany({ where: { courseId: inCourses }, include: { group: true } }),
     prisma.topic.count({ where: { courseId: inCourses, contentItems: { some: { status: "PUBLISHED" } } } }),
@@ -344,6 +373,7 @@ export async function getTeacherDashboard(teacherId: number) {
     upcomingSessions: upcoming.map((s) => ({
       id: s.id,
       courseId: s.courseId,
+      groupId: s.course.courseGroups[0]?.groupId ?? null, // sessions live in the group profile
       date: s.date,
       subjectNameUz: s.course.subject.nameUz,
       subjectNameRu: s.course.subject.nameRu,
