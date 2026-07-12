@@ -126,7 +126,7 @@ export async function getRoster(sessionId: number, teacherId: number) {
     prisma.attendance.findMany({ where: { sessionId } }),
     prisma.course.findUnique({ where: { id: session.courseId }, include: { courseGroups: { include: { group: true } } } }),
   ]);
-  const byStudent = new Map(marks.map((m) => [m.studentId, m.status]));
+  const byStudent = new Map(marks.map((m) => [m.studentId, m]));
   return {
     session: {
       id: session.id,
@@ -136,11 +136,20 @@ export async function getRoster(sessionId: number, teacherId: number) {
       room: session.room,
       groupName: group?.courseGroups[0]?.group.name ?? null,
     },
-    students: students.map((s) => ({ id: s.id, fullName: s.fullName, status: byStudent.get(s.id) ?? null })),
+    students: students.map((s) => ({
+      id: s.id,
+      fullName: s.fullName,
+      status: byStudent.get(s.id)?.status ?? null,
+      grade: byStudent.get(s.id)?.grade ?? null,
+    })),
   };
 }
 
-export async function markAttendance(sessionId: number, teacherId: number, marks: { studentId: number; status: Status }[]) {
+export async function markAttendance(
+  sessionId: number,
+  teacherId: number,
+  marks: { studentId: number; status: Status; grade?: number | null }[]
+) {
   const session = await ownSession(sessionId, teacherId);
   if (!Array.isArray(marks)) throw badRequest("Notoʻgʻri maʼlumot", "Неверные данные");
 
@@ -148,10 +157,19 @@ export async function markAttendance(sessionId: number, teacherId: number, marks
   const now = new Date();
   for (const m of marks) {
     if (!enrolledIds.has(m.studentId) || !STATUSES.includes(m.status)) continue;
+    // Grade is optional (0-100): undefined -> keep existing, null -> clear, number -> set.
+    let grade: number | null | undefined = undefined;
+    if (m.grade === null) grade = null;
+    else if (m.grade !== undefined) {
+      if (!Number.isFinite(m.grade) || m.grade < 0 || m.grade > 100) {
+        throw badRequest("Baho 0-100 oraligʻida boʻlsin", "Балл должен быть 0-100");
+      }
+      grade = Math.round(m.grade);
+    }
     await prisma.attendance.upsert({
       where: { sessionId_studentId: { sessionId, studentId: m.studentId } },
-      create: { sessionId, studentId: m.studentId, status: m.status, markedById: teacherId },
-      update: { status: m.status, markedById: teacherId },
+      create: { sessionId, studentId: m.studentId, status: m.status, grade: grade ?? null, markedById: teacherId },
+      update: { status: m.status, markedById: teacherId, ...(grade !== undefined ? { grade } : {}) },
     });
   }
   await prisma.auditLog.create({
@@ -162,15 +180,21 @@ export async function markAttendance(sessionId: number, teacherId: number, marks
 
 // ---------- Report ----------
 
+interface ReportCell {
+  status: Status;
+  grade: number | null;
+}
+
 interface ReportStudent {
   id: number;
   fullName: string;
-  cells: Record<number, Status>; // sessionId -> status
+  cells: Record<number, ReportCell>; // sessionId -> {status, grade}
   present: number;
   absent: number;
   late: number;
   excused: number;
   attendancePct: number | null;
+  avgGrade: number | null;
 }
 
 async function buildReport(courseId: number, teacherId: number, opts: { from?: string; to?: string }) {
@@ -187,25 +211,28 @@ async function buildReport(courseId: number, teacherId: number, opts: { from?: s
   const marks = sessionIds.length
     ? await prisma.attendance.findMany({ where: { sessionId: { in: sessionIds }, studentId: { in: students.map((s) => s.id) } } })
     : [];
-  const byStudent = new Map<number, Record<number, Status>>();
+  const byStudent = new Map<number, Record<number, ReportCell>>();
   for (const m of marks) {
     if (!byStudent.has(m.studentId)) byStudent.set(m.studentId, {});
-    byStudent.get(m.studentId)![m.sessionId] = m.status as Status;
+    byStudent.get(m.studentId)![m.sessionId] = { status: m.status as Status, grade: m.grade };
   }
 
   const rows: ReportStudent[] = students.map((s) => {
     const cells = byStudent.get(s.id) ?? {};
     let present = 0, absent = 0, late = 0, excused = 0;
-    for (const st of Object.values(cells)) {
-      if (st === "PRESENT") present++;
-      else if (st === "ABSENT") absent++;
-      else if (st === "LATE") late++;
-      else if (st === "EXCUSED") excused++;
+    const grades: number[] = [];
+    for (const cell of Object.values(cells)) {
+      if (cell.status === "PRESENT") present++;
+      else if (cell.status === "ABSENT") absent++;
+      else if (cell.status === "LATE") late++;
+      else if (cell.status === "EXCUSED") excused++;
+      if (cell.grade !== null) grades.push(cell.grade);
     }
     const marked = present + absent + late + excused;
     // Attendance % = came (present + late) out of sessions actually marked for them.
     const attendancePct = marked === 0 ? null : Math.round(((present + late) / marked) * 100);
-    return { id: s.id, fullName: s.fullName, cells, present, absent, late, excused, attendancePct };
+    const avgGrade = grades.length === 0 ? null : Math.round(grades.reduce((a, b) => a + b, 0) / grades.length);
+    return { id: s.id, fullName: s.fullName, cells, present, absent, late, excused, attendancePct, avgGrade };
   });
 
   return {
@@ -231,14 +258,23 @@ export async function exportAttendance(courseId: number, teacherId: number, view
   const fmt = (d: Date) => new Date(d).toLocaleDateString("ru-RU");
 
   if (view === "matrix") {
-    ws.addRow(["Talaba", ...report.sessions.map((s) => fmt(s.date)), "Kelmadi (jami)"]);
+    ws.addRow(["Talaba", ...report.sessions.map((s) => fmt(s.date)), "Kelmadi (jami)", "Oʻrtacha baho"]);
     for (const st of report.students) {
-      ws.addRow([st.fullName, ...report.sessions.map((s) => (st.cells[s.id] ? shortLabel[st.cells[s.id]] : "—")), st.absent]);
+      ws.addRow([
+        st.fullName,
+        ...report.sessions.map((s) => {
+          const cell = st.cells[s.id];
+          if (!cell) return "—";
+          return cell.grade !== null ? `${shortLabel[cell.status]}/${cell.grade}` : shortLabel[cell.status];
+        }),
+        st.absent,
+        st.avgGrade ?? "—",
+      ]);
     }
   } else {
-    ws.addRow(["FISH", "Keldi", "Kelmadi", "Kechikdi", "Sababli", "Davomat %"]);
+    ws.addRow(["FISH", "Keldi", "Kelmadi", "Kechikdi", "Sababli", "Davomat %", "Oʻrtacha baho"]);
     for (const st of report.students) {
-      ws.addRow([st.fullName, st.present, st.absent, st.late, st.excused, st.attendancePct ?? "—"]);
+      ws.addRow([st.fullName, st.present, st.absent, st.late, st.excused, st.attendancePct ?? "—", st.avgGrade ?? "—"]);
     }
   }
   ws.getRow(1).font = { bold: true };

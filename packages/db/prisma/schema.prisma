@@ -313,6 +313,7 @@ model Attendance {
   studentId  Int
   student    User             @relation("AttendanceStudent", fields: [studentId], references: [id])
   status     AttendanceStatus
+  grade      Int?
   markedById Int
   markedBy   User             @relation("AttendanceMarker", fields: [markedById], references: [id])
   markedAt   DateTime         @updatedAt

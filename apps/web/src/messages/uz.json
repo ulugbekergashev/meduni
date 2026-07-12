@@ -24,10 +24,31 @@
   },
   "groups": {
     "title": "Mening guruhlarim",
-    "subtitle": "Siz dars beradigan guruhlar va ulardagi talabalar.",
+    "subtitle": "Siz dars beradigan guruhlar: jurnal, yoʻqlama va progress shu yerdan.",
     "empty": "Sizga hali guruh biriktirilmagan.",
     "yearN": "{{n}}-kurs",
-    "noStudents": "Bu guruhda talaba yoʻq."
+    "noStudents": "Bu guruhda talaba yoʻq.",
+    "noCourses": "Kursni admin biriktiradi.",
+    "journal": "Jurnal",
+    "attendance": "Yoʻqlama",
+    "progress": "Progress"
+  },
+  "journal": {
+    "hint": "Katakni bosing — yoʻqlama va baho qoʻying.",
+    "newSession": "Yangi dars",
+    "empty": "Bu oraliqda dars yoʻq. Yangi dars qoʻshing.",
+    "student": "Talaba",
+    "avg": "Oʻrtacha",
+    "emptyCell": "Belgilanmagan",
+    "grade": "Baho (ixtiyoriy)",
+    "gradeHint": "Boʻsh qoldirsangiz — faqat yoʻqlama belgilanadi.",
+    "gradeRange": "Baho 0–100 oraligʻida boʻlsin",
+    "status": { "PRESENT": "Keldi", "ABSENT": "Kelmadi", "LATE": "Kechikdi", "EXCUSED": "Sababli" },
+    "save": "Saqlash",
+    "cancel": "Bekor",
+    "saved": "Saqlandi",
+    "saveFailed": "Saqlanmadi, qayta urinib koʻring",
+    "legendGrade": "Katakdagi raqam — baho"
   },
   "syllabus": {
     "subtitle": "Kurs oʻquv rejasi: maqsadlar, mavzular boʻyicha soatlar va adabiyot.",
@@ -693,7 +714,9 @@
   },
   "attendance": {
     "tabSessions": "Darslar",
+    "tabJournal": "Jurnal",
     "tabReport": "Hisobot",
+    "avgGrade": "Oʻrtacha baho",
     "status": { "PRESENT": "Keldi", "ABSENT": "Kelmadi", "LATE": "Kechikdi", "EXCUSED": "Sababli" },
     "sessionStatus": { "UNMARKED": "Belgilanmagan", "PARTIAL": "Qisman", "FULL": "Toʻliq" },
     "date": "Sana",
