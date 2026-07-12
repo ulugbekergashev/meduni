@@ -32,6 +32,12 @@ teachCoursesRouter.get(
   wrap(async (req, res) => res.json(await svc.listTeacherCourses(req.user!.id)))
 );
 
+// Groups the teacher teaches (with students).
+teachCoursesRouter.get(
+  "/groups",
+  wrap(async (req, res) => res.json(await svc.listTeacherGroups(req.user!.id)))
+);
+
 // Progress matrix (heatmap + list).
 teachCoursesRouter.get(
   "/courses/:id/progress",
