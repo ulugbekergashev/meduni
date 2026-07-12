@@ -339,8 +339,34 @@ Tayyor:
   student123 (T1 slides+test+keys to'liq ishlaydi). ⚠️ Demo'да real video/mp4 yo'q
   (Modul 8/9 generatsiyasi kerak) — video tab "mavjud emas" ko'rsatadi.
 
+- **Modul 13 — O'qituvchi: progress heatmap + dashboard (tayyor).** Prisma: Progress
+  += overriddenAt/overriddenById (qo'lda ochish override). **Override umumiy
+  dvigatelga ulandi** (me/service): `FullFacts.forceComplete` → `computeTopics` uni
+  COMPLETED deb hisoblaydi, ya'ni override **talabaning o'z ko'rinishida ham** keyingi
+  mavzuni ochadi (tekshirildi). me/service'dan `loadCourse/computeTopics/FullFacts/
+  CourseWithTopics` eksport qilindi (qayta ishlatish). Backend `modules/courses/
+  progress.ts` (TEACHER, o'z kursi): `GET /teach/courses/:id/progress` — talaba×mavzu
+  matritsasi bir necha **batch** so'rovда (progress+quiz+case attempts), har talaba
+  uchun `computeTopics` bilan cells (state/pct/elements) + overallPct + lastActiveAt
+  + avgQuizScore + **behind** (guruh o'rtachasidan 30%+ past YOKI 7+ kun harakatsiz);
+  `POST /teach/courses/:id/unlock {studentId,topicId}` (override→COMPLETED + AuditLog
+  MANUAL_UNLOCK); `GET /teach/courses/:id/progress/export?view=heatmap|list`
+  (**exceljs** xlsx); `GET /teach/dashboard` (kurslar+avgProgress + tasks:
+  casesToReview[reviewedAt=null], contentToApprove[DRAFT/REVIEW], studentsBehind).
+  ⚠️ Yangi teach route'lar org-router'dan OLDIN (teachCoursesRouter'da). Frontend:
+  `ProgressTab` (Modul 4 placeholder o'rnida) — 5 stat karta (filtr), qidiruv/saralash
+  (orqadagilar tepada), **Heatmap** (chap ustun **sticky**, rangli kataklar
+  emerald/amber/kulrang, guruh o'rtacha qatori, hover tooltip, katak→talaba modali) /
+  **Ro'yxat** ko'rinishi, talaba modali (mavzu×element + **"Qo'lda ochish"**), Excel;
+  `TeachDashboard` — salom+sana, **vazifalar bloki** (3 rangli karta yoki emerald
+  "hammasi bajarilgan"), kurs kartalari avg-progress bilan. `/teach/review` — Modul 14
+  uchun halol placeholder. **To'liq tekshirildi**: 16/16 HTTP e2e — matritsa/stats,
+  behind aniqlash, override cascade (+student ko'rinishiga yetib boradi), AuditLog,
+  dashboard tasks, ownership 403, xlsx eksport; tsc+build toza. Dev demo (boyitilgan):
+  teacher.m11demo@meduni.uz/student123 — 6 talaba turli progressда, 1 keys tekshiruvда,
+  1 draft, 1 orqada (harakatsiz).
+
 Keyingilar (men har biriga prompt beraman):
-13. O'qituvchi: progress heatmap
 14. O'qituvchi: keys tekshiruv navbati
 15. Yo'qlama
 16. Talaba: davomat + profil

@@ -16,12 +16,14 @@ const courseInclude = {
   topics: { orderBy: { orderIndex: "asc" }, include: topicInclude },
 } satisfies Prisma.CourseInclude;
 
-type CourseWithTopics = Prisma.CourseGetPayload<{ include: typeof courseInclude }>;
+export type CourseWithTopics = Prisma.CourseGetPayload<{ include: typeof courseInclude }>;
 type TopicWithContent = CourseWithTopics["topics"][number];
 
-// Facts + the extra slides-viewed flag (slides don't gate unlock but do show on the card).
-interface FullFacts extends Facts {
+// Facts + extras: slides-viewed (shown on the card, doesn't gate) and a teacher
+// manual-override flag that force-completes the topic (unlocks the next one).
+export interface FullFacts extends Facts {
   slidesViewed: boolean;
+  forceComplete: boolean;
 }
 
 function resolveRule(topic: TopicWithContent, course: CourseWithTopics): UnlockRule {
@@ -51,7 +53,7 @@ export interface TopicOut {
 
 /** The heart of the module: walk the topics in order, unlocking each only after
  *  the previous one is COMPLETED. Every LOCKED topic carries a concrete reason. */
-function computeTopics(course: CourseWithTopics, factsByTopic: Map<number, FullFacts>): TopicOut[] {
+export function computeTopics(course: CourseWithTopics, factsByTopic: Map<number, FullFacts>): TopicOut[] {
   const out: TopicOut[] = [];
   let prevCompleted = true; // the first topic is always open
   let prevUnmet: Reason[] = [];
@@ -59,7 +61,12 @@ function computeTopics(course: CourseWithTopics, factsByTopic: Map<number, FullF
   for (const topic of course.topics) {
     const rule = resolveRule(topic, course);
     const facts = factsByTopic.get(topic.id)!;
-    const { completed, pct, dateOk, unmet } = evaluateRule(facts, rule);
+    const evaluated = evaluateRule(facts, rule);
+    // A teacher override force-completes the topic regardless of the student's facts.
+    const completed = evaluated.completed || facts.forceComplete;
+    const pct = facts.forceComplete ? 100 : evaluated.pct;
+    const dateOk = evaluated.dateOk || facts.forceComplete;
+    const unmet = completed ? [] : evaluated.unmet;
 
     let state: TopicOut["state"];
     let reason: Reason | null = null;
@@ -100,7 +107,7 @@ async function studentFactsMap(studentId: number, course: CourseWithTopics): Pro
 
   const progressRows = await prisma.progress.findMany({
     where: { studentId, topicId: { in: topicIds } },
-    select: { topicId: true, videoWatchedPct: true, slidesViewed: true },
+    select: { topicId: true, videoWatchedPct: true, slidesViewed: true, overriddenAt: true },
   });
   const progressByTopic = new Map(progressRows.map((r) => [r.topicId, r]));
 
@@ -151,6 +158,7 @@ async function studentFactsMap(studentId: number, course: CourseWithTopics): Pro
       hasCase: kinds.has("CASE"),
       videoWatchedPct: prog?.videoWatchedPct ?? 0,
       slidesViewed: prog?.slidesViewed ?? false,
+      forceComplete: prog?.overriddenAt != null,
       quizScore: bestScore.has(topic.id) ? bestScore.get(topic.id)! : null,
       caseSubmitted: cs?.submitted ?? false,
       caseReviewed: cs?.reviewed ?? false,
@@ -188,7 +196,7 @@ async function enrolledCourseIds(studentId: number): Promise<number[]> {
   return rows.map((r) => r.courseId);
 }
 
-async function loadCourse(courseId: number): Promise<CourseWithTopics> {
+export async function loadCourse(courseId: number): Promise<CourseWithTopics> {
   const course = await prisma.course.findUnique({ where: { id: courseId }, include: courseInclude });
   if (!course) throw notFound("Kurs");
   // Only topics with at least one PUBLISHED content item are visible to students;
