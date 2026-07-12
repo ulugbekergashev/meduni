@@ -1,0 +1,216 @@
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import {
+  ArrowLeft,
+  CheckCircle2,
+  ClipboardList,
+  FileText,
+  Lock,
+  PartyPopper,
+  PlayCircle,
+  RotateCcw,
+  Stethoscope,
+  Video,
+} from "lucide-react";
+import { Badge, Card, Icon, Spinner, cls, useToast } from "@meduni/ui";
+import { AsyncSection } from "../../components/AsyncSection";
+import { useLocale, pickName } from "../../lib/useLocale";
+import { useMyCourse, type StudentTopic, type TopicElements } from "./api";
+
+function Chip({ icon, label, done, hint }: { icon: typeof Video; label: string; done: boolean; hint?: string }) {
+  return (
+    <span
+      className={cls(
+        "inline-flex items-center gap-1 rounded-pill px-2 py-0.5 text-[11.5px] font-medium",
+        done ? "bg-emerald-soft text-emerald" : "bg-bg text-ink-faint"
+      )}
+    >
+      <Icon icon={done ? CheckCircle2 : icon} size={13} />
+      {label}
+      {hint && <span className="font-bold">{hint}</span>}
+    </span>
+  );
+}
+
+function ElementChips({ topic }: { topic: StudentTopic }) {
+  const { t } = useTranslation(undefined, { keyPrefix: "student" });
+  const e: TopicElements = topic.elements;
+  const complete = topic.state === "COMPLETED";
+  const chips = [];
+  if (e.video.exists)
+    chips.push(<Chip key="v" icon={Video} label={t("elVideo")} done={complete || e.video.watchedPct >= 80} hint={!complete && e.video.watchedPct > 0 && e.video.watchedPct < 80 ? `${e.video.watchedPct}%` : undefined} />);
+  if (e.slides.exists) chips.push(<Chip key="s" icon={FileText} label={t("elSlides")} done={complete || e.slides.viewed} />);
+  if (e.quiz.exists)
+    chips.push(<Chip key="q" icon={ClipboardList} label={t("elQuiz")} done={complete || e.quiz.score !== null} hint={e.quiz.score !== null ? `${e.quiz.score}%` : undefined} />);
+  if (e.case.exists) chips.push(<Chip key="c" icon={Stethoscope} label={t("elCase")} done={complete || e.case.reviewed} />);
+  if (chips.length === 0) return null;
+  return <div className="flex flex-wrap gap-1.5">{chips}</div>;
+}
+
+function Dot({ state }: { state: StudentTopic["state"] }) {
+  return (
+    <span
+      className={cls(
+        "z-10 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 bg-surface",
+        state === "COMPLETED" && "border-emerald text-emerald",
+        (state === "AVAILABLE" || state === "IN_PROGRESS") && "border-brand text-brand",
+        state === "LOCKED" && "border-line text-ink-faint"
+      )}
+    >
+      {state === "COMPLETED" ? (
+        <Icon icon={CheckCircle2} size={14} />
+      ) : state === "LOCKED" ? (
+        <Icon icon={Lock} size={12} />
+      ) : (
+        <span className="h-2 w-2 rounded-full bg-brand" />
+      )}
+    </span>
+  );
+}
+
+function TopicCard({ topic, last }: { topic: StudentTopic; last: boolean }) {
+  const { t } = useTranslation(undefined, { keyPrefix: "student" });
+  const locale = useLocale();
+  const { show } = useToast();
+  const title = pickName(locale, topic.titleUz, topic.titleRu);
+  const subtitle = locale === "ru" ? topic.titleUz : topic.titleRu;
+  const current = topic.state === "AVAILABLE" || topic.state === "IN_PROGRESS";
+
+  return (
+    <li className="relative flex gap-3">
+      <div className="flex flex-col items-center">
+        <Dot state={topic.state} />
+        {!last && <span className="w-0.5 flex-1 bg-line" />}
+      </div>
+
+      <div className="flex-1 pb-5">
+        <Card
+          className={cls(
+            "flex flex-col gap-3",
+            current && "border-brand shadow-md",
+            topic.state === "LOCKED" && "opacity-80"
+          )}
+        >
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <p className="text-[11.5px] font-bold uppercase tracking-wide text-ink-faint">
+                {t("topic")} {topic.orderIndex}
+              </p>
+              <h3 className={cls("mt-0.5 text-section font-bold", topic.state === "LOCKED" ? "text-ink-soft" : "text-ink")}>{title}</h3>
+              <p className="truncate text-[12px] text-ink-faint">{subtitle}</p>
+            </div>
+            {topic.state === "COMPLETED" && <Badge tone="emerald">{t("statusDone")}</Badge>}
+            {current && <Badge tone="brand">{t("statusCurrent")}</Badge>}
+          </div>
+
+          {topic.state !== "LOCKED" && <ElementChips topic={topic} />}
+
+          {current && (
+            <>
+              <div>
+                <div className="h-2 w-full overflow-hidden rounded-pill bg-bg">
+                  <div className="h-full rounded-pill bg-brand transition-all" style={{ width: `${Math.max(topic.pct, 2)}%` }} />
+                </div>
+                <p className="mt-1 text-[12px] text-ink-soft">{topic.pct}% {t("done")}</p>
+              </div>
+              <Link to={`/app/topics/${topic.id}`}>
+                <button className="flex w-full items-center justify-center gap-2 rounded-control bg-brand px-4 py-2.5 text-[14.5px] font-bold text-white transition-all hover:bg-brand-deep">
+                  <Icon icon={PlayCircle} size={18} />
+                  {t("continue")}
+                </button>
+              </Link>
+            </>
+          )}
+
+          {topic.state === "COMPLETED" && (
+            <Link to={`/app/topics/${topic.id}`} className="self-start">
+              <button className="flex items-center gap-1.5 rounded-control border border-line px-3 py-1.5 text-[13px] font-semibold text-ink-soft transition-all hover:bg-bg">
+                <Icon icon={RotateCcw} size={14} />
+                {t("review")}
+              </button>
+            </Link>
+          )}
+
+          {topic.state === "LOCKED" && topic.reason && (
+            <button
+              onClick={() => show(locale === "ru" ? topic.reason!.ru : topic.reason!.uz)}
+              className="flex items-start gap-2 rounded-control bg-amber-soft px-3 py-2 text-left text-[12.5px] font-medium text-amber"
+            >
+              <Icon icon={Lock} size={14} className="mt-0.5 shrink-0" />
+              {locale === "ru" ? topic.reason.ru : topic.reason.uz}
+            </button>
+          )}
+        </Card>
+      </div>
+    </li>
+  );
+}
+
+export function CoursePath() {
+  const { id } = useParams();
+  const courseId = Number(id);
+  const { t } = useTranslation(undefined, { keyPrefix: "student" });
+  const locale = useLocale();
+  const navigate = useNavigate();
+  const q = useMyCourse(courseId);
+  const c = q.data;
+  const allDone = !!c && c.topicsTotal > 0 && c.topicsCompleted === c.topicsTotal;
+
+  return (
+    <div className="mx-auto max-w-2xl">
+      <button onClick={() => navigate("/app")} className="mb-3 flex items-center gap-1 text-[13.5px] font-medium text-brand-deep hover:underline">
+        <Icon icon={ArrowLeft} size={15} />
+        {t("back")}
+      </button>
+
+      {q.isLoading ? (
+        <div className="flex min-h-[40vh] items-center justify-center">
+          <Spinner size={26} />
+        </div>
+      ) : (
+        <AsyncSection
+          isLoading={false}
+          isError={q.isError}
+          isEmpty={!!c && c.topicsTotal === 0}
+          emptyText={t("noTopics")}
+          onRetry={() => q.refetch()}
+        >
+          {c && (
+            <>
+              {/* Course header */}
+              <div className="rounded-card bg-gradient-to-br from-brand-deep to-brand p-5 text-white shadow-md">
+                <h1 className="text-h1 font-bold leading-tight">{pickName(locale, c.subjectNameUz, c.subjectNameRu)}</h1>
+                <p className="mt-1 text-[13px] text-white/85">
+                  {c.teacherName}
+                  {c.groupName && ` · ${c.groupName}`}
+                </p>
+                <div className="mt-4">
+                  <div className="h-2 w-full overflow-hidden rounded-pill bg-white/25">
+                    <div className="h-full rounded-pill bg-white transition-all" style={{ width: `${Math.max(c.progressPct, 2)}%` }} />
+                  </div>
+                  <p className="mt-1.5 text-[12.5px] text-white/85">
+                    {c.progressPct}% {t("done")} · {c.topicsCompleted}/{c.topicsTotal} {t("topics")}
+                  </p>
+                </div>
+              </div>
+
+              {allDone && (
+                <div className="mt-4 flex items-center gap-3 rounded-card bg-emerald-soft p-4 text-emerald">
+                  <Icon icon={PartyPopper} size={20} />
+                  <p className="text-[14px] font-bold">{t("allDone")}</p>
+                </div>
+              )}
+
+              {/* Topic path */}
+              <ol className="mt-6">
+                {c.topics.map((topic, i) => (
+                  <TopicCard key={topic.id} topic={topic} last={i === c.topics.length - 1} />
+                ))}
+              </ol>
+            </>
+          )}
+        </AsyncSection>
+      )}
+    </div>
+  );
+}

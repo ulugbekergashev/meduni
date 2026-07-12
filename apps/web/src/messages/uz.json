@@ -472,5 +472,29 @@
       "statusActive": "Faol",
       "statusDropped": "Chiqarilgan"
     }
+  },
+  "student": {
+    "hello": "Salom",
+    "continueLabel": "Davom ettirish",
+    "continue": "Davom ettirish",
+    "done": "tugadi",
+    "myCourses": "Mening kurslarim",
+    "noCourses": "Siz hali kursga yozilmagansiz. Admin sizni kursga qoʻshadi.",
+    "adminWillAdd": "Admin sizni kursga qoʻshadi.",
+    "topics": "mavzu",
+    "nextTopic": "Keyingi mavzu",
+    "back": "Kurslarim",
+    "noTopics": "Bu kursda hali mavzu yoʻq. Oʻqituvchi qoʻshganda paydo boʻladi.",
+    "topic": "Mavzu",
+    "statusDone": "TUGALLANDI",
+    "statusCurrent": "JORIY",
+    "review": "Qayta koʻrish",
+    "allDone": "Barcha mavzular tugallandi!",
+    "elVideo": "Video",
+    "elSlides": "Slaydlar",
+    "elQuiz": "Test",
+    "elCase": "Keys",
+    "lessonSoonTitle": "Dars sahifasi tez orada",
+    "lessonSoonBody": "Video, prezentatsiya, test va keysni oʻz ichiga olgan dars sahifasi keyingi modulda ochiladi."
   }
 }

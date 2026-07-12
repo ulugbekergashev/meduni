@@ -1,22 +1,122 @@
+import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { GraduationCap } from "lucide-react";
-import { EmptyState, Icon } from "@meduni/ui";
-import { useMe } from "../../lib/auth";
+import { ArrowRight, BookOpen, GraduationCap, PlayCircle } from "lucide-react";
+import { Card, EmptyState, Icon } from "@meduni/ui";
+import { AsyncSection } from "../../components/AsyncSection";
+import { useLocale, pickName } from "../../lib/useLocale";
+import { useMyDashboard, type CourseSummary } from "./api";
 
-export function StudentDashboard() {
-  const { t } = useTranslation(undefined, { keyPrefix: "dashboard" });
-  const { data: me } = useMe();
+function ProgressBar({ pct, tone = "brand" }: { pct: number; tone?: "brand" | "white" }) {
+  return (
+    <div className={tone === "white" ? "h-2 w-full overflow-hidden rounded-pill bg-white/25" : "h-2 w-full overflow-hidden rounded-pill bg-bg"}>
+      <div
+        className={tone === "white" ? "h-full rounded-pill bg-white transition-all" : "h-full rounded-pill bg-brand transition-all"}
+        style={{ width: `${Math.max(pct, 2)}%` }}
+      />
+    </div>
+  );
+}
+
+function CourseCard({ course }: { course: CourseSummary }) {
+  const { t } = useTranslation(undefined, { keyPrefix: "student" });
+  const locale = useLocale();
+  const navigate = useNavigate();
+  const next = course.nextTopicId ? pickName(locale, course.nextTopicUz ?? "", course.nextTopicRu ?? "") : null;
 
   return (
-    <div className="mx-auto max-w-md sm:max-w-none">
-      <h1 className="text-h1 font-bold text-ink">{t("studentTitle")}</h1>
-      <p className="mt-1 text-[13.5px] text-ink-soft">
-        {t("welcome")}, {me?.full_name}
-      </p>
-
-      <div className="mt-8">
-        <EmptyState icon={<Icon icon={GraduationCap} size={22} />} text={t("empty")} />
+    <Card interactive onClick={() => navigate(`/app/courses/${course.id}`)} className="flex flex-col gap-3">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h3 className="truncate text-section font-bold text-ink">{pickName(locale, course.subjectNameUz, course.subjectNameRu)}</h3>
+          <p className="truncate text-[12.5px] text-ink-faint">{course.teacherName}</p>
+        </div>
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand-deep">
+          <Icon icon={BookOpen} size={18} />
+        </div>
       </div>
+
+      <div className="space-y-1.5">
+        <ProgressBar pct={course.progressPct} />
+        <div className="flex items-center justify-between text-[12px] text-ink-soft">
+          <span>{course.progressPct}%</span>
+          <span>
+            {course.topicsCompleted}/{course.topicsTotal} {t("topics")}
+          </span>
+        </div>
+      </div>
+
+      {next && (
+        <p className="truncate text-[12.5px] text-ink-soft">
+          <span className="text-ink-faint">{t("nextTopic")}: </span>
+          {next}
+        </p>
+      )}
+    </Card>
+  );
+}
+
+export function StudentDashboard() {
+  const { t } = useTranslation(undefined, { keyPrefix: "student" });
+  const locale = useLocale();
+  const q = useMyDashboard();
+  const d = q.data;
+
+  return (
+    <div className="mx-auto max-w-3xl">
+      <AsyncSection
+        isLoading={q.isLoading}
+        isError={q.isError}
+        isEmpty={!!d && d.courses.length === 0}
+        emptyIcon={<Icon icon={GraduationCap} size={22} />}
+        emptyText={t("noCourses")}
+        onRetry={() => q.refetch()}
+      >
+        {d && (
+          <>
+            <h1 className="text-h1 font-bold text-ink">
+              {t("hello")}, {d.fullName.split(" ")[0]}
+            </h1>
+
+            {/* Resume — the primary action, most prominent block */}
+            {d.resume && (
+              <div className="mt-5 rounded-card bg-gradient-to-br from-brand-deep to-brand p-5 text-white shadow-md">
+                <p className="text-[12.5px] font-medium uppercase tracking-wide text-white/70">{t("continueLabel")}</p>
+                <p className="mt-1 text-[13px] text-white/85">{pickName(locale, d.resume.subjectNameUz, d.resume.subjectNameRu)}</p>
+                <h2 className="mt-0.5 text-[20px] font-bold leading-tight">{pickName(locale, d.resume.topicUz, d.resume.topicRu)}</h2>
+                <div className="mt-3">
+                  <ProgressBar pct={d.resume.pct} tone="white" />
+                  <p className="mt-1.5 text-[12px] text-white/80">{d.resume.pct}% {t("done")}</p>
+                </div>
+                <Link to={`/app/topics/${d.resume.topicId}`} className="mt-4 block">
+                  <button className="flex w-full items-center justify-center gap-2 rounded-control bg-white px-4 py-3 text-[15px] font-bold text-brand-deep transition-all hover:bg-white/90">
+                    <Icon icon={PlayCircle} size={19} />
+                    {t("continue")}
+                  </button>
+                </Link>
+              </div>
+            )}
+
+            {/* My courses */}
+            <div className="mt-8">
+              <h2 className="text-section font-bold text-ink">{t("myCourses")}</h2>
+              <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {d.courses.map((c) => (
+                  <CourseCard key={c.id} course={c} />
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+      </AsyncSection>
+
+      {d && d.courses.length === 0 && (
+        <p className="mt-3 text-center text-[13px] text-ink-faint">{t("adminWillAdd")}</p>
+      )}
+
+      {/* Empty-but-loaded fallback handled by AsyncSection; explicit hint below */}
+      {!d && !q.isLoading && !q.isError && (
+        <EmptyState icon={<Icon icon={ArrowRight} size={22} />} text={t("noCourses")} />
+      )}
     </div>
   );
 }

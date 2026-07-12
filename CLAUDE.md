@@ -285,8 +285,30 @@ Tayyor:
   publish gate to'g'ridan-to'g'ri API'da 403, edit approvalni bekor qiladi.
   Butun oqim: material→konspekt→⛔tasdiq→generatsiya→tahrir→faktcheck→⛔chop etish.
 
+- **Modul 11 — Talaba: bosh sahifa + mavzu yo'li (tayyor). Talaba tomonining
+  BOSHI.** Prisma: `Progress` (studentId, topicId, state LOCKED|AVAILABLE|
+  IN_PROGRESS|COMPLETED, videoWatchedPct, completedAt; @@unique studentId+topicId).
+  **Ketma-ket ochilish dvigateli** `modules/me/rules.ts` (sof funksiyalar):
+  `evaluateRule(facts, rule)` — Topic.unlockRuleJson ?? Course.defaultUnlockRuleJson
+  ?? DEFAULT (video%≥, quiz%≥, keys, sana, AND/OR), qisman progress `pct`
+  (video 45/80 hisobga olinadi), `lockedReason` — o'z sanasi yoki OLDINGI mavzu
+  birinchi bajarilmagan sharti (aniq: "Oldingi mavzu: videoni 80% koʻring").
+  `service.ts::computeTopics` — mavzular tartibda, N ochiq faqat N-1 COMPLETED bo'lsa.
+  **Talaba faqat PUBLISHED kontentli mavzuni ko'radi** (published content'siz mavzu
+  umuman ko'rinmaydi — `loadCourse` filtri). Backend (`requireRoles STUDENT`):
+  `GET /me/dashboard` (salom + resume + kurslar), `/me/courses`, `/me/courses/:id`
+  (mavzular state/pct/reason/elements bilan; yozilmagan kurs → 403). Quiz/keys
+  fakti hozircha yo'q (Modul 12 attempt'lar qo'shadi) → hozir #1 AVAILABLE,
+  qolganlari LOCKED. Frontend (mobil-birinchi): `StudentDashboard` (salom, brend-
+  gradient "Davom ettirish" bloki, kurs kartalari progress bilan), `CoursePath`
+  (`/app/courses/:id` — timeline nuqta+chiziq, 3 holat: TUGALLANDI emerald /
+  JORIY brand+soya+progress / YOPIQ kulrang+amber sabab, element chiplari
+  video✓/test%/keys). `/app/topics/:id` — Modul 12 dars sahifasi uchun halol
+  placeholder. **To'liq tekshirildi**: dvigatel (to'g'ridan-to'g'ri service +
+  HTTP e2e real talaba login), ketma-ketlik, aniq sabablar, published-only,
+  cross-student 403, tsc+build toza. Dev demo: student@meduni.uz / student123.
+
 Keyingilar (men har biriga prompt beraman):
-11. Talaba: mavzu yo'li
 12. Talaba: mavzu o'tish
 13. O'qituvchi: progress heatmap
 14. O'qituvchi: keys tekshiruv navbati

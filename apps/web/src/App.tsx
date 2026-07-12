@@ -23,6 +23,8 @@ import { TopicConstructor } from "./pages/teach/topics/TopicConstructor";
 import { ContentEditor } from "./pages/teach/content/ContentEditor";
 import { StudentShell } from "./pages/student/StudentShell";
 import { StudentDashboard } from "./pages/student/StudentDashboard";
+import { CoursePath } from "./pages/student/CoursePath";
+import { LessonPlaceholder } from "./pages/student/LessonPlaceholder";
 
 export function App() {
   return (
@@ -81,6 +83,9 @@ export function App() {
         }
       >
         <Route index element={<StudentDashboard />} />
+        <Route path="courses/:id" element={<CoursePath />} />
+        {/* Full lesson page arrives in Module 12; placeholder keeps the link honest. */}
+        <Route path="topics/:id" element={<LessonPlaceholder />} />
       </Route>
 
       <Route path="*" element={<RoleRedirect />} />
