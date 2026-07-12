@@ -420,8 +420,28 @@ Tayyor:
   Demo: teacher.m11demo@meduni.uz/student123 — 3 dars (1 topic-linked, 1 partial),
   6 talaba turli davomatда (Fayzullaev 0%, Bobojonov 33%).
 
+- **Modul 16 — Talaba: davomat + profil (tayyor). Talaba tomoni TO'LIQ.** Schema
+  o'zgarmadi. Backend `modules/me/profile.ts` (STUDENT, faqat o'ziniki): `GET /me/
+  attendance?courseId=&from=&to=` (faqat **studentId=me** yozuvlari → cross-student
+  imkonsiz; stats present/absent/late/excused + **pct=(present+late)/marked** — Modul
+  15 hisoboti bilan bir xil formula; sessions ro'yxati sana/kurs/mavzu/status),
+  `GET /me/profile` (FISH/email/telefon/guruh + xulosa: coursesCount/completedTopics/
+  attendancePct), `PUT /me/locale {locale}` (uz|ru validatsiya), `POST /me/change-
+  password {oldPassword,newPassword}` (eski argon2.verify → xato 400 wrong_old_password;
+  yangi <6 → 400 password_too_short → argon2.hash). Frontend (mobil-birinchi):
+  `AttendancePage` (`/app/attendance`) — katta % (‹75 **rose** + amber ogohlantirish
+  "xabardor qiladi, qo'rqitmaydi"), 4 rangli breakdown karta, kurs+sana filtri, dars
+  ro'yxati rangli status belgi bilan; `ProfilePage` (`/app/profile`) — shaxsiy karta
+  (o'zgartirib bo'lmaydi + "admin o'zgartiradi" izohi), o'qish xulosasi (3 tile —
+  **XP/badge/reyting YO'Q**), sozlamalar (til **segmented → i18n.changeLanguage darrov**,
+  parol o'zgartirish: eski/yangi/tasdiq + validatsiya), Logout. StudentShell nav'ga
+  Davomat+Profil qo'shildi. **To'liq tekshirildi**: 18/18 HTTP e2e — davomat stats/pct,
+  **own-only** (har talaba faqat o'zini), sana filtri, profil xulosa, locale persist+
+  validatsiya, uch parol validatsiyasi, role guard (o'qituvchi→403); tsc+build toza.
+  Demo: student@meduni.uz/student123 — 2 dars (PRESENT+LATE=100%). **Talaba tomoni
+  tugadi**: bosh sahifa → mavzu yo'li → mavzu o'tish → davomat → profil.
+
 Keyingilar (men har biriga prompt beraman):
-16. Talaba: davomat + profil
 17. Admin: lug'at, shablon, AI monitoring, audit
 
 ---

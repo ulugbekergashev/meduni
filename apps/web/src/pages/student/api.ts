@@ -83,6 +83,10 @@ export function useMyCourse(id: number) {
   });
 }
 
+export function useMyCourses() {
+  return useQuery({ queryKey: ["me-courses"], queryFn: () => api<CourseSummary[]>("/api/v1/me/courses") });
+}
+
 // ---------------- Lesson (Module 12) ----------------
 
 export type SlideLayout = string;
@@ -274,5 +278,58 @@ export function useSubmitCase(topicId: number) {
     mutationFn: (b: { caseId: number; answers: string[] }) =>
       api<CaseAttemptView>(`/api/v1/me/cases/${b.caseId}/attempts`, { method: "POST", body: JSON.stringify({ answers: b.answers }) }),
     onSuccess: invalidate,
+  });
+}
+
+// ---------------- Attendance + profile (Module 16) ----------------
+
+export type AttStatus = "PRESENT" | "ABSENT" | "LATE" | "EXCUSED";
+
+export interface MyAttendance {
+  stats: { present: number; absent: number; late: number; excused: number; pct: number | null };
+  sessions: {
+    id: number;
+    date: string;
+    courseNameUz: string;
+    courseNameRu: string;
+    titleUz: string | null;
+    titleRu: string | null;
+    status: AttStatus;
+  }[];
+}
+
+export interface MyProfile {
+  fullName: string;
+  email: string;
+  phone: string | null;
+  groupName: string | null;
+  locale: "uz" | "ru";
+  coursesCount: number;
+  completedTopics: number;
+  attendancePct: number | null;
+}
+
+export function useMyAttendance(courseId: number | undefined, range: { from?: string; to?: string }) {
+  const p = new URLSearchParams();
+  if (courseId) p.set("courseId", String(courseId));
+  if (range.from) p.set("from", range.from);
+  if (range.to) p.set("to", range.to);
+  return useQuery({ queryKey: ["me-attendance", courseId, range], queryFn: () => api<MyAttendance>(`/api/v1/me/attendance?${p}`) });
+}
+
+export function useMyProfile() {
+  return useQuery({ queryKey: ["me-profile"], queryFn: () => api<MyProfile>("/api/v1/me/profile") });
+}
+
+export function useSetLocale() {
+  return useMutation({
+    mutationFn: (locale: "uz" | "ru") => api<{ ok: boolean; locale: string }>("/api/v1/me/locale", { method: "PUT", body: JSON.stringify({ locale }) }),
+  });
+}
+
+export function useChangePassword() {
+  return useMutation({
+    mutationFn: (b: { oldPassword: string; newPassword: string }) =>
+      api("/api/v1/me/change-password", { method: "POST", body: JSON.stringify(b) }),
   });
 }

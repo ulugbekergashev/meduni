@@ -26,6 +26,8 @@ import { StudentShell } from "./pages/student/StudentShell";
 import { StudentDashboard } from "./pages/student/StudentDashboard";
 import { CoursePath } from "./pages/student/CoursePath";
 import { LessonPage } from "./pages/student/lesson/LessonPage";
+import { AttendancePage } from "./pages/student/AttendancePage";
+import { ProfilePage } from "./pages/student/ProfilePage";
 
 export function App() {
   return (
@@ -87,6 +89,8 @@ export function App() {
         <Route index element={<StudentDashboard />} />
         <Route path="courses/:id" element={<CoursePath />} />
         <Route path="topics/:id" element={<LessonPage />} />
+        <Route path="attendance" element={<AttendancePage />} />
+        <Route path="profile" element={<ProfilePage />} />
       </Route>
 
       <Route path="*" element={<RoleRedirect />} />
