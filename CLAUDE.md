@@ -265,8 +265,27 @@ Tayyor:
   so'zlashuv uslubida. `lib/exec.ts` (FFMPEG_PATH). ffmpeg+edge-tts+sharp server'da
   bo'lishi shart (prod eslatma). ⚠️ Modul 8 real rasmlari hali pulli kalit kutmoqda.
 
+- **Modul 10 — Faktcheck + Chop etish (ikkinchi qulf) + Kurs sozlamalari (tayyor).
+  O'qituvchi tomonining YAKUNI.** Prisma: ContentItem += factcheckFlagsJson,
+  factcheckStatus (NONE|CHECKING|FLAGGED|CLEAN|RESOLVED), factcheckedAt;
+  Course.defaultUnlockRuleJson; AuditLog. AI: `ai/prompts/factcheck.ts` — kontentni
+  ASL manba bilan solishtiradi, manbada YO'Q da'volarni belgilaydi (dozalar=high).
+  Backend (content router): `POST /content/:id/factcheck` (Gemini, contentToText
+  per-kind + collectSource), `/factcheck/resolve {flagIndex, confirmed|fixed}`,
+  `/publish`. **Ikkinchi qulf — backend TEKSHIRADI:** publish = digest approved +
+  reviewOpenedAt (GET content'da o'rnatiladi) + factcheck CLEAN/RESOLVED, aks holda
+  403 aniq kod. Publish → PUBLISHED + approvedBy/At + AuditLog (kim/qachon/flagCount).
+  **Kontent tahrirlansa** → factcheck reset (NONE) va PUBLISHED/APPROVED → DRAFT
+  (tibbiy xavfsizlik). Qisman chop etish (har ContentItem alohida). Settings:
+  `PUT /teach/courses/:id/settings`, `PUT /topics/:id/unlock-rule` (null=default).
+  Frontend: konstruktor 4-bo'lim Faktcheck (per-kontent run/flags/Tasdiqlayman/
+  Tuzataman), 5-bo'lim Chop etish (checklist + "Tasdiqlash va chop etish" + tasdiq
+  modal + "Tekshirdi: FISH, sana"); Sozlamalar tabi (`UnlockRuleForm`) + mavzu
+  override (`TopicUnlockRule`). **To'liq tekshirildi**: soxta doza → high flag,
+  publish gate to'g'ridan-to'g'ri API'da 403, edit approvalni bekor qiladi.
+  Butun oqim: material→konspekt→⛔tasdiq→generatsiya→tahrir→faktcheck→⛔chop etish.
+
 Keyingilar (men har biriga prompt beraman):
-10. Faktcheck + chop etish (qulf 2)
 11. Talaba: mavzu yo'li
 12. Talaba: mavzu o'tish
 13. O'qituvchi: progress heatmap

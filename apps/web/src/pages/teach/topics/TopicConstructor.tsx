@@ -1,23 +1,38 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { BookOpen, Check, FileStack, Lock, Sparkles } from "lucide-react";
+import { BookOpen, Check, FileStack, Lock, Rocket, ShieldCheck, Sparkles } from "lucide-react";
 import { Badge, Card, Icon, Spinner, cls } from "@meduni/ui";
 import { useLocale } from "../../../lib/useLocale";
 import { MaterialsSection } from "./MaterialsSection";
 import { DigestSection } from "./DigestSection";
 import { GenerateSection } from "./GenerateSection";
+import { FactcheckSection } from "./FactcheckSection";
+import { PublishSection } from "./PublishSection";
+import { TopicUnlockRule } from "./TopicUnlockRule";
 import { useTopicDetail } from "./api";
 
 type StepState = "done" | "current" | "locked";
 
-function ProgressTrack({ materialDone, digestApproved }: { materialDone: boolean; digestApproved: boolean }) {
+function ProgressTrack({
+  materialDone,
+  digestApproved,
+  hasContent,
+  factcheckDone,
+  anyPublished,
+}: {
+  materialDone: boolean;
+  digestApproved: boolean;
+  hasContent: boolean;
+  factcheckDone: boolean;
+  anyPublished: boolean;
+}) {
   const { t } = useTranslation(undefined, { keyPrefix: "constructor.steps" });
   const steps: { key: string; state: StepState }[] = [
     { key: "material", state: materialDone ? "done" : "current" },
     { key: "digest", state: digestApproved ? "done" : materialDone ? "current" : "locked" },
-    { key: "generate", state: digestApproved ? "current" : "locked" },
-    { key: "factcheck", state: "locked" },
-    { key: "publish", state: "locked" },
+    { key: "generate", state: hasContent ? "done" : digestApproved ? "current" : "locked" },
+    { key: "factcheck", state: factcheckDone ? "done" : hasContent ? "current" : "locked" },
+    { key: "publish", state: anyPublished ? "done" : factcheckDone ? "current" : "locked" },
   ];
 
   return (
@@ -134,7 +149,16 @@ export function TopicConstructor() {
 
       {/* Progress track */}
       <Card className="mt-6">
-        <ProgressTrack materialDone={topic.digestUnlocked} digestApproved={topic.generateUnlocked} />
+        <ProgressTrack
+          materialDone={topic.digestUnlocked}
+          digestApproved={topic.generateUnlocked}
+          hasContent={topic.content.length > 0}
+          factcheckDone={
+            topic.content.length > 0 &&
+            topic.content.every((c) => c.factcheckStatus === "clean" || c.factcheckStatus === "resolved")
+          }
+          anyPublished={topic.content.some((c) => c.status === "published")}
+        />
       </Card>
 
       {/* Section 1 — Materials (fully working) */}
@@ -167,10 +191,33 @@ export function TopicConstructor() {
         )}
       </section>
 
-      {/* Remaining locked sections */}
-      <div className="mt-6 space-y-3">
-        <LockedSection n={4} titleKey="sections.factcheck" hintKey="sectionLocked.factcheck" />
-        <LockedSection n={5} titleKey="sections.publish" hintKey="sectionLocked.publish" />
+      {/* Section 4 — Faktcheck: needs generated content */}
+      <section className="mt-6">
+        {topic.content.length > 0 ? (
+          <>
+            <SectionHeader n={4} icon={ShieldCheck} title={t("sections.factcheck")} />
+            <FactcheckSection topic={topic} />
+          </>
+        ) : (
+          <LockedSection n={4} titleKey="sections.factcheck" hintKey="sectionLocked.factcheck" />
+        )}
+      </section>
+
+      {/* Section 5 — Chop etish (second lock) */}
+      <section className="mt-6">
+        {topic.content.length > 0 ? (
+          <>
+            <SectionHeader n={5} icon={Rocket} title={t("sections.publish")} />
+            <PublishSection topic={topic} />
+          </>
+        ) : (
+          <LockedSection n={5} titleKey="sections.publish" hintKey="sectionLocked.publish" />
+        )}
+      </section>
+
+      {/* Topic-level unlock rule override */}
+      <div className="mt-6">
+        <TopicUnlockRule topic={topic} />
       </div>
     </div>
   );

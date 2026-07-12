@@ -1,5 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../lib/api";
+import type { UnlockRule } from "./topics/api";
 
 export interface TeachCourse {
   id: number;
@@ -12,6 +13,7 @@ export interface TeachCourse {
   academicYear: string;
   groups: { id: number; name: string }[];
   studentCount: number;
+  defaultUnlockRuleJson?: UnlockRule | null;
 }
 
 export function useTeachCourses() {
@@ -27,5 +29,14 @@ export function useTeachCourseMeta(id: number) {
     queryKey: ["teach-course", id],
     queryFn: () => api<TeachCourse>(`/api/v1/teach/courses/${id}`),
     retry: false,
+  });
+}
+
+export function useUpdateCourseSettings(courseId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (defaultUnlockRuleJson: UnlockRule) =>
+      api(`/api/v1/teach/courses/${courseId}/settings`, { method: "PUT", body: JSON.stringify({ defaultUnlockRuleJson }) }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["teach-course", courseId] }),
   });
 }

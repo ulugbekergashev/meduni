@@ -51,11 +51,36 @@ export type ContentKind = "quiz" | "case" | "presentation" | "video";
 export type ContentStatus = "draft" | "review" | "approved" | "published";
 export type Difficulty = "RECALL" | "UNDERSTAND" | "APPLY";
 
+export type FactcheckStatus = "none" | "checking" | "flagged" | "clean" | "resolved";
+
+export interface FactcheckFlag {
+  claim: string;
+  location: string;
+  severity: "high" | "medium" | "low";
+  resolved: boolean;
+  resolution: "confirmed" | "fixed" | null;
+}
+
 export interface ContentSummary {
   id: number;
   kind: ContentKind;
   status: ContentStatus;
   editedByTeacher: boolean;
+  reviewOpened: boolean;
+  factcheckStatus: FactcheckStatus;
+  factcheckFlags: FactcheckFlag[];
+  approvedByName: string | null;
+  approvedAt: string | null;
+}
+
+export interface UnlockRule {
+  videoWatchedPct: number;
+  quizPassedPct: number;
+  quizMaxAttempts: number;
+  caseRequired: boolean;
+  caseReviewedRequired: boolean;
+  notBeforeDate: string | null;
+  logic: "AND" | "OR";
 }
 
 export interface TopicDetail extends TopicRow {
@@ -63,6 +88,7 @@ export interface TopicDetail extends TopicRow {
   digestUnlocked: boolean;
   digest: Digest | null;
   generateUnlocked: boolean;
+  unlockRule: UnlockRule | null;
   content: ContentSummary[];
 }
 
@@ -340,6 +366,44 @@ export function useRebuildVideo(videoId: number) {
   return useMutation({
     mutationFn: () => api(`/api/v1/videos/${videoId}/rebuild`, { method: "POST" }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["content"] }),
+  });
+}
+
+// ---- Factcheck + publish (per content) ----
+
+export function useRunFactcheck(topicId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (contentId: number) => api(`/api/v1/content/${contentId}/factcheck`, { method: "POST" }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["topic", topicId] }),
+  });
+}
+
+export function useResolveFlag(topicId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ contentId, flagIndex, resolution }: { contentId: number; flagIndex: number; resolution: "confirmed" | "fixed" }) =>
+      api(`/api/v1/content/${contentId}/factcheck/resolve`, { method: "POST", body: JSON.stringify({ flagIndex, resolution }) }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["topic", topicId] }),
+  });
+}
+
+export function usePublishContent(topicId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (contentId: number) => api(`/api/v1/content/${contentId}/publish`, { method: "POST" }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["topic", topicId] }),
+  });
+}
+
+// ---- Unlock rule (topic override) ----
+
+export function useSetTopicUnlockRule(topicId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (unlockRuleJson: UnlockRule | null) =>
+      api(`/api/v1/topics/${topicId}/unlock-rule`, { method: "PUT", body: JSON.stringify({ unlockRuleJson }) }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["topic", topicId] }),
   });
 }
 

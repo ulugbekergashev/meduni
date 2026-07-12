@@ -95,6 +95,13 @@ export async function updateTopic(
   return toTopicOut(t);
 }
 
+export async function setTopicUnlockRule(id: number, unlockRule: unknown, teacherId: number) {
+  await topicForTeacher(id, teacherId);
+  // null => fall back to the course default.
+  await prisma.topic.update({ where: { id }, data: { unlockRuleJson: (unlockRule ?? null) as object } });
+  return { ok: true };
+}
+
 export async function deleteTopic(id: number, teacherId: number) {
   await topicForTeacher(id, teacherId);
   const materials = await prisma.sourceMaterial.findMany({ where: { topicId: id } });
@@ -130,7 +137,7 @@ export async function getTopicDetail(id: number, teacherId: number) {
     orderBy: { id: "asc" },
   });
   const digest = await prisma.topicDigest.findUnique({ where: { topicId: id } });
-  const content = await prisma.contentItem.findMany({ where: { topicId: id } });
+  const content = await prisma.contentItem.findMany({ where: { topicId: id }, include: { approvedBy: true } });
   return {
     ...toTopicOut(topic),
     materials: materials.map(toMaterialOut),
@@ -145,11 +152,17 @@ export async function getTopicDetail(id: number, teacherId: number) {
       : null,
     // Lock gate for section 3 (Generatsiya) — first control point.
     generateUnlocked: digest?.approvedByTeacher === true,
+    unlockRule: topic.unlockRuleJson ?? null,
     content: content.map((c) => ({
       id: c.id,
       kind: c.kind.toLowerCase(),
       status: c.status.toLowerCase(),
       editedByTeacher: c.editedByTeacher,
+      reviewOpened: c.reviewOpenedAt !== null,
+      factcheckStatus: c.factcheckStatus.toLowerCase(),
+      factcheckFlags: (c.factcheckFlagsJson as unknown as unknown[] | null) ?? [],
+      approvedByName: c.approvedBy?.fullName ?? null,
+      approvedAt: c.approvedAt,
     })),
   };
 }
