@@ -1,5 +1,5 @@
 import { Outlet } from "react-router-dom";
-import { BookMarked, BookOpen, ClipboardCheck, Home, Users2 } from "lucide-react";
+import { BookMarked, BookOpen, ClipboardCheck, Home, Settings, Users2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Icon } from "@meduni/ui";
 import { RoleShell } from "../../components/RoleShell";
@@ -19,6 +19,7 @@ export function TeachShell() {
         { href: "/teach/groups", label: t("groups"), icon: <Icon icon={Users2} /> },
         { href: "/teach/cases/review", label: t("caseReview"), icon: <Icon icon={ClipboardCheck} />, badge: pendingCases },
         { href: "/teach/glossary", label: t("glossary"), icon: <Icon icon={BookMarked} /> },
+        { href: "/teach/settings", label: t("settings"), icon: <Icon icon={Settings} /> },
       ]}
     >
       <Outlet />

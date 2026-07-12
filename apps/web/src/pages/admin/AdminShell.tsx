@@ -1,5 +1,5 @@
 import { Outlet } from "react-router-dom";
-import { BookMarked, BookOpen, Home, Network, Palette, ScrollText, Sparkles, Users } from "lucide-react";
+import { BookMarked, BookOpen, Home, Network, Palette, ScrollText, Settings, Sparkles, Users } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Icon } from "@meduni/ui";
 import { RoleShell } from "../../components/RoleShell";
@@ -19,6 +19,7 @@ export function AdminShell() {
         { href: "/admin/templates", label: t("templates"), icon: <Icon icon={Palette} /> },
         { href: "/admin/ai", label: t("ai"), icon: <Icon icon={Sparkles} /> },
         { href: "/admin/audit", label: t("audit"), icon: <Icon icon={ScrollText} /> },
+        { href: "/admin/settings", label: t("settings"), icon: <Icon icon={Settings} /> },
       ]}
     >
       <Outlet />
