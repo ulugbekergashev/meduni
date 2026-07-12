@@ -145,6 +145,39 @@ export const slideGenSchema = z.object({
 export const slidesGenSchema = z.object({ slides: z.array(slideGenSchema) });
 export type SlidesGen = z.infer<typeof slidesGenSchema>;
 
+// ---------- Video script ----------
+
+export const scriptSegmentSchema = z.object({
+  slideIndex: z.number().int(),
+  narration: z.string(),
+});
+export const videoScriptGenSchema = z.object({ segments: z.array(scriptSegmentSchema) });
+export type VideoScriptGen = z.infer<typeof videoScriptGenSchema>;
+
+export interface ScriptSegment {
+  slideIndex: number;
+  narration: string;
+  durationSec: number;
+}
+
+export const videoScriptResponseSchema = {
+  type: Type.OBJECT,
+  properties: {
+    segments: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          slideIndex: { type: Type.INTEGER },
+          narration: { type: Type.STRING },
+        },
+        required: ["slideIndex", "narration"],
+      },
+    },
+  },
+  required: ["segments"],
+};
+
 export const slidesResponseSchema = {
   type: Type.OBJECT,
   properties: {

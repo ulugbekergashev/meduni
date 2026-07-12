@@ -137,10 +137,36 @@
     "templateDefault": "Universitet (standart)",
     "generatePresentation": "Prezentatsiya generatsiya qilish",
     "imagesNote": "Slaydlar + tibbiy rasmlar avtomatik yasaladi",
+    "voice": "Ovoz",
+    "voiceFemale": "Ayol (Madina)",
+    "voiceMale": "Erkak (Sardor)",
+    "generateVideo": "Video generatsiya qilish",
+    "videoNote": "Slaydlar ovoz bilan videoga aylanadi (subtitr bilan)",
+    "needPresentation": "Avval prezentatsiya yarating",
+    "vStep": {
+      "script": "Skript yozilmoqda…",
+      "tts": "Ovoz yaratilmoqda…",
+      "render": "Montaj qilinmoqda…"
+    },
+    "vError": "Xato ({stage}) — qayta urinish",
     "ready": "Tayyor",
     "edit": "Tahrirlash",
     "error": "Yaratilmadi, qayta urinish",
     "edited": "Tahrirlangan"
+  },
+  "videoEditor": {
+    "back": "← Konstruktor",
+    "title": "Video tahrirlagichi",
+    "downloadMp4": "MP4 yuklab olish",
+    "downloadSrt": "Subtitr (SRT)",
+    "rebuild": "Qayta ovozlash va montaj",
+    "script": "Ovoz skripti",
+    "segment": "Slayd",
+    "save": "Skriptni saqlash",
+    "saved": "Saqlandi",
+    "building": "Video tayyorlanmoqda…",
+    "buildError": "Montajда xato ({stage})",
+    "duration": "Davomiyligi"
   },
   "presEditor": {
     "back": "← Konstruktor",
