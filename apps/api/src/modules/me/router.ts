@@ -4,6 +4,7 @@ import { badRequest, notFound } from "../../lib/errors";
 import { requireRoles } from "../../middleware/rbac";
 import * as svc from "./service";
 import * as lesson from "./lesson";
+import * as profile from "./profile";
 
 export const meRouter = Router();
 meRouter.use(requireRoles("STUDENT"));
@@ -30,6 +31,25 @@ function parseBody<T extends ZodTypeAny>(schema: T, body: unknown): z.infer<T> {
 meRouter.get("/dashboard", wrap(async (req, res) => res.json(await svc.getDashboard(req.user!.id))));
 meRouter.get("/courses", wrap(async (req, res) => res.json(await svc.listMyCourses(req.user!.id))));
 meRouter.get("/courses/:id", wrap(async (req, res) => res.json(await svc.getMyCourse(req.user!.id, parseId(req.params.id)))));
+
+// ---------- Attendance + profile (Module 16) ----------
+
+meRouter.get(
+  "/attendance",
+  wrap(async (req, res) =>
+    res.json(
+      await profile.getMyAttendance(req.user!.id, {
+        courseId: req.query.courseId ? Number(req.query.courseId) : undefined,
+        from: typeof req.query.from === "string" ? req.query.from : undefined,
+        to: typeof req.query.to === "string" ? req.query.to : undefined,
+      })
+    )
+  )
+);
+
+meRouter.get("/profile", wrap(async (req, res) => res.json(await profile.getMyProfile(req.user!.id))));
+meRouter.put("/locale", wrap(async (req, res) => res.json(await profile.setLocale(req.user!.id, req.body?.locale))));
+meRouter.post("/change-password", wrap(async (req, res) => res.json(await profile.changePassword(req.user!.id, req.body?.oldPassword, req.body?.newPassword))));
 
 // ---------- Lesson (Module 12) ----------
 
