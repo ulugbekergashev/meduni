@@ -366,8 +366,33 @@ Tayyor:
   teacher.m11demo@meduni.uz/student123 — 6 talaba turli progressда, 1 keys tekshiruvда,
   1 draft, 1 orqada (harakatsiz).
 
+- **Modul 14 — O'qituvchi: keys tekshiruv navbati (tayyor). O'quv zanjiri YOPILDI.**
+  Schema o'zgarmadi (CaseAttempt Modul 12'dan; reviewedAt null/notNull = holat).
+  me/service refaktor: `persistAndReport` → eksport `syncTopicProgress` (recompute+
+  Progress persist) — lesson va review baholash ikkalasi ishlatadi; `getDashboard`ga
+  **notifications** qo'shildi (oxirgi baholangan keyslar). Backend `modules/courses/
+  review.ts` (TEACHER, o'z kursi): `GET /teach/cases/review` (BARCHA kurslardan keys
+  javoblari — filtr: courseId/topicId/status[def PENDING]/search[insensitive]/
+  sort[def **oldest=adolatli FIFO**]), `GET /teach/cases/filters` (dropdownlar uchun
+  kurs/mavzu), `GET /teach/cases/:id` (keys sharti+javob+etalon+baho), `POST /teach/
+  cases/:id/review {score[0-100],feedback}` — reviewedBy/At yozadi, **caseReviewedRequired
+  bo'lsa `syncTopicProgress` mavzuni tugatadi va keyingisini ochadi**, qayta baholash
+  ruxsat (AuditLog RE_REVIEW_CASE prev/new bilan). ⚠️ `/cases/review` va `/filters`
+  route'lar `/cases/:id`dan OLDIN. Frontend `/teach/cases/review` (`CaseReviewQueue`,
+  ikki panel): chapда filtr+navbat kartalari (talaba/kurs-mavzu/vaqt/holat pill),
+  o'ngда tekshirish — **yig'iladigan keys sharti** + **javob||etalon yonma-yon** (sm:2
+  ustun) + baho(0-100)+izoh+**tez shablon chiplari**(uz/ru)+**"Saqlash va keyingisi"**
+  (avto keyingi PENDING'ga o'tadi)/"Saqlash"/"O'tkazib yuborish"; mobilда navbat→javob
+  to'liq ekran; bo'sh navbat ijobiy emerald xabar. Talaba dashboard'да
+  **bildirishnomalar** (keys bahosi keldi → keysga link). Dashboard "keys kutmoqda"
+  → shu yerga. **To'liq tekshirildi**: 18/18 HTTP e2e — navbat/filtrlar/oldest,
+  javob+etalon, ownership 403, baho→talaba ko'radi+notification, caseReviewedRequired
+  cascade (T1 COMPLETED→T2 ochildi), qayta baholash audit, ball validatsiya; tsc+build
+  toza. Demo: teacher.m11demo@meduni.uz/student123 — 3 keys tekshiruvда.
+  **Zanjir yopildi**: talaba topshirdi→o'qituvchi baholadi→talaba ko'rdi→mavzu tugadi→
+  keyingisi ochildi.
+
 Keyingilar (men har biriga prompt beraman):
-14. O'qituvchi: keys tekshiruv navbati
 15. Yo'qlama
 16. Talaba: davomat + profil
 17. Admin: lug'at, shablon, AI monitoring, audit

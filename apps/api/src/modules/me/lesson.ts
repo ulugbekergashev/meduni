@@ -3,24 +3,9 @@ import { ApiError, badRequest, notFound } from "../../lib/errors";
 import { readFileBuffer } from "../../lib/storage";
 import { buildPdf } from "../content/presentation";
 import type { CaseJson, Slide } from "../../ai/types";
-import { assertTopicOpen, recomputeTopic, type TopicOut } from "./service";
+import { assertTopicOpen, recomputeTopic, syncTopicProgress, type TopicOut } from "./service";
 
-// ---------- Persist recomputed state (for the heatmap/Module 13) + report ----------
-
-async function persistAndReport(studentId: number, topicId: number): Promise<TopicOut | null> {
-  const t = await recomputeTopic(studentId, topicId);
-  if (!t) return null;
-  const row = await prisma.progress.upsert({
-    where: { studentId_topicId: { studentId, topicId } },
-    create: { studentId, topicId, state: t.state, completedAt: t.state === "COMPLETED" ? new Date() : null },
-    update: { state: t.state },
-  });
-  // Stamp completion once, the first time the topic becomes COMPLETED.
-  if (t.state === "COMPLETED" && row.completedAt === null) {
-    await prisma.progress.update({ where: { id: row.id }, data: { completedAt: new Date() } });
-  }
-  return t;
-}
+const persistAndReport = syncTopicProgress;
 
 // ---------- Content shapes ----------
 

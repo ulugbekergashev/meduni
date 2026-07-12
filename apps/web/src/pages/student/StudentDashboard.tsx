@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ArrowRight, BookOpen, GraduationCap, PlayCircle } from "lucide-react";
+import { ArrowRight, BookOpen, ClipboardCheck, GraduationCap, PlayCircle } from "lucide-react";
 import { Card, EmptyState, Icon } from "@meduni/ui";
 import { AsyncSection } from "../../components/AsyncSection";
 import { useLocale, pickName } from "../../lib/useLocale";
@@ -93,6 +93,29 @@ export function StudentDashboard() {
                     {t("continue")}
                   </button>
                 </Link>
+              </div>
+            )}
+
+            {/* Notifications */}
+            {d.notifications.length > 0 && (
+              <div className="mt-8">
+                <h2 className="text-section font-bold text-ink">{t("notifications")}</h2>
+                <div className="mt-3 space-y-2">
+                  {d.notifications.map((n) => (
+                    <Link key={n.caseAttemptId} to={`/app/topics/${n.topicId}?tab=case`}>
+                      <Card interactive className="flex items-center gap-3 py-3">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-soft text-emerald">
+                          <Icon icon={ClipboardCheck} size={17} />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-[13.5px] font-semibold text-ink">{t("caseGraded")}</p>
+                          <p className="truncate text-[12px] text-ink-soft">{pickName(locale, n.topicUz, n.topicRu)}</p>
+                        </div>
+                        {n.score !== null && <span className="text-[16px] font-bold text-emerald">{n.score}</span>}
+                      </Card>
+                    </Link>
+                  ))}
+                </div>
               </div>
             )}
 

@@ -54,11 +54,21 @@ export interface Resume {
   pct: number;
 }
 
+export interface Notification {
+  type: "case_reviewed";
+  caseAttemptId: number;
+  topicId: number;
+  topicUz: string;
+  topicRu: string;
+  score: number | null;
+  reviewedAt: string;
+}
+
 export interface Dashboard {
   fullName: string;
   resume: Resume | null;
   courses: CourseSummary[];
-  notifications: unknown[];
+  notifications: Notification[];
 }
 
 export function useMyDashboard() {

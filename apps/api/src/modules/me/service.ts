@@ -280,7 +280,24 @@ export async function getDashboard(studentId: number) {
     }
   }
 
-  return { fullName: me?.fullName ?? "", resume, courses, notifications: [] as unknown[] };
+  // Notifications: recently graded clinical cases ("your case was reviewed").
+  const reviewed = await prisma.caseAttempt.findMany({
+    where: { studentId, reviewedAt: { not: null } },
+    orderBy: { reviewedAt: "desc" },
+    take: 5,
+    include: { clinicalCase: { include: { contentItem: { include: { topic: true } } } } },
+  });
+  const notifications = reviewed.map((a) => ({
+    type: "case_reviewed" as const,
+    caseAttemptId: a.id,
+    topicId: a.clinicalCase.contentItem.topicId,
+    topicUz: a.clinicalCase.contentItem.topic.titleUz,
+    topicRu: a.clinicalCase.contentItem.topic.titleRu,
+    score: a.score,
+    reviewedAt: a.reviewedAt,
+  }));
+
+  return { fullName: me?.fullName ?? "", resume, courses, notifications };
 }
 
 // ---------- Shared access helpers (used by the lesson module) ----------
@@ -326,4 +343,20 @@ export async function recomputeTopic(studentId: number, topicId: number): Promis
   const course = await loadCourse(topic.courseId);
   const facts = await studentFactsMap(studentId, course);
   return computeTopics(course, facts).find((t) => t.id === topicId) ?? null;
+}
+
+/** Recompute a topic's state and persist it to Progress (for the heatmap / completion
+ *  stamp). Shared by student actions (lesson) and teacher grading (case review). */
+export async function syncTopicProgress(studentId: number, topicId: number): Promise<TopicOut | null> {
+  const t = await recomputeTopic(studentId, topicId);
+  if (!t) return null;
+  const row = await prisma.progress.upsert({
+    where: { studentId_topicId: { studentId, topicId } },
+    create: { studentId, topicId, state: t.state, completedAt: t.state === "COMPLETED" ? new Date() : null },
+    update: { state: t.state },
+  });
+  if (t.state === "COMPLETED" && row.completedAt === null) {
+    await prisma.progress.update({ where: { id: row.id }, data: { completedAt: new Date() } });
+  }
+  return t;
 }
