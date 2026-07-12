@@ -441,8 +441,39 @@ Tayyor:
   Demo: student@meduni.uz/student123 — 2 dars (PRESENT+LATE=100%). **Talaba tomoni
   tugadi**: bosh sahifa → mavzu yo'li → mavzu o'tish → davomat → profil.
 
-Keyingilar (men har biriga prompt beraman):
-17. Admin: lug'at, shablon, AI monitoring, audit
+- **Modul 17 — Admin: Lug'at + Shablon + AI monitoring + Audit (tayyor). YAKUNIY.**
+  Prisma: Glossary (departmentId, termRu/Uz/Lat?, approved, @@unique dept+termRu),
+  PresentationTemplate (name, colorsJson, logoUrl?, isDefault), AiQuota (departmentId
+  unique, monthly{Token,Image,Cost}Limit); **AiUsage refactor** (+ departmentId?/userId?/
+  images/ttsChars/costUsd). **AI qatlam refaktori (MUHIM):** `ai/glossary.ts`
+  (getGlossaryForDepartment + `glossaryBlock` — "Цирроз = Sirroz (Cirrhosis)" MAJBURIY
+  bloki, departmentForTopic), `ai/usage.ts` (recordAiUsage — cost bilan), `ai/cost.ts`
+  (gemini narx ~), `ai/quota.ts` (assertQuota — oylik limit oshsa **403 quota_exceeded**).
+  **Har generatsiya** (digest/quiz/case/slides/video/factcheck/image) endi: dept aniqlaydi
+  → assertQuota → glossaryni systemInstruction'ga qo'shadi → recordAiUsage(dept/user/cost).
+  Backend `modules/admin/`: glossary CRUD+import[exceljs] (ADMIN+TEACHER — teacher o'z
+  kafedrasiga pinned), templates CRUD+set-default (ADMIN), monitoring (ai-usage agregat
+  byDept/byKind, quotas GET/PUT+audit), audit (filtr actor/action/entity/sana+pagination),
+  stats (counts+attention+aiThisMonth+activity). Mount: `/glossary`,`/templates`,`/admin`
+  org-router'dan OLDIN. Audit loglar qo'shildi: CREATE_USER/ACTIVATE/DEACTIVATE (users
+  router), UPDATE_QUOTA. Frontend: **AdminDashboard** to'ldirildi (5 stat karta — ikonka+
+  rang+izoh, bosiladi; "diqqat talab qiladi" bloki; AI gradient karta; 7-kun faollik —
+  **quruq raqam EMAS**), `/admin/glossary` (kafedra+qidiruv+qo'shish+jadval+Excel import),
+  `/admin/templates` (kartalar+rang tanlash+**preview namuna slayd**+set-default),
+  `/admin/ai` (gradient jami+tur bo'yicha+kafedra jadvali kvota progress[80%amber/100%rose]+
+  kvota modal), `/admin/audit` (filtr+jadval+rangli action pill+JSON detal modal+pagination).
+  AdminShell nav + 4 sahifa. **To'liq tekshirildi**: 27/27 HTTP e2e — glossary CRUD+409,
+  **glossaryBlock AI promptga MAJBURIY qo'shiladi**, teacher scoping, templates default flip,
+  usage agregat+cost, **quota 403**, audit (CREATE_USER/UPDATE_QUOTA), stats, role guardlar;
+  tsc+build toza. Demo: admin@meduni.uz/admin123 — 5 atama, 2 shablon, 7 usage yozuvi, kvota.
+
+**PLATFORMA TUGADI.** Butun zanjir: admin quradi → o'qituvchi material→AI(konspekt/test/
+keys/slayd/video, lug'at bilan)→tekshir→⛔tasdiq→⛔chop et → talaba ketma-ket o'qiydi→
+test/keys topshiradi → o'qituvchi baholaydi/progress/yo'qlama → admin sarf/kvota nazorat.
+Ikki qulf + faktcheck tibbiy xavfsizlik. ⚠️ Pilotdан oldin: GEMINI_API_KEY yangilash;
+Modul 8 real Nano Banana Pro rasmlari pulli kalitni kutmoqda.
+
+Barcha modullar tugadi (1-17).
 
 ---
 

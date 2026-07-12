@@ -8,6 +8,9 @@ import { ApiError, badRequest, notFound } from "../../lib/errors";
 import { readFileBuffer, saveBytes } from "../../lib/storage";
 import { FFMPEG, run } from "../../lib/exec";
 import { generateStructured } from "../../ai/gemini";
+import { recordAiUsage } from "../../ai/usage";
+import { assertQuota } from "../../ai/quota";
+import { departmentForTopic, getGlossaryForDepartment, glossaryBlock } from "../../ai/glossary";
 import {
   videoScriptGenSchema,
   videoScriptResponseSchema,
@@ -173,12 +176,15 @@ async function stageScript(videoId: number) {
     include: { presentation: true },
   });
   const slides = (content?.presentation?.slidesJson as unknown as Slide[]) ?? [];
+  const departmentId = await departmentForTopic(v.contentItem.topicId);
+  const glossary = glossaryBlock(await getGlossaryForDepartment(departmentId));
   const gen = await generateStructured<VideoScriptGen>({
-    systemInstruction: videoScriptSystemPrompt(v.language),
+    systemInstruction: videoScriptSystemPrompt(v.language) + glossary,
     userContent: videoScriptUserContent(slides),
     responseSchema: videoScriptResponseSchema,
-    kind: "videoScript",
+    kind: "VIDEO",
     topicId: v.contentItem.topicId,
+    departmentId,
   });
   const parsed = videoScriptGenSchema.safeParse(gen);
   const segs = (parsed.success ? parsed.data : gen).segments;
@@ -192,6 +198,12 @@ async function stageTtsAndRender(videoId: number) {
   const topicId = v.contentItem.topicId;
   const voice = v.voiceId ?? VOICES[`${v.language}:female`];
   const segments = scriptOf(v);
+
+  // Record TTS usage (edge-tts is free, but chars are tracked for admin monitoring).
+  const ttsChars = segments.reduce((n, s) => n + (s.narration?.length ?? 0), 0);
+  if (ttsChars > 0) {
+    await recordAiUsage({ kind: "TTS", model: "edge-tts", topicId, departmentId: await departmentForTopic(topicId), ttsChars });
+  }
 
   const presContent = await prisma.contentItem.findUnique({
     where: { topicId_kind: { topicId, kind: "PRESENTATION" } },
@@ -274,6 +286,7 @@ export async function generateVideo(
   opts: { language: "uz" | "ru"; voice: "male" | "female" }
 ) {
   await topicForTeacher(topicId, teacherId);
+  await assertQuota(await departmentForTopic(topicId));
   const pres = await prisma.contentItem.findUnique({
     where: { topicId_kind: { topicId, kind: "PRESENTATION" } },
     include: { presentation: true },

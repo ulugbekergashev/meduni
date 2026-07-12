@@ -2,6 +2,8 @@ import { Prisma, prisma } from "../../lib/prisma";
 import { ApiError, badRequest, notFound } from "../../lib/errors";
 import { readText } from "../../lib/storage";
 import { generateStructured } from "../../ai/gemini";
+import { assertQuota } from "../../ai/quota";
+import { departmentForTopic, getGlossaryForDepartment, glossaryBlock } from "../../ai/glossary";
 import { factcheckSystemPrompt, factcheckUserContent } from "../../ai/prompts/factcheck";
 import { factcheckGenSchema, factcheckResponseSchema, type FactcheckFlag, type FactcheckGen } from "../../ai/types";
 import {
@@ -135,13 +137,18 @@ export async function generateQuiz(
   opts: { language: "uz" | "ru"; questionCount: number; difficulty: string }
 ) {
   const digest = await approvedDigest(topicId, teacherId);
+  const departmentId = await departmentForTopic(topicId);
+  await assertQuota(departmentId);
+  const glossary = glossaryBlock(await getGlossaryForDepartment(departmentId));
 
   const gen = await generateStructured<QuizGen>({
-    systemInstruction: quizSystemPrompt(opts.language, opts.questionCount, opts.difficulty),
+    systemInstruction: quizSystemPrompt(opts.language, opts.questionCount, opts.difficulty) + glossary,
     userContent: quizUserContent(digest),
     responseSchema: quizResponseSchema,
-    kind: "quiz",
+    kind: "QUIZ",
     topicId,
+    departmentId,
+    userId: teacherId,
   });
   const parsed = quizGenSchema.safeParse(gen);
   const questions = (parsed.success ? parsed.data : gen).questions;
@@ -190,13 +197,18 @@ export async function generateCase(
   opts: { language: "uz" | "ru"; format: "SHORT" | "EXTENDED" }
 ) {
   const digest = await approvedDigest(topicId, teacherId);
+  const departmentId = await departmentForTopic(topicId);
+  await assertQuota(departmentId);
+  const glossary = glossaryBlock(await getGlossaryForDepartment(departmentId));
 
   const gen = await generateStructured<CaseJson>({
-    systemInstruction: caseSystemPrompt(opts.language, opts.format),
+    systemInstruction: caseSystemPrompt(opts.language, opts.format) + glossary,
     userContent: caseUserContent(digest),
     responseSchema: caseResponseSchema,
-    kind: "case",
+    kind: "CASE",
     topicId,
+    departmentId,
+    userId: teacherId,
   });
   const parsed = caseSchema.safeParse(gen);
   const caseJson = parsed.success ? parsed.data : gen;
@@ -384,13 +396,17 @@ export async function runFactcheck(contentId: number, teacherId: number) {
   const contentText = contentToText(item);
   const sourceText = await collectSource(item.topicId);
 
+  const departmentId = await departmentForTopic(item.topicId);
+  await assertQuota(departmentId);
   await prisma.contentItem.update({ where: { id: contentId }, data: { factcheckStatus: "CHECKING" } });
 
   const gen = await generateStructured<FactcheckGen>({
     systemInstruction: factcheckSystemPrompt(),
     userContent: factcheckUserContent(contentText, sourceText),
     responseSchema: factcheckResponseSchema,
-    kind: "factcheck",
+    departmentId,
+    userId: teacherId,
+    kind: "FACTCHECK",
     topicId: item.topicId,
   });
   const parsed = factcheckGenSchema.safeParse(gen);

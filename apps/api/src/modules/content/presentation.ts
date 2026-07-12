@@ -6,6 +6,8 @@ import { prisma } from "../../lib/prisma";
 import { ApiError, notFound } from "../../lib/errors";
 import { readFileBuffer, saveBytes } from "../../lib/storage";
 import { generateImage, generateStructured } from "../../ai/gemini";
+import { assertQuota } from "../../ai/quota";
+import { departmentForTopic, getGlossaryForDepartment, glossaryBlock } from "../../ai/glossary";
 import { slidesGenSchema, slidesResponseSchema, type DigestJson, type Slide, type SlidesGen } from "../../ai/types";
 import { slidesSystemPrompt, slidesUserContent } from "../../ai/prompts/slides";
 import { imagePromptForSlide } from "../../ai/prompts/images";
@@ -53,12 +55,18 @@ export async function generatePresentation(
   }
   const digest = topic.digest.digestJson as unknown as DigestJson;
 
+  const departmentId = await departmentForTopic(topicId);
+  await assertQuota(departmentId);
+  const glossary = glossaryBlock(await getGlossaryForDepartment(departmentId));
+
   const gen = await generateStructured<SlidesGen>({
-    systemInstruction: slidesSystemPrompt(opts.language),
+    systemInstruction: slidesSystemPrompt(opts.language) + glossary,
     userContent: slidesUserContent(digest),
     responseSchema: slidesResponseSchema,
-    kind: "slides",
+    kind: "SLIDES",
     topicId,
+    departmentId,
+    userId: teacherId,
   });
   const parsed = slidesGenSchema.safeParse(gen);
   const raw = (parsed.success ? parsed.data : gen).slides;
@@ -110,7 +118,8 @@ async function updateSlot(
   await prisma.presentation.update({ where: { id: presentationId }, data: { slidesJson: slides as object } });
 }
 
-async function runImageJob(presentationId: number, topicId: number, lang: "uz" | "ru", targets: { s: number; slot: number }[]) {
+async function runImageJob(presentationId: number, topicId: number, teacherId: number, lang: "uz" | "ru", targets: { s: number; slot: number }[]) {
+  const departmentId = await departmentForTopic(topicId);
   for (const { s, slot } of targets) {
     await updateSlot(presentationId, s, slot, { status: "PROCESSING" });
     try {
@@ -120,7 +129,7 @@ async function runImageJob(presentationId: number, topicId: number, lang: "uz" |
       const slotObj = slide?.imageSlots[slot];
       if (!slotObj) continue;
       const prompt = imagePromptForSlide(slide, slotObj.prompt, lang);
-      const img = await generateImage(prompt, { kind: "image", topicId });
+      const img = await generateImage(prompt, { kind: "IMAGE", topicId, departmentId, userId: teacherId });
       const rel = await saveBytes(`topics/${topicId}/presentation/${presentationId}/s${s}_slot${slot}.png`, img.buffer);
       await updateSlot(presentationId, s, slot, { url: rel, status: "DONE" });
     } catch {
@@ -140,9 +149,10 @@ export async function generateAllImages(presentationId: number, teacherId: numbe
       if (slot.status !== "DONE") targets.push({ s, slot: i });
     })
   );
+  await assertQuota(await departmentForTopic(topicId));
   // Mark queued as pending immediately so the UI shows progress.
   for (const t of targets) await updateSlot(presentationId, t.s, t.slot, { status: "PENDING" });
-  setImmediate(() => void runImageJob(presentationId, topicId, lang, targets));
+  setImmediate(() => void runImageJob(presentationId, topicId, teacherId, lang, targets));
 }
 
 export async function regenerateOneImage(
@@ -155,7 +165,7 @@ export async function regenerateOneImage(
   const topicId = pres.contentItem.topicId;
   const lang = pres.contentItem.language;
   await updateSlot(presentationId, slideIndex, slotIndex, { status: "PENDING", url: null });
-  setImmediate(() => void runImageJob(presentationId, topicId, lang, [{ s: slideIndex, slot: slotIndex }]));
+  setImmediate(() => void runImageJob(presentationId, topicId, teacherId, lang, [{ s: slideIndex, slot: slotIndex }]));
 }
 
 // ---------- Media ----------
