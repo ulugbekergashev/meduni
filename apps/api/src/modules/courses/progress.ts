@@ -1,7 +1,7 @@
 import ExcelJS from "exceljs";
 import { prisma } from "../../lib/prisma";
 import { ApiError, notFound } from "../../lib/errors";
-import { computeTopics, loadCourse, type CourseWithTopics, type FullFacts, type TopicOut } from "../me/service";
+import { computeTopics, loadCourse, studentFactsMap, type CourseWithTopics, type FullFacts, type TopicOut } from "../me/service";
 
 function forbidden(): ApiError {
   return new ApiError(403, "forbidden", "Bu sizning kursingiz emas", "Это не ваш курс");
@@ -184,6 +184,93 @@ export async function manualUnlock(courseId: number, teacherId: number, studentI
     data: { actorId: teacherId, action: "MANUAL_UNLOCK", entity: "Topic", entityId: topicId, detailsJson: { studentId, courseId } },
   });
   return { ok: true };
+}
+
+// ---------- Single student detail (from the group) ----------
+
+/** Everything a teacher needs about one student across their own courses:
+ *  attendance, per-topic progress, quiz scores, case answers + grades. */
+export async function getStudentDetail(teacherId: number, studentId: number) {
+  const enrollments = await prisma.enrollment.findMany({
+    where: { studentId, status: "ACTIVE", course: { teacherId } },
+    include: { course: { include: { subject: true } } },
+    orderBy: { courseId: "asc" },
+  });
+  if (enrollments.length === 0) throw forbidden(); // not this teacher's student
+
+  const student = await prisma.user.findUnique({ where: { id: studentId }, include: { group: true } });
+  if (!student) throw notFound("Talaba");
+
+  const courses = [];
+  for (const enr of enrollments) {
+    const course = await loadCourse(enr.courseId);
+    const facts = await studentFactsMap(studentId, course);
+    const topicOuts = computeTopics(course, facts);
+    const topicIds = topicOuts.map((t) => t.id);
+
+    const [attendance, caseAttempts] = await Promise.all([
+      prisma.attendance.findMany({ where: { studentId, session: { courseId: enr.courseId } } }),
+      topicIds.length
+        ? prisma.caseAttempt.findMany({
+            where: { studentId, clinicalCase: { contentItem: { topicId: { in: topicIds } } } },
+            include: { clinicalCase: { include: { contentItem: true } } },
+          })
+        : Promise.resolve([]),
+    ]);
+
+    let present = 0, absent = 0, late = 0, excused = 0;
+    const grades: number[] = [];
+    for (const a of attendance) {
+      if (a.status === "PRESENT") present++;
+      else if (a.status === "ABSENT") absent++;
+      else if (a.status === "LATE") late++;
+      else if (a.status === "EXCUSED") excused++;
+      if (a.grade !== null) grades.push(a.grade);
+    }
+    const marked = present + absent + late + excused;
+    const caseByTopic = new Map(caseAttempts.map((ca) => [ca.clinicalCase.contentItem.topicId, ca]));
+
+    const completedCount = topicOuts.filter((t) => t.state === "COMPLETED").length;
+    courses.push({
+      courseId: course.id,
+      subjectNameUz: course.subject.nameUz,
+      subjectNameRu: course.subject.nameRu,
+      topicsTotal: topicOuts.length,
+      completedCount,
+      overallPct: topicOuts.length === 0 ? 0 : Math.round((completedCount / topicOuts.length) * 100),
+      attendance: {
+        present,
+        absent,
+        late,
+        excused,
+        pct: marked === 0 ? null : Math.round(((present + late) / marked) * 100),
+        avgGrade: grades.length === 0 ? null : Math.round(grades.reduce((a, b) => a + b, 0) / grades.length),
+      },
+      topics: topicOuts.map((t) => {
+        const ca = caseByTopic.get(t.id);
+        return {
+          id: t.id,
+          titleUz: t.titleUz,
+          titleRu: t.titleRu,
+          state: t.state,
+          pct: t.pct,
+          hasQuiz: t.elements.quiz.exists,
+          quizScore: t.elements.quiz.score,
+          hasCase: t.elements.case.exists,
+          caseSubmitted: t.elements.case.submitted,
+          caseReviewed: t.elements.case.reviewed,
+          caseScore: ca?.score ?? null,
+          caseFeedback: ca?.teacherFeedback ?? null,
+          caseAttemptId: ca?.id ?? null,
+        };
+      }),
+    });
+  }
+
+  return {
+    student: { id: student.id, fullName: student.fullName, email: student.email, groupName: student.group?.name ?? null },
+    courses,
+  };
 }
 
 // ---------- Teacher dashboard ----------

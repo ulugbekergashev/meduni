@@ -48,14 +48,24 @@
   },
   "groups": {
     "title": "Mening guruhlarim",
-    "subtitle": "Siz dars beradigan guruhlar: jurnal, yoʻqlama va progress shu yerdan.",
+    "subtitle": "Guruhni oching, talabani bosing — uning davomati, statistikasi va ishlari koʻrinadi.",
     "empty": "Sizga hali guruh biriktirilmagan.",
     "yearN": "{{n}}-kurs",
     "noStudents": "Bu guruhda talaba yoʻq.",
     "noCourses": "Kursni admin biriktiradi.",
-    "journal": "Jurnal",
-    "attendance": "Yoʻqlama",
-    "progress": "Progress"
+    "journalOf": "{{name}} — jurnal"
+  },
+  "studentDetail": {
+    "back": "← Guruhlar",
+    "progress": "Progress",
+    "attendance": "Davomat",
+    "att": { "pct": "Davomat", "present": "Keldi", "absent": "Kelmadi", "late": "Kechikdi", "excused": "Sababli", "avgGrade": "Oʻrt. baho" },
+    "work": "Mavzular boʻyicha ishi",
+    "noTopics": "Hali chop etilgan mavzu yoʻq.",
+    "quiz": "Test",
+    "case": "Keys",
+    "underReview": "tekshiruvda",
+    "state": { "COMPLETED": "Tugallandi", "IN_PROGRESS": "Jarayonda", "AVAILABLE": "Ochiq", "LOCKED": "Yopiq" }
   },
   "journal": {
     "hint": "Katakni bosing — yoʻqlama va baho qoʻying.",

@@ -40,6 +40,40 @@ export function useTeachGroups() {
   return useQuery({ queryKey: ["teach-groups"], queryFn: () => api<TeachGroup[]>("/api/v1/teach/groups") });
 }
 
+export interface StudentDetailTopic {
+  id: number;
+  titleUz: string;
+  titleRu: string;
+  state: CellState;
+  pct: number;
+  hasQuiz: boolean;
+  quizScore: number | null;
+  hasCase: boolean;
+  caseSubmitted: boolean;
+  caseReviewed: boolean;
+  caseScore: number | null;
+  caseFeedback: string | null;
+  caseAttemptId: number | null;
+}
+export interface StudentDetailCourse {
+  courseId: number;
+  subjectNameUz: string;
+  subjectNameRu: string;
+  topicsTotal: number;
+  completedCount: number;
+  overallPct: number;
+  attendance: { present: number; absent: number; late: number; excused: number; pct: number | null; avgGrade: number | null };
+  topics: StudentDetailTopic[];
+}
+export interface StudentDetail {
+  student: { id: number; fullName: string; email: string; groupName: string | null };
+  courses: StudentDetailCourse[];
+}
+
+export function useStudentDetail(studentId: number) {
+  return useQuery({ queryKey: ["student-detail", studentId], queryFn: () => api<StudentDetail>(`/api/v1/teach/students/${studentId}`), retry: false });
+}
+
 export interface SyllabusTopic {
   id: number;
   titleUz: string;
