@@ -67,15 +67,18 @@ export async function listTopics(courseId: number, teacherId: number) {
   return rows.map(toTopicOut);
 }
 
-export async function createTopic(input: { courseId: number; titleUz: string; titleRu: string }, teacherId: number) {
+export async function createTopic(input: { courseId: number; titleUz?: string; titleRu?: string }, teacherId: number) {
   await assertCourseOwner(input.courseId, teacherId);
+  // One language is enough — mirror it into the other so both display fields are set.
+  const titleUz = (input.titleUz?.trim() || input.titleRu?.trim())!;
+  const titleRu = (input.titleRu?.trim() || input.titleUz?.trim())!;
   const last = await prisma.topic.findFirst({
     where: { courseId: input.courseId },
     orderBy: { orderIndex: "desc" },
   });
   const orderIndex = (last?.orderIndex ?? -1) + 1;
   const t = await prisma.topic.create({
-    data: { courseId: input.courseId, titleUz: input.titleUz.trim(), titleRu: input.titleRu.trim(), orderIndex },
+    data: { courseId: input.courseId, titleUz, titleRu, orderIndex },
   });
   return toTopicOut(t);
 }

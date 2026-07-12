@@ -34,20 +34,27 @@ const wrap = (fn: RequestHandler): RequestHandler => (req, res, next) =>
 
 // Schemas ---------------------------------------------------------------
 
-const nameFields = { nameUz: z.string().trim().min(1), nameRu: z.string().trim().min(1) };
-const facultyIn = z.object(nameFields);
-const departmentIn = z.object({ facultyId: z.number().int().positive(), ...nameFields });
-const departmentUpdate = z.object({ facultyId: z.number().int().positive().optional(), ...nameFields });
-const subjectIn = z.object({
-  departmentId: z.number().int().positive(),
-  ...nameFields,
-  description: z.string().trim().optional().nullable(),
+// One language is enough; the missing one is mirrored from the other.
+const nameOpt = { nameUz: z.string().trim().optional(), nameRu: z.string().trim().optional() };
+const atLeastName = (d: { nameUz?: string; nameRu?: string }) => !!(d.nameUz || d.nameRu);
+const nameMsg = { message: "Kamida bitta tilda nom kiriting / Введите название хотя бы на одном языке" };
+const fillNames = <T extends { nameUz?: string; nameRu?: string }>(d: T) => ({
+  ...d,
+  nameUz: (d.nameUz || d.nameRu)!,
+  nameRu: (d.nameRu || d.nameUz)!,
 });
-const subjectUpdate = z.object({
-  departmentId: z.number().int().positive().optional(),
-  ...nameFields,
-  description: z.string().trim().optional().nullable(),
-});
+
+const facultyIn = z.object(nameOpt).refine(atLeastName, nameMsg).transform(fillNames);
+const departmentIn = z.object({ facultyId: z.number().int().positive(), ...nameOpt }).refine(atLeastName, nameMsg).transform(fillNames);
+const departmentUpdate = z.object({ facultyId: z.number().int().positive().optional(), ...nameOpt }).refine(atLeastName, nameMsg).transform(fillNames);
+const subjectIn = z
+  .object({ departmentId: z.number().int().positive(), ...nameOpt, description: z.string().trim().optional().nullable() })
+  .refine(atLeastName, nameMsg)
+  .transform(fillNames);
+const subjectUpdate = z
+  .object({ departmentId: z.number().int().positive().optional(), ...nameOpt, description: z.string().trim().optional().nullable() })
+  .refine(atLeastName, nameMsg)
+  .transform(fillNames);
 const groupIn = z.object({
   facultyId: z.number().int().positive(),
   name: z.string().trim().min(1),

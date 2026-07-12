@@ -157,6 +157,8 @@
   },
   "topics": {
     "addForm": "Yangi mavzu",
+    "oneLangHint": "Bittasini toʻldirsangiz yetarli — ikkinchisi avtomatik toʻldiriladi.",
+    "titleRequired": "Kamida bitta tilda nom kiriting",
     "titleUz": "Mavzu nomi (oʻzbek)",
     "titleRu": "Mavzu nomi (rus)",
     "add": "Yangi mavzu",
@@ -429,7 +431,9 @@
     "all": "Barchasi",
     "nameUz": "Nomi (oʻzbek)",
     "nameRu": "Nomi (rus)",
-    "genericError": "Xatolik yuz berdi"
+    "genericError": "Xatolik yuz berdi",
+    "oneLangHint": "Bittasini toʻldirsangiz yetarli — ikkinchisi avtomatik toʻldiriladi.",
+    "nameRequired": "Kamida bitta tilda nom kiriting"
   },
   "structure": {
     "title": "Tuzilma",

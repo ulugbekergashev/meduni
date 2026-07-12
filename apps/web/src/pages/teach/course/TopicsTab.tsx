@@ -40,6 +40,10 @@ export function TopicsTab() {
   const onAdd = (e: FormEvent) => {
     e.preventDefault();
     setFormError(null);
+    if (!titleUz.trim() && !titleRu.trim()) {
+      setFormError(t("titleRequired"));
+      return;
+    }
     create.mutate(
       { titleUz: titleUz.trim(), titleRu: titleRu.trim() },
       {
@@ -65,13 +69,16 @@ export function TopicsTab() {
     <div className="space-y-6">
       {/* Add form */}
       <Card>
-        <h2 className="mb-4 text-section font-bold text-ink">{t("addForm")}</h2>
+        <div className="mb-4">
+          <h2 className="text-section font-bold text-ink">{t("addForm")}</h2>
+          <p className="mt-0.5 text-[12px] text-ink-faint">{t("oneLangHint")}</p>
+        </div>
         <form onSubmit={onAdd} className="grid gap-4 sm:grid-cols-2">
           <Field label={t("titleUz")}>
-            <Input value={titleUz} onChange={(e) => setTitleUz(e.target.value)} required />
+            <Input value={titleUz} onChange={(e) => setTitleUz(e.target.value)} />
           </Field>
           <Field label={t("titleRu")}>
-            <Input value={titleRu} onChange={(e) => setTitleRu(e.target.value)} required />
+            <Input value={titleRu} onChange={(e) => setTitleRu(e.target.value)} />
           </Field>
           {formError && <p className="text-[13px] text-rose sm:col-span-2">{formError}</p>}
           <div className="sm:col-span-2">
