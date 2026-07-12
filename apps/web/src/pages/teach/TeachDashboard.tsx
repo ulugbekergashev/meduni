@@ -1,11 +1,25 @@
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { BookOpen, CheckCircle2, ClipboardCheck, FileClock, Users, UserX } from "lucide-react";
+import { BookOpen, CalendarCheck, CalendarDays, CheckCircle2, ClipboardCheck, FileClock, FileStack, Layers, TrendingUp, Users, UserX, Users2 } from "lucide-react";
 import { Card, Icon, Spinner } from "@meduni/ui";
 import { AsyncSection } from "../../components/AsyncSection";
 import { pickName, useLocale } from "../../lib/useLocale";
 import { useMe } from "../../lib/auth";
 import { useTeachCourses, useTeachDashboard } from "./api";
+
+function StatTile({ icon, value, label, tone }: { icon: typeof Users; value: string | number; label: string; tone: string }) {
+  return (
+    <div className="flex items-center gap-3 rounded-card border border-line bg-surface p-3.5">
+      <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${tone}`}>
+        <Icon icon={icon} size={18} />
+      </div>
+      <div className="min-w-0">
+        <p className="text-[22px] font-bold leading-none tabular-nums text-ink">{value}</p>
+        <p className="mt-0.5 truncate text-[12px] text-ink-soft">{label}</p>
+      </div>
+    </div>
+  );
+}
 
 function TaskRow({ icon, tone, count, label, onClick }: { icon: typeof ClipboardCheck; tone: string; count: number; label: string; onClick?: () => void }) {
   return (
@@ -61,6 +75,54 @@ export function TeachDashboard() {
           </div>
         )}
       </section>
+
+      {/* My statistics */}
+      {dash.data?.stats && (
+        <section className="mt-8">
+          <h2 className="mb-3 text-section font-bold text-ink">{t("myStats")}</h2>
+          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4">
+            <StatTile icon={Users} value={dash.data.stats.students} label={t("statStudents")} tone="bg-blue-soft text-blue" />
+            <StatTile icon={Layers} value={`${dash.data.stats.publishedTopics}/${dash.data.stats.totalTopics}`} label={t("statTopics")} tone="bg-emerald-soft text-emerald" />
+            <StatTile icon={FileStack} value={dash.data.stats.publishedContent} label={t("statContent")} tone="bg-violet-soft text-violet" />
+            <StatTile icon={ClipboardCheck} value={dash.data.stats.casesReviewed} label={t("statReviewed")} tone="bg-amber-soft text-amber" />
+            <StatTile icon={TrendingUp} value={`${dash.data.stats.avgProgress}%`} label={t("statAvgProgress")} tone="bg-brand-soft text-brand-deep" />
+            <StatTile icon={CalendarCheck} value={dash.data.stats.avgAttendance !== null ? `${dash.data.stats.avgAttendance}%` : "—"} label={t("statAttendance")} tone="bg-blue-soft text-blue" />
+          </div>
+
+          {/* Groups taught */}
+          {dash.data.stats.groups.length > 0 && (
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-ink-soft">
+                <Icon icon={Users2} size={15} /> {t("myGroups")}:
+              </span>
+              {dash.data.stats.groups.map((g) => (
+                <span key={g} className="rounded-pill bg-slate-100 px-2.5 py-0.5 text-[12.5px] font-medium text-ink-soft">{g}</span>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* Upcoming sessions */}
+      {dash.data?.upcomingSessions && dash.data.upcomingSessions.length > 0 && (
+        <section className="mt-8">
+          <h2 className="mb-3 text-section font-bold text-ink">{t("upcoming")}</h2>
+          <div className="space-y-2">
+            {dash.data.upcomingSessions.map((s) => (
+              <button key={s.id} onClick={() => navigate(`/teach/courses/${s.courseId}/sessions`)} className="flex w-full items-center gap-3 rounded-card border border-line bg-surface p-3 text-left transition-all hover:-translate-y-0.5 hover:shadow-sm">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand-deep">
+                  <Icon icon={CalendarDays} size={18} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[13.5px] font-semibold text-ink">{s.title ?? pickName(locale, s.subjectNameUz, s.subjectNameRu)}</p>
+                  <p className="truncate text-[12px] text-ink-faint">{pickName(locale, s.subjectNameUz, s.subjectNameRu)}{s.room ? ` · ${s.room}` : ""}</p>
+                </div>
+                <span className="shrink-0 text-[12.5px] font-medium text-ink-soft">{new Date(s.date).toLocaleDateString(locale === "ru" ? "ru-RU" : "uz-UZ", { day: "2-digit", month: "short" })}</span>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Courses */}
       <section className="mt-8">

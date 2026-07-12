@@ -210,25 +210,50 @@ export async function getTeacherDashboard(teacherId: number) {
 
   const startOfToday = new Date();
   startOfToday.setHours(0, 0, 0, 0);
+  const courseIds = courses.map((c) => c.id);
+  const inCourses = { in: courseIds };
 
-  const [casesToReview, contentToApprove, upcoming] = await Promise.all([
-    prisma.caseAttempt.count({
-      where: { reviewedAt: null, clinicalCase: { contentItem: { topic: { course: { teacherId } } } } },
-    }),
-    prisma.contentItem.count({
-      where: { status: { in: ["DRAFT", "REVIEW"] }, topic: { course: { teacherId } } },
-    }),
-    prisma.lessonSession.findMany({
-      where: { course: { teacherId }, date: { gte: startOfToday } },
-      orderBy: { date: "asc" },
-      take: 5,
-      include: { course: { include: { subject: true } }, topic: true },
-    }),
+  const [casesToReview, contentToApprove, upcoming, distinctStudents, courseGroups, publishedTopics, totalTopics, publishedContent, casesReviewed, attMarks] = await Promise.all([
+    prisma.caseAttempt.count({ where: { reviewedAt: null, clinicalCase: { contentItem: { topic: { course: { teacherId } } } } } }),
+    prisma.contentItem.count({ where: { status: { in: ["DRAFT", "REVIEW"] }, topic: { course: { teacherId } } } }),
+    prisma.lessonSession.findMany({ where: { course: { teacherId }, date: { gte: startOfToday } }, orderBy: { date: "asc" }, take: 5, include: { course: { include: { subject: true } }, topic: true } }),
+    prisma.enrollment.findMany({ where: { courseId: inCourses, status: "ACTIVE" }, distinct: ["studentId"], select: { studentId: true } }),
+    prisma.courseGroup.findMany({ where: { courseId: inCourses }, include: { group: true } }),
+    prisma.topic.count({ where: { courseId: inCourses, contentItems: { some: { status: "PUBLISHED" } } } }),
+    prisma.topic.count({ where: { courseId: inCourses } }),
+    prisma.contentItem.count({ where: { status: "PUBLISHED", topic: { courseId: inCourses } } }),
+    prisma.caseAttempt.count({ where: { reviewedById: teacherId } }),
+    prisma.attendance.groupBy({ by: ["status"], where: { session: { courseId: inCourses } }, _count: true }),
   ]);
+
+  // Distinct groups the teacher teaches.
+  const groupMap = new Map<number, string>();
+  for (const cg of courseGroups) groupMap.set(cg.groupId, cg.group.name);
+
+  // Overall attendance %: (present + late) / marked across all their sessions.
+  let present = 0, late = 0, marked = 0;
+  for (const m of attMarks) {
+    marked += m._count;
+    if (m.status === "PRESENT") present += m._count;
+    else if (m.status === "LATE") late += m._count;
+  }
+  const avgAttendance = marked === 0 ? null : Math.round(((present + late) / marked) * 100);
+  const avgProgress = courseCards.length ? Math.round(courseCards.reduce((a, c) => a + c.avgProgress, 0) / courseCards.length) : 0;
 
   return {
     courses: courseCards,
     tasks: { casesToReview, contentToApprove, studentsBehind },
+    stats: {
+      students: distinctStudents.length,
+      courses: courses.length,
+      groups: [...groupMap.values()],
+      publishedTopics,
+      totalTopics,
+      publishedContent,
+      casesReviewed,
+      avgProgress,
+      avgAttendance,
+    },
     upcomingSessions: upcoming.map((s) => ({
       id: s.id,
       courseId: s.courseId,
