@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { AlertTriangle, BookOpen, CheckCircle2, ClipboardCheck, FileClock, FileStack, GraduationCap, Layers, Sparkles, TrendingUp, Users } from "lucide-react";
 import { Card, Icon, Spinner, cls } from "@meduni/ui";
 import { useMe } from "../../lib/auth";
+import { useLocale } from "../../lib/useLocale";
 import { useAdminStats } from "./api";
 
 function StatCard({ icon, value, label, hint, tone, onClick }: { icon: typeof Users; value: number; label: string; hint: string; tone: string; onClick: () => void }) {
@@ -24,9 +25,10 @@ export function AdminDashboard() {
   const { t } = useTranslation(undefined, { keyPrefix: "adminHome" });
   const { data: me } = useMe();
   const navigate = useNavigate();
+  const locale = useLocale();
   const q = useAdminStats();
   const s = q.data;
-  const today = new Date().toLocaleDateString("uz-UZ", { day: "numeric", month: "long", year: "numeric" });
+  const today = new Date().toLocaleDateString(locale === "ru" ? "ru-RU" : "uz-UZ", { day: "numeric", month: "long", year: "numeric" });
 
   if (q.isLoading) return <div className="flex min-h-[40vh] items-center justify-center"><Spinner size={26} /></div>;
 

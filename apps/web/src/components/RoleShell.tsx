@@ -19,6 +19,8 @@ export interface RoleShellItem {
   icon: ReactNode;
   /** Exact-match only (for the role home item); otherwise prefix-match highlights sub-routes. */
   end?: boolean;
+  /** Optional count pill (e.g. pending cases). */
+  badge?: number;
 }
 
 export function RoleShell({
@@ -39,6 +41,7 @@ export function RoleShell({
     href: item.href,
     label: item.label,
     icon: item.icon,
+    badge: item.badge,
     active: item.end
       ? pathname === item.href
       : pathname === item.href || pathname.startsWith(`${item.href}/`),

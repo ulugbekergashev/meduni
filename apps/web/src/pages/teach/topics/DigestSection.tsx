@@ -157,21 +157,26 @@ export function DigestSection({ topic }: { topic: TopicDetail }) {
   return (
     <div className="space-y-4">
       <Card className="space-y-6">
-        <Block title={t("objectives")}>
-          <EditableList items={draft.objectives} onChange={(v) => patch({ objectives: v })} />
-        </Block>
-        <Block title={t("concepts")}>
-          <EditableList items={draft.concepts} onChange={(v) => patch({ concepts: v })} />
-        </Block>
-        <Block title={t("terms")}>
-          <TermsTable terms={draft.terms} onChange={(v) => patch({ terms: v })} />
-        </Block>
-        <Block title={t("facts")}>
-          <EditableList items={draft.facts} onChange={(v) => patch({ facts: v })} />
-        </Block>
-        <Block title={t("imageIdeas")}>
-          <EditableList items={draft.imageIdeas} onChange={(v) => patch({ imageIdeas: v })} />
-        </Block>
+        {/* Single-column lists paired two-up so the digest reads on one screen. */}
+        <div className="grid gap-x-8 gap-y-6 lg:grid-cols-2">
+          <Block title={t("objectives")}>
+            <EditableList items={draft.objectives} onChange={(v) => patch({ objectives: v })} />
+          </Block>
+          <Block title={t("concepts")}>
+            <EditableList items={draft.concepts} onChange={(v) => patch({ concepts: v })} />
+          </Block>
+          <Block title={t("facts")}>
+            <EditableList items={draft.facts} onChange={(v) => patch({ facts: v })} />
+          </Block>
+          <Block title={t("imageIdeas")}>
+            <EditableList items={draft.imageIdeas} onChange={(v) => patch({ imageIdeas: v })} />
+          </Block>
+        </div>
+        <div className="border-t border-line pt-6">
+          <Block title={t("terms")}>
+            <TermsTable terms={draft.terms} onChange={(v) => patch({ terms: v })} />
+          </Block>
+        </div>
       </Card>
 
       {/* Dosages — medically sensitive, highlighted */}

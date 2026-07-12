@@ -26,6 +26,7 @@ import { SettingsTab } from "./pages/teach/course/SettingsTab";
 import { TopicConstructor } from "./pages/teach/topics/TopicConstructor";
 import { ContentEditor } from "./pages/teach/content/ContentEditor";
 import { CaseReviewQueue } from "./pages/teach/CaseReviewQueue";
+import { TeachGlossaryPage } from "./pages/teach/glossary/TeachGlossaryPage";
 import { StudentShell } from "./pages/student/StudentShell";
 import { StudentDashboard } from "./pages/student/StudentDashboard";
 import { CoursePath } from "./pages/student/CoursePath";
@@ -84,6 +85,7 @@ export function App() {
         <Route path="topics/:id" element={<TopicConstructor />} />
         <Route path="content/:id" element={<ContentEditor />} />
         <Route path="cases/review" element={<CaseReviewQueue />} />
+        <Route path="glossary" element={<TeachGlossaryPage />} />
       </Route>
 
       <Route
