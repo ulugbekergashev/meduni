@@ -218,8 +218,11 @@ export async function exportPptx(presentationId: number, teacherId: number): Pro
 
 export async function exportPdf(presentationId: number, teacherId: number): Promise<Buffer> {
   const pres = await presentationForTeacher(presentationId, teacherId);
-  const slides = slidesOf(pres);
+  return buildPdf(slidesOf(pres));
+}
 
+/** Pure PDF builder (branded template) — shared by teacher export and student download. */
+export function buildPdf(slides: Slide[]): Promise<Buffer> {
   return new Promise<Buffer>(async (resolve, reject) => {
     try {
       const doc = new PDFDocument({ size: [960, 540], margin: 0 });

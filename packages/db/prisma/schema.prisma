@@ -102,6 +102,9 @@ model User {
   approvedContent   ContentItem[]    @relation("ContentApprover")
   auditLogs         AuditLog[]
   progress          Progress[]
+  quizAttempts      QuizAttempt[]
+  caseAttempts      CaseAttempt[]    @relation("CaseStudent")
+  reviewedCases     CaseAttempt[]    @relation("CaseReviewer")
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
 
@@ -227,15 +230,17 @@ model Topic {
 }
 
 model Progress {
-  id              Int           @id @default(autoincrement())
-  studentId       Int
-  student         User          @relation(fields: [studentId], references: [id])
-  topicId         Int
-  topic           Topic         @relation(fields: [topicId], references: [id])
-  state           ProgressState @default(LOCKED)
-  videoWatchedPct Int           @default(0)
-  completedAt     DateTime?
-  updatedAt       DateTime      @updatedAt
+  id               Int           @id @default(autoincrement())
+  studentId        Int
+  student          User          @relation(fields: [studentId], references: [id])
+  topicId          Int
+  topic            Topic         @relation(fields: [topicId], references: [id])
+  state            ProgressState @default(LOCKED)
+  videoWatchedPct  Int           @default(0)
+  videoPositionSec Int           @default(0)
+  slidesViewed     Boolean       @default(false)
+  completedAt      DateTime?
+  updatedAt        DateTime      @updatedAt
 
   @@unique([studentId, topicId])
   @@map("progress")
@@ -292,8 +297,25 @@ model Quiz {
   maxAttempts   Int         @default(1)
   settingsJson  Json?
   questions     Question[]
+  attempts      QuizAttempt[]
 
   @@map("quizzes")
+}
+
+model QuizAttempt {
+  id          Int       @id @default(autoincrement())
+  quizId      Int
+  quiz        Quiz      @relation(fields: [quizId], references: [id])
+  studentId   Int
+  student     User      @relation(fields: [studentId], references: [id])
+  answersJson Json      @default("{}") // { [questionId]: selectedIndex }
+  scorePct    Int       @default(0)
+  passed      Boolean   @default(false)
+  attemptNo   Int       @default(1)
+  startedAt   DateTime  @default(now())
+  finishedAt  DateTime?
+
+  @@map("quiz_attempts")
 }
 
 model Question {
@@ -312,13 +334,32 @@ model Question {
 }
 
 model ClinicalCase {
-  id            Int         @id @default(autoincrement())
-  contentItemId Int         @unique
-  contentItem   ContentItem @relation(fields: [contentItemId], references: [id])
+  id            Int           @id @default(autoincrement())
+  contentItemId Int           @unique
+  contentItem   ContentItem   @relation(fields: [contentItemId], references: [id])
   caseJson      Json
-  format        CaseFormat  @default(SHORT)
+  format        CaseFormat    @default(SHORT)
+  attempts      CaseAttempt[]
 
   @@map("clinical_cases")
+}
+
+model CaseAttempt {
+  id              Int          @id @default(autoincrement())
+  caseId          Int
+  clinicalCase    ClinicalCase @relation(fields: [caseId], references: [id])
+  studentId       Int
+  student         User         @relation("CaseStudent", fields: [studentId], references: [id])
+  answersJson     Json // string[] paired with case questions
+  submittedAt     DateTime     @default(now())
+  teacherFeedback String?
+  score           Int?
+  reviewedById    Int?
+  reviewedBy      User?        @relation("CaseReviewer", fields: [reviewedById], references: [id])
+  reviewedAt      DateTime?
+
+  @@unique([studentId, caseId])
+  @@map("case_attempts")
 }
 
 model Presentation {
