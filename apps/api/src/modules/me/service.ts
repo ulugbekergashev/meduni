@@ -6,7 +6,7 @@ import { DEFAULT_RULE, evaluateRule, lockedReason, type Facts, type Reason, type
 // A topic is visible to students only once it has at least one PUBLISHED content
 // item. Un-published topics don't appear on the path at all.
 const topicInclude = {
-  contentItems: { where: { status: "PUBLISHED" }, include: { quiz: true } },
+  contentItems: { where: { status: "PUBLISHED" }, include: { quiz: true, clinicalCase: true } },
 } satisfies Prisma.TopicInclude;
 
 const courseInclude = {
@@ -19,35 +19,20 @@ const courseInclude = {
 type CourseWithTopics = Prisma.CourseGetPayload<{ include: typeof courseInclude }>;
 type TopicWithContent = CourseWithTopics["topics"][number];
 
+// Facts + the extra slides-viewed flag (slides don't gate unlock but do show on the card).
+interface FullFacts extends Facts {
+  slidesViewed: boolean;
+}
+
 function resolveRule(topic: TopicWithContent, course: CourseWithTopics): UnlockRule {
   const raw = (topic.unlockRuleJson ?? course.defaultUnlockRuleJson) as Partial<UnlockRule> | null;
   return { ...DEFAULT_RULE, ...(raw ?? {}) };
 }
 
-interface ProgressRow {
-  videoWatchedPct: number;
-}
-
-function buildFacts(topic: TopicWithContent, progress: ProgressRow | undefined): Facts {
-  const kinds = new Set(topic.contentItems.map((c) => c.kind));
-  return {
-    hasVideo: kinds.has("VIDEO"),
-    hasSlides: kinds.has("PRESENTATION"),
-    hasQuiz: kinds.has("QUIZ"),
-    hasCase: kinds.has("CASE"),
-    videoWatchedPct: progress?.videoWatchedPct ?? 0,
-    // Quiz score and case submission come from student attempts (Module 12);
-    // until then there are no attempts, so these stay at their "not done" values.
-    quizScore: null,
-    caseSubmitted: false,
-    caseReviewed: false,
-  };
-}
-
-function buildElements(topic: TopicWithContent, facts: Facts) {
+function buildElements(facts: FullFacts) {
   return {
     video: { exists: facts.hasVideo, watchedPct: facts.videoWatchedPct },
-    slides: { exists: facts.hasSlides, viewed: false },
+    slides: { exists: facts.hasSlides, viewed: facts.slidesViewed },
     quiz: { exists: facts.hasQuiz, score: facts.quizScore },
     case: { exists: facts.hasCase, submitted: facts.caseSubmitted, reviewed: facts.caseReviewed },
   };
@@ -66,14 +51,14 @@ export interface TopicOut {
 
 /** The heart of the module: walk the topics in order, unlocking each only after
  *  the previous one is COMPLETED. Every LOCKED topic carries a concrete reason. */
-function computeTopics(course: CourseWithTopics, progressByTopic: Map<number, ProgressRow>): TopicOut[] {
+function computeTopics(course: CourseWithTopics, factsByTopic: Map<number, FullFacts>): TopicOut[] {
   const out: TopicOut[] = [];
   let prevCompleted = true; // the first topic is always open
   let prevUnmet: Reason[] = [];
 
   for (const topic of course.topics) {
     const rule = resolveRule(topic, course);
-    const facts = buildFacts(topic, progressByTopic.get(topic.id));
+    const facts = factsByTopic.get(topic.id)!;
     const { completed, pct, dateOk, unmet } = evaluateRule(facts, rule);
 
     let state: TopicOut["state"];
@@ -96,7 +81,7 @@ function computeTopics(course: CourseWithTopics, progressByTopic: Map<number, Pr
       state,
       pct,
       reason,
-      elements: buildElements(topic, facts),
+      elements: buildElements(facts),
     });
 
     prevCompleted = completed;
@@ -106,13 +91,73 @@ function computeTopics(course: CourseWithTopics, progressByTopic: Map<number, Pr
   return out;
 }
 
-async function progressMap(studentId: number, topicIds: number[]): Promise<Map<number, ProgressRow>> {
-  if (topicIds.length === 0) return new Map();
-  const rows = await prisma.progress.findMany({
+/** Gather every fact the unlock engine needs for a student across a course's topics,
+ *  in a few batched queries: progress rows, best quiz scores, case submissions. */
+async function studentFactsMap(studentId: number, course: CourseWithTopics): Promise<Map<number, FullFacts>> {
+  const topicIds = course.topics.map((t) => t.id);
+  const map = new Map<number, FullFacts>();
+  if (topicIds.length === 0) return map;
+
+  const progressRows = await prisma.progress.findMany({
     where: { studentId, topicId: { in: topicIds } },
-    select: { topicId: true, videoWatchedPct: true },
+    select: { topicId: true, videoWatchedPct: true, slidesViewed: true },
   });
-  return new Map(rows.map((r) => [r.topicId, { videoWatchedPct: r.videoWatchedPct }]));
+  const progressByTopic = new Map(progressRows.map((r) => [r.topicId, r]));
+
+  // quizId -> topicId, caseId -> topicId
+  const quizToTopic = new Map<number, number>();
+  const caseToTopic = new Map<number, number>();
+  for (const topic of course.topics) {
+    for (const c of topic.contentItems) {
+      if (c.quiz) quizToTopic.set(c.quiz.id, topic.id);
+      if (c.clinicalCase) caseToTopic.set(c.clinicalCase.id, topic.id);
+    }
+  }
+
+  // Best finished quiz score per topic.
+  const bestScore = new Map<number, number>();
+  if (quizToTopic.size > 0) {
+    const attempts = await prisma.quizAttempt.findMany({
+      where: { studentId, quizId: { in: [...quizToTopic.keys()] }, finishedAt: { not: null } },
+      select: { quizId: true, scorePct: true },
+    });
+    for (const a of attempts) {
+      const tid = quizToTopic.get(a.quizId)!;
+      bestScore.set(tid, Math.max(bestScore.get(tid) ?? 0, a.scorePct));
+    }
+  }
+
+  // Case submission / review per topic.
+  const caseState = new Map<number, { submitted: boolean; reviewed: boolean }>();
+  if (caseToTopic.size > 0) {
+    const caseAttempts = await prisma.caseAttempt.findMany({
+      where: { studentId, caseId: { in: [...caseToTopic.keys()] } },
+      select: { caseId: true, reviewedAt: true },
+    });
+    for (const a of caseAttempts) {
+      const tid = caseToTopic.get(a.caseId)!;
+      caseState.set(tid, { submitted: true, reviewed: a.reviewedAt !== null });
+    }
+  }
+
+  for (const topic of course.topics) {
+    const kinds = new Set(topic.contentItems.map((c) => c.kind));
+    const prog = progressByTopic.get(topic.id);
+    const cs = caseState.get(topic.id);
+    map.set(topic.id, {
+      hasVideo: kinds.has("VIDEO"),
+      hasSlides: kinds.has("PRESENTATION"),
+      hasQuiz: kinds.has("QUIZ"),
+      hasCase: kinds.has("CASE"),
+      videoWatchedPct: prog?.videoWatchedPct ?? 0,
+      slidesViewed: prog?.slidesViewed ?? false,
+      quizScore: bestScore.has(topic.id) ? bestScore.get(topic.id)! : null,
+      caseSubmitted: cs?.submitted ?? false,
+      caseReviewed: cs?.reviewed ?? false,
+    });
+  }
+
+  return map;
 }
 
 function courseSummary(course: CourseWithTopics, topics: TopicOut[]) {
@@ -158,7 +203,7 @@ export async function listMyCourses(studentId: number) {
   const summaries = [];
   for (const id of ids) {
     const course = await loadCourse(id);
-    const pm = await progressMap(studentId, course.topics.map((t) => t.id));
+    const pm = await studentFactsMap(studentId, course);
     summaries.push(courseSummary(course, computeTopics(course, pm)));
   }
   return summaries;
@@ -173,7 +218,7 @@ export async function getMyCourse(studentId: number, courseId: number) {
     throw new ApiError(403, "forbidden", "Siz bu kursga yozilmagansiz", "Вы не записаны на этот курс");
   }
   const course = await loadCourse(courseId);
-  const pm = await progressMap(studentId, course.topics.map((t) => t.id));
+  const pm = await studentFactsMap(studentId, course);
   const topics = computeTopics(course, pm);
   return {
     id: course.id,
@@ -206,7 +251,7 @@ export async function getDashboard(studentId: number) {
 
   for (const id of ids) {
     const course = await loadCourse(id);
-    const pm = await progressMap(studentId, course.topics.map((t) => t.id));
+    const pm = await studentFactsMap(studentId, course);
     const topics = computeTopics(course, pm);
     courses.push(courseSummary(course, topics));
 
@@ -228,4 +273,49 @@ export async function getDashboard(studentId: number) {
   }
 
   return { fullName: me?.fullName ?? "", resume, courses, notifications: [] as unknown[] };
+}
+
+// ---------- Shared access helpers (used by the lesson module) ----------
+
+export function forbiddenNotEnrolled(): ApiError {
+  return new ApiError(403, "forbidden", "Siz bu kursga yozilmagansiz", "Вы не записаны на этот курс");
+}
+
+export function forbiddenLocked(reason?: Reason): ApiError {
+  return new ApiError(
+    403,
+    "topic_locked",
+    reason?.uz ?? "Bu mavzu hali ochilmagan",
+    reason?.ru ?? "Эта тема ещё не открыта"
+  );
+}
+
+/** Recomputes a single topic's state for the student, enforcing enrollment,
+ *  published-visibility and the sequential lock. Throws 403/404 as appropriate. */
+export async function assertTopicOpen(studentId: number, topicId: number): Promise<TopicOut> {
+  const topic = await prisma.topic.findUnique({ where: { id: topicId }, select: { courseId: true } });
+  if (!topic) throw notFound("Mavzu");
+
+  const enrolled = await prisma.enrollment.findUnique({
+    where: { studentId_courseId: { studentId, courseId: topic.courseId } },
+  });
+  if (!enrolled || enrolled.status !== "ACTIVE") throw forbiddenNotEnrolled();
+
+  const course = await loadCourse(topic.courseId);
+  const facts = await studentFactsMap(studentId, course);
+  const computed = computeTopics(course, facts);
+  const state = computed.find((t) => t.id === topicId);
+  if (!state) throw notFound("Mavzu"); // not published -> invisible to students
+  if (state.state === "LOCKED") throw forbiddenLocked(state.reason ?? undefined);
+  return state;
+}
+
+/** Recompute + return a single topic's fresh state (no lock enforcement) — used
+ *  after a student action to report whether the topic just completed. */
+export async function recomputeTopic(studentId: number, topicId: number): Promise<TopicOut | null> {
+  const topic = await prisma.topic.findUnique({ where: { id: topicId }, select: { courseId: true } });
+  if (!topic) return null;
+  const course = await loadCourse(topic.courseId);
+  const facts = await studentFactsMap(studentId, course);
+  return computeTopics(course, facts).find((t) => t.id === topicId) ?? null;
 }

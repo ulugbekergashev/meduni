@@ -308,8 +308,38 @@ Tayyor:
   HTTP e2e real talaba login), ketma-ketlik, aniq sabablar, published-only,
   cross-student 403, tsc+build toza. Dev demo: student@meduni.uz / student123.
 
+- **Modul 12 — Talaba: mavzu o'tish (tayyor). Talaba tomonining YURAGI.** Prisma:
+  QuizAttempt (answersJson, scorePct, passed, attemptNo, finishedAt?), CaseAttempt
+  (answersJson, submittedAt, teacherFeedback?, score?, reviewedBy?/At?; @@unique
+  studentId+caseId), Progress += slidesViewed, videoPositionSec. **Modul 11
+  dvigateliga real faktlar ulandi**: `studentFactsMap` endi eng yaxshi quiz balli,
+  keys topshirilishi/tekshirilishi, slaydlar ko'rilishini o'qiydi (ilgari null edi)
+  → mavzu haqiqatan COMPLETED bo'lib keyingisini ochadi. Backend `modules/me/lesson.ts`
+  (STUDENT): `GET /me/topics/:id` (to'liq dars payload — 4 tab, faqat PUBLISHED,
+  LOCKED bo'lsa **assertTopicOpen 403 topic_locked**), `POST /topics/:id/{video-
+  progress[monoton watchedPct+pozitsiya], slides-viewed}`, quiz: `POST /quizzes/:id/
+  attempts` (in-progress bo'lsa **o'shani qaytaradi=resume**, maxAttempts tugasa
+  **403 quiz_max_attempts**), `PUT /attempts/:id/answers` (avtosave, yakunlangan→403),
+  `POST /attempts/:id/finish` (avto-baho scorePct/passed), `GET /attempts/:id`
+  (**izoh/to'g'ri javob faqat finishedApidan keyin**, jarayonda yashirin), keys:
+  `POST /cases/:id/attempts` (topshirish, takror→409 case_already_submitted, etalon
+  javob **faqat topshirgach ochiladi**), `GET /case-attempts/:id`; media: `GET /me/
+  {videos/:id/mp4|srt, presentations/:id/{image,pdf}}` (published+enrolled+unlocked
+  tekshiruvi, `buildPdf` presentation.ts'dan ajratildi). Har harakatdan keyin
+  `persistAndReport` Progress.state/completedAt ni yangilaydi (Modul 13 heatmap uchun).
+  Frontend `/app/topics/:id` (`lesson/LessonPage` + 4 tab, mobil-birinchi, ?tab= URL,
+  default=birinchi bajarilmagan tab): VideoTab (pleyer, %kuzatuv 5s, pozitsiya-resume,
+  SRT→VTT subtitr), SlidesTab (swipe, PDF, oxirgi slayd→ko'rildi), QuizTab (kirish
+  ogohlantirish→jarayon avtosave→natija+**izohli tahlil**: to'g'ri yashil/xato rose/
+  izoh blue), CaseTab (bloklar→javob→topshirish tasdiq→etalon+baho/tekshiruvda).
+  Ranglar: video=violet, prezentatsiya=brand, test=blue, keys=rose. **To'liq
+  tekshirildi**: 23/23 HTTP e2e (real talaba) — LOCKED→403, izoh yashirin/ochiq,
+  avtosave+resume, baho 67%o'tdi, quiz-bir-marta→403, etalon topshirgach, cascade
+  T1→T2 ochildi, cross-student→403; tsc+build toza. Dev demo: student@meduni.uz/
+  student123 (T1 slides+test+keys to'liq ishlaydi). ⚠️ Demo'да real video/mp4 yo'q
+  (Modul 8/9 generatsiyasi kerak) — video tab "mavjud emas" ko'rsatadi.
+
 Keyingilar (men har biriga prompt beraman):
-12. Talaba: mavzu o'tish
 13. O'qituvchi: progress heatmap
 14. O'qituvchi: keys tekshiruv navbati
 15. Yo'qlama
