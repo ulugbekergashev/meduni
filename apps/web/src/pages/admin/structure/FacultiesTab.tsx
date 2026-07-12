@@ -37,6 +37,10 @@ export function FacultiesTab() {
   const onAdd = (e: FormEvent) => {
     e.preventDefault();
     setFormError(null);
+    if (!nameUz.trim() && !nameRu.trim()) {
+      setFormError(tc("nameRequired"));
+      return;
+    }
     create.mutate(
       { nameUz: nameUz.trim(), nameRu: nameRu.trim() },
       {
@@ -87,11 +91,12 @@ export function FacultiesTab() {
         <h2 className="mb-4 text-section font-bold text-ink">{t("addFacultyForm")}</h2>
         <form onSubmit={onAdd} className="grid gap-4 sm:grid-cols-2">
           <Field label={tc("nameUz")}>
-            <Input value={nameUz} onChange={(e) => setNameUz(e.target.value)} required />
+            <Input value={nameUz} onChange={(e) => setNameUz(e.target.value)} />
           </Field>
           <Field label={tc("nameRu")}>
-            <Input value={nameRu} onChange={(e) => setNameRu(e.target.value)} required />
+            <Input value={nameRu} onChange={(e) => setNameRu(e.target.value)} />
           </Field>
+          <p className="text-[12px] text-ink-faint sm:col-span-2">{tc("oneLangHint")}</p>
           {formError && <p className="text-[13px] text-rose sm:col-span-2">{formError}</p>}
           <div className="sm:col-span-2">
             <Button type="submit" icon={<span className="text-lg leading-none">+</span>} disabled={create.isPending}>
