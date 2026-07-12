@@ -114,6 +114,26 @@ export interface TeachDashboard {
     avgProgress: number;
   }[];
   tasks: { casesToReview: number; contentToApprove: number; studentsBehind: number };
+  stats: {
+    students: number;
+    courses: number;
+    groups: string[];
+    publishedTopics: number;
+    totalTopics: number;
+    publishedContent: number;
+    casesReviewed: number;
+    avgProgress: number;
+    avgAttendance: number | null;
+  };
+  upcomingSessions: {
+    id: number;
+    courseId: number;
+    date: string;
+    subjectNameUz: string;
+    subjectNameRu: string;
+    title: string | null;
+    room: string | null;
+  }[];
 }
 
 export function useTeachDashboard() {
