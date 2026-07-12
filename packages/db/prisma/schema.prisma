@@ -77,6 +77,13 @@ enum FactcheckStatus {
   RESOLVED
 }
 
+enum ProgressState {
+  LOCKED
+  AVAILABLE
+  IN_PROGRESS
+  COMPLETED
+}
+
 model User {
   id             Int             @id @default(autoincrement())
   fullName       String
@@ -94,6 +101,7 @@ model User {
   uploadedMaterials SourceMaterial[]
   approvedContent   ContentItem[]    @relation("ContentApprover")
   auditLogs         AuditLog[]
+  progress          Progress[]
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
 
@@ -213,8 +221,24 @@ model Topic {
   materials      SourceMaterial[]
   digest         TopicDigest?
   contentItems   ContentItem[]
+  progress       Progress[]
 
   @@map("topics")
+}
+
+model Progress {
+  id              Int           @id @default(autoincrement())
+  studentId       Int
+  student         User          @relation(fields: [studentId], references: [id])
+  topicId         Int
+  topic           Topic         @relation(fields: [topicId], references: [id])
+  state           ProgressState @default(LOCKED)
+  videoWatchedPct Int           @default(0)
+  completedAt     DateTime?
+  updatedAt       DateTime      @updatedAt
+
+  @@unique([studentId, topicId])
+  @@map("progress")
 }
 
 model ContentItem {
