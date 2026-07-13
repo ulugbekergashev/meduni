@@ -2,11 +2,14 @@ import { GoogleGenAI } from "@google/genai";
 import { ApiError } from "../lib/errors";
 import { recordAiUsage } from "./usage";
 
-// `gemini-2.5-flash` is blocked for new API accounts; `gemini-flash-latest` is the
-// current stable flash alias (works with responseSchema + thinkingBudget:0).
-const MODEL = "gemini-flash-latest";
+// `gemini-2.5-flash` is blocked for new API accounts. We try the best flash first
+// for quality, then fall back to the lite alias when the primary is overloaded
+// (503 "high demand"). Both support responseSchema + thinkingBudget:0.
+const MODELS = ["gemini-flash-latest", "gemini-flash-lite-latest"];
 const TIMEOUT_MS = 90_000;
-const MAX_ATTEMPTS = 2;
+const ATTEMPTS_PER_MODEL = 2;
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 let client: GoogleGenAI | null = null;
 
@@ -35,6 +38,9 @@ function toApiError(err: unknown): ApiError {
   if (status === 429 || /quota|rate limit|resource_exhausted/i.test(msg)) {
     return new ApiError(502, "ai_quota", "Gemini limiti tugadi, keyinroq urinib koʻring", "Лимит Gemini исчерпан, попробуйте позже");
   }
+  if (status === 503 || status === 500 || /unavailable|overloaded|high demand/i.test(msg)) {
+    return new ApiError(502, "ai_busy", "Gemini hozir band, biroздан keyin qayta urining", "Gemini сейчас загружен, повторите через минуту");
+  }
   return new ApiError(502, "ai_error", "Konspekt yaratilmadi, qayta urinish", "Не удалось сгенерировать, повторите");
 }
 
@@ -53,42 +59,47 @@ export async function generateStructured<T>(opts: GenerateOpts): Promise<T> {
   const ai = getClient();
   let lastErr: unknown;
 
-  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
-    try {
-      const res = await withTimeout(
-        ai.models.generateContent({
-          model: MODEL,
-          contents: opts.userContent,
-          config: {
-            systemInstruction: opts.systemInstruction,
-            responseMimeType: "application/json",
-            responseSchema: opts.responseSchema as never,
-            // Disable "thinking": for extraction tasks it's ~5s vs ~40s+, uses
-            // ~2.6x fewer tokens (free-tier friendly), and quality holds.
-            thinkingConfig: { thinkingBudget: 0 },
-          },
-        }),
-        TIMEOUT_MS
-      );
+  // Try each model in the chain; within a model, retry transient errors with backoff.
+  for (const model of MODELS) {
+    for (let attempt = 1; attempt <= ATTEMPTS_PER_MODEL; attempt++) {
+      try {
+        const res = await withTimeout(
+          ai.models.generateContent({
+            model,
+            contents: opts.userContent,
+            config: {
+              systemInstruction: opts.systemInstruction,
+              responseMimeType: "application/json",
+              responseSchema: opts.responseSchema as never,
+              // Disable "thinking": for extraction tasks it's ~5s vs ~40s+, uses
+              // ~2.6x fewer tokens (free-tier friendly), and quality holds.
+              thinkingConfig: { thinkingBudget: 0 },
+            },
+          }),
+          TIMEOUT_MS
+        );
 
-      const usage = res.usageMetadata;
-      await recordAiUsage({
-        kind: opts.kind,
-        model: MODEL,
-        topicId: opts.topicId,
-        departmentId: opts.departmentId,
-        userId: opts.userId,
-        promptTokens: usage?.promptTokenCount ?? 0,
-        completionTokens: usage?.candidatesTokenCount ?? 0,
-      });
+        const usage = res.usageMetadata;
+        await recordAiUsage({
+          kind: opts.kind,
+          model,
+          topicId: opts.topicId,
+          departmentId: opts.departmentId,
+          userId: opts.userId,
+          promptTokens: usage?.promptTokenCount ?? 0,
+          completionTokens: usage?.candidatesTokenCount ?? 0,
+        });
 
-      const text = res.text ?? "";
-      return JSON.parse(text) as T;
-    } catch (err) {
-      lastErr = err;
-      // Don't retry auth/quota errors.
-      const status = (err as { status?: number })?.status;
-      if (status === 401 || status === 403 || status === 429) break;
+        return JSON.parse(res.text ?? "") as T;
+      } catch (err) {
+        lastErr = err;
+        const status = (err as { status?: number })?.status;
+        // Auth/quota won't self-resolve and won't differ across models → stop now.
+        if (status === 401 || status === 403 || status === 429) throw toApiError(err);
+        // Transient (503 "high demand" / 500 / timeout): back off and retry the same
+        // model; if it stays down, the outer loop falls back to the next model.
+        if (attempt < ATTEMPTS_PER_MODEL) await sleep(1200 * attempt);
+      }
     }
   }
 
