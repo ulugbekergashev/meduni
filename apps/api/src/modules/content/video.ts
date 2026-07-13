@@ -7,10 +7,11 @@ import { prisma } from "../../lib/prisma";
 import { ApiError, badRequest, notFound } from "../../lib/errors";
 import { readFileBuffer, saveBytes } from "../../lib/storage";
 import { FFMPEG, run } from "../../lib/exec";
-import { generateStructured } from "../../ai/gemini";
+import { generateImage, generateStructured } from "../../ai/gemini";
 import { recordAiUsage } from "../../ai/usage";
 import { assertQuota } from "../../ai/quota";
 import { departmentForTopic, getGlossaryForDepartment, glossaryBlock } from "../../ai/glossary";
+import { imagePromptForVisual } from "../../ai/prompts/images";
 import {
   lectureScriptGenSchema,
   videoScriptResponseSchema,
@@ -122,7 +123,7 @@ async function renderSlidePng(slide: Slide, imageBuf: Buffer | null): Promise<Bu
 
 // ---------- Visual card -> PNG (NotebookLM-style lecture frames) ----------
 
-async function renderVisualPng(visual: VideoVisual): Promise<Buffer> {
+async function renderVisualPng(visual: VideoVisual, imageBuf: Buffer | null): Promise<Buffer> {
   const W = 1920, H = 1080;
   const BRAND = "#0F9E8E", INK = "#0F172A", BG = "#F7F8FA";
   const AMBER = "#D97706", AMBER_BG = "#FCF2E2";
@@ -134,8 +135,14 @@ async function renderVisualPng(visual: VideoVisual): Promise<Buffer> {
   const txt = (x: number, y: number, size: number, weight: number, fill: string, s: string) =>
     `<text x="${x}" y="${y}" font-family="Segoe UI, Arial, sans-serif" font-size="${size}" font-weight="${weight}" fill="${fill}">${esc(s)}</text>`;
 
+  // Illustration enriches the explanatory cards (points / term). When present,
+  // the text shares the frame with the diagram on the right.
+  const hasImg = !!imageBuf && (visual.kind === "points" || visual.kind === "term");
+  const termW = hasImg ? 34 : 60; // char wrap widths shrink when the image takes the right
+  const pointW = hasImg ? 32 : 52;
+
   if (visual.kind === "title") {
-    // Centered title band.
+    // Centered title band (intro card — no illustration).
     parts.push(`<rect x="0" y="518" width="${W}" height="8" fill="${BRAND}"/>`);
     wrap(visual.title, 34).slice(0, 3).forEach((ln, i) => {
       const w = ln.length * 30;
@@ -147,8 +154,8 @@ async function renderVisualPng(visual: VideoVisual): Promise<Buffer> {
     parts.push(txt(120, 300, 72, 700, BRAND, visual.title));
     let y = 430;
     for (const p of visual.points) {
-      wrap(p, 60).forEach((ln, i) => { parts.push(txt(120, y + i * 52, 40, 400, INK, ln)); });
-      y += wrap(p, 60).length * 52 + 20;
+      wrap(p, termW).forEach((ln, i) => { parts.push(txt(120, y + i * 52, 40, 400, INK, ln)); });
+      y += wrap(p, termW).length * 52 + 20;
     }
   } else {
     // points / warning: header bar + big bullet points.
@@ -157,7 +164,7 @@ async function renderVisualPng(visual: VideoVisual): Promise<Buffer> {
     else wrap(visual.title, 40).slice(0, 1).forEach(() => parts.push(txt(70, 98, 52, 700, "#FFFFFF", visual.title)));
     let y = 320;
     for (const p of visual.points) {
-      const lines = wrap(p, 52);
+      const lines = wrap(p, pointW);
       parts.push(`<circle cx="90" cy="${y - 16}" r="10" fill="${accent}"/>`);
       lines.forEach((ln, i) => { parts.push(txt(130, y + i * 58, 46, 500, INK, ln)); });
       y += lines.length * 58 + 40;
@@ -165,7 +172,15 @@ async function renderVisualPng(visual: VideoVisual): Promise<Buffer> {
   }
 
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}">${parts.join("")}</svg>`;
-  return sharp(Buffer.from(svg)).png().toBuffer();
+  let base = sharp(Buffer.from(svg));
+  if (hasImg) {
+    const box = 760;
+    const resized = await sharp(imageBuf!).resize(box, box, { fit: "inside" }).png().toBuffer();
+    const meta = await sharp(resized).metadata();
+    const top = visual.kind === "term" ? 250 : 220;
+    base = base.composite([{ input: resized, left: W - (meta.width ?? box) - 90, top }]);
+  }
+  return base.png().toBuffer();
 }
 
 // ---------- TTS (edge-tts) ----------
@@ -248,17 +263,23 @@ async function stageScript(videoId: number) {
   await prisma.video.update({ where: { id: videoId }, data: { scriptJson: script as object } });
 }
 
+// Cap illustrations per video so a long lecture can't run up cost/time; extra
+// explanatory cards simply render as clean text frames.
+const MAX_VIDEO_IMAGES = 10;
+
 async function stageTtsAndRender(videoId: number) {
   const v = await prisma.video.findUnique({ where: { id: videoId }, include: videoInclude });
   if (!v) return;
   const topicId = v.contentItem.topicId;
+  const teacherId = v.contentItem.topic.course.teacherId;
+  const departmentId = await departmentForTopic(topicId);
   const voice = v.voiceId ?? VOICES[`${v.language}:female`];
   const segments = scriptOf(v);
 
   // Record TTS usage (edge-tts is free, but chars are tracked for admin monitoring).
   const ttsChars = segments.reduce((n, s) => n + (s.narration?.length ?? 0), 0);
   if (ttsChars > 0) {
-    await recordAiUsage({ kind: "TTS", model: "edge-tts", topicId, departmentId: await departmentForTopic(topicId), ttsChars });
+    await recordAiUsage({ kind: "TTS", model: "edge-tts", topicId, departmentId, ttsChars });
   }
 
   const presContent = await prisma.contentItem.findUnique({
@@ -285,13 +306,35 @@ async function stageTtsAndRender(videoId: number) {
 
     // --- RENDER ---
     await setStatus(videoId, "RENDER");
+    let imagesMade = 0;
     const listLines: string[] = [];
     for (let i = 0; i < segments.length; i++) {
       const seg = segments[i];
       let png: Buffer;
       if (seg.visual) {
-        // New NotebookLM-style: render the segment's key-visual card.
-        png = await renderVisualPng(seg.visual);
+        // NotebookLM-style card. Explanatory cards (points/term) are enriched
+        // with a Nano Banana illustration, generated once and cached on the
+        // segment so rebuilds reuse it. Any failure falls back to a text card.
+        let imgBuf: Buffer | null = null;
+        const wantsImage = seg.visual.kind === "points" || seg.visual.kind === "term";
+        if (wantsImage) {
+          if (!seg.visualImageUrl && imagesMade < MAX_VIDEO_IMAGES) {
+            try {
+              const img = await generateImage(imagePromptForVisual(seg.visual, v.language), {
+                kind: "IMAGE",
+                topicId,
+                departmentId,
+                userId: teacherId,
+              });
+              seg.visualImageUrl = await saveBytes(`topics/${topicId}/video/${v.id}/seg${i}.png`, img.buffer);
+              imagesMade++;
+            } catch {
+              seg.visualImageUrl = null; // quota/429/etc → clean text card
+            }
+          }
+          if (seg.visualImageUrl) imgBuf = await readFileBuffer(seg.visualImageUrl).catch(() => null);
+        }
+        png = await renderVisualPng(seg.visual, imgBuf);
       } else {
         // Legacy fallback: slide-narration videos rebuild without breaking.
         const slide = slides[seg.slideIndex ?? 0] ?? slides[0];
@@ -320,7 +363,8 @@ async function stageTtsAndRender(videoId: number) {
 
     await prisma.video.update({
       where: { id: videoId },
-      data: { mp4Url: mp4Rel, srtUrl: srtRel, durationSec: total, buildStatus: "DONE", errorStage: null },
+      // Persist segments again so cached illustration URLs (set during render) survive rebuilds.
+      data: { scriptJson: segments as object, mp4Url: mp4Rel, srtUrl: srtRel, durationSec: total, buildStatus: "DONE", errorStage: null },
     });
   } finally {
     await rm(dir, { recursive: true, force: true });

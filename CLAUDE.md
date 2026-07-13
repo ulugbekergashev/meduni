@@ -243,8 +243,14 @@ Tayyor:
   Frontend: Prezentatsiya kartasi + tahrirlagich (`PresentationEditor`: slayd
   ro'yxati, sarlavha/tezis/izoh tahrir, rasm sloti preview+qayta-chizish, slayd
   o'chirish, PDF/PPTX yuklab olish). Slayd+PPTX+PDF **tekshirildi** (matn kaliti);
-  fon-job 429'ni ERROR bilan to'g'ri boshqaradi. ⚠️ **Real Nano Banana Pro rasmlari
-  free-tier'da 429 (rasm kvotasi yo'q) — pulli kalit kelganda sifat tekshiriladi.**
+  fon-job 429'ni ERROR bilan to'g'ri boshqaradi. ✅ **Pulli kalit ulandi — real
+  Nano Banana Pro rasmlari ishlaydi va tekshirildi** (uz-labelli, callout'li,
+  textbook-atlas darajasi). `ai/prompts/images/index.ts` yangilandi: promptlar
+  endi bezak emas — **tushuntiruvchi belgilangan tibbiy diagramma** (BASE_STYLE:
+  flat-vector atlas, callout chiziqlar, rang-kodlash ko'k=kislorodsiz/qizil=kislorodli;
+  slayd bullet'lari label sifatida promptga uzatiladi). `slides.ts` imagePrompt
+  qoidasi batafsillashtirildi (NIMA chizilishini konkret yozadi). Sifat: yurak
+  kesimi 12 raqamli callout bilan — NotebookLM darajasidan yuqori.
 
 - **Modul 9 — O'qituvchi: Video generatsiya (tayyor).** TTS: **edge-tts**
   (uz-UZ-Madina/Sardor, ru-RU-Svetlana/Dmitry — Azure ovozlari, bepul, kalitsiz;
@@ -263,7 +269,15 @@ Tayyor:
   "qayta ovozlash va montaj", MP4/SRT yuklab olish). **To'liq tekshirildi**:
   real MP4 (H.264 1920x1080 + AAC) + SRT, narration tabiiy o'zbekcha va
   so'zlashuv uslubida. `lib/exec.ts` (FFMPEG_PATH). ffmpeg+edge-tts+sharp server'da
-  bo'lishi shart (prod eslatma). ⚠️ Modul 8 real rasmlari hali pulli kalit kutmoqda.
+  bo'lishi shart (prod eslatma). ✅ **Video yaxshilandi (NotebookLM Video Overview
+  uslubi):** leksiya kartalari endi sof matn emas — `points`/`term` segmentlari
+  RENDER paytida **Nano Banana Pro tibbiy illyustratsiya** oladi (o'ngda diagramma,
+  chapda tezislar). `imagePromptForVisual` (segment title+points'dan), rasm
+  `visualImageUrl`da keshlanadi (rebuild qayta yaratmaydi, narration tahriri
+  saqlaydi), video boshiga `MAX_VIDEO_IMAGES=10` cheklovi (xarajat), har rasm
+  xatosi/429 → toza matn kartaga graceful fallback. `title`/`warning` — matn
+  kartada qoladi. **Tekshirildi:** real composited 1920×1080 karta (qon aylanish
+  doiralari diagrammasi + tezislar).
 
 - **Modul 10 — Faktcheck + Chop etish (ikkinchi qulf) + Kurs sozlamalari (tayyor).
   O'qituvchi tomonining YAKUNI.** Prisma: ContentItem += factcheckFlagsJson,
@@ -506,6 +520,7 @@ cd apps/web; npm run dev                       # Vite, port 3000
 **Muhim:**
 - Eski stack (FastAPI + Next.js, M1–M8 + R1) — `pre-rewrite-fastapi-nextjs` branchida
   saqlangan. Kerak bo'lsa eski logika/UX'ni o'sha yerdan ko'r.
-- ⚠️ `GEMINI_API_KEY` (apps/api/.env'ga ko'chirilgan) ilgari chatga yozilgan —
-  skomprometatsiya deb hisobla, pilot/prod'dan oldin aistudio.google.com'da yangila.
-  Hozircha kodga ulanmagan (AI generatsiya — keyingi sessiya).
+- ⚠️ `GEMINI_API_KEY` (pulli kalit) `apps/api/.env`da (gitignore — commit
+  QILINMAYDI, tracked fayllarda yo'q). Matn+rasm generatsiyaga to'liq ulangan va
+  ishlaydi. Kalit chatga yozilgan — **skomprometatsiya deb hisobla**, pilot/prod'dan
+  oldin aistudio.google.com'da yangila.

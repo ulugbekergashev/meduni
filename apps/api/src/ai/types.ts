@@ -208,6 +208,8 @@ export interface ScriptSegment {
   narration: string;
   durationSec: number;
   visual?: VideoVisual;
+  /** Cached Nano Banana illustration for this segment's card (set at render, reused on rebuild). */
+  visualImageUrl?: string | null;
 }
 
 const videoVisualSchema = z.object({
