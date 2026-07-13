@@ -36,7 +36,7 @@ export function videoScriptSystemPrompt(lang: "uz" | "ru"): string {
     "",
     "QATʼIY:",
     "- FAQAT konspektdagi maʼlumot. Oʻzingdan tibbiy fakt/doza/protokol QOʻSHMA.",
-    `- Til — ${langLabel[lang]}. Tibbiy atamalarni toʻgʻri va izchil ishlat.`,
+    `- TIL — ${langLabel[lang]}. BARCHA chiqish matni (narration, visual.title, visual.points) FAQAT shu tilda boʻlsin. Tillarni ARALASHTIRMA (masalan rus videosida oʻzbekcha sarlavha boʻlmasin). Xalqaro qisqartmalar (DCIS, in situ) oʻz holicha qolishi mumkin.`,
     "- 12-16 segment. Umumiy video ~7-12 daqiqa boʻlsin (narration yetarlicha toʻliq).",
     "- Javobni FAQAT JSON schema boʻyicha ber.",
   ].join("\n");
