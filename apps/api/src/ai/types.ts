@@ -191,11 +191,36 @@ export const scriptSegmentSchema = z.object({
 export const videoScriptGenSchema = z.object({ segments: z.array(scriptSegmentSchema) });
 export type VideoScriptGen = z.infer<typeof videoScriptGenSchema>;
 
+// NotebookLM-style lecture video: a segment is narration + a key-visual card
+// (NOT a slide readout). Kinds map to frame templates in the renderer.
+export const VIDEO_VISUAL_KINDS = ["title", "points", "term", "warning"] as const;
+export type VideoVisualKind = (typeof VIDEO_VISUAL_KINDS)[number];
+
+export interface VideoVisual {
+  kind: VideoVisualKind;
+  title: string;
+  points: string[];
+}
+
 export interface ScriptSegment {
-  slideIndex: number;
+  /** Legacy (slide-narration videos); new lecture segments use `visual`. */
+  slideIndex?: number;
   narration: string;
   durationSec: number;
+  visual?: VideoVisual;
 }
+
+const videoVisualSchema = z.object({
+  kind: z.enum(VIDEO_VISUAL_KINDS),
+  title: z.string(),
+  points: z.array(z.string()),
+});
+export const lectureSegmentSchema = z.object({
+  narration: z.string(),
+  visual: videoVisualSchema,
+});
+export const lectureScriptGenSchema = z.object({ segments: z.array(lectureSegmentSchema) });
+export type LectureScriptGen = z.infer<typeof lectureScriptGenSchema>;
 
 export const videoScriptResponseSchema = {
   type: Type.OBJECT,
@@ -205,10 +230,18 @@ export const videoScriptResponseSchema = {
       items: {
         type: Type.OBJECT,
         properties: {
-          slideIndex: { type: Type.INTEGER },
           narration: { type: Type.STRING },
+          visual: {
+            type: Type.OBJECT,
+            properties: {
+              kind: { type: Type.STRING, enum: VIDEO_VISUAL_KINDS as unknown as string[] },
+              title: { type: Type.STRING },
+              points: { type: Type.ARRAY, items: { type: Type.STRING } },
+            },
+            required: ["kind", "title", "points"],
+          },
         },
-        required: ["slideIndex", "narration"],
+        required: ["narration", "visual"],
       },
     },
   },

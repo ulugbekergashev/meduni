@@ -245,7 +245,6 @@ function VideoCard({ topic }: { topic: TopicDetail }) {
   const navigate = useNavigate();
   const gen = useGenerateVideo(topic.id);
   const summary = topic.content.find((c) => c.kind === "video");
-  const hasPresentation = topic.content.some((c) => c.kind === "presentation");
 
   const [language, setLanguage] = useState<"uz" | "ru">(locale);
   const [voice, setVoice] = useState<"male" | "female">("female");
@@ -265,9 +264,7 @@ function VideoCard({ topic }: { topic: TopicDetail }) {
         <h3 className="text-section font-bold text-ink">{t("videoTitle")}</h3>
       </div>
 
-      {!hasPresentation ? (
-        <p className="text-[13px] text-amber">{t("needPresentation")}</p>
-      ) : building ? (
+      {building ? (
         <VideoStages status={video!.buildStatus} />
       ) : (
         <>

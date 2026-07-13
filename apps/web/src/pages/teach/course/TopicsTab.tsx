@@ -30,8 +30,7 @@ export function TopicsTab() {
   const remove = useDeleteTopic(courseId);
   const reorder = useReorderTopics(courseId);
 
-  const [titleUz, setTitleUz] = useState("");
-  const [titleRu, setTitleRu] = useState("");
+  const [title, setTitle] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<TopicRow | null>(null);
 
@@ -40,16 +39,16 @@ export function TopicsTab() {
   const onAdd = (e: FormEvent) => {
     e.preventDefault();
     setFormError(null);
-    if (!titleUz.trim() && !titleRu.trim()) {
+    if (!title.trim()) {
       setFormError(t("titleRequired"));
       return;
     }
+    // One field only — typed in the interface language; the backend mirrors the other.
     create.mutate(
-      { titleUz: titleUz.trim(), titleRu: titleRu.trim() },
+      locale === "ru" ? { titleRu: title.trim() } : { titleUz: title.trim() },
       {
         onSuccess: () => {
-          setTitleUz("");
-          setTitleRu("");
+          setTitle("");
           show(t("added"));
         },
         onError: (err) => setFormError(apiErrorMessage(err, locale) ?? tc("genericError")),
@@ -69,19 +68,15 @@ export function TopicsTab() {
     <div className="space-y-6">
       {/* Add form */}
       <Card>
-        <div className="mb-4">
-          <h2 className="text-section font-bold text-ink">{t("addForm")}</h2>
-          <p className="mt-0.5 text-[12px] text-ink-faint">{t("oneLangHint")}</p>
-        </div>
-        <form onSubmit={onAdd} className="grid gap-4 sm:grid-cols-2">
-          <Field label={t("titleUz")}>
-            <Input value={titleUz} onChange={(e) => setTitleUz(e.target.value)} />
-          </Field>
-          <Field label={t("titleRu")}>
-            <Input value={titleRu} onChange={(e) => setTitleRu(e.target.value)} />
-          </Field>
-          {formError && <p className="text-[13px] text-rose sm:col-span-2">{formError}</p>}
-          <div className="sm:col-span-2">
+        <h2 className="mb-4 text-section font-bold text-ink">{t("addForm")}</h2>
+        <form onSubmit={onAdd} className="flex flex-wrap items-start gap-3">
+          <div className="min-w-[240px] flex-1">
+            <Field label={t("titleOne")}>
+              <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t("titlePlaceholder")} />
+            </Field>
+            {formError && <p className="mt-1 text-[13px] text-rose">{formError}</p>}
+          </div>
+          <div className="pt-6">
             <Button type="submit" icon={<span className="text-lg leading-none">+</span>} disabled={create.isPending}>
               {t("add")}
             </Button>

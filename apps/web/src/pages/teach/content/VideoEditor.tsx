@@ -48,9 +48,16 @@ export function VideoEditor({ content }: { content: ContentFull }) {
 
   const save = () =>
     update.mutate(
-      { script: script.map((s) => ({ slideIndex: s.slideIndex, narration: s.narration })) },
+      { script: script.map((s) => ({ narration: s.narration })) },
       { onSuccess: () => show(t("saved")) }
     );
+
+  const visualTone: Record<string, string> = {
+    title: "bg-brand-soft text-brand-deep",
+    points: "bg-blue-soft text-blue",
+    term: "bg-violet-soft text-violet",
+    warning: "bg-amber-soft text-amber",
+  };
 
   return (
     <div>
@@ -123,9 +130,14 @@ export function VideoEditor({ content }: { content: ContentFull }) {
       <div className="mt-3 space-y-3">
         {script.map((seg, i) => (
           <Card key={i} className="space-y-2">
-            <span className="text-[13px] font-bold text-ink-soft">
-              {t("segment")} {seg.slideIndex + 1}
-            </span>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-[13px] font-bold text-ink-soft">{t("segment")} {i + 1}</span>
+              {seg.visual && (
+                <span className={`inline-flex items-center gap-1 rounded-pill px-2 py-0.5 text-[11.5px] font-semibold ${visualTone[seg.visual.kind] ?? "bg-bg text-ink-soft"}`}>
+                  {t(`visual.${seg.visual.kind}`)}: {seg.visual.title}
+                </span>
+              )}
+            </div>
             <Textarea
               value={seg.narration}
               onChange={(e) => setScript((ss) => ss.map((s, j) => (j === i ? { ...s, narration: e.target.value } : s)))}
