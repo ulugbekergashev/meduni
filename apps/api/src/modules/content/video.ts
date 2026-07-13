@@ -12,11 +12,13 @@ import { recordAiUsage } from "../../ai/usage";
 import { assertQuota } from "../../ai/quota";
 import { departmentForTopic, getGlossaryForDepartment, glossaryBlock } from "../../ai/glossary";
 import {
-  videoScriptGenSchema,
+  lectureScriptGenSchema,
   videoScriptResponseSchema,
+  type DigestJson,
+  type LectureScriptGen,
   type ScriptSegment,
   type Slide,
-  type VideoScriptGen,
+  type VideoVisual,
 } from "../../ai/types";
 import { videoScriptSystemPrompt, videoScriptUserContent } from "../../ai/prompts/videoScript";
 
@@ -34,7 +36,7 @@ const VOICES: Record<string, string> = {
 // ---------- Ownership ----------
 
 async function topicForTeacher(topicId: number, teacherId: number) {
-  const topic = await prisma.topic.findUnique({ where: { id: topicId }, include: { course: true } });
+  const topic = await prisma.topic.findUnique({ where: { id: topicId }, include: { course: true, digest: true } });
   if (!topic) throw notFound("Mavzu");
   if (topic.course.teacherId !== teacherId) throw forbidden();
   return topic;
@@ -118,6 +120,54 @@ async function renderSlidePng(slide: Slide, imageBuf: Buffer | null): Promise<Bu
   return base.png().toBuffer();
 }
 
+// ---------- Visual card -> PNG (NotebookLM-style lecture frames) ----------
+
+async function renderVisualPng(visual: VideoVisual): Promise<Buffer> {
+  const W = 1920, H = 1080;
+  const BRAND = "#0F9E8E", INK = "#0F172A", BG = "#F7F8FA";
+  const AMBER = "#D97706", AMBER_BG = "#FCF2E2";
+  const parts: string[] = [];
+  const bg = visual.kind === "warning" ? AMBER_BG : BG;
+  const accent = visual.kind === "warning" ? AMBER : BRAND;
+  parts.push(`<rect width="${W}" height="${H}" fill="${bg}"/>`);
+
+  const txt = (x: number, y: number, size: number, weight: number, fill: string, s: string) =>
+    `<text x="${x}" y="${y}" font-family="Segoe UI, Arial, sans-serif" font-size="${size}" font-weight="${weight}" fill="${fill}">${esc(s)}</text>`;
+
+  if (visual.kind === "title") {
+    // Centered title band.
+    parts.push(`<rect x="0" y="518" width="${W}" height="8" fill="${BRAND}"/>`);
+    wrap(visual.title, 34).slice(0, 3).forEach((ln, i) => {
+      const w = ln.length * 30;
+      parts.push(txt((W - w) / 2, 430 + i * 78, 60, 700, INK, ln));
+    });
+  } else if (visual.kind === "term") {
+    // Big term card: title (term) + definition points.
+    parts.push(`<rect x="0" y="0" width="18" height="${H}" fill="${BRAND}"/>`);
+    parts.push(txt(120, 300, 72, 700, BRAND, visual.title));
+    let y = 430;
+    for (const p of visual.points) {
+      wrap(p, 60).forEach((ln, i) => { parts.push(txt(120, y + i * 52, 40, 400, INK, ln)); });
+      y += wrap(p, 60).length * 52 + 20;
+    }
+  } else {
+    // points / warning: header bar + big bullet points.
+    parts.push(`<rect width="${W}" height="150" fill="${accent}"/>`);
+    if (visual.kind === "warning") parts.push(txt(70, 98, 52, 700, "#FFFFFF", "⚠ " + visual.title));
+    else wrap(visual.title, 40).slice(0, 1).forEach(() => parts.push(txt(70, 98, 52, 700, "#FFFFFF", visual.title)));
+    let y = 320;
+    for (const p of visual.points) {
+      const lines = wrap(p, 52);
+      parts.push(`<circle cx="90" cy="${y - 16}" r="10" fill="${accent}"/>`);
+      lines.forEach((ln, i) => { parts.push(txt(130, y + i * 58, 46, 500, INK, ln)); });
+      y += lines.length * 58 + 40;
+    }
+  }
+
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}">${parts.join("")}</svg>`;
+  return sharp(Buffer.from(svg)).png().toBuffer();
+}
+
 // ---------- TTS (edge-tts) ----------
 
 function srtLastEndSec(srt: string): number {
@@ -171,24 +221,30 @@ async function stageScript(videoId: number) {
   if (!v) return;
   if (scriptOf(v).length > 0) return; // already have a script (e.g. rebuild after edit)
 
-  const content = await prisma.contentItem.findUnique({
-    where: { topicId_kind: { topicId: v.contentItem.topicId, kind: "PRESENTATION" } },
+  const topicId = v.contentItem.topicId;
+  // Lecture is written from the approved digest (single source of truth), with
+  // presentation section titles as an optional structural hint.
+  const topic = await prisma.topic.findUnique({ where: { id: topicId }, include: { digest: true } });
+  const digest = (topic?.digest?.digestJson as unknown as DigestJson) ?? { objectives: [], concepts: [], terms: [], facts: [], dosages: [], imageIdeas: [] };
+  const presContent = await prisma.contentItem.findUnique({
+    where: { topicId_kind: { topicId, kind: "PRESENTATION" } },
     include: { presentation: true },
   });
-  const slides = (content?.presentation?.slidesJson as unknown as Slide[]) ?? [];
-  const departmentId = await departmentForTopic(v.contentItem.topicId);
+  const slideTitles = ((presContent?.presentation?.slidesJson as unknown as Slide[]) ?? []).map((s) => s.title).filter(Boolean);
+
+  const departmentId = await departmentForTopic(topicId);
   const glossary = glossaryBlock(await getGlossaryForDepartment(departmentId));
-  const gen = await generateStructured<VideoScriptGen>({
+  const gen = await generateStructured<LectureScriptGen>({
     systemInstruction: videoScriptSystemPrompt(v.language) + glossary,
-    userContent: videoScriptUserContent(slides),
+    userContent: videoScriptUserContent(digest, slideTitles),
     responseSchema: videoScriptResponseSchema,
     kind: "VIDEO",
-    topicId: v.contentItem.topicId,
+    topicId,
     departmentId,
   });
-  const parsed = videoScriptGenSchema.safeParse(gen);
+  const parsed = lectureScriptGenSchema.safeParse(gen);
   const segs = (parsed.success ? parsed.data : gen).segments;
-  const script: ScriptSegment[] = segs.map((s) => ({ slideIndex: s.slideIndex, narration: s.narration, durationSec: 0 }));
+  const script: ScriptSegment[] = segs.map((s) => ({ narration: s.narration, visual: s.visual, durationSec: 0 }));
   await prisma.video.update({ where: { id: videoId }, data: { scriptJson: script as object } });
 }
 
@@ -231,13 +287,21 @@ async function stageTtsAndRender(videoId: number) {
     await setStatus(videoId, "RENDER");
     const listLines: string[] = [];
     for (let i = 0; i < segments.length; i++) {
-      const slide = slides[segments[i].slideIndex] ?? slides[0];
-      let imgBuf: Buffer | null = null;
-      const url = slide?.imageSlots?.[0]?.url;
-      if (slide?.imageSlots?.[0]?.status === "DONE" && url) imgBuf = await readFileBuffer(url).catch(() => null);
-      const png = await renderSlidePng(slide ?? { id: "", layout: "BULLETS", title: "", bullets: [], speakerNotes: "", imageSlots: [] }, imgBuf);
+      const seg = segments[i];
+      let png: Buffer;
+      if (seg.visual) {
+        // New NotebookLM-style: render the segment's key-visual card.
+        png = await renderVisualPng(seg.visual);
+      } else {
+        // Legacy fallback: slide-narration videos rebuild without breaking.
+        const slide = slides[seg.slideIndex ?? 0] ?? slides[0];
+        let imgBuf: Buffer | null = null;
+        const url = slide?.imageSlots?.[0]?.url;
+        if (slide?.imageSlots?.[0]?.status === "DONE" && url) imgBuf = await readFileBuffer(url).catch(() => null);
+        png = await renderSlidePng(slide ?? { id: "", layout: "BULLETS", title: "", bullets: [], speakerNotes: "", imageSlots: [] }, imgBuf);
+      }
       await writeFile(path.join(dir, `slide${i}.png`), png);
-      listLines.push(`file 'slide${i}.png'`, `duration ${segments[i].durationSec}`);
+      listLines.push(`file 'slide${i}.png'`, `duration ${seg.durationSec}`);
     }
     listLines.push(`file 'slide${segments.length - 1}.png'`); // concat needs last frame repeated
     await writeFile(path.join(dir, "slides.txt"), listLines.join("\n"), "utf8");
@@ -285,14 +349,11 @@ export async function generateVideo(
   teacherId: number,
   opts: { language: "uz" | "ru"; voice: "male" | "female" }
 ) {
-  await topicForTeacher(topicId, teacherId);
+  const topic = await topicForTeacher(topicId, teacherId);
   await assertQuota(await departmentForTopic(topicId));
-  const pres = await prisma.contentItem.findUnique({
-    where: { topicId_kind: { topicId, kind: "PRESENTATION" } },
-    include: { presentation: true },
-  });
-  if (!pres?.presentation) {
-    throw badRequest("Avval prezentatsiya yarating", "Сначала создайте презентацию");
+  // Lecture video is built from the approved digest (like quiz/case) — presentation optional.
+  if (!topic.digest?.approvedByTeacher) {
+    throw new ApiError(403, "digest_not_approved", "Avval konspektni tasdiqlang", "Сначала утвердите конспект");
   }
 
   const voiceId = VOICES[`${opts.language}:${opts.voice}`] ?? VOICES[`${opts.language}:female`];

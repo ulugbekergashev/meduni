@@ -324,10 +324,12 @@ export async function updateContent(contentId: number, teacherId: number, body: 
     }));
     await prisma.presentation.update({ where: { contentItemId: contentId }, data: { slidesJson: merged as object } });
   } else if (item.kind === "VIDEO") {
-    const b = body as { script: { slideIndex: number; narration: string }[] };
+    const b = body as { script: { narration: string }[] };
     if (!b || !Array.isArray(b.script)) throw badRequest("Skript notoʻgʻri", "Неверный скрипт");
-    // Only narration text is editable; durations are re-measured on rebuild.
-    const segs: ScriptSegment[] = b.script.map((s) => ({ slideIndex: s.slideIndex, narration: s.narration, durationSec: 0 }));
+    // Only narration text is editable — keep each segment's existing visual/slideIndex,
+    // merged by index. Durations are re-measured on rebuild.
+    const existing = (item.video!.scriptJson as unknown as ScriptSegment[]) ?? [];
+    const segs: ScriptSegment[] = b.script.map((s, i) => ({ ...(existing[i] ?? {}), narration: s.narration, durationSec: 0 }));
     await prisma.video.update({ where: { contentItemId: contentId }, data: { scriptJson: segs as object } });
   } else {
     throw badRequest("Bu kontent turi hali tahrirlanmaydi", "Этот тип контента пока не редактируется");

@@ -137,10 +137,16 @@ export interface PresentationContent {
 
 export type VideoBuildStatus = "pending" | "script" | "tts" | "render" | "done" | "error";
 
+export interface VideoVisual {
+  kind: "title" | "points" | "term" | "warning";
+  title: string;
+  points: string[];
+}
 export interface ScriptSegment {
-  slideIndex: number;
+  slideIndex?: number;
   narration: string;
   durationSec: number;
+  visual?: VideoVisual;
 }
 
 export interface VideoContent {
@@ -180,7 +186,7 @@ export function useTopics(courseId: number) {
 export function useCreateTopic(courseId: number) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: { titleUz: string; titleRu: string }) =>
+    mutationFn: (body: { titleUz?: string; titleRu?: string }) =>
       api<TopicRow>("/api/v1/topics", { method: "POST", body: JSON.stringify({ courseId, ...body }) }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["topics", courseId] }),
   });

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Check, Plus, Sparkles, Trash2, TriangleAlert } from "lucide-react";
-import { Button, Card, Icon, Input, Spinner, useToast } from "@meduni/ui";
+import { Check, ChevronDown, Plus, Sparkles, Trash2, TriangleAlert } from "lucide-react";
+import { Button, Card, Icon, Spinner, cls, useToast } from "@meduni/ui";
 import { apiErrorMessage } from "../../../lib/api";
 import { useLocale } from "../../../lib/useLocale";
 import {
@@ -13,45 +13,33 @@ import {
   type TopicDetail,
 } from "./api";
 
-// ---- editable primitives ----
+// ---- compact editable primitives ----
 
-function EditableList({
-  items,
-  onChange,
-  accent,
-}: {
-  items: string[];
-  onChange: (next: string[]) => void;
-  accent?: boolean;
-}) {
+function EditableList({ items, onChange }: { items: string[]; onChange: (next: string[]) => void }) {
   const { t } = useTranslation(undefined, { keyPrefix: "digest" });
   return (
-    <div className="space-y-2">
+    <div className="space-y-1.5">
       {items.map((item, i) => (
-        <div key={i} className="flex items-center gap-2">
-          <span
-            className={
-              "mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full " + (accent ? "bg-amber" : "bg-brand")
-            }
-          />
-          <Input
+        <div key={i} className="group flex items-center gap-1.5">
+          <input
             value={item}
             onChange={(e) => onChange(items.map((x, j) => (j === i ? e.target.value : x)))}
+            className="w-full rounded-control border border-line px-2.5 py-1.5 text-[13px] outline-none focus:border-brand"
           />
           <button
             onClick={() => onChange(items.filter((_, j) => j !== i))}
-            className="rounded-control p-1.5 text-ink-faint hover:bg-rose-soft hover:text-rose"
+            className="rounded-control p-1 text-ink-faint opacity-0 transition-opacity hover:bg-rose-soft hover:text-rose group-hover:opacity-100"
             aria-label="remove"
           >
-            <Icon icon={Trash2} size={15} />
+            <Icon icon={Trash2} size={14} />
           </button>
         </div>
       ))}
       <button
         onClick={() => onChange([...items, ""])}
-        className="inline-flex items-center gap-1 text-[13px] font-medium text-brand-deep hover:underline"
+        className="inline-flex items-center gap-1 text-[12.5px] font-medium text-brand-deep hover:underline"
       >
-        <Icon icon={Plus} size={14} /> {t("addItem")}
+        <Icon icon={Plus} size={13} /> {t("addItem")}
       </button>
     </div>
   );
@@ -61,44 +49,51 @@ function TermsTable({ terms, onChange }: { terms: Term[]; onChange: (next: Term[
   const { t } = useTranslation(undefined, { keyPrefix: "digest" });
   const set = (i: number, key: keyof Term, val: string) =>
     onChange(terms.map((tm, j) => (j === i ? { ...tm, [key]: val } : tm)));
+  const cell = "w-full rounded-control border border-line px-2.5 py-1.5 text-[13px] outline-none focus:border-brand";
 
   return (
-    <div className="space-y-2">
-      <div className="hidden grid-cols-[1fr_1fr_1fr_auto] gap-2 px-1 text-[12px] font-semibold uppercase tracking-wide text-ink-faint sm:grid">
+    <div className="space-y-1.5">
+      <div className="hidden grid-cols-[1fr_1fr_1fr_24px] gap-1.5 px-1 text-[11px] font-semibold uppercase tracking-wide text-ink-faint sm:grid">
         <span>{t("termRu")}</span>
         <span>{t("termUz")}</span>
         <span>{t("termLat")}</span>
         <span />
       </div>
       {terms.map((tm, i) => (
-        <div key={i} className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_1fr_1fr_auto]">
-          <Input value={tm.ru} onChange={(e) => set(i, "ru", e.target.value)} placeholder={t("termRu")} />
-          <Input value={tm.uz} onChange={(e) => set(i, "uz", e.target.value)} placeholder={t("termUz")} />
-          <Input value={tm.lat} onChange={(e) => set(i, "lat", e.target.value)} placeholder={t("termLat")} />
+        <div key={i} className="group grid grid-cols-1 items-center gap-1.5 sm:grid-cols-[1fr_1fr_1fr_24px]">
+          <input value={tm.ru} onChange={(e) => set(i, "ru", e.target.value)} placeholder={t("termRu")} className={cell} />
+          <input value={tm.uz} onChange={(e) => set(i, "uz", e.target.value)} placeholder={t("termUz")} className={cell} />
+          <input value={tm.lat} onChange={(e) => set(i, "lat", e.target.value)} placeholder={t("termLat")} className={cell} />
           <button
             onClick={() => onChange(terms.filter((_, j) => j !== i))}
-            className="justify-self-end rounded-control p-1.5 text-ink-faint hover:bg-rose-soft hover:text-rose"
+            className="justify-self-end rounded-control p-1 text-ink-faint opacity-0 transition-opacity hover:bg-rose-soft hover:text-rose group-hover:opacity-100"
             aria-label="remove"
           >
-            <Icon icon={Trash2} size={15} />
+            <Icon icon={Trash2} size={14} />
           </button>
         </div>
       ))}
       <button
         onClick={() => onChange([...terms, { ru: "", uz: "", lat: "" }])}
-        className="inline-flex items-center gap-1 text-[13px] font-medium text-brand-deep hover:underline"
+        className="inline-flex items-center gap-1 text-[12.5px] font-medium text-brand-deep hover:underline"
       >
-        <Icon icon={Plus} size={14} /> {t("addRow")}
+        <Icon icon={Plus} size={13} /> {t("addRow")}
       </button>
     </div>
   );
 }
 
-function Block({ title, children }: { title: string; children: React.ReactNode }) {
+/** Collapsible block: header shows title + item count; closed by default. */
+function Block({ title, count, defaultOpen = false, children }: { title: string; count: number; defaultOpen?: boolean; children: React.ReactNode }) {
+  const [open, setOpen] = useState(defaultOpen);
   return (
-    <div>
-      <h3 className="mb-2 text-[13px] font-bold uppercase tracking-wide text-ink-soft">{title}</h3>
-      {children}
+    <div className="border-b border-line last:border-0">
+      <button onClick={() => setOpen((o) => !o)} className="flex w-full items-center gap-2 py-2.5 text-left">
+        <span className="text-[13px] font-bold text-ink">{title}</span>
+        <span className="rounded-pill bg-bg px-2 py-0.5 text-[11.5px] font-semibold text-ink-soft">{count}</span>
+        <Icon icon={ChevronDown} size={15} className={cls("ml-auto text-ink-faint transition-transform", open && "rotate-180")} />
+      </button>
+      {open && <div className="pb-3">{children}</div>}
     </div>
   );
 }
@@ -117,7 +112,6 @@ export function DigestSection({ topic }: { topic: TopicDetail }) {
   const server = topic.digest;
   const [draft, setDraft] = useState<DigestJson | null>(server?.digestJson ?? null);
 
-  // Re-sync the draft whenever the server digest changes (generate/save).
   useEffect(() => {
     setDraft(server?.digestJson ?? null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -128,7 +122,6 @@ export function DigestSection({ topic }: { topic: TopicDetail }) {
     [draft, server]
   );
 
-  // No digest yet — generate.
   if (!server || !draft) {
     return (
       <Card>
@@ -153,81 +146,68 @@ export function DigestSection({ topic }: { topic: TopicDetail }) {
   }
 
   const patch = (p: Partial<DigestJson>) => setDraft({ ...draft, ...p });
+  const approved = server.approvedByTeacher && !dirty;
 
   return (
-    <div className="space-y-4">
-      <Card className="space-y-6">
-        {/* Single-column lists paired two-up so the digest reads on one screen. */}
-        <div className="grid gap-x-8 gap-y-6 lg:grid-cols-2">
-          <Block title={t("objectives")}>
-            <EditableList items={draft.objectives} onChange={(v) => patch({ objectives: v })} />
-          </Block>
-          <Block title={t("concepts")}>
-            <EditableList items={draft.concepts} onChange={(v) => patch({ concepts: v })} />
-          </Block>
-          <Block title={t("facts")}>
-            <EditableList items={draft.facts} onChange={(v) => patch({ facts: v })} />
-          </Block>
-          <Block title={t("imageIdeas")}>
-            <EditableList items={draft.imageIdeas} onChange={(v) => patch({ imageIdeas: v })} />
-          </Block>
-        </div>
-        <div className="border-t border-line pt-6">
-          <Block title={t("terms")}>
-            <TermsTable terms={draft.terms} onChange={(v) => patch({ terms: v })} />
-          </Block>
-        </div>
-      </Card>
+    <Card className="p-0">
+      {/* Collapsible content blocks — one screen, open what you need */}
+      <div className="px-5 pt-2">
+        <Block title={t("objectives")} count={draft.objectives.length}>
+          <EditableList items={draft.objectives} onChange={(v) => patch({ objectives: v })} />
+        </Block>
+        <Block title={t("concepts")} count={draft.concepts.length}>
+          <EditableList items={draft.concepts} onChange={(v) => patch({ concepts: v })} />
+        </Block>
+        <Block title={t("terms")} count={draft.terms.length}>
+          <TermsTable terms={draft.terms} onChange={(v) => patch({ terms: v })} />
+        </Block>
+        <Block title={t("facts")} count={draft.facts.length}>
+          <EditableList items={draft.facts} onChange={(v) => patch({ facts: v })} />
+        </Block>
+        <Block title={t("imageIdeas")} count={draft.imageIdeas.length}>
+          <EditableList items={draft.imageIdeas} onChange={(v) => patch({ imageIdeas: v })} />
+        </Block>
+      </div>
 
-      {/* Dosages — medically sensitive, highlighted */}
-      <Card className="border-amber/30 bg-amber-soft">
+      {/* Dosages — medically sensitive, always visible */}
+      <div className="mx-5 my-3 rounded-control border border-amber/30 bg-amber-soft p-3">
         <div className="mb-2 flex items-center gap-2">
-          <Icon icon={TriangleAlert} size={16} className="text-amber" />
-          <h3 className="text-[13px] font-bold uppercase tracking-wide text-amber">{t("dosages")}</h3>
+          <Icon icon={TriangleAlert} size={15} className="text-amber" />
+          <h3 className="text-[12.5px] font-bold uppercase tracking-wide text-amber">{t("dosages")}</h3>
+          <span className="text-[11.5px] text-ink-soft">— {t("dosagesNote")}</span>
         </div>
-        <p className="mb-3 text-[12px] text-ink-soft">{t("dosagesNote")}</p>
-        <EditableList items={draft.dosages} onChange={(v) => patch({ dosages: v })} accent />
-      </Card>
+        <EditableList items={draft.dosages} onChange={(v) => patch({ dosages: v })} />
+      </div>
 
-      {/* Save row */}
-      {dirty && (
-        <div className="flex items-center gap-3">
-          <Button
-            onClick={() =>
-              update.mutate(draft, { onSuccess: () => show(t("saved")) })
-            }
-            disabled={update.isPending}
-          >
-            {t("save")}
-          </Button>
-          <span className="text-[12.5px] text-ink-faint">v{server.version}</span>
-        </div>
-      )}
-
-      {/* Approve block — first control point */}
-      <Card className={server.approvedByTeacher && !dirty ? "border-emerald/30 bg-emerald-soft" : ""}>
-        {server.approvedByTeacher && !dirty ? (
-          <div className="flex items-center gap-2 text-emerald">
-            <Icon icon={Check} size={18} />
-            <span className="text-[14px] font-semibold">{t("approved")}</span>
-          </div>
+      {/* Sticky action bar: save + approve in one row */}
+      <div className="sticky bottom-0 flex flex-wrap items-center gap-3 rounded-b-card border-t border-line bg-surface px-5 py-3">
+        {approved ? (
+          <span className="inline-flex items-center gap-1.5 text-[13.5px] font-semibold text-emerald">
+            <Icon icon={Check} size={16} /> {t("approved")}
+          </span>
         ) : (
-          <div className="space-y-3">
-            <div className="flex items-start gap-2 rounded-control bg-amber-soft px-3 py-2 text-[12.5px] text-amber">
-              <Icon icon={TriangleAlert} size={15} className="mt-0.5 shrink-0" />
-              <span>{t("approveWarning")}</span>
-            </div>
+          <>
+            {dirty && (
+              <Button size="sm" onClick={() => update.mutate(draft, { onSuccess: () => show(t("saved")) })} disabled={update.isPending}>
+                {t("save")}
+              </Button>
+            )}
             <Button
+              size="sm"
               variant="deep"
               disabled={dirty || approve.isPending}
               onClick={() => approve.mutate(undefined, { onSuccess: () => show(t("approvedToast")) })}
             >
               {t("approve")}
             </Button>
-            {dirty && <p className="text-[12.5px] text-ink-faint">{t("saveBeforeApprove")}</p>}
-          </div>
+            <span className="inline-flex items-center gap-1 text-[11.5px] text-amber">
+              <Icon icon={TriangleAlert} size={12} /> {t("approveWarning")}
+            </span>
+            {dirty && <span className="text-[11.5px] text-ink-faint">{t("saveBeforeApprove")}</span>}
+          </>
         )}
-      </Card>
-    </div>
+        <span className="ml-auto text-[11.5px] text-ink-faint">v{server.version}</span>
+      </div>
+    </Card>
   );
 }
