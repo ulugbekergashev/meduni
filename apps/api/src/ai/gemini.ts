@@ -2,7 +2,9 @@ import { GoogleGenAI } from "@google/genai";
 import { ApiError } from "../lib/errors";
 import { recordAiUsage } from "./usage";
 
-const MODEL = "gemini-2.5-flash";
+// `gemini-2.5-flash` is blocked for new API accounts; `gemini-flash-latest` is the
+// current stable flash alias (works with responseSchema + thinkingBudget:0).
+const MODEL = "gemini-flash-latest";
 const TIMEOUT_MS = 90_000;
 const MAX_ATTEMPTS = 2;
 

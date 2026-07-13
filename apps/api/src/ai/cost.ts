@@ -1,7 +1,8 @@
-// Rough cost estimates (USD). Text: gemini-2.5-flash list price; image: flat per-image;
+// Rough cost estimates (USD). Text: gemini flash list price; image: flat per-image;
 // TTS via edge-tts is free. Numbers are approximate for admin budgeting, not billing.
 const TEXT_PRICING: Record<string, { in: number; out: number }> = {
-  "gemini-2.5-flash": { in: 0.3, out: 2.5 }, // per 1M tokens
+  "gemini-flash-latest": { in: 0.3, out: 2.5 }, // per 1M tokens
+  "gemini-2.5-flash": { in: 0.3, out: 2.5 }, // legacy rows
 };
 const IMAGE_COST_USD = 0.04; // per generated image (estimate)
 
