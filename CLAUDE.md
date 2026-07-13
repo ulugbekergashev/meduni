@@ -252,9 +252,9 @@ Tayyor:
   qoidasi batafsillashtirildi (NIMA chizilishini konkret yozadi). Sifat: yurak
   kesimi 12 raqamli callout bilan — NotebookLM darajasidan yuqori.
 
-- **Modul 9 — O'qituvchi: Video generatsiya (tayyor).** TTS: **edge-tts**
-  (uz-UZ-Madina/Sardor, ru-RU-Svetlana/Dmitry — Azure ovozlari, bepul, kalitsiz;
-  Aisha/Azure Speech kalitlari yo'q edi). Prisma: Video (scriptJson, audioUrl?,
+- **Modul 9 — O'qituvchi: Video generatsiya (tayyor).** TTS (dastlab **edge-tts**,
+  hozir **Gemini native TTS** — pastdagi PREMIUM overhaul'ga qarang; edge-tts endi
+  faqat fallback: uz-UZ-Madina/Sardor, ru-RU-Svetlana/Dmitry). Prisma: Video (scriptJson, audioUrl?,
   mp4Url?, srtUrl?, durationSec?, voiceId?, buildStatus PENDING|SCRIPT|TTS|RENDER|
   DONE|ERROR, errorStage?). AI: `ai/prompts/videoScript.ts` (slaydlardan so'zlashuv
   uslubidagi narration — slaydni o'qib bermaydi). Pipeline (`modules/content/
@@ -274,10 +274,21 @@ Tayyor:
   RENDER paytida **Nano Banana Pro tibbiy illyustratsiya** oladi (o'ngda diagramma,
   chapda tezislar). `imagePromptForVisual` (segment title+points'dan), rasm
   `visualImageUrl`da keshlanadi (rebuild qayta yaratmaydi, narration tahriri
-  saqlaydi), video boshiga `MAX_VIDEO_IMAGES=10` cheklovi (xarajat), har rasm
+  saqlaydi), video boshiga `MAX_VIDEO_IMAGES` cheklovi (xarajat), har rasm
   xatosi/429 → toza matn kartaga graceful fallback. `title`/`warning` — matn
-  kartada qoladi. **Tekshirildi:** real composited 1920×1080 karta (qon aylanish
-  doiralari diagrammasi + tezislar).
+  kartada qoladi.
+  ✅✅ **PREMIUM overhaul (foydalanuvchi: ovoz "trash", rasm "yo'q", qisqa):**
+  (1) **OVOZ** — edge-tts o'rniga **Gemini native TTS** (`gemini-2.5-flash-preview-tts`,
+  Kore/Charon studiya ovozlari, `gemini.ts::generateSpeech` PCM→WAV, har segment
+  24kHz mono, aac 192k; edge-tts faqat fallback). (2) **MATN** — `videoScript.ts`
+  v3 promptи chuqurroq (4-7 jumla/segment, 12-16 segment) + `generateStructured`
+  `thinking:true` → ~59 so'z/segment, ~4 daqiqa (ilgari ~2). (3) **RASM** — kichik
+  yon rasm o'rniga **HERO layout** (`renderVisualPng`: sarlavha paneli + katta
+  markazlashgan diagramma), `MAX_VIDEO_IMAGES=18`. (4) **KIRIL IMLO tuzatildi** —
+  rasm modeli ko'p yorliqda Kirilni buzardi; `images/index.ts` endi KAM (4-5),
+  QISQA (1-2 so'z), imlosi aniq yorliq so'raydi → to'g'ri ("Атипичные клетки",
+  "Микрокальцинаты", "Базальная мембрана"). **Tekshirildi (topic 43, ru):**
+  script→TTS→render→DONE, aac audio, HERO kadrlar, dozalar amber karta, imlo to'g'ri.
 
 - **Modul 10 — Faktcheck + Chop etish (ikkinchi qulf) + Kurs sozlamalari (tayyor).
   O'qituvchi tomonining YAKUNI.** Prisma: ContentItem += factcheckFlagsJson,
