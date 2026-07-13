@@ -387,7 +387,7 @@
     "voiceFemale": "Ayol (Madina)",
     "voiceMale": "Erkak (Sardor)",
     "generateVideo": "Video generatsiya qilish",
-    "videoNote": "AI mini-maruza yaratadi: jonli ovozli izoh + asosiy vizual kartalar (subtitr bilan). Slayd oʻqib berish emas.",
+    "videoNote": "AI video-maruza yaratadi: studiya sifatidagi ovoz (Gemini) + har kadrga katta tibbiy illyustratsiya, subtitr bilan.",
     "needPresentation": "Avval prezentatsiya yarating",
     "vStep": {
       "script": "Skript yozilmoqda…",

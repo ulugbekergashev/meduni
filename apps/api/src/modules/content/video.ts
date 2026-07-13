@@ -7,8 +7,7 @@ import { prisma } from "../../lib/prisma";
 import { ApiError, badRequest, notFound } from "../../lib/errors";
 import { readFileBuffer, saveBytes } from "../../lib/storage";
 import { FFMPEG, run } from "../../lib/exec";
-import { generateImage, generateStructured } from "../../ai/gemini";
-import { recordAiUsage } from "../../ai/usage";
+import { generateImage, generateSpeech, generateStructured } from "../../ai/gemini";
 import { assertQuota } from "../../ai/quota";
 import { departmentForTopic, getGlossaryForDepartment, glossaryBlock } from "../../ai/glossary";
 import { imagePromptForVisual } from "../../ai/prompts/images";
@@ -27,12 +26,22 @@ function forbidden(): ApiError {
   return new ApiError(403, "forbidden", "Bu sizning kursingiz emas", "Это не ваш курс");
 }
 
+// edge-tts voices — used only as a fallback if Gemini TTS fails for a segment.
 const VOICES: Record<string, string> = {
   "uz:female": "uz-UZ-MadinaNeural",
   "uz:male": "uz-UZ-SardorNeural",
   "ru:female": "ru-RU-SvetlanaNeural",
   "ru:male": "ru-RU-DmitryNeural",
 };
+
+// Gemini native TTS voices (studio quality). Voice is language-agnostic.
+const GEMINI_VOICES: Record<"female" | "male", string> = { female: "Kore", male: "Charon" };
+
+/** Infer gender from the stored edge-tts voiceId → pick a Gemini voice. */
+function geminiVoiceFor(voiceId: string | null): string {
+  const female = !voiceId || /Madina|Svetlana/i.test(voiceId);
+  return female ? GEMINI_VOICES.female : GEMINI_VOICES.male;
+}
 
 // ---------- Ownership ----------
 
@@ -127,79 +136,107 @@ async function renderVisualPng(visual: VideoVisual, imageBuf: Buffer | null): Pr
   const W = 1920, H = 1080;
   const BRAND = "#0F9E8E", INK = "#0F172A", BG = "#F7F8FA";
   const AMBER = "#D97706", AMBER_BG = "#FCF2E2";
+
+  const txt = (x: number, y: number, size: number, weight: number, fill: string, s: string, anchor = "start") =>
+    `<text x="${x}" y="${y}" text-anchor="${anchor}" font-family="Segoe UI, Arial, sans-serif" font-size="${size}" font-weight="${weight}" fill="${fill}">${esc(s)}</text>`;
+
+  // HERO layout: when a diagram exists, make it the star — a title bar on top and
+  // the large labeled illustration centered below (the diagram carries its own
+  // labels, so no competing bullet text). Applies to points/term cards.
+  const hero = !!imageBuf && (visual.kind === "points" || visual.kind === "term");
+  if (hero) {
+    const barH = 150;
+    const parts: string[] = [];
+    parts.push(`<rect width="${W}" height="${H}" fill="${BG}"/>`);
+    parts.push(`<rect width="${W}" height="${barH}" fill="${BRAND}"/>`);
+    wrap(visual.title, 50).slice(0, 1).forEach(() => parts.push(txt(70, 96, 50, 700, "#FFFFFF", visual.title)));
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}">${parts.join("")}</svg>`;
+    const areaW = W - 160, areaH = H - barH - 90;
+    const resized = await sharp(imageBuf!).resize(areaW, areaH, { fit: "inside" }).png().toBuffer();
+    const meta = await sharp(resized).metadata();
+    const iw = meta.width ?? areaW, ih = meta.height ?? areaH;
+    const left = Math.round((W - iw) / 2);
+    const top = barH + Math.round((H - barH - ih) / 2);
+    return sharp(Buffer.from(svg)).composite([{ input: resized, left, top }]).png().toBuffer();
+  }
+
+  // Text cards (no illustration): title intro, dosage warning, or points/term
+  // when image generation was unavailable.
   const parts: string[] = [];
   const bg = visual.kind === "warning" ? AMBER_BG : BG;
   const accent = visual.kind === "warning" ? AMBER : BRAND;
   parts.push(`<rect width="${W}" height="${H}" fill="${bg}"/>`);
 
-  const txt = (x: number, y: number, size: number, weight: number, fill: string, s: string) =>
-    `<text x="${x}" y="${y}" font-family="Segoe UI, Arial, sans-serif" font-size="${size}" font-weight="${weight}" fill="${fill}">${esc(s)}</text>`;
-
-  // Illustration enriches the explanatory cards (points / term). When present,
-  // the text shares the frame with the diagram on the right.
-  const hasImg = !!imageBuf && (visual.kind === "points" || visual.kind === "term");
-  const termW = hasImg ? 34 : 60; // char wrap widths shrink when the image takes the right
-  const pointW = hasImg ? 32 : 52;
-
   if (visual.kind === "title") {
-    // Centered title band (intro card — no illustration).
     parts.push(`<rect x="0" y="518" width="${W}" height="8" fill="${BRAND}"/>`);
-    wrap(visual.title, 34).slice(0, 3).forEach((ln, i) => {
-      const w = ln.length * 30;
-      parts.push(txt((W - w) / 2, 430 + i * 78, 60, 700, INK, ln));
-    });
+    wrap(visual.title, 34).slice(0, 3).forEach((ln, i) => parts.push(txt(W / 2, 430 + i * 78, 60, 700, INK, ln, "middle")));
   } else if (visual.kind === "term") {
-    // Big term card: title (term) + definition points.
     parts.push(`<rect x="0" y="0" width="18" height="${H}" fill="${BRAND}"/>`);
     parts.push(txt(120, 300, 72, 700, BRAND, visual.title));
     let y = 430;
     for (const p of visual.points) {
-      wrap(p, termW).forEach((ln, i) => { parts.push(txt(120, y + i * 52, 40, 400, INK, ln)); });
-      y += wrap(p, termW).length * 52 + 20;
+      wrap(p, 60).forEach((ln, i) => parts.push(txt(120, y + i * 52, 40, 400, INK, ln)));
+      y += wrap(p, 60).length * 52 + 20;
     }
   } else {
-    // points / warning: header bar + big bullet points.
     parts.push(`<rect width="${W}" height="150" fill="${accent}"/>`);
-    if (visual.kind === "warning") parts.push(txt(70, 98, 52, 700, "#FFFFFF", "⚠ " + visual.title));
-    else wrap(visual.title, 40).slice(0, 1).forEach(() => parts.push(txt(70, 98, 52, 700, "#FFFFFF", visual.title)));
+    parts.push(txt(70, 98, 52, 700, "#FFFFFF", visual.kind === "warning" ? "⚠ " + visual.title : visual.title));
     let y = 320;
     for (const p of visual.points) {
-      const lines = wrap(p, pointW);
+      const lines = wrap(p, 52);
       parts.push(`<circle cx="90" cy="${y - 16}" r="10" fill="${accent}"/>`);
-      lines.forEach((ln, i) => { parts.push(txt(130, y + i * 58, 46, 500, INK, ln)); });
+      lines.forEach((ln, i) => parts.push(txt(130, y + i * 58, 46, 500, INK, ln)));
       y += lines.length * 58 + 40;
     }
   }
-
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}">${parts.join("")}</svg>`;
-  let base = sharp(Buffer.from(svg));
-  if (hasImg) {
-    const box = 760;
-    const resized = await sharp(imageBuf!).resize(box, box, { fit: "inside" }).png().toBuffer();
-    const meta = await sharp(resized).metadata();
-    const top = visual.kind === "term" ? 250 : 220;
-    base = base.composite([{ input: resized, left: W - (meta.width ?? box) - 90, top }]);
+  return sharp(Buffer.from(svg)).png().toBuffer();
+}
+
+// ---------- TTS ----------
+// Primary: Gemini native TTS (studio quality). Fallback per segment: edge-tts.
+// Every segment is normalized to a 24 kHz mono 16-bit WAV so they concat cleanly.
+
+const TTS_RATE = 24000;
+
+/** Wrap raw 16-bit PCM into a WAV container. */
+function pcmToWav(pcm: Buffer, rate: number, ch = 1, bits = 16): Buffer {
+  const blockAlign = (ch * bits) / 8;
+  const byteRate = rate * blockAlign;
+  const h = Buffer.alloc(44);
+  h.write("RIFF", 0); h.writeUInt32LE(36 + pcm.length, 4); h.write("WAVE", 8);
+  h.write("fmt ", 12); h.writeUInt32LE(16, 16); h.writeUInt16LE(1, 20); h.writeUInt16LE(ch, 22);
+  h.writeUInt32LE(rate, 24); h.writeUInt32LE(byteRate, 28); h.writeUInt16LE(blockAlign, 32); h.writeUInt16LE(bits, 34);
+  h.write("data", 36); h.writeUInt32LE(pcm.length, 40);
+  return Buffer.concat([h, pcm]);
+}
+
+interface TtsUsage { topicId?: number; departmentId?: number | null; userId?: number | null }
+
+/** Synthesize one segment to `${name}.wav` (24 kHz mono). Returns duration in seconds. */
+async function synthSegment(
+  text: string,
+  geminiVoice: string,
+  edgeVoice: string,
+  dir: string,
+  name: string,
+  usage: TtsUsage
+): Promise<number> {
+  const wav = path.join(dir, `${name}.wav`);
+  try {
+    const { pcm, sampleRate } = await generateSpeech(text, geminiVoice, usage);
+    await writeFile(wav, pcmToWav(pcm, sampleRate));
+    return Math.max(1, Math.round(pcm.length / (sampleRate * 2)));
+  } catch {
+    // Fallback: edge-tts (python) → mp3 → normalized 24 kHz mono WAV.
+    const txtFile = path.join(dir, `${name}.txt`);
+    const mp3 = path.join(dir, `${name}.mp3`);
+    await writeFile(txtFile, text, "utf8");
+    await run("python", ["-m", "edge_tts", "--voice", edgeVoice, "--file", txtFile, "--write-media", mp3]);
+    await run(FFMPEG, ["-y", "-i", `${name}.mp3`, "-ar", String(TTS_RATE), "-ac", "1", `${name}.wav`], { cwd: dir });
+    const size = (await readFile(wav)).length;
+    return Math.max(1, Math.round((size - 44) / (TTS_RATE * 2)));
   }
-  return base.png().toBuffer();
-}
-
-// ---------- TTS (edge-tts) ----------
-
-function srtLastEndSec(srt: string): number {
-  const times = [...srt.matchAll(/-->\s*(\d\d):(\d\d):(\d\d),(\d\d\d)/g)];
-  if (times.length === 0) return 0;
-  const m = times[times.length - 1];
-  return Number(m[1]) * 3600 + Number(m[2]) * 60 + Number(m[3]) + Number(m[4]) / 1000;
-}
-
-async function synthSegment(text: string, voice: string, dir: string, name: string): Promise<number> {
-  const txtFile = path.join(dir, `${name}.txt`);
-  const mp3 = path.join(dir, `${name}.mp3`);
-  const srt = path.join(dir, `${name}.srt`);
-  await writeFile(txtFile, text, "utf8");
-  await run("python", ["-m", "edge_tts", "--voice", voice, "--file", txtFile, "--write-media", mp3, "--write-subtitles", srt]);
-  const srtText = await readFile(srt, "utf8").catch(() => "");
-  return Math.max(1, Math.round(srtLastEndSec(srtText)) || 3);
 }
 
 // ---------- SRT builder (combined, cumulative) ----------
@@ -256,6 +293,7 @@ async function stageScript(videoId: number) {
     kind: "VIDEO",
     topicId,
     departmentId,
+    thinking: true, // richer, better-structured lecture is worth the extra tokens
   });
   const parsed = lectureScriptGenSchema.safeParse(gen);
   const segs = (parsed.success ? parsed.data : gen).segments;
@@ -263,9 +301,9 @@ async function stageScript(videoId: number) {
   await prisma.video.update({ where: { id: videoId }, data: { scriptJson: script as object } });
 }
 
-// Cap illustrations per video so a long lecture can't run up cost/time; extra
-// explanatory cards simply render as clean text frames.
-const MAX_VIDEO_IMAGES = 10;
+// Cap illustrations per video so a very long lecture can't run up cost/time;
+// beyond it, explanatory cards render as clean text frames.
+const MAX_VIDEO_IMAGES = 18;
 
 async function stageTtsAndRender(videoId: number) {
   const v = await prisma.video.findUnique({ where: { id: videoId }, include: videoInclude });
@@ -273,14 +311,9 @@ async function stageTtsAndRender(videoId: number) {
   const topicId = v.contentItem.topicId;
   const teacherId = v.contentItem.topic.course.teacherId;
   const departmentId = await departmentForTopic(topicId);
-  const voice = v.voiceId ?? VOICES[`${v.language}:female`];
+  const edgeVoice = v.voiceId ?? VOICES[`${v.language}:female`];
+  const geminiVoice = geminiVoiceFor(v.voiceId);
   const segments = scriptOf(v);
-
-  // Record TTS usage (edge-tts is free, but chars are tracked for admin monitoring).
-  const ttsChars = segments.reduce((n, s) => n + (s.narration?.length ?? 0), 0);
-  if (ttsChars > 0) {
-    await recordAiUsage({ kind: "TTS", model: "edge-tts", topicId, departmentId, ttsChars });
-  }
 
   const presContent = await prisma.contentItem.findUnique({
     where: { topicId_kind: { topicId, kind: "PRESENTATION" } },
@@ -290,18 +323,18 @@ async function stageTtsAndRender(videoId: number) {
 
   const dir = await mkdtemp(path.join(os.tmpdir(), "meduni-video-"));
   try {
-    // --- TTS ---
+    // --- TTS (Gemini native, per segment → normalized WAV) ---
     await setStatus(videoId, "TTS");
-    const segMp3s: string[] = [];
+    const segWavs: string[] = [];
     for (let i = 0; i < segments.length; i++) {
-      const dur = await synthSegment(segments[i].narration, voice, dir, `seg${i}`);
+      const dur = await synthSegment(segments[i].narration, geminiVoice, edgeVoice, dir, `seg${i}`, { topicId, departmentId, userId: teacherId });
       segments[i].durationSec = dur;
-      segMp3s.push(`seg${i}.mp3`);
+      segWavs.push(`seg${i}.wav`);
     }
-    // concat audio
-    await writeFile(path.join(dir, "audio.txt"), segMp3s.map((f) => `file '${f}'`).join("\n"), "utf8");
-    await run(FFMPEG, ["-y", "-f", "concat", "-safe", "0", "-i", "audio.txt", "-c", "copy", "audio.mp3"], { cwd: dir });
-    const audioRel = await saveBytes(`topics/${topicId}/video/${v.id}/audio.mp3`, await readFile(path.join(dir, "audio.mp3")));
+    // concat audio (all segments are 24 kHz mono s16 → copy-concat is safe)
+    await writeFile(path.join(dir, "audio.txt"), segWavs.map((f) => `file '${f}'`).join("\n"), "utf8");
+    await run(FFMPEG, ["-y", "-f", "concat", "-safe", "0", "-i", "audio.txt", "-c", "copy", "audio.wav"], { cwd: dir });
+    const audioRel = await saveBytes(`topics/${topicId}/video/${v.id}/audio.wav`, await readFile(path.join(dir, "audio.wav")));
     await prisma.video.update({ where: { id: videoId }, data: { scriptJson: segments as object, audioUrl: audioRel } });
 
     // --- RENDER ---
@@ -352,8 +385,8 @@ async function stageTtsAndRender(videoId: number) {
     await run(
       FFMPEG,
       [
-        "-y", "-f", "concat", "-safe", "0", "-i", "slides.txt", "-i", "audio.mp3",
-        "-c:v", "libx264", "-pix_fmt", "yuv420p", "-r", "25", "-c:a", "aac", "-shortest", "video.mp4",
+        "-y", "-f", "concat", "-safe", "0", "-i", "slides.txt", "-i", "audio.wav",
+        "-c:v", "libx264", "-pix_fmt", "yuv420p", "-r", "25", "-c:a", "aac", "-b:a", "192k", "-shortest", "video.mp4",
       ],
       { cwd: dir }
     );

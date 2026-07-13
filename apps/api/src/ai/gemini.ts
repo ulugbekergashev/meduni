@@ -8,6 +8,7 @@ import { recordAiUsage } from "./usage";
 const MODELS = ["gemini-flash-latest", "gemini-flash-lite-latest"];
 const TIMEOUT_MS = 90_000;
 const ATTEMPTS_PER_MODEL = 2;
+const MAX_TTS_ATTEMPTS = 3;
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -52,6 +53,8 @@ export interface GenerateOpts {
   topicId?: number;
   departmentId?: number | null;
   userId?: number | null;
+  /** Allow the model to "think" for higher-quality output (e.g. lecture scripts). */
+  thinking?: boolean;
 }
 
 /** Calls Gemini for structured JSON, logs token usage, retries transient failures. */
@@ -71,9 +74,9 @@ export async function generateStructured<T>(opts: GenerateOpts): Promise<T> {
               systemInstruction: opts.systemInstruction,
               responseMimeType: "application/json",
               responseSchema: opts.responseSchema as never,
-              // Disable "thinking": for extraction tasks it's ~5s vs ~40s+, uses
-              // ~2.6x fewer tokens (free-tier friendly), and quality holds.
-              thinkingConfig: { thinkingBudget: 0 },
+              // Disable "thinking" for extraction tasks (~5s vs ~40s+, ~2.6x fewer
+              // tokens). Enable it where quality matters most (lecture scripts).
+              ...(opts.thinking ? {} : { thinkingConfig: { thinkingBudget: 0 } }),
             },
           }),
           TIMEOUT_MS
@@ -154,4 +157,59 @@ export async function generateImage(
     if (err instanceof ApiError) throw err;
     throw toApiError(err);
   }
+}
+
+const TTS_MODEL = "gemini-2.5-flash-preview-tts";
+
+export interface GeneratedSpeech {
+  /** Raw 16-bit PCM audio. */
+  pcm: Buffer;
+  sampleRate: number;
+}
+
+/**
+ * Synthesizes speech via Gemini native TTS (studio-quality, far better than
+ * edge-tts). Returns raw PCM + sample rate. Retries transient 503/timeouts.
+ */
+export async function generateSpeech(
+  text: string,
+  voiceName: string,
+  opts: { topicId?: number; departmentId?: number | null; userId?: number | null } = {}
+): Promise<GeneratedSpeech> {
+  const ai = getClient();
+  let lastErr: unknown;
+  for (let attempt = 1; attempt <= MAX_TTS_ATTEMPTS; attempt++) {
+    try {
+      const res = await withTimeout(
+        ai.models.generateContent({
+          model: TTS_MODEL,
+          contents: text,
+          config: { responseModalities: ["AUDIO"], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName } } } },
+        }),
+        TIMEOUT_MS
+      );
+      const part = res.candidates?.[0]?.content?.parts?.find((p) => p.inlineData?.data);
+      if (!part?.inlineData?.data) throw new ApiError(502, "ai_no_audio", "Ovoz yaratilmadi", "Аудио не создано");
+
+      await recordAiUsage({
+        kind: "TTS",
+        model: TTS_MODEL,
+        topicId: opts.topicId,
+        departmentId: opts.departmentId,
+        userId: opts.userId,
+        promptTokens: res.usageMetadata?.promptTokenCount ?? 0,
+        completionTokens: res.usageMetadata?.candidatesTokenCount ?? 0,
+        ttsChars: text.length,
+      });
+
+      const rate = Number(/rate=(\d+)/.exec(part.inlineData.mimeType ?? "")?.[1] ?? 24000);
+      return { pcm: Buffer.from(part.inlineData.data, "base64"), sampleRate: rate };
+    } catch (err) {
+      lastErr = err;
+      const status = (err as { status?: number })?.status;
+      if (status === 401 || status === 403) throw toApiError(err);
+      if (attempt < MAX_TTS_ATTEMPTS) await sleep(1500 * attempt);
+    }
+  }
+  throw toApiError(lastErr);
 }
