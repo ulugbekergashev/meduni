@@ -394,7 +394,7 @@
       "tts": "Ovoz yaratilmoqda…",
       "render": "Montaj qilinmoqda…"
     },
-    "vError": "Xato ({stage}) — qayta urinish",
+    "vError": "Xato ({{stage}}) — qayta urinish",
     "ready": "Tayyor",
     "edit": "Tahrirlash",
     "error": "Yaratilmadi, qayta urinish",
@@ -412,7 +412,7 @@
     "save": "Skriptni saqlash",
     "saved": "Saqlandi",
     "building": "Video tayyorlanmoqda…",
-    "buildError": "Montajда xato ({stage})",
+    "buildError": "Montajда xato ({{stage}})",
     "duration": "Davomiyligi"
   },
   "presEditor": {

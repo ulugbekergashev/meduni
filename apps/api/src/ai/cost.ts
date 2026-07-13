@@ -2,6 +2,7 @@
 // TTS via edge-tts is free. Numbers are approximate for admin budgeting, not billing.
 const TEXT_PRICING: Record<string, { in: number; out: number }> = {
   "gemini-flash-latest": { in: 0.3, out: 2.5 }, // per 1M tokens
+  "gemini-flash-lite-latest": { in: 0.1, out: 0.4 }, // lite fallback (cheaper)
   "gemini-2.5-flash": { in: 0.3, out: 2.5 }, // legacy rows
 };
 const IMAGE_COST_USD = 0.04; // per generated image (estimate)
