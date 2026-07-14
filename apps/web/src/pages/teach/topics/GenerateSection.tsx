@@ -29,7 +29,7 @@ function ReadyRow({ summary, onEdit }: { summary: ContentSummary; onEdit: () => 
   const { t } = useTranslation(undefined, { keyPrefix: "generate" });
   return (
     <div className="flex items-center justify-between gap-2">
-      <span className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-emerald">
+      <span className="inline-flex items-center gap-1.5 text-body font-semibold text-emerald">
         <Icon icon={Check} size={16} /> {t("ready")}
         {summary.editedByTeacher && (
           <Badge tone="slate">{t("edited")}</Badge>
@@ -67,7 +67,7 @@ function QuizCard({ topic }: { topic: TopicDetail }) {
       </div>
 
       {gen.isPending ? (
-        <div className="flex items-center gap-2 py-2 text-[13px] text-ink-soft">
+        <div className="flex items-center gap-2 py-2 text-body text-ink-soft">
           <Spinner size={16} /> {t("generatingQuiz")}
         </div>
       ) : (
@@ -95,7 +95,7 @@ function QuizCard({ topic }: { topic: TopicDetail }) {
               </Field>
             </div>
           </div>
-          {gen.isError && <p className="text-[13px] text-rose">{apiErrorMessage(gen.error, locale) ?? t("error")}</p>}
+          {gen.isError && <p className="text-body text-rose">{apiErrorMessage(gen.error, locale) ?? t("error")}</p>}
           <Button icon={<Icon icon={Sparkles} size={16} />} onClick={run}>
             {existing ? t("regenerate") : t("generateQuiz")}
           </Button>
@@ -129,7 +129,7 @@ function CaseCard({ topic }: { topic: TopicDetail }) {
       </div>
 
       {gen.isPending ? (
-        <div className="flex items-center gap-2 py-2 text-[13px] text-ink-soft">
+        <div className="flex items-center gap-2 py-2 text-body text-ink-soft">
           <Spinner size={16} /> {t("generatingCase")}
         </div>
       ) : (
@@ -145,7 +145,7 @@ function CaseCard({ topic }: { topic: TopicDetail }) {
               <LangSelect value={language} onChange={setLanguage} />
             </Field>
           </div>
-          {gen.isError && <p className="text-[13px] text-rose">{apiErrorMessage(gen.error, locale) ?? t("error")}</p>}
+          {gen.isError && <p className="text-body text-rose">{apiErrorMessage(gen.error, locale) ?? t("error")}</p>}
           <Button icon={<Icon icon={Sparkles} size={16} />} onClick={() => gen.mutate({ language, format })}>
             {existing ? t("regenerate") : t("generateCase")}
           </Button>
@@ -179,7 +179,7 @@ function PresentationCard({ topic }: { topic: TopicDetail }) {
       </div>
 
       {gen.isPending ? (
-        <div className="flex items-center gap-2 py-2 text-[13px] text-ink-soft">
+        <div className="flex items-center gap-2 py-2 text-body text-ink-soft">
           <Spinner size={16} /> {t("generatingSlides")}
         </div>
       ) : (
@@ -194,8 +194,8 @@ function PresentationCard({ topic }: { topic: TopicDetail }) {
               <LangSelect value={language} onChange={setLanguage} />
             </Field>
           </div>
-          <p className="text-[12px] text-ink-faint">{t("imagesNote")}</p>
-          {gen.isError && <p className="text-[13px] text-rose">{apiErrorMessage(gen.error, locale) ?? t("error")}</p>}
+          <p className="text-note text-ink-faint">{t("imagesNote")}</p>
+          {gen.isError && <p className="text-body text-rose">{apiErrorMessage(gen.error, locale) ?? t("error")}</p>}
           <Button
             icon={<Icon icon={Sparkles} size={16} />}
             onClick={() => gen.mutate({ language }, { onSuccess: () => show(t("ready")) })}
@@ -222,7 +222,7 @@ function VideoStages({ status }: { status: string }) {
         const done = idx > i;
         const active = status === step;
         return (
-          <div key={step} className="flex items-center gap-2 text-[13px]">
+          <div key={step} className="flex items-center gap-2 text-body">
             {done ? (
               <Icon icon={Check} size={15} className="text-emerald" />
             ) : active ? (
@@ -281,11 +281,11 @@ function VideoCard({ topic }: { topic: TopicDetail }) {
                   <LangSelect value={language} onChange={setLanguage} />
                 </Field>
               </div>
-              <p className="text-[12px] text-ink-faint">{t("videoNote")}</p>
+              <p className="text-note text-ink-faint">{t("videoNote")}</p>
             </>
           )}
           {(gen.isError || errored) && (
-            <p className="text-[13px] text-rose">
+            <p className="text-body text-rose">
               {errored ? t("vError", { stage: video!.errorStage ?? "" }) : apiErrorMessage(gen.error, locale) ?? t("error")}
             </p>
           )}

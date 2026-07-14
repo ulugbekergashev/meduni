@@ -1,7 +1,18 @@
-import { useNavigate, useParams } from "react-router-dom";
+import { useEffect } from "react";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { BookOpen, Check, FileStack, Lock, Rocket, ShieldCheck, Sparkles } from "lucide-react";
-import { Badge, Card, Icon, Spinner, cls } from "@meduni/ui";
+import {
+  BookOpen,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  FileStack,
+  Rocket,
+  ShieldCheck,
+  Sparkles,
+  type LucideIcon,
+} from "lucide-react";
+import { Badge, Button, Card, Icon, Spinner, cls } from "@meduni/ui";
 import { useLocale } from "../../../lib/useLocale";
 import { MaterialsSection } from "./MaterialsSection";
 import { DigestSection } from "./DigestSection";
@@ -9,93 +20,58 @@ import { GenerateSection } from "./GenerateSection";
 import { FactcheckSection } from "./FactcheckSection";
 import { PublishSection } from "./PublishSection";
 import { TopicUnlockRule } from "./TopicUnlockRule";
-import { useTopicDetail } from "./api";
+import { useTopicDetail, type TopicDetail } from "./api";
 
+type StepKey = "material" | "digest" | "generate" | "factcheck" | "publish";
 type StepState = "done" | "current" | "locked";
 
-function ProgressTrack({
-  materialDone,
-  digestApproved,
-  hasContent,
-  factcheckDone,
-  anyPublished,
-}: {
-  materialDone: boolean;
-  digestApproved: boolean;
-  hasContent: boolean;
-  factcheckDone: boolean;
-  anyPublished: boolean;
-}) {
-  const { t } = useTranslation(undefined, { keyPrefix: "constructor.steps" });
-  const steps: { key: string; state: StepState }[] = [
-    { key: "material", state: materialDone ? "done" : "current" },
-    { key: "digest", state: digestApproved ? "done" : materialDone ? "current" : "locked" },
-    { key: "generate", state: hasContent ? "done" : digestApproved ? "current" : "locked" },
-    { key: "factcheck", state: factcheckDone ? "done" : hasContent ? "current" : "locked" },
-    { key: "publish", state: anyPublished ? "done" : factcheckDone ? "current" : "locked" },
-  ];
+const STEP_ORDER: StepKey[] = ["material", "digest", "generate", "factcheck", "publish"];
+const STEP_ICON: Record<StepKey, LucideIcon> = {
+  material: FileStack,
+  digest: BookOpen,
+  generate: Sparkles,
+  factcheck: ShieldCheck,
+  publish: Rocket,
+};
+// "material" step title lives under sections.materials (plural); others match.
+const SECTION_KEY: Record<StepKey, string> = {
+  material: "materials",
+  digest: "digest",
+  generate: "generate",
+  factcheck: "factcheck",
+  publish: "publish",
+};
 
-  return (
-    <div className="flex items-center gap-2 overflow-x-auto">
-      {steps.map((s, i) => (
-        <div key={s.key} className="flex items-center gap-2">
-          <div className="flex items-center gap-2">
-            <span
-              className={cls(
-                "flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[12px] font-bold",
-                s.state === "done" && "bg-emerald text-white",
-                s.state === "current" && "bg-brand text-white",
-                s.state === "locked" && "bg-bg text-ink-faint"
-              )}
-            >
-              {s.state === "done" ? <Icon icon={Check} size={15} /> : i + 1}
-            </span>
-            <span
-              className={cls(
-                "whitespace-nowrap text-[13px] font-medium",
-                s.state === "locked" ? "text-ink-faint" : "text-ink"
-              )}
-            >
-              {t(s.key)}
-            </span>
-          </div>
-          {i < steps.length - 1 && <span className="h-px w-6 bg-line" />}
-        </div>
-      ))}
-    </div>
-  );
+/** Availability + completion per step — reuses the same gating booleans as before. */
+function computeSteps(topic: TopicDetail) {
+  const materialDone = topic.digestUnlocked;
+  const digestApproved = topic.generateUnlocked;
+  const hasContent = topic.content.length > 0;
+  const factcheckDone =
+    hasContent && topic.content.every((c) => c.factcheckStatus === "clean" || c.factcheckStatus === "resolved");
+  const anyPublished = topic.content.some((c) => c.status === "published");
+
+  const available: Record<StepKey, boolean> = {
+    material: true,
+    digest: materialDone,
+    generate: digestApproved,
+    factcheck: hasContent,
+    publish: hasContent,
+  };
+  const done: Record<StepKey, boolean> = {
+    material: materialDone,
+    digest: digestApproved,
+    generate: hasContent,
+    factcheck: factcheckDone,
+    publish: anyPublished,
+  };
+  return { available, done };
 }
 
-function SectionHeader({ n, icon, title }: { n: number; icon: typeof Lock; title: string }) {
-  return (
-    <div className="mb-3 flex items-center gap-2">
-      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-soft text-brand-deep">
-        <Icon icon={icon} size={16} />
-      </div>
-      <h2 className="text-section font-bold text-ink">
-        {n}. {title}
-      </h2>
-    </div>
-  );
-}
-
-function LockedSection({ n, titleKey, hintKey }: { n: number; titleKey: string; hintKey: string }) {
-  const { t } = useTranslation(undefined, { keyPrefix: "constructor" });
-  return (
-    <Card className="opacity-70">
-      <div className="flex items-center gap-3">
-        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-bg text-ink-faint">
-          <Icon icon={Lock} size={16} />
-        </div>
-        <div>
-          <p className="text-section font-bold text-ink-soft">
-            {n}. {t(titleKey)}
-          </p>
-          <p className="text-[12.5px] text-ink-faint">{t(hintKey)}</p>
-        </div>
-      </div>
-    </Card>
-  );
+function stateOf(key: StepKey, available: Record<StepKey, boolean>, done: Record<StepKey, boolean>): StepState {
+  if (done[key]) return "done";
+  if (available[key]) return "current";
+  return "locked";
 }
 
 export function TopicConstructor() {
@@ -105,8 +81,31 @@ export function TopicConstructor() {
   const { t: tt } = useTranslation(undefined, { keyPrefix: "topics" });
   const locale = useLocale();
   const navigate = useNavigate();
+  const [params, setParams] = useSearchParams();
 
   const detail = useTopicDetail(topicId);
+
+  // Derived step state (safe defaults while loading so hooks run unconditionally).
+  const topic = detail.data;
+  const { available, done } = topic
+    ? computeSteps(topic)
+    : { available: {} as Record<StepKey, boolean>, done: {} as Record<StepKey, boolean> };
+
+  const firstIncomplete = STEP_ORDER.find((k) => available[k] && !done[k]) ?? STEP_ORDER[0];
+  const requested = params.get("step") as StepKey | null;
+  const active: StepKey =
+    requested && STEP_ORDER.includes(requested) && available[requested] ? requested : firstIncomplete;
+
+  // Keep the URL in sync with the resolved active step (invalid/locked → normalize).
+  const activeParam = params.get("step");
+  useEffect(() => {
+    if (topic && activeParam !== active) {
+      const p = new URLSearchParams(params);
+      p.set("step", active);
+      setParams(p, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeParam, active, !!topic]);
 
   if (detail.isLoading) {
     return (
@@ -115,26 +114,40 @@ export function TopicConstructor() {
       </div>
     );
   }
-  if (detail.isError || !detail.data) {
+  if (detail.isError || !topic) {
     return (
       <div>
-        <button onClick={() => navigate("/teach")} className="text-[13.5px] font-medium text-brand-deep hover:underline">
+        <button onClick={() => navigate("/teach")} className="text-body font-medium text-brand-deep hover:underline">
           {t("back")}
         </button>
         <Card className="mt-4">
-          <p className="py-6 text-center text-[13.5px] text-rose">{tt("empty")}</p>
+          <p className="py-6 text-center text-body text-rose">{tt("empty")}</p>
         </Card>
       </div>
     );
   }
 
-  const topic = detail.data;
+  const go = (step: StepKey) => {
+    if (!available[step]) return;
+    setParams(
+      (prev) => {
+        const p = new URLSearchParams(prev);
+        p.set("step", step);
+        return p;
+      },
+      { replace: false }
+    );
+  };
+
+  const activeIdx = STEP_ORDER.indexOf(active);
+  const prevStep = activeIdx > 0 ? STEP_ORDER[activeIdx - 1] : null;
+  const nextStep = activeIdx < STEP_ORDER.length - 1 ? STEP_ORDER[activeIdx + 1] : null;
 
   return (
     <div>
       <button
         onClick={() => navigate(`/teach/courses/${topic.courseId}/topics`)}
-        className="text-[13.5px] font-medium text-brand-deep hover:underline"
+        className="text-body font-medium text-brand-deep hover:underline"
       >
         {t("back")}
       </button>
@@ -142,82 +155,102 @@ export function TopicConstructor() {
       <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-h1 font-bold text-ink">{locale === "ru" ? topic.titleRu : topic.titleUz}</h1>
-          <p className="text-[13.5px] text-ink-faint">{locale === "ru" ? topic.titleUz : topic.titleRu}</p>
+          <p className="text-note text-ink-faint">{locale === "ru" ? topic.titleUz : topic.titleRu}</p>
         </div>
         <Badge tone={topic.status === "published" ? "emerald" : "slate"}>{tt(`status.${topic.status}`)}</Badge>
       </div>
 
-      {/* Progress track */}
-      <Card className="mt-6">
-        <ProgressTrack
-          materialDone={topic.digestUnlocked}
-          digestApproved={topic.generateUnlocked}
-          hasContent={topic.content.length > 0}
-          factcheckDone={
-            topic.content.length > 0 &&
-            topic.content.every((c) => c.factcheckStatus === "clean" || c.factcheckStatus === "resolved")
-          }
-          anyPublished={topic.content.some((c) => c.status === "published")}
-        />
-      </Card>
+      {/* Sticky stepper — one glance at where you are; click an unlocked step to jump. */}
+      <div className="sticky top-0 z-20 mt-5 border-b border-line bg-bg py-3">
+        <div className="flex items-center gap-1 overflow-x-auto">
+          {STEP_ORDER.map((key, i) => {
+            const st = stateOf(key, available, done);
+            const isActive = key === active;
+            const clickable = available[key];
+            return (
+              <div key={key} className="flex items-center gap-1">
+                <button
+                  type="button"
+                  disabled={!clickable}
+                  onClick={() => go(key)}
+                  className={cls(
+                    "flex items-center gap-2 rounded-control px-2 py-1 transition-colors",
+                    clickable ? "hover:bg-surface" : "cursor-not-allowed",
+                    isActive && "bg-surface ring-1 ring-brand/40"
+                  )}
+                >
+                  <span
+                    className={cls(
+                      "flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[12px] font-bold",
+                      st === "done" && "bg-emerald text-white",
+                      st === "current" && (isActive ? "bg-brand text-white" : "border border-brand text-brand"),
+                      st === "locked" && "bg-bg text-ink-faint"
+                    )}
+                  >
+                    {st === "done" ? <Icon icon={Check} size={15} /> : i + 1}
+                  </span>
+                  <span
+                    className={cls(
+                      "whitespace-nowrap text-body",
+                      st === "locked"
+                        ? "text-ink-faint"
+                        : isActive
+                          ? "font-semibold text-ink"
+                          : "font-medium text-ink-soft"
+                    )}
+                  >
+                    {t(`steps.${key}`)}
+                  </span>
+                </button>
+                {i < STEP_ORDER.length - 1 && <span className="h-px w-5 shrink-0 bg-line" />}
+              </div>
+            );
+          })}
+        </div>
+      </div>
 
-      {/* Section 1 — Materials (fully working) */}
+      {/* Active step panel */}
       <section className="mt-6">
-        <SectionHeader n={1} icon={FileStack} title={t("sections.materials")} />
-        <MaterialsSection topicId={topicId} materials={topic.materials} />
-      </section>
+        <div className="mb-4 flex items-center gap-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-soft text-brand-deep">
+            <Icon icon={STEP_ICON[active]} size={16} />
+          </div>
+          <h2 className="text-section font-bold text-ink">
+            {activeIdx + 1}. {t(`sections.${SECTION_KEY[active]}`)}
+          </h2>
+        </div>
 
-      {/* Section 2 — Konspekt (digest): unlocks once a material is DONE */}
-      <section className="mt-6">
-        {topic.digestUnlocked ? (
-          <>
-            <SectionHeader n={2} icon={BookOpen} title={t("sections.digest")} />
-            <DigestSection topic={topic} />
-          </>
-        ) : (
-          <LockedSection n={2} titleKey="sections.digest" hintKey="sectionLocked.digest" />
-        )}
-      </section>
-
-      {/* Section 3 — Generatsiya: first lock — needs an APPROVED digest */}
-      <section className="mt-6">
-        {topic.generateUnlocked ? (
-          <>
-            <SectionHeader n={3} icon={Sparkles} title={t("sections.generate")} />
-            <GenerateSection topic={topic} />
-          </>
-        ) : (
-          <LockedSection n={3} titleKey="sections.generate" hintKey="sectionLocked.generate" />
-        )}
-      </section>
-
-      {/* Section 4 — Faktcheck: needs generated content */}
-      <section className="mt-6">
-        {topic.content.length > 0 ? (
-          <>
-            <SectionHeader n={4} icon={ShieldCheck} title={t("sections.factcheck")} />
-            <FactcheckSection topic={topic} />
-          </>
-        ) : (
-          <LockedSection n={4} titleKey="sections.factcheck" hintKey="sectionLocked.factcheck" />
-        )}
-      </section>
-
-      {/* Section 5 — Chop etish (second lock) */}
-      <section className="mt-6">
-        {topic.content.length > 0 ? (
-          <>
-            <SectionHeader n={5} icon={Rocket} title={t("sections.publish")} />
+        {active === "material" && <MaterialsSection topicId={topicId} materials={topic.materials} />}
+        {active === "digest" && <DigestSection topic={topic} />}
+        {active === "generate" && <GenerateSection topic={topic} />}
+        {active === "factcheck" && <FactcheckSection topic={topic} />}
+        {active === "publish" && (
+          <div className="space-y-4">
             <PublishSection topic={topic} />
-          </>
-        ) : (
-          <LockedSection n={5} titleKey="sections.publish" hintKey="sectionLocked.publish" />
+            <TopicUnlockRule topic={topic} />
+          </div>
         )}
       </section>
 
-      {/* Topic-level unlock rule override */}
-      <div className="mt-6">
-        <TopicUnlockRule topic={topic} />
+      {/* Prev / Next navigation */}
+      <div className="mt-8 flex items-center justify-between gap-3 border-t border-line pt-5">
+        {prevStep ? (
+          <Button variant="ghost" onClick={() => go(prevStep)}>
+            <Icon icon={ChevronLeft} size={16} /> {t("nav.prev")}
+          </Button>
+        ) : (
+          <span />
+        )}
+        {nextStep && (
+          <div className="flex items-center gap-3">
+            {!available[nextStep] && (
+              <span className="hidden text-note text-ink-faint sm:inline">{t(`sectionLocked.${nextStep}`)}</span>
+            )}
+            <Button onClick={() => go(nextStep)} disabled={!available[nextStep]}>
+              {t("nav.next")} <Icon icon={ChevronRight} size={16} />
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );

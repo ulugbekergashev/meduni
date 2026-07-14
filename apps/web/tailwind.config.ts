@@ -35,6 +35,8 @@ export default {
         h1: ["25px", { lineHeight: "1.25", letterSpacing: "-0.02em" }],
         stat: ["34px", { lineHeight: "1.1" }],
         section: ["14.5px", { lineHeight: "1.4" }],
+        body: ["13.5px", { lineHeight: "1.5" }],
+        note: ["12px", { lineHeight: "1.45" }],
       },
       fontFamily: {
         sans: ["Inter", "system-ui", "sans-serif"],

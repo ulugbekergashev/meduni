@@ -32,7 +32,7 @@ function ContentFactcheck({ topicId, item }: { topicId: number; item: ContentSum
       <div className="flex items-center justify-between gap-2">
         <h3 className="text-section font-bold text-ink">{kindName}</h3>
         {item.factcheckStatus === "clean" && (
-          <span className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-emerald">
+          <span className="inline-flex items-center gap-1.5 text-body font-semibold text-emerald">
             <Icon icon={ShieldCheck} size={16} /> {t("clean")}
           </span>
         )}
@@ -44,7 +44,7 @@ function ContentFactcheck({ topicId, item }: { topicId: number; item: ContentSum
       </div>
 
       {running ? (
-        <div className="flex items-center gap-2 text-[13px] text-ink-soft">
+        <div className="flex items-center gap-2 text-body text-ink-soft">
           <Spinner size={15} /> {t("running")}
         </div>
       ) : (
@@ -61,18 +61,18 @@ function ContentFactcheck({ topicId, item }: { topicId: number; item: ContentSum
                   <div className="flex items-center gap-2">
                     <Icon icon={TriangleAlert} size={15} className={flag.resolved ? "text-ink-faint" : "text-amber"} />
                     <Badge tone={sevTone[flag.severity]}>{t(`sev.${flag.severity}`)}</Badge>
-                    <span className="text-[12px] text-ink-faint">
+                    <span className="text-note text-ink-faint">
                       {t("at")}: {flag.location}
                     </span>
                   </div>
                   {flag.resolved && (
-                    <span className="inline-flex items-center gap-1 text-[12px] font-semibold text-emerald">
+                    <span className="inline-flex items-center gap-1 text-note font-semibold text-emerald">
                       <Icon icon={Check} size={13} />
                       {flag.resolution === "fixed" ? t("resolvedFixed") : t("resolvedConfirmed")}
                     </span>
                   )}
                 </div>
-                <p className="mt-2 text-[13.5px] text-ink">{flag.claim}</p>
+                <p className="mt-2 text-body text-ink">{flag.claim}</p>
                 {!flag.resolved && (
                   <div className="mt-2 flex gap-2">
                     <Button
@@ -110,7 +110,7 @@ export function FactcheckSection({ topic }: { topic: TopicDetail }) {
   const { t } = useTranslation(undefined, { keyPrefix: "factcheck" });
 
   if (topic.content.length === 0) {
-    return <p className="text-[13.5px] text-ink-soft">{t("needContent")}</p>;
+    return <p className="text-body text-ink-soft">{t("needContent")}</p>;
   }
   return (
     <div className="space-y-3">
