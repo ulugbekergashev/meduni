@@ -244,6 +244,24 @@ export function useTeachDashboard() {
   return useQuery({ queryKey: ["teach-dashboard"], queryFn: () => api<TeachDashboard>("/api/v1/teach/dashboard") });
 }
 
+// ---------------- My Tasks hub ----------------
+
+export type TaskTone = "rose" | "amber" | "blue" | "brand" | "violet" | "emerald";
+export interface AutoTask {
+  type: string;
+  count: number;
+  tone: TaskTone;
+  link: string;
+}
+export interface TasksInbox {
+  auto: AutoTask[];
+  assigned: unknown[];
+}
+
+export function useTeachTasks() {
+  return useQuery({ queryKey: ["teach-tasks"], queryFn: () => api<TasksInbox>("/api/v1/teach/tasks") });
+}
+
 // ---------------- Case review queue (Module 14) ----------------
 
 export type ReviewStatus = "PENDING" | "REVIEWED";

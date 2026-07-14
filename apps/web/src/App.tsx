@@ -20,6 +20,7 @@ import { AiMonitoringPage } from "./pages/admin/ai/AiMonitoringPage";
 import { AuditPage } from "./pages/admin/audit/AuditPage";
 import { TeachShell } from "./pages/teach/TeachShell";
 import { TeachDashboard } from "./pages/teach/TeachDashboard";
+import { TeachTasksPage } from "./pages/teach/TeachTasksPage";
 import { TeachCoursesPage } from "./pages/teach/TeachCoursesPage";
 import { TeachGroupsPage } from "./pages/teach/TeachGroupsPage";
 import { StudentDetailPage } from "./pages/teach/StudentDetailPage";
@@ -36,6 +37,7 @@ import { CaseReviewQueue } from "./pages/teach/CaseReviewQueue";
 import { TeachGlossaryPage } from "./pages/teach/glossary/TeachGlossaryPage";
 import { StudentShell } from "./pages/student/StudentShell";
 import { StudentDashboard } from "./pages/student/StudentDashboard";
+import { StudentTasksPage } from "./pages/student/StudentTasksPage";
 import { CoursePath } from "./pages/student/CoursePath";
 import { LessonPage } from "./pages/student/lesson/LessonPage";
 import { AttendancePage } from "./pages/student/AttendancePage";
@@ -83,6 +85,7 @@ export function App() {
         }
       >
         <Route index element={<TeachDashboard />} />
+        <Route path="tasks" element={<TeachTasksPage />} />
         <Route path="courses" element={<TeachCoursesPage />} />
         <Route path="groups" element={<TeachGroupsPage />} />
         <Route path="groups/:id" element={<GroupProfile />} />
@@ -114,6 +117,7 @@ export function App() {
         }
       >
         <Route index element={<StudentDashboard />} />
+        <Route path="tasks" element={<StudentTasksPage />} />
         <Route path="courses/:id" element={<CoursePath />} />
         <Route path="topics/:id" element={<LessonPage />} />
         <Route path="attendance" element={<AttendancePage />} />

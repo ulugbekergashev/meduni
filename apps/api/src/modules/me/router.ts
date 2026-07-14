@@ -5,6 +5,7 @@ import { requireRoles } from "../../middleware/rbac";
 import * as svc from "./service";
 import * as lesson from "./lesson";
 import * as profile from "./profile";
+import { computeStudentAutoTasks } from "../tasks/service";
 
 export const meRouter = Router();
 meRouter.use(requireRoles("STUDENT"));
@@ -29,6 +30,7 @@ function parseBody<T extends ZodTypeAny>(schema: T, body: unknown): z.infer<T> {
 // ---------- Dashboard + path (Module 11) ----------
 
 meRouter.get("/dashboard", wrap(async (req, res) => res.json(await svc.getDashboard(req.user!.id))));
+meRouter.get("/tasks", wrap(async (req, res) => res.json({ auto: await computeStudentAutoTasks(req.user!.id), assigned: [] })));
 meRouter.get("/courses", wrap(async (req, res) => res.json(await svc.listMyCourses(req.user!.id))));
 meRouter.get("/courses/:id", wrap(async (req, res) => res.json(await svc.getMyCourse(req.user!.id, parseId(req.params.id)))));
 

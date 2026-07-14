@@ -29,7 +29,7 @@ interface StudentRow {
 }
 
 /** Build the full progress matrix for a course in a handful of batched queries. */
-async function buildMatrix(course: CourseWithTopics) {
+export async function buildMatrix(course: CourseWithTopics) {
   const topics = course.topics; // already ordered + published-only
   const topicIds = topics.map((t) => t.id);
 
