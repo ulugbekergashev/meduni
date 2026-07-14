@@ -410,7 +410,14 @@
       "sessions": "Yoʻqlama moduli — keyingi sessiyada (Modul 15) qoʻshiladi.",
       "progress": "Progress moduli — keyingi sessiyada (Modul 13) qoʻshiladi.",
       "settings": "Kurs sozlamalari — keyingi sessiyada (Modul 10) qoʻshiladi."
-    }
+    },
+    "qaTasks": "Vazifalarim",
+    "qaReview": "Keys tekshirish",
+    "qaCourses": "Kurslarim",
+    "qaGroups": "Guruhlarim",
+    "analytics": "Analitika",
+    "byCourse": "Kurslar bo‘yicha progress",
+    "statStudentsN": "{{n}} talaba"
   },
   "topics": {
     "addForm": "Yangi mavzu",

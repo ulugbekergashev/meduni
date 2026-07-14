@@ -227,6 +227,7 @@ export interface TeachDashboard {
     casesReviewed: number;
     avgProgress: number;
     avgAttendance: number | null;
+    groupList: { id: number; name: string }[];
   };
   upcomingSessions: {
     id: number;
