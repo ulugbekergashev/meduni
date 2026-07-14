@@ -91,6 +91,18 @@ enum AttendanceStatus {
   EXCUSED
 }
 
+enum TaskStatus {
+  OPEN
+  DONE
+  DISMISSED
+}
+
+enum TaskPriority {
+  LOW
+  NORMAL
+  HIGH
+}
+
 model User {
   id             Int             @id @default(autoincrement())
   fullName       String
@@ -118,6 +130,8 @@ model User {
   attendanceRecords Attendance[]     @relation("AttendanceStudent")
   glossaryTerms     Glossary[]       @relation("GlossaryCreator")
   aiUsage           AiUsage[]
+  tasksCreated      Task[]           @relation("TaskCreator")
+  tasksAssigned     Task[]           @relation("TaskAssignee")
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
 
@@ -543,4 +557,33 @@ model Enrollment {
 
   @@unique([studentId, courseId])
   @@map("enrollments")
+}
+
+// Manually-assigned task (admin -> teacher/department, teacher -> student/group).
+// Auto-derived tasks are NOT stored here — they are computed live.
+model Task {
+  id           Int          @id @default(autoincrement())
+  title        String
+  description  String?
+  status       TaskStatus   @default(OPEN)
+  priority     TaskPriority @default(NORMAL)
+  dueDate      DateTime?
+  createdById  Int
+  createdBy    User         @relation("TaskCreator", fields: [createdById], references: [id])
+  assignedToId Int
+  assignedTo   User         @relation("TaskAssignee", fields: [assignedToId], references: [id])
+  departmentId Int?
+  courseId     Int?
+  groupId      Int?
+  topicId      Int?
+  linkUrl      String?
+  batchId      String? // groups a group/department fan-out into one logical assignment
+  completedAt  DateTime?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  @@index([assignedToId, status])
+  @@index([createdById])
+  @@index([batchId])
+  @@map("tasks")
 }

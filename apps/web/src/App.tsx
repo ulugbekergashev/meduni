@@ -18,6 +18,7 @@ import { GlossaryPage } from "./pages/admin/glossary/GlossaryPage";
 import { TemplatesPage } from "./pages/admin/templates/TemplatesPage";
 import { AiMonitoringPage } from "./pages/admin/ai/AiMonitoringPage";
 import { AuditPage } from "./pages/admin/audit/AuditPage";
+import { AdminTasksPage } from "./pages/admin/tasks/AdminTasksPage";
 import { TeachShell } from "./pages/teach/TeachShell";
 import { TeachDashboard } from "./pages/teach/TeachDashboard";
 import { TeachTasksPage } from "./pages/teach/TeachTasksPage";
@@ -69,6 +70,7 @@ export function App() {
         <Route path="users/:id" element={<UserProfilePage />} />
         <Route path="courses" element={<CoursesPage />} />
         <Route path="courses/:id" element={<CourseDetail />} />
+        <Route path="tasks" element={<AdminTasksPage />} />
         <Route path="glossary" element={<GlossaryPage />} />
         <Route path="templates" element={<TemplatesPage />} />
         <Route path="ai" element={<AiMonitoringPage />} />

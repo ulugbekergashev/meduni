@@ -176,3 +176,52 @@ export interface AdminStats {
 export function useAdminStats() {
   return useQuery({ queryKey: ["admin-stats"], queryFn: () => api<AdminStats>("/api/v1/admin/stats") });
 }
+
+// ---------------- Tasks (department assignments) ----------------
+export interface TeacherOption { id: number; fullName: string }
+export function useTeacherOptions() {
+  return useQuery({
+    queryKey: ["teacher-options"],
+    queryFn: async () => {
+      const res = await api<{ items: TeacherOption[] }>("/api/v1/users?role=TEACHER&page=1");
+      return res.items.map((t) => ({ id: t.id, fullName: t.fullName }));
+    },
+  });
+}
+
+export interface CreatedTaskGroup {
+  key: string;
+  title: string;
+  description: string | null;
+  dueDate: string | null;
+  createdAt: string;
+  total: number;
+  done: number;
+  assignees: string[];
+  taskIds: number[];
+}
+export function useCreatedTasks() {
+  return useQuery({ queryKey: ["created-tasks"], queryFn: () => api<CreatedTaskGroup[]>("/api/v1/tasks/created") });
+}
+
+export interface CreateTaskBody {
+  title: string;
+  description?: string;
+  dueDate?: string | null;
+  teacherId?: number;
+  departmentId?: number;
+}
+export function useCreateTask() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: CreateTaskBody) => api<{ count: number }>("/api/v1/tasks", { method: "POST", body: JSON.stringify(body) }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["created-tasks"] }),
+  });
+}
+export function useDeleteTask() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => api(`/api/v1/tasks/${id}`, { method: "DELETE" }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["created-tasks"] }),
+  });
+}

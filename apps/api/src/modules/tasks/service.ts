@@ -1,4 +1,7 @@
+import { randomUUID } from "crypto";
 import { prisma } from "../../lib/prisma";
+import { badRequest, forbidden, notFound } from "../../lib/errors";
+import type { Role } from "../../lib/prisma";
 import { buildMatrix } from "../courses/progress";
 import { computeTopics, enrolledCourseIds, loadCourse, studentFactsMap } from "../me/service";
 
@@ -132,4 +135,167 @@ export async function computeStudentAutoTasks(studentId: number): Promise<AutoTa
   if (gradedCount && graded) tasks.push({ type: "case_graded", count: gradedCount, tone: "emerald", link: `/app/topics/${graded.clinicalCase.contentItem.topicId}?tab=case` });
   if (marked > 0 && attendancePct < 75) tasks.push({ type: "attendance_low", count: attendancePct, tone: "amber", link: "/app/attendance" });
   return tasks;
+}
+
+// ---------- Explicit (manually assigned) tasks ----------
+
+export interface AssignedTaskDto {
+  id: number;
+  title: string;
+  description: string | null;
+  dueDate: string | null;
+  priority: "LOW" | "NORMAL" | "HIGH";
+  createdByName: string;
+  createdAt: string;
+  linkUrl: string | null;
+}
+
+export interface CreatedTaskGroup {
+  key: string; // batchId, or `id:<n>` for a single assignment
+  title: string;
+  description: string | null;
+  dueDate: string | null;
+  createdAt: string;
+  total: number;
+  done: number;
+  assignees: string[];
+  taskIds: number[];
+}
+
+/** OPEN tasks assigned to me (the "inbox"). */
+export async function listAssigned(userId: number): Promise<AssignedTaskDto[]> {
+  const rows = await prisma.task.findMany({
+    where: { assignedToId: userId, status: "OPEN" },
+    include: { createdBy: { select: { fullName: true } } },
+    orderBy: [{ dueDate: "asc" }, { createdAt: "desc" }],
+  });
+  return rows.map((t) => ({
+    id: t.id,
+    title: t.title,
+    description: t.description,
+    dueDate: t.dueDate?.toISOString() ?? null,
+    priority: t.priority,
+    createdByName: t.createdBy.fullName,
+    createdAt: t.createdAt.toISOString(),
+    linkUrl: t.linkUrl,
+  }));
+}
+
+/** Tasks I created, grouped by batch, with completion counts. */
+export async function listCreated(userId: number): Promise<CreatedTaskGroup[]> {
+  const rows = await prisma.task.findMany({
+    where: { createdById: userId },
+    include: { assignedTo: { select: { fullName: true } } },
+    orderBy: { createdAt: "desc" },
+  });
+  const groups = new Map<string, CreatedTaskGroup>();
+  for (const t of rows) {
+    const key = t.batchId ?? `id:${t.id}`;
+    let g = groups.get(key);
+    if (!g) {
+      g = { key, title: t.title, description: t.description, dueDate: t.dueDate?.toISOString() ?? null, createdAt: t.createdAt.toISOString(), total: 0, done: 0, assignees: [], taskIds: [] };
+      groups.set(key, g);
+    }
+    g.total++;
+    if (t.status === "DONE") g.done++;
+    g.assignees.push(t.assignedTo.fullName);
+    g.taskIds.push(t.id);
+  }
+  return [...groups.values()];
+}
+
+export interface CreateTaskInput {
+  title?: string;
+  description?: string;
+  dueDate?: string | null;
+  priority?: "LOW" | "NORMAL" | "HIGH";
+  teacherId?: number; // ADMIN → one teacher
+  departmentId?: number; // ADMIN → all teachers in a department
+  studentId?: number; // TEACHER → one student
+  groupId?: number; // TEACHER → a whole group
+  courseId?: number;
+  topicId?: number;
+  linkUrl?: string;
+}
+
+/** Create a task. Direction is validated by the creator's role. */
+export async function createTask(creator: { id: number; role: Role }, input: CreateTaskInput) {
+  const title = input.title?.trim();
+  if (!title) throw badRequest("Sarlavha kiriting", "Введите заголовок");
+
+  let recipients: number[] = [];
+  let departmentId: number | null = null;
+  let groupId: number | null = null;
+
+  if (creator.role === "ADMIN") {
+    if (input.teacherId) {
+      const u = await prisma.user.findUnique({ where: { id: input.teacherId }, select: { role: true } });
+      if (u?.role !== "TEACHER") throw badRequest("Faqat oʻqituvchiga tayinlanadi", "Можно назначить только преподавателю");
+      recipients = [input.teacherId];
+    } else if (input.departmentId) {
+      const teachers = await prisma.teacherProfile.findMany({ where: { departmentId: input.departmentId }, select: { userId: true } });
+      recipients = teachers.map((t) => t.userId);
+      departmentId = input.departmentId;
+    } else {
+      throw badRequest("Kimga tayinlash koʻrsatilmagan", "Не указан получатель");
+    }
+  } else if (creator.role === "TEACHER") {
+    if (input.studentId) {
+      const enrolled = await prisma.enrollment.findFirst({
+        where: { studentId: input.studentId, status: "ACTIVE", course: { teacherId: creator.id } },
+      });
+      if (!enrolled) throw forbidden();
+      recipients = [input.studentId];
+    } else if (input.groupId) {
+      const teaches = await prisma.courseGroup.findFirst({ where: { groupId: input.groupId, course: { teacherId: creator.id } } });
+      if (!teaches) throw forbidden();
+      const students = await prisma.user.findMany({ where: { groupId: input.groupId, role: "STUDENT", isActive: true }, select: { id: true } });
+      recipients = students.map((s) => s.id);
+      groupId = input.groupId;
+    } else {
+      throw badRequest("Kimga tayinlash koʻrsatilmagan", "Не указан получатель");
+    }
+  } else {
+    throw forbidden();
+  }
+
+  if (recipients.length === 0) throw badRequest("Qabul qiluvchilar topilmadi", "Получатели не найдены");
+
+  const batchId = recipients.length > 1 ? randomUUID() : null;
+  const due = input.dueDate ? new Date(input.dueDate) : null;
+  await prisma.task.createMany({
+    data: recipients.map((rid) => ({
+      title,
+      description: input.description?.trim() || null,
+      priority: input.priority ?? "NORMAL",
+      dueDate: due,
+      createdById: creator.id,
+      assignedToId: rid,
+      departmentId,
+      groupId,
+      courseId: input.courseId ?? null,
+      topicId: input.topicId ?? null,
+      linkUrl: input.linkUrl?.trim() || null,
+      batchId,
+    })),
+  });
+  return { count: recipients.length };
+}
+
+/** Assignee marks their task done (or reopens it). */
+export async function setTaskDone(id: number, userId: number, done: boolean) {
+  const t = await prisma.task.findUnique({ where: { id } });
+  if (!t) throw notFound("Vazifa");
+  if (t.assignedToId !== userId) throw forbidden();
+  return prisma.task.update({ where: { id }, data: { status: done ? "DONE" : "OPEN", completedAt: done ? new Date() : null } });
+}
+
+/** Creator deletes a task (whole batch if it was a group/department assignment). */
+export async function deleteTask(id: number, userId: number) {
+  const t = await prisma.task.findUnique({ where: { id } });
+  if (!t) throw notFound("Vazifa");
+  if (t.createdById !== userId) throw forbidden();
+  if (t.batchId) await prisma.task.deleteMany({ where: { batchId: t.batchId, createdById: userId } });
+  else await prisma.task.delete({ where: { id } });
+  return { ok: true };
 }

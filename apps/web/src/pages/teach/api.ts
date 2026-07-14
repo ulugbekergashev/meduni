@@ -253,13 +253,31 @@ export interface AutoTask {
   tone: TaskTone;
   link: string;
 }
+export interface AssignedTask {
+  id: number;
+  title: string;
+  description: string | null;
+  dueDate: string | null;
+  priority: "LOW" | "NORMAL" | "HIGH";
+  createdByName: string;
+  createdAt: string;
+  linkUrl: string | null;
+}
 export interface TasksInbox {
   auto: AutoTask[];
-  assigned: unknown[];
+  assigned: AssignedTask[];
 }
 
 export function useTeachTasks() {
   return useQuery({ queryKey: ["teach-tasks"], queryFn: () => api<TasksInbox>("/api/v1/teach/tasks") });
+}
+
+export function useSetTaskDone() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => api(`/api/v1/tasks/${id}`, { method: "PATCH", body: JSON.stringify({ done: true }) }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["teach-tasks"] }),
+  });
 }
 
 // ---------------- Case review queue (Module 14) ----------------

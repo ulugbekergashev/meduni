@@ -3,7 +3,9 @@ import { useTranslation } from "react-i18next";
 import { CalendarCheck, CheckCircle2, ClipboardList, PlayCircle, Sparkles, Stethoscope, type LucideIcon } from "lucide-react";
 import { Card, Icon, Spinner } from "@meduni/ui";
 import { TaskCard } from "../../components/TaskCard";
-import { useMyTasks } from "./api";
+import { AssignedTaskList } from "../../components/AssignedTaskList";
+import { useLocale } from "../../lib/useLocale";
+import { useMyTasks, useSetMyTaskDone } from "./api";
 
 const META: Record<string, { icon: LucideIcon; labelKey: string }> = {
   study: { icon: PlayCircle, labelKey: "study" },
@@ -16,13 +18,24 @@ const META: Record<string, { icon: LucideIcon; labelKey: string }> = {
 export function StudentTasksPage() {
   const { t } = useTranslation(undefined, { keyPrefix: "tasks" });
   const navigate = useNavigate();
+  const locale = useLocale();
   const q = useMyTasks();
+  const done = useSetMyTaskDone();
   const auto = q.data?.auto ?? [];
+  const assigned = q.data?.assigned ?? [];
 
   return (
     <div className="mx-auto max-w-3xl">
       <h1 className="text-h1 font-bold text-ink">{t("studentTitle")}</h1>
       <p className="mt-0.5 text-note text-ink-faint">{t("studentHint")}</p>
+
+      {/* Teacher assignments */}
+      {assigned.length > 0 && (
+        <section className="mt-6">
+          <h2 className="mb-3 text-section font-bold text-ink">{t("teacherAssignedSection")}</h2>
+          <AssignedTaskList items={assigned} onDone={(id) => done.mutate(id)} pendingId={done.isPending ? (done.variables as number) : null} locale={locale} />
+        </section>
+      )}
 
       <section className="mt-6">
         {q.isLoading ? (
