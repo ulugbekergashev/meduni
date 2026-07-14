@@ -187,7 +187,7 @@ function courseSummary(course: CourseWithTopics, topics: TopicOut[]) {
   };
 }
 
-async function enrolledCourseIds(studentId: number): Promise<number[]> {
+export async function enrolledCourseIds(studentId: number): Promise<number[]> {
   const rows = await prisma.enrollment.findMany({
     where: { studentId, status: "ACTIVE" },
     select: { courseId: true },

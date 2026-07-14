@@ -75,6 +75,24 @@ export function useMyDashboard() {
   return useQuery({ queryKey: ["me-dashboard"], queryFn: () => api<Dashboard>("/api/v1/me/dashboard") });
 }
 
+// ---------------- My Tasks ----------------
+
+export type TaskTone = "rose" | "amber" | "blue" | "brand" | "violet" | "emerald";
+export interface AutoTask {
+  type: string;
+  count: number;
+  tone: TaskTone;
+  link: string;
+}
+export interface TasksInbox {
+  auto: AutoTask[];
+  assigned: unknown[];
+}
+
+export function useMyTasks() {
+  return useQuery({ queryKey: ["me-tasks"], queryFn: () => api<TasksInbox>("/api/v1/me/tasks") });
+}
+
 export function useMyCourse(id: number) {
   return useQuery({
     queryKey: ["me-course", id],
