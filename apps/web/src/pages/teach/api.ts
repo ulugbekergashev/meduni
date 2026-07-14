@@ -25,6 +25,16 @@ export function useTeachCourses() {
   });
 }
 
+export interface GroupStudent {
+  id: number;
+  fullName: string;
+  email: string;
+  overallPct: number;
+  avgQuizScore: number | null;
+  attendancePct: number | null;
+  lastActiveAt: string | null;
+  behind: boolean;
+}
 export interface TeachGroup {
   id: number;
   name: string;
@@ -32,8 +42,11 @@ export interface TeachGroup {
   facultyNameUz: string;
   facultyNameRu: string;
   courses: { id: number; nameUz: string; nameRu: string }[];
-  students: { id: number; fullName: string; email: string }[];
+  students: GroupStudent[];
   studentCount: number;
+  avgProgress: number;
+  avgAttendance: number | null;
+  behindCount: number;
 }
 
 export function useTeachGroups() {

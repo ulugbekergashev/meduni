@@ -143,7 +143,17 @@
       "journal": "Jurnal",
       "sessions": "Darslar",
       "report": "Hisobot"
-    }
+    },
+    "avgProgress": "O‘rtacha progress",
+    "avgAttendance": "O‘rtacha davomat",
+    "behindCount": "Orqada qolgan",
+    "studentsCount": "Talabalar",
+    "behind": "Orqada",
+    "quiz": "Test",
+    "att": "Davomat",
+    "neverActive": "Faollik yo‘q",
+    "activeToday": "Bugun faol",
+    "activeYesterday": "Kecha faol"
   },
   "courseGroups": {
     "subtitle": "Bu kurs qaysi guruhlarda oʻtiladi. Guruhni bosing — profili (talabalar, jurnal, davomat).",

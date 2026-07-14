@@ -2,10 +2,10 @@ import { useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ArrowLeft, BarChart3, CalendarDays, ChevronRight, GraduationCap, NotebookPen, Users2 } from "lucide-react";
-import { Card, Icon, Spinner, cls } from "@meduni/ui";
+import { Badge, Card, Icon, ProgressBar, ProgressRing, Spinner, cls } from "@meduni/ui";
 import { AsyncSection } from "../../../components/AsyncSection";
 import { useLocale, pickName } from "../../../lib/useLocale";
-import { useTeachGroup, type TeachGroup } from "../api";
+import { useTeachGroup, type GroupStudent, type TeachGroup } from "../api";
 import { JournalView } from "../course/attendance/JournalView";
 import { SessionsView } from "../course/attendance/SessionsView";
 import { ReportView } from "../course/attendance/ReportView";
@@ -19,34 +19,87 @@ const TABS: { key: TabKey; icon: typeof Users2 }[] = [
   { key: "report", icon: BarChart3 },
 ];
 
+/** Group-level metric cards (progress ring + attendance + behind + count). */
+function GroupStats({ group }: { group: TeachGroup }) {
+  const { t } = useTranslation(undefined, { keyPrefix: "groupProfile" });
+  return (
+    <div className="mt-5 grid grid-cols-2 gap-2.5 lg:grid-cols-4">
+      <Card className="flex items-center gap-3">
+        <ProgressRing value={group.avgProgress} size={62} stroke={7} tone="brand" />
+        <span className="text-note font-medium text-ink-soft">{t("avgProgress")}</span>
+      </Card>
+      <Card className="flex items-center gap-3">
+        <ProgressRing value={group.avgAttendance ?? 0} size={62} stroke={7} tone="blue" />
+        <span className="text-note font-medium text-ink-soft">{t("avgAttendance")}</span>
+      </Card>
+      <Card className={cls("flex flex-col justify-center", group.behindCount > 0 && "border-rose/30 bg-rose-soft")}>
+        <span className={cls("text-[28px] font-bold leading-none tabular-nums", group.behindCount > 0 ? "text-rose" : "text-ink")}>{group.behindCount}</span>
+        <span className="mt-1 text-note font-medium text-ink-soft">{t("behindCount")}</span>
+      </Card>
+      <Card className="flex flex-col justify-center">
+        <span className="text-[28px] font-bold leading-none tabular-nums text-ink">{group.studentCount}</span>
+        <span className="mt-1 text-note font-medium text-ink-soft">{t("studentsCount")}</span>
+      </Card>
+    </div>
+  );
+}
+
+function StudentRow({ s, onClick, tRel }: { s: GroupStudent; onClick: () => void; tRel: (iso: string | null) => string }) {
+  const { t } = useTranslation(undefined, { keyPrefix: "groupProfile" });
+  const initials = s.fullName.split(" ").filter(Boolean).slice(0, 2).map((x) => x[0]?.toUpperCase()).join("");
+  const lowAtt = s.attendancePct !== null && s.attendancePct < 75;
+  return (
+    <button onClick={onClick} className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-bg">
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-soft text-[12px] font-bold text-brand-deep">{initials}</div>
+      <div className="min-w-0 flex-[2]">
+        <div className="flex items-center gap-2">
+          <p className="truncate text-[14px] font-medium text-ink">{s.fullName}</p>
+          {s.behind && <Badge tone="rose">{t("behind")}</Badge>}
+        </div>
+        <p className="mt-0.5 truncate text-note text-ink-faint">{tRel(s.lastActiveAt)}</p>
+      </div>
+      <div className="hidden min-w-0 flex-1 sm:block">
+        <div className="flex items-center gap-2">
+          <ProgressBar value={s.overallPct} className="flex-1" />
+          <span className="w-9 shrink-0 text-right text-[12px] font-semibold tabular-nums text-ink-soft">{s.overallPct}%</span>
+        </div>
+      </div>
+      <div className="hidden w-14 shrink-0 text-right sm:block">
+        <span className="text-[12px] text-ink-faint">{t("quiz")}</span>
+        <p className="text-[13px] font-bold tabular-nums text-ink">{s.avgQuizScore === null ? "—" : `${s.avgQuizScore}%`}</p>
+      </div>
+      <div className="w-14 shrink-0 text-right">
+        <span className="text-[12px] text-ink-faint">{t("att")}</span>
+        <p className={cls("text-[13px] font-bold tabular-nums", lowAtt ? "text-rose" : "text-ink")}>{s.attendancePct === null ? "—" : `${s.attendancePct}%`}</p>
+      </div>
+      <Icon icon={ChevronRight} size={16} className="shrink-0 text-ink-faint" />
+    </button>
+  );
+}
+
 function StudentsTab({ group }: { group: TeachGroup }) {
   const { t } = useTranslation(undefined, { keyPrefix: "groupProfile" });
   const navigate = useNavigate();
+  const locale = useLocale();
+
+  const relTime = (iso: string | null) => {
+    if (!iso) return t("neverActive");
+    const days = Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
+    if (days <= 0) return t("activeToday");
+    if (days === 1) return t("activeYesterday");
+    return locale === "ru" ? `${days} дн. назад` : `${days} kun oldin`;
+  };
 
   if (group.students.length === 0) {
-    return <Card><p className="py-8 text-center text-[13.5px] text-ink-soft">{t("noStudents")}</p></Card>;
+    return <Card><p className="py-8 text-center text-body text-ink-soft">{t("noStudents")}</p></Card>;
   }
+  // Behind students first, then by progress descending.
+  const sorted = [...group.students].sort((a, b) => Number(b.behind) - Number(a.behind) || b.overallPct - a.overallPct);
   return (
-    <Card className="p-0">
-      <ul>
-        {group.students.map((s, i) => (
-          <li key={s.id}>
-            <button
-              onClick={() => navigate(`/teach/students/${s.id}`)}
-              className={cls("flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-bg", i > 0 && "border-t border-line")}
-            >
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-soft text-[12px] font-bold text-brand-deep">
-                {s.fullName.split(" ").filter(Boolean).slice(0, 2).map((x) => x[0]?.toUpperCase()).join("")}
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-[14px] font-medium text-ink">{s.fullName}</p>
-                <p className="truncate text-[12px] text-ink-faint">{s.email}</p>
-              </div>
-              <Icon icon={ChevronRight} size={16} className="shrink-0 text-ink-faint" />
-            </button>
-          </li>
-        ))}
-      </ul>
+    <Card className="divide-y divide-line p-0">
+      {sorted.map((s) => (
+        <StudentRow key={s.id} s={s} onClick={() => navigate(`/teach/students/${s.id}`)} tRel={relTime} />
+      ))}
     </Card>
   );
 }
@@ -127,6 +180,9 @@ export function GroupProfile() {
                   ))}
                 </div>
               </div>
+
+              {/* Group metrics */}
+              <GroupStats group={group} />
 
               {/* Tabs */}
               <div className="mt-6 flex gap-1 overflow-x-auto border-b border-line">
