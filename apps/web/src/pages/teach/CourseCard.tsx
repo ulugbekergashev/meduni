@@ -24,7 +24,7 @@ export function CourseCard({ course, avgProgress }: { course: TeachCourse; avgPr
       <div className="flex flex-wrap gap-1.5 text-[12px]">
         <span className="rounded-pill bg-brand-soft px-2 py-0.5 font-semibold text-brand-deep">{t("semesterN", { n: course.semester })}</span>
         {course.groups.map((g) => (
-          <span key={g.id} className="rounded-pill bg-slate-100 px-2 py-0.5 text-ink-soft">{g.name}</span>
+          <span key={g.id} className="rounded-pill bg-bg px-2 py-0.5 text-ink-soft">{g.name}</span>
         ))}
       </div>
       <div className="mt-auto space-y-1.5 pt-1">

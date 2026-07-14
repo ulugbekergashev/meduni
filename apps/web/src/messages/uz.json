@@ -25,6 +25,11 @@
     "settings": "Sozlamalar",
     "logout": "Chiqish"
   },
+  "theme": {
+    "label": "Mavzu (rang)",
+    "light": "Yorugʻ",
+    "dark": "Tungi"
+  },
   "tasks": {
     "myTasks": "Mening vazifalarim",
     "myTasksHint": "Bajarilishi kerak bo'lgan ishlar",

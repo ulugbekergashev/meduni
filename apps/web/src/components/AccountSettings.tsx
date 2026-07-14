@@ -7,6 +7,7 @@ import { Button, Card, Icon, Spinner, cls, useToast } from "@meduni/ui";
 import { ApiError, api } from "../lib/api";
 import { useLocale } from "../lib/useLocale";
 import { useLogout } from "../lib/auth";
+import { ThemeToggle } from "./ThemeToggle";
 
 interface Account {
   fullName: string;
@@ -122,6 +123,8 @@ export function AccountSettings() {
               </div>
               <p className="mt-1 text-[11.5px] text-ink-faint">{t("languageHint")}</p>
             </div>
+
+            <ThemeToggle />
 
             <div className="space-y-2 border-t border-line pt-4">
               <p className="text-[12.5px] font-semibold text-ink-soft">{t("changePassword")}</p>

@@ -4,8 +4,12 @@ import { BrowserRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ToastProvider } from "@meduni/ui";
 import { App } from "./App";
+import { applyTheme, getTheme } from "./lib/theme";
 import "./lib/i18n";
 import "./index.css";
+
+// Apply the saved/OS theme before first paint (avoids a flash).
+applyTheme(getTheme());
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { refetchOnWindowFocus: false } },

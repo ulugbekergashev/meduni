@@ -7,6 +7,7 @@ import { Button, Card, Icon, Spinner, cls, useToast } from "@meduni/ui";
 import { ApiError } from "../../lib/api";
 import { useLocale } from "../../lib/useLocale";
 import { useLogout } from "../../lib/auth";
+import { ThemeToggle } from "../../components/ThemeToggle";
 import { useChangePassword, useMyProfile, useSetLocale } from "./api";
 
 function Row({ icon, label, value }: { icon: typeof Mail; label: string; value: string }) {
@@ -128,6 +129,9 @@ export function ProfilePage() {
                 ))}
               </div>
             </div>
+
+            {/* Theme */}
+            <ThemeToggle />
 
             {/* Password */}
             <div className="space-y-2">
