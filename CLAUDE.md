@@ -521,6 +521,27 @@ Barcha modullar tugadi (1-17).
   bajarildi→1/1, o'qituvchi→guruh fan-out 6 talaba→1/6, begona guruh/vazifa→403,
   talaba yarata olmaydi→403; tsc+build toza.
 
+- **Modul 19 — UX: lug'at o'chirildi · global qidiruv · diagrammalar · boy profillar
+  (tayyor).** (A) **Lug'at BUTUNLAY olib tashlandi** (foydalanuvchi qarori): nav/route/
+  sahifalar, glossaryRouter, `modules/admin/glossary.ts`, va **barcha 5 AI generatsiya
+  joyidan** glossaryBlock injektsiyasi. `ai/glossary.ts`da faqat `departmentForTopic`
+  qoldi (kvota/AiUsage). Prisma `Glossary` jadvali bazada qoladi (kod ishlatmaydi).
+  (B) **Global qidiruv (tepada sticky, 3 rol):** `modules/search/service.ts` —
+  `teacherSearch` (O'Z talaba/guruh/kursi — enrollment/courseGroup/teacherId scoping),
+  `adminSearch` (butun universitet), `studentSearch` (o'z kurs+published mavzular);
+  route'lar `/teach|/admin|/me` + `/search`. `packages/ui/SidebarLayout` ga `headerSlot`,
+  `components/GlobalSearch.tsx` (Ctrl+K, 300ms debounce, kategoriyalangan dropdown,
+  klik→profil). Wizard stepper `top-[57px]`ga tushdi. (C) **Bosh sahifa (o'qituvchi)
+  redizayn:** yangi `packages/ui/Charts.tsx` (ProgressRing/ProgressBar/BarRow/StackedBar
+  — sof SVG, token-rangli, dark-mode). TeachDashboard: 4 tez-o'tish kartasi + ANALITIKA
+  (3 ring + kurs BarRow'lar + **bosiladigan** guruh chiplari). Backend `getTeacherDashboard`
+  `stats.groupList {id,name}[]`. (D) **Guruh profili:** `getTeacherGroup` buildMatrix
+  reuse → per-student overallPct/avgQuizScore/attendancePct/lastActiveAt/behind + guruh
+  agregatlari; UI 4 metrik-karta + boy talaba qatorlari (bar/pill/badge, orqada qolganlar
+  tepada). (E) **Talaba profili:** hero ProgressRing + davomat StackedBar + per-topic
+  pct bar + baholanmagan keysга "Baholash→". **Tekshirildi (e2e):** 3 rol qidiruv +
+  ownership/403, guruh payload matritsa bilan mos (avgProgress 17/behind 1); tsc+build toza.
+
 ---
 
 ## 9. Loyiha holati va ishga tushirish (operatsion — sessiya 0)
