@@ -14,7 +14,9 @@ import {
 } from "lucide-react";
 import { Card, Icon, Spinner } from "@meduni/ui";
 import { TaskCard } from "../../components/TaskCard";
-import { useTeachTasks } from "./api";
+import { AssignedTaskList } from "../../components/AssignedTaskList";
+import { useLocale } from "../../lib/useLocale";
+import { useSetTaskDone, useTeachTasks } from "./api";
 
 const META: Record<string, { icon: LucideIcon; labelKey: string }> = {
   cases_review: { icon: ClipboardCheck, labelKey: "casesReview" },
@@ -30,13 +32,24 @@ const META: Record<string, { icon: LucideIcon; labelKey: string }> = {
 export function TeachTasksPage() {
   const { t } = useTranslation(undefined, { keyPrefix: "tasks" });
   const navigate = useNavigate();
+  const locale = useLocale();
   const q = useTeachTasks();
+  const done = useSetTaskDone();
   const auto = q.data?.auto ?? [];
+  const assigned = q.data?.assigned ?? [];
 
   return (
     <div>
       <h1 className="text-h1 font-bold text-ink">{t("myTasks")}</h1>
       <p className="mt-0.5 text-note text-ink-faint">{t("myTasksHint")}</p>
+
+      {/* Department assignments (from admin) */}
+      {assigned.length > 0 && (
+        <section className="mt-6">
+          <h2 className="mb-3 text-section font-bold text-ink">{t("assignedSection")}</h2>
+          <AssignedTaskList items={assigned} onDone={(id) => done.mutate(id)} pendingId={done.isPending ? (done.variables as number) : null} locale={locale} />
+        </section>
+      )}
 
       <section className="mt-6">
         <h2 className="mb-3 text-section font-bold text-ink">{t("autoSection")}</h2>

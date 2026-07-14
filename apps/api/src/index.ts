@@ -14,6 +14,7 @@ import { generateRouter, contentRouter, presentationsRouter, videosRouter } from
 import { meRouter } from "./modules/me/router";
 import { accountRouter } from "./modules/account/router";
 import { glossaryRouter, templatesRouter, adminRouter } from "./modules/admin/router";
+import { tasksRouter } from "./modules/tasks/router";
 
 const app = express();
 
@@ -29,6 +30,7 @@ app.use("/auth", authRouter);
 // intercept /api/v1/teach/* and 403 teachers before they reach their router.
 app.use("/api/v1/me", meRouter);
 app.use("/api/v1/account", accountRouter);
+app.use("/api/v1/tasks", tasksRouter);
 app.use("/api/v1/teach", teachCoursesRouter);
 app.use("/api/v1/topics", topicsRouter);
 app.use("/api/v1/topics", generateRouter);

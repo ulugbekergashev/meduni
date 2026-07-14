@@ -5,7 +5,7 @@ import * as svc from "./service";
 import * as progress from "./progress";
 import * as review from "./review";
 import * as attendance from "./attendance";
-import { computeTeacherAutoTasks } from "../tasks/service";
+import { computeTeacherAutoTasks, listAssigned } from "../tasks/service";
 
 export const teachCoursesRouter = Router();
 teachCoursesRouter.use(requireRoles("TEACHER"));
@@ -30,7 +30,10 @@ teachCoursesRouter.get(
 // My Tasks hub — auto-derived tasks (assigned tasks added in Phase 2).
 teachCoursesRouter.get(
   "/tasks",
-  wrap(async (req, res) => res.json({ auto: await computeTeacherAutoTasks(req.user!.id), assigned: [] }))
+  wrap(async (req, res) => {
+    const [auto, assigned] = await Promise.all([computeTeacherAutoTasks(req.user!.id), listAssigned(req.user!.id)]);
+    res.json({ auto, assigned });
+  })
 );
 
 // Own courses only.

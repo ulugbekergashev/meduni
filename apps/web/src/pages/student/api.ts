@@ -84,13 +84,31 @@ export interface AutoTask {
   tone: TaskTone;
   link: string;
 }
+export interface AssignedTask {
+  id: number;
+  title: string;
+  description: string | null;
+  dueDate: string | null;
+  priority: "LOW" | "NORMAL" | "HIGH";
+  createdByName: string;
+  createdAt: string;
+  linkUrl: string | null;
+}
 export interface TasksInbox {
   auto: AutoTask[];
-  assigned: unknown[];
+  assigned: AssignedTask[];
 }
 
 export function useMyTasks() {
   return useQuery({ queryKey: ["me-tasks"], queryFn: () => api<TasksInbox>("/api/v1/me/tasks") });
+}
+
+export function useSetMyTaskDone() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => api(`/api/v1/tasks/${id}`, { method: "PATCH", body: JSON.stringify({ done: true }) }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["me-tasks"] }),
+  });
 }
 
 export function useMyCourse(id: number) {
