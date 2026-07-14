@@ -280,6 +280,44 @@ export function useSetTaskDone() {
   });
 }
 
+// Assignments the teacher created for students/groups.
+export interface CreatedTaskGroup {
+  key: string;
+  title: string;
+  description: string | null;
+  dueDate: string | null;
+  createdAt: string;
+  total: number;
+  done: number;
+  assignees: string[];
+  taskIds: number[];
+}
+export function useMyCreatedTasks() {
+  return useQuery({ queryKey: ["teach-created-tasks"], queryFn: () => api<CreatedTaskGroup[]>("/api/v1/tasks/created") });
+}
+
+export interface AssignTaskBody {
+  title: string;
+  description?: string;
+  dueDate?: string | null;
+  studentId?: number;
+  groupId?: number;
+}
+export function useAssignTask() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: AssignTaskBody) => api<{ count: number }>("/api/v1/tasks", { method: "POST", body: JSON.stringify(body) }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["teach-created-tasks"] }),
+  });
+}
+export function useDeleteMyTask() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => api(`/api/v1/tasks/${id}`, { method: "DELETE" }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["teach-created-tasks"] }),
+  });
+}
+
 // ---------------- Case review queue (Module 14) ----------------
 
 export type ReviewStatus = "PENDING" | "REVIEWED";
