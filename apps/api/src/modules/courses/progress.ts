@@ -369,6 +369,7 @@ export async function getTeacherDashboard(teacherId: number) {
       casesReviewed,
       avgProgress,
       avgAttendance,
+      groupList: [...groupMap.entries()].map(([id, name]) => ({ id, name })),
     },
     upcomingSessions: upcoming.map((s) => ({
       id: s.id,

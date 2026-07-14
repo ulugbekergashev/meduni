@@ -1,28 +1,38 @@
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { BookOpen, CalendarCheck, CalendarDays, CheckCircle2, ClipboardCheck, FileClock, FileStack, Layers, TrendingUp, Users, UserX, Users2 } from "lucide-react";
-import { Card, Icon, Spinner } from "@meduni/ui";
+import {
+  BookOpen,
+  CalendarDays,
+  CheckCircle2,
+  ClipboardCheck,
+  FileClock,
+  ListChecks,
+  Users2,
+  UserX,
+  type LucideIcon,
+} from "lucide-react";
+import { BarRow, Card, Icon, ProgressRing, Spinner } from "@meduni/ui";
 import { AsyncSection } from "../../components/AsyncSection";
 import { pickName, useLocale } from "../../lib/useLocale";
 import { useMe } from "../../lib/auth";
 import { useTeachCourses, useTeachDashboard } from "./api";
 import { CourseCard } from "./CourseCard";
 
-function StatTile({ icon, value, label, tone }: { icon: typeof Users; value: string | number; label: string; tone: string }) {
+function QuickAction({ icon, label, tone, onClick }: { icon: LucideIcon; label: string; tone: string; onClick: () => void }) {
   return (
-    <div className="flex items-center gap-3 rounded-card border border-line bg-surface p-3.5">
+    <button
+      onClick={onClick}
+      className="flex items-center gap-3 rounded-card border border-line bg-surface p-3.5 text-left transition-all hover:-translate-y-0.5 hover:shadow-sm"
+    >
       <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${tone}`}>
         <Icon icon={icon} size={18} />
       </div>
-      <div className="min-w-0">
-        <p className="text-[22px] font-bold leading-none tabular-nums text-ink">{value}</p>
-        <p className="mt-0.5 truncate text-[12px] text-ink-soft">{label}</p>
-      </div>
-    </div>
+      <span className="text-body font-semibold text-ink">{label}</span>
+    </button>
   );
 }
 
-function TaskRow({ icon, tone, count, label, onClick }: { icon: typeof ClipboardCheck; tone: string; count: number; label: string; onClick?: () => void }) {
+function TaskRow({ icon, tone, count, label, onClick }: { icon: LucideIcon; tone: string; count: number; label: string; onClick?: () => void }) {
   return (
     <button
       onClick={onClick}
@@ -32,9 +42,21 @@ function TaskRow({ icon, tone, count, label, onClick }: { icon: typeof Clipboard
       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/60">
         <Icon icon={icon} size={17} />
       </div>
-      <span className="text-[26px] font-bold tabular-nums leading-none">{count}</span>
-      <span className="text-[13.5px] font-medium">{label}</span>
+      <span className="text-[24px] font-bold tabular-nums leading-none">{count}</span>
+      <span className="text-body font-medium">{label}</span>
     </button>
+  );
+}
+
+function MetricCard({ ring, tone, label, sublabel }: { ring: number; tone: "brand" | "blue" | "emerald"; label: string; sublabel?: string }) {
+  return (
+    <Card className="flex items-center gap-4">
+      <ProgressRing value={ring} tone={tone} />
+      <div className="min-w-0">
+        <p className="text-body font-semibold text-ink">{label}</p>
+        {sublabel && <p className="mt-0.5 text-note text-ink-faint">{sublabel}</p>}
+      </div>
+    </Card>
   );
 }
 
@@ -47,19 +69,29 @@ export function TeachDashboard() {
   const list = useTeachCourses();
   const courses = list.data ?? [];
   const tasks = dash.data?.tasks;
+  const stats = dash.data?.stats;
   const today = new Date().toLocaleDateString(locale === "ru" ? "ru-RU" : "uz-UZ", { day: "numeric", month: "long", year: "numeric" });
   const firstCourseId = courses[0]?.id;
   const noTasks = tasks && tasks.casesToReview === 0 && tasks.contentToApprove === 0 && tasks.studentsBehind === 0;
+  const publishedPct = stats && stats.totalTopics > 0 ? Math.round((stats.publishedTopics / stats.totalTopics) * 100) : 0;
 
   return (
     <div>
       <h1 className="text-h1 font-bold text-ink">
         {t("hello")}, {me?.full_name?.split(" ")[0]}
       </h1>
-      <p className="mt-0.5 text-[13px] text-ink-faint">{today}</p>
+      <p className="mt-0.5 text-note text-ink-faint">{today}</p>
+
+      {/* Quick actions */}
+      <div className="mt-5 grid gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
+        <QuickAction icon={ListChecks} label={t("qaTasks")} tone="bg-brand-soft text-brand-deep" onClick={() => navigate("/teach/tasks")} />
+        <QuickAction icon={ClipboardCheck} label={t("qaReview")} tone="bg-amber-soft text-amber" onClick={() => navigate("/teach/cases/review")} />
+        <QuickAction icon={BookOpen} label={t("qaCourses")} tone="bg-blue-soft text-blue" onClick={() => navigate("/teach/courses")} />
+        <QuickAction icon={Users2} label={t("qaGroups")} tone="bg-violet-soft text-violet" onClick={() => navigate("/teach/groups")} />
+      </div>
 
       {/* Tasks */}
-      <section className="mt-6">
+      <section className="mt-8">
         <h2 className="mb-3 text-section font-bold text-ink">{t("tasks")}</h2>
         {dash.isLoading ? (
           <div className="flex h-24 items-center justify-center"><Spinner size={22} /></div>
@@ -71,33 +103,53 @@ export function TeachDashboard() {
         ) : (
           <div className="grid gap-2.5 sm:grid-cols-3">
             <TaskRow icon={ClipboardCheck} tone="border-amber/30 bg-amber-soft text-amber" count={tasks?.casesToReview ?? 0} label={t("casesToReview")} onClick={() => navigate("/teach/cases/review")} />
-            <TaskRow icon={FileClock} tone="border-blue/30 bg-blue-soft text-blue" count={tasks?.contentToApprove ?? 0} label={t("contentToApprove")} onClick={firstCourseId ? () => navigate(`/teach/courses/${firstCourseId}/topics`) : undefined} />
+            <TaskRow icon={FileClock} tone="border-blue/30 bg-blue-soft text-blue" count={tasks?.contentToApprove ?? 0} label={t("contentToApprove")} onClick={() => navigate("/teach/tasks")} />
             <TaskRow icon={UserX} tone="border-rose/30 bg-rose-soft text-rose" count={tasks?.studentsBehind ?? 0} label={t("studentsBehind")} onClick={firstCourseId ? () => navigate(`/teach/courses/${firstCourseId}/progress`) : undefined} />
           </div>
         )}
       </section>
 
-      {/* My statistics */}
-      {dash.data?.stats && (
+      {/* Analytics */}
+      {stats && (
         <section className="mt-8">
-          <h2 className="mb-3 text-section font-bold text-ink">{t("myStats")}</h2>
-          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4">
-            <StatTile icon={Users} value={dash.data.stats.students} label={t("statStudents")} tone="bg-blue-soft text-blue" />
-            <StatTile icon={Layers} value={`${dash.data.stats.publishedTopics}/${dash.data.stats.totalTopics}`} label={t("statTopics")} tone="bg-emerald-soft text-emerald" />
-            <StatTile icon={FileStack} value={dash.data.stats.publishedContent} label={t("statContent")} tone="bg-violet-soft text-violet" />
-            <StatTile icon={ClipboardCheck} value={dash.data.stats.casesReviewed} label={t("statReviewed")} tone="bg-amber-soft text-amber" />
-            <StatTile icon={TrendingUp} value={`${dash.data.stats.avgProgress}%`} label={t("statAvgProgress")} tone="bg-brand-soft text-brand-deep" />
-            <StatTile icon={CalendarCheck} value={dash.data.stats.avgAttendance !== null ? `${dash.data.stats.avgAttendance}%` : "—"} label={t("statAttendance")} tone="bg-blue-soft text-blue" />
+          <h2 className="mb-3 text-section font-bold text-ink">{t("analytics")}</h2>
+          <div className="grid gap-2.5 lg:grid-cols-3">
+            <MetricCard ring={stats.avgProgress} tone="brand" label={t("statAvgProgress")} sublabel={t("statStudentsN", { n: stats.students })} />
+            <MetricCard ring={stats.avgAttendance ?? 0} tone="blue" label={t("statAttendance")} sublabel={stats.avgAttendance === null ? "—" : undefined} />
+            <MetricCard ring={publishedPct} tone="emerald" label={t("statTopics")} sublabel={`${stats.publishedTopics}/${stats.totalTopics}`} />
           </div>
 
-          {/* Groups taught */}
-          {dash.data.stats.groups.length > 0 && (
+          {/* Per-course progress bars */}
+          {dash.data && dash.data.courses.length > 0 && (
+            <Card className="mt-2.5">
+              <p className="mb-2 text-[12.5px] font-semibold text-ink-soft">{t("byCourse")}</p>
+              <div className="space-y-0.5">
+                {dash.data.courses.map((c) => (
+                  <BarRow
+                    key={c.id}
+                    label={pickName(locale, c.subjectNameUz, c.subjectNameRu)}
+                    value={c.avgProgress}
+                    onClick={() => navigate(`/teach/courses/${c.id}/progress`)}
+                  />
+                ))}
+              </div>
+            </Card>
+          )}
+
+          {/* Clickable group chips */}
+          {stats.groupList.length > 0 && (
             <div className="mt-3 flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-ink-soft">
+              <span className="inline-flex items-center gap-1.5 text-note font-semibold text-ink-soft">
                 <Icon icon={Users2} size={15} /> {t("myGroups")}:
               </span>
-              {dash.data.stats.groups.map((g) => (
-                <span key={g} className="rounded-pill bg-bg px-2.5 py-0.5 text-[12.5px] font-medium text-ink-soft">{g}</span>
+              {stats.groupList.map((g) => (
+                <button
+                  key={g.id}
+                  onClick={() => navigate(`/teach/groups/${g.id}`)}
+                  className="rounded-pill bg-bg px-2.5 py-0.5 text-note font-medium text-ink-soft transition-colors hover:bg-brand-soft hover:text-brand-deep"
+                >
+                  {g.name}
+                </button>
               ))}
             </div>
           )}
@@ -115,21 +167,21 @@ export function TeachDashboard() {
                   <Icon icon={CalendarDays} size={18} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-[13.5px] font-semibold text-ink">{s.title ?? pickName(locale, s.subjectNameUz, s.subjectNameRu)}</p>
-                  <p className="truncate text-[12px] text-ink-faint">{pickName(locale, s.subjectNameUz, s.subjectNameRu)}{s.room ? ` · ${s.room}` : ""}</p>
+                  <p className="truncate text-body font-semibold text-ink">{s.title ?? pickName(locale, s.subjectNameUz, s.subjectNameRu)}</p>
+                  <p className="truncate text-note text-ink-faint">{pickName(locale, s.subjectNameUz, s.subjectNameRu)}{s.room ? ` · ${s.room}` : ""}</p>
                 </div>
-                <span className="shrink-0 text-[12.5px] font-medium text-ink-soft">{new Date(s.date).toLocaleDateString(locale === "ru" ? "ru-RU" : "uz-UZ", { day: "2-digit", month: "short" })}</span>
+                <span className="shrink-0 text-note font-medium text-ink-soft">{new Date(s.date).toLocaleDateString(locale === "ru" ? "ru-RU" : "uz-UZ", { day: "2-digit", month: "short" })}</span>
               </button>
             ))}
           </div>
         </section>
       )}
 
-      {/* Courses preview (full list lives in the Courses module) */}
+      {/* Courses preview */}
       <section className="mt-8">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-section font-bold text-ink">{t("myCourses")}</h2>
-          <button onClick={() => navigate("/teach/courses")} className="text-[13px] font-semibold text-brand-deep hover:underline">{t("seeAll")} →</button>
+          <button onClick={() => navigate("/teach/courses")} className="text-body font-semibold text-brand-deep hover:underline">{t("seeAll")} →</button>
         </div>
         <AsyncSection
           isLoading={list.isLoading}
