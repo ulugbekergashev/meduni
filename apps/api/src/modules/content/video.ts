@@ -9,7 +9,7 @@ import { readFileBuffer, saveBytes } from "../../lib/storage";
 import { FFMPEG, run } from "../../lib/exec";
 import { generateImage, generateSpeech, generateStructured } from "../../ai/gemini";
 import { assertQuota } from "../../ai/quota";
-import { departmentForTopic, getGlossaryForDepartment, glossaryBlock } from "../../ai/glossary";
+import { departmentForTopic } from "../../ai/glossary";
 import { imagePromptForVisual } from "../../ai/prompts/images";
 import {
   lectureScriptGenSchema,
@@ -285,9 +285,8 @@ async function stageScript(videoId: number) {
   const slideTitles = ((presContent?.presentation?.slidesJson as unknown as Slide[]) ?? []).map((s) => s.title).filter(Boolean);
 
   const departmentId = await departmentForTopic(topicId);
-  const glossary = glossaryBlock(await getGlossaryForDepartment(departmentId));
   const gen = await generateStructured<LectureScriptGen>({
-    systemInstruction: videoScriptSystemPrompt(v.language) + glossary,
+    systemInstruction: videoScriptSystemPrompt(v.language),
     userContent: videoScriptUserContent(digest, slideTitles),
     responseSchema: videoScriptResponseSchema,
     kind: "VIDEO",

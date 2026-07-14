@@ -7,7 +7,7 @@ import { ApiError, notFound } from "../../lib/errors";
 import { readFileBuffer, saveBytes } from "../../lib/storage";
 import { generateImage, generateStructured } from "../../ai/gemini";
 import { assertQuota } from "../../ai/quota";
-import { departmentForTopic, getGlossaryForDepartment, glossaryBlock } from "../../ai/glossary";
+import { departmentForTopic } from "../../ai/glossary";
 import { slidesGenSchema, slidesResponseSchema, type DigestJson, type Slide, type SlidesGen } from "../../ai/types";
 import { slidesSystemPrompt, slidesUserContent } from "../../ai/prompts/slides";
 import { imagePromptForSlide } from "../../ai/prompts/images";
@@ -57,10 +57,9 @@ export async function generatePresentation(
 
   const departmentId = await departmentForTopic(topicId);
   await assertQuota(departmentId);
-  const glossary = glossaryBlock(await getGlossaryForDepartment(departmentId));
 
   const gen = await generateStructured<SlidesGen>({
-    systemInstruction: slidesSystemPrompt(opts.language) + glossary,
+    systemInstruction: slidesSystemPrompt(opts.language),
     userContent: slidesUserContent(digest),
     responseSchema: slidesResponseSchema,
     kind: "SLIDES",

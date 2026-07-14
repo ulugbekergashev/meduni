@@ -14,7 +14,6 @@ import { UsersPage } from "./pages/admin/users/UsersPage";
 import { UserProfilePage } from "./pages/admin/users/UserProfilePage";
 import { CoursesPage } from "./pages/admin/courses/CoursesPage";
 import { CourseDetail } from "./pages/admin/courses/CourseDetail";
-import { GlossaryPage } from "./pages/admin/glossary/GlossaryPage";
 import { TemplatesPage } from "./pages/admin/templates/TemplatesPage";
 import { AiMonitoringPage } from "./pages/admin/ai/AiMonitoringPage";
 import { AuditPage } from "./pages/admin/audit/AuditPage";
@@ -35,7 +34,6 @@ import { SettingsTab } from "./pages/teach/course/SettingsTab";
 import { TopicConstructor } from "./pages/teach/topics/TopicConstructor";
 import { ContentEditor } from "./pages/teach/content/ContentEditor";
 import { CaseReviewQueue } from "./pages/teach/CaseReviewQueue";
-import { TeachGlossaryPage } from "./pages/teach/glossary/TeachGlossaryPage";
 import { StudentShell } from "./pages/student/StudentShell";
 import { StudentDashboard } from "./pages/student/StudentDashboard";
 import { StudentTasksPage } from "./pages/student/StudentTasksPage";
@@ -71,7 +69,6 @@ export function App() {
         <Route path="courses" element={<CoursesPage />} />
         <Route path="courses/:id" element={<CourseDetail />} />
         <Route path="tasks" element={<AdminTasksPage />} />
-        <Route path="glossary" element={<GlossaryPage />} />
         <Route path="templates" element={<TemplatesPage />} />
         <Route path="ai" element={<AiMonitoringPage />} />
         <Route path="audit" element={<AuditPage />} />
@@ -106,7 +103,6 @@ export function App() {
         <Route path="topics/:id" element={<TopicConstructor />} />
         <Route path="content/:id" element={<ContentEditor />} />
         <Route path="cases/review" element={<CaseReviewQueue />} />
-        <Route path="glossary" element={<TeachGlossaryPage />} />
         <Route path="settings" element={<AccountSettings />} />
       </Route>
 
