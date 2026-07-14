@@ -202,7 +202,9 @@
       "IN_PROGRESS": "Jarayonda",
       "AVAILABLE": "Ochiq",
       "LOCKED": "Yopiq"
-    }
+    },
+    "topicsDone": "mavzu",
+    "gradeNow": "Baholash"
   },
   "journal": {
     "hint": "Katakni bosing — yoʻqlama va baho qoʻying.",
