@@ -6,6 +6,7 @@ import * as progress from "./progress";
 import * as review from "./review";
 import * as attendance from "./attendance";
 import { computeTeacherAutoTasks, listAssigned } from "../tasks/service";
+import { teacherSearch } from "../search/service";
 
 export const teachCoursesRouter = Router();
 teachCoursesRouter.use(requireRoles("TEACHER"));
@@ -25,6 +26,12 @@ function parseId(raw: string): number {
 teachCoursesRouter.get(
   "/dashboard",
   wrap(async (req, res) => res.json(await progress.getTeacherDashboard(req.user!.id)))
+);
+
+// Global top-bar search (own students/groups/courses only).
+teachCoursesRouter.get(
+  "/search",
+  wrap(async (req, res) => res.json(await teacherSearch(req.user!.id, typeof req.query.q === "string" ? req.query.q : "")))
 );
 
 // My Tasks hub — auto-derived tasks (assigned tasks added in Phase 2).

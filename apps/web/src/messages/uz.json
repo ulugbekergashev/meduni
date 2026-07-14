@@ -1064,5 +1064,18 @@
     "submitCaseTitle": "Javobni topshirasizmi?",
     "submitCaseConfirm": "Topshirgach etalon javob koʻrsatiladi va oʻzgartirib boʻlmaydi.",
     "submitted": "Topshirildi"
+  },
+  "search": {
+    "placeholder": "Qidirish… (talaba, guruh, kurs)",
+    "searching": "Qidirilmoqda…",
+    "empty": "Hech narsa topilmadi",
+    "error": "Qidiruv xatosi, qayta urining",
+    "sections": {
+      "students": "Talabalar",
+      "teachers": "O‘qituvchilar",
+      "groups": "Guruhlar",
+      "courses": "Kurslar",
+      "topics": "Mavzular"
+    }
   }
 }
