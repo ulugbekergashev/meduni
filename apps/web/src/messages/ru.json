@@ -143,7 +143,17 @@
       "journal": "Журнал",
       "sessions": "Занятия",
       "report": "Отчёт"
-    }
+    },
+    "avgProgress": "Ср. прогресс",
+    "avgAttendance": "Ср. посещаемость",
+    "behindCount": "Отстают",
+    "studentsCount": "Студенты",
+    "behind": "Отстаёт",
+    "quiz": "Тест",
+    "att": "Посещ.",
+    "neverActive": "Нет активности",
+    "activeToday": "Активен сегодня",
+    "activeYesterday": "Был вчера"
   },
   "courseGroups": {
     "subtitle": "В каких группах ведётся этот курс. Нажмите на группу — её профиль (студенты, журнал, посещаемость).",

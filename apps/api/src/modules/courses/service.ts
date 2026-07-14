@@ -1,6 +1,8 @@
 import type { Prisma } from "../../lib/prisma";
 import { prisma } from "../../lib/prisma";
 import { ApiError, badRequest, notFound } from "../../lib/errors";
+import { buildMatrix } from "./progress";
+import { loadCourse } from "../me/service";
 
 const courseInclude = {
   subject: { include: { department: true } },
@@ -227,6 +229,63 @@ export async function getTeacherGroup(groupId: number, teacherId: number) {
     select: { id: true, fullName: true, email: true },
     orderBy: { fullName: "asc" },
   });
+  const studentIds = students.map((s) => s.id);
+  const courseIds = cgs.map((cg) => cg.course.id);
+
+  // Per-student metrics across this teacher's courses for the group (reuses the
+  // same matrix the progress heatmap builds), keyed to this group's students only.
+  const metric = new Map<number, { pcts: number[]; quiz: number[]; last: number; behind: boolean }>();
+  for (const s of students) metric.set(s.id, { pcts: [], quiz: [], last: 0, behind: false });
+  for (const cid of courseIds) {
+    const loaded = await loadCourse(cid).catch(() => null);
+    if (!loaded) continue;
+    const { students: rows } = await buildMatrix(loaded);
+    for (const r of rows) {
+      const m = metric.get(r.id);
+      if (!m) continue; // student from another group on the same course — skip
+      m.pcts.push(r.overallPct);
+      if (r.avgQuizScore !== null) m.quiz.push(r.avgQuizScore);
+      if (r.lastActiveAt) m.last = Math.max(m.last, new Date(r.lastActiveAt).getTime());
+      if (r.behind) m.behind = true;
+    }
+  }
+
+  // Attendance % per student across the group's (teacher-course) sessions.
+  const attRows = studentIds.length
+    ? await prisma.attendance.groupBy({
+        by: ["studentId", "status"],
+        where: { studentId: { in: studentIds }, session: { courseId: { in: courseIds } } },
+        _count: true,
+      })
+    : [];
+  const att = new Map<number, { hit: number; marked: number }>();
+  for (const s of students) att.set(s.id, { hit: 0, marked: 0 });
+  for (const a of attRows) {
+    const x = att.get(a.studentId);
+    if (!x) continue;
+    x.marked += a._count;
+    if (a.status === "PRESENT" || a.status === "LATE") x.hit += a._count;
+  }
+
+  const studentsOut = students.map((s) => {
+    const m = metric.get(s.id)!;
+    const a = att.get(s.id)!;
+    return {
+      id: s.id,
+      fullName: s.fullName,
+      email: s.email,
+      overallPct: m.pcts.length ? Math.round(m.pcts.reduce((x, y) => x + y, 0) / m.pcts.length) : 0,
+      avgQuizScore: m.quiz.length ? Math.round(m.quiz.reduce((x, y) => x + y, 0) / m.quiz.length) : null,
+      attendancePct: a.marked ? Math.round((a.hit / a.marked) * 100) : null,
+      lastActiveAt: m.last ? new Date(m.last).toISOString() : null,
+      behind: m.behind,
+    };
+  });
+
+  const avgProgress = studentsOut.length ? Math.round(studentsOut.reduce((a, s) => a + s.overallPct, 0) / studentsOut.length) : 0;
+  const attVals = studentsOut.map((s) => s.attendancePct).filter((x): x is number => x !== null);
+  const avgAttendance = attVals.length ? Math.round(attVals.reduce((a, b) => a + b, 0) / attVals.length) : null;
+  const behindCount = studentsOut.filter((s) => s.behind).length;
 
   return {
     id: group.id,
@@ -235,8 +294,11 @@ export async function getTeacherGroup(groupId: number, teacherId: number) {
     facultyNameUz: group.faculty.nameUz,
     facultyNameRu: group.faculty.nameRu,
     courses: cgs.map((cg) => ({ id: cg.course.id, nameUz: cg.course.subject.nameUz, nameRu: cg.course.subject.nameRu })),
-    students,
+    students: studentsOut,
     studentCount: students.length,
+    avgProgress,
+    avgAttendance,
+    behindCount,
   };
 }
 
