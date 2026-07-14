@@ -25,3 +25,31 @@
   --radius-control: 10px;
   --radius-pill: 20px;
 }
+
+/* Dark theme — neutrals inverted, soft tints darkened. Accent bases stay so that
+   `bg-<accent> text-white` chips/buttons keep contrast; only the tints flip. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --bg: #0e141b;
+  --surface: #161d27;
+  --ink: #e6edf3;
+  --ink-soft: #9aa7b6;
+  --ink-faint: #6b7887;
+  --line: #263141;
+
+  --brand: #14b8a6;
+  --brand-soft: #10312c;
+  --brand-deep: #0d9488;
+
+  --blue: #3b82f6;
+  --blue-soft: #16223c;
+  --violet: #8b5cf6;
+  --violet-soft: #21193a;
+  --amber: #e0900f;
+  --amber-soft: #33260f;
+  --rose: #f43f5e;
+  --rose-soft: #341420;
+  --emerald: #10b981;
+  --emerald-soft: #103026;
+}

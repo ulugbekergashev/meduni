@@ -97,7 +97,7 @@ export function TeachDashboard() {
                 <Icon icon={Users2} size={15} /> {t("myGroups")}:
               </span>
               {dash.data.stats.groups.map((g) => (
-                <span key={g} className="rounded-pill bg-slate-100 px-2.5 py-0.5 text-[12.5px] font-medium text-ink-soft">{g}</span>
+                <span key={g} className="rounded-pill bg-bg px-2.5 py-0.5 text-[12.5px] font-medium text-ink-soft">{g}</span>
               ))}
             </div>
           )}

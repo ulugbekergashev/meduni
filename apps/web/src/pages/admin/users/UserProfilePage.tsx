@@ -92,8 +92,8 @@ export function UserProfilePage() {
                             <h3 className="text-[15px] font-bold text-ink">{pickName(locale, c.subjectNameUz, c.subjectNameRu)}</h3>
                             <div className="flex flex-wrap gap-1.5 text-[12px]">
                               <span className="rounded-pill bg-brand-soft px-2 py-0.5 font-semibold text-brand-deep">{c.semester}-semestr</span>
-                              <span className="rounded-pill bg-slate-100 px-2 py-0.5 text-ink-soft">{c.academicYear}</span>
-                              {c.groups.map((g) => <span key={g} className="rounded-pill bg-slate-100 px-2 py-0.5 text-ink-soft">{g}</span>)}
+                              <span className="rounded-pill bg-bg px-2 py-0.5 text-ink-soft">{c.academicYear}</span>
+                              {c.groups.map((g) => <span key={g} className="rounded-pill bg-bg px-2 py-0.5 text-ink-soft">{g}</span>)}
                             </div>
                             <span className="mt-auto flex items-center gap-1.5 text-[12.5px] text-ink-soft"><Icon icon={GraduationCap} size={14} /> {c.studentCount}</span>
                           </Card>

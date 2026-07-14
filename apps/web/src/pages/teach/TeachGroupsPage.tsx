@@ -44,7 +44,7 @@ export function TeachGroupsPage() {
                 </div>
                 <div className="flex flex-wrap gap-1.5">
                   {g.courses.map((c) => (
-                    <span key={c.id} className="rounded-pill bg-slate-100 px-2 py-0.5 text-[12px] text-ink-soft">{pickName(locale, c.nameUz, c.nameRu)}</span>
+                    <span key={c.id} className="rounded-pill bg-bg px-2 py-0.5 text-[12px] text-ink-soft">{pickName(locale, c.nameUz, c.nameRu)}</span>
                   ))}
                 </div>
                 <div className="mt-auto flex items-center gap-1.5 text-[13px] text-ink-soft">
