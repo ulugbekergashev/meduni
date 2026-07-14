@@ -18,8 +18,8 @@ function CheckRow({ ok, label, doHint }: { ok: boolean; label: string; doHint: s
     <div className="flex items-start gap-2">
       <Icon icon={ok ? Check : X} size={16} className={ok ? "mt-0.5 text-emerald" : "mt-0.5 text-rose"} />
       <div>
-        <span className={"text-[13.5px] " + (ok ? "text-ink" : "text-ink-soft")}>{label}</span>
-        {!ok && <p className="text-[12px] text-ink-faint">{doHint}</p>}
+        <span className={"text-body " + (ok ? "text-ink" : "text-ink-soft")}>{label}</span>
+        {!ok && <p className="text-note text-ink-faint">{doHint}</p>}
       </div>
     </div>
   );
@@ -48,7 +48,7 @@ function ContentPublish({ topic, item }: { topic: TopicDetail; item: ContentSumm
       </div>
 
       {published ? (
-        <p className="mt-1 text-[12.5px] text-emerald">
+        <p className="mt-1 text-note text-emerald">
           {t("stamp", {
             name: item.approvedByName ?? "",
             date: item.approvedAt ? new Date(item.approvedAt).toLocaleDateString(locale === "ru" ? "ru" : "uz") : "",
@@ -96,7 +96,7 @@ function ContentPublish({ topic, item }: { topic: TopicDetail; item: ContentSumm
 export function PublishSection({ topic }: { topic: TopicDetail }) {
   const { t } = useTranslation(undefined, { keyPrefix: "factcheck" });
   if (topic.content.length === 0) {
-    return <p className="text-[13.5px] text-ink-soft">{t("needContent")}</p>;
+    return <p className="text-body text-ink-soft">{t("needContent")}</p>;
   }
   return (
     <div className="space-y-3">

@@ -24,7 +24,7 @@ function EditableList({ items, onChange }: { items: string[]; onChange: (next: s
           <input
             value={item}
             onChange={(e) => onChange(items.map((x, j) => (j === i ? e.target.value : x)))}
-            className="w-full rounded-control border border-line px-2.5 py-1.5 text-[13px] outline-none focus:border-brand"
+            className="w-full rounded-control border border-line px-2.5 py-1.5 text-body outline-none focus:border-brand"
           />
           <button
             onClick={() => onChange(items.filter((_, j) => j !== i))}
@@ -37,7 +37,7 @@ function EditableList({ items, onChange }: { items: string[]; onChange: (next: s
       ))}
       <button
         onClick={() => onChange([...items, ""])}
-        className="inline-flex items-center gap-1 text-[12.5px] font-medium text-brand-deep hover:underline"
+        className="inline-flex items-center gap-1 text-note font-medium text-brand-deep hover:underline"
       >
         <Icon icon={Plus} size={13} /> {t("addItem")}
       </button>
@@ -49,7 +49,7 @@ function TermsTable({ terms, onChange }: { terms: Term[]; onChange: (next: Term[
   const { t } = useTranslation(undefined, { keyPrefix: "digest" });
   const set = (i: number, key: keyof Term, val: string) =>
     onChange(terms.map((tm, j) => (j === i ? { ...tm, [key]: val } : tm)));
-  const cell = "w-full rounded-control border border-line px-2.5 py-1.5 text-[13px] outline-none focus:border-brand";
+  const cell = "w-full rounded-control border border-line px-2.5 py-1.5 text-body outline-none focus:border-brand";
 
   return (
     <div className="space-y-1.5">
@@ -75,7 +75,7 @@ function TermsTable({ terms, onChange }: { terms: Term[]; onChange: (next: Term[
       ))}
       <button
         onClick={() => onChange([...terms, { ru: "", uz: "", lat: "" }])}
-        className="inline-flex items-center gap-1 text-[12.5px] font-medium text-brand-deep hover:underline"
+        className="inline-flex items-center gap-1 text-note font-medium text-brand-deep hover:underline"
       >
         <Icon icon={Plus} size={13} /> {t("addRow")}
       </button>
@@ -89,7 +89,7 @@ function Block({ title, count, defaultOpen = false, children }: { title: string;
   return (
     <div className="border-b border-line last:border-0">
       <button onClick={() => setOpen((o) => !o)} className="flex w-full items-center gap-2 py-2.5 text-left">
-        <span className="text-[13px] font-bold text-ink">{title}</span>
+        <span className="text-body font-bold text-ink">{title}</span>
         <span className="rounded-pill bg-bg px-2 py-0.5 text-[11.5px] font-semibold text-ink-soft">{count}</span>
         <Icon icon={ChevronDown} size={15} className={cls("ml-auto text-ink-faint transition-transform", open && "rotate-180")} />
       </button>
@@ -128,13 +128,13 @@ export function DigestSection({ topic }: { topic: TopicDetail }) {
         {generate.isPending ? (
           <div className="flex items-center gap-3 py-4">
             <Spinner size={20} />
-            <p className="text-[13.5px] text-ink-soft">{t("generating")}</p>
+            <p className="text-body text-ink-soft">{t("generating")}</p>
           </div>
         ) : (
           <div className="flex flex-col items-start gap-3">
-            <p className="text-[13.5px] text-ink-soft">{t("generateHint")}</p>
+            <p className="text-body text-ink-soft">{t("generateHint")}</p>
             {generate.isError && (
-              <p className="text-[13px] text-rose">{apiErrorMessage(generate.error, locale) ?? t("generateError")}</p>
+              <p className="text-body text-rose">{apiErrorMessage(generate.error, locale) ?? t("generateError")}</p>
             )}
             <Button icon={<Icon icon={Sparkles} size={16} />} onClick={() => generate.mutate()}>
               {t("generate")}
@@ -173,7 +173,7 @@ export function DigestSection({ topic }: { topic: TopicDetail }) {
       <div className="mx-5 my-3 rounded-control border border-amber/30 bg-amber-soft p-3">
         <div className="mb-2 flex items-center gap-2">
           <Icon icon={TriangleAlert} size={15} className="text-amber" />
-          <h3 className="text-[12.5px] font-bold uppercase tracking-wide text-amber">{t("dosages")}</h3>
+          <h3 className="text-note font-bold uppercase tracking-wide text-amber">{t("dosages")}</h3>
           <span className="text-[11.5px] text-ink-soft">— {t("dosagesNote")}</span>
         </div>
         <EditableList items={draft.dosages} onChange={(v) => patch({ dosages: v })} />
@@ -182,7 +182,7 @@ export function DigestSection({ topic }: { topic: TopicDetail }) {
       {/* Sticky action bar: save + approve in one row */}
       <div className="sticky bottom-0 flex flex-wrap items-center gap-3 rounded-b-card border-t border-line bg-surface px-5 py-3">
         {approved ? (
-          <span className="inline-flex items-center gap-1.5 text-[13.5px] font-semibold text-emerald">
+          <span className="inline-flex items-center gap-1.5 text-body font-semibold text-emerald">
             <Icon icon={Check} size={16} /> {t("approved")}
           </span>
         ) : (

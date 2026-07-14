@@ -27,7 +27,7 @@ export function TopicUnlockRule({ topic }: { topic: TopicDetail }) {
           </div>
           <div>
             <p className="text-section font-bold text-ink">{t("editRule")}</p>
-            <p className="text-[12.5px] text-ink-faint">{override ? t("topicOverrideOn") : t("useDefault")}</p>
+            <p className="text-note text-ink-faint">{override ? t("topicOverrideOn") : t("useDefault")}</p>
           </div>
         </div>
         <Toggle checked={override} onChange={toggle} aria-label="override" />

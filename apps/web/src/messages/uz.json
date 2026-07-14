@@ -329,7 +329,11 @@
       "factcheck": "Kontent generatsiya qilingach ochiladi (Modul 10).",
       "publish": "Faktcheck tugagach ochiladi (Modul 10)."
     },
-    "generateSoon": "Konspekt tasdiqlangan. Generatsiya moduli (Modul 7) da qoʻshiladi."
+    "generateSoon": "Konspekt tasdiqlangan. Generatsiya moduli (Modul 7) da qoʻshiladi.",
+    "nav": {
+      "prev": "Oldingi",
+      "next": "Keyingi"
+    }
   },
   "digest": {
     "generate": "Konspekt tuzish",

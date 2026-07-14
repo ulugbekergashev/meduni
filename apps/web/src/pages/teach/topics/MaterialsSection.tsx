@@ -101,10 +101,10 @@ export function MaterialsSection({ topicId, materials }: { topicId: number; mate
         <div className="flex h-11 w-11 items-center justify-center rounded-full bg-brand-soft text-brand-deep">
           <Icon icon={Upload} size={20} />
         </div>
-        <p className="text-[13.5px] font-medium text-ink">{t("dropzone")}</p>
-        <p className="text-[12px] text-ink-faint">{t("formats")}</p>
+        <p className="text-body font-medium text-ink">{t("dropzone")}</p>
+        <p className="text-note text-ink-faint">{t("formats")}</p>
         {upload.isPending && (
-          <span className="mt-1 flex items-center gap-2 text-[12.5px] text-ink-soft">
+          <span className="mt-1 flex items-center gap-2 text-note text-ink-soft">
             <Spinner size={14} /> {t("uploading")}
           </span>
         )}
@@ -125,14 +125,14 @@ export function MaterialsSection({ topicId, materials }: { topicId: number; mate
                       onClick={() => m.hasText && openText(m)}
                       disabled={!m.hasText}
                       className={
-                        "truncate text-left text-[13.5px] font-medium " +
+                        "truncate text-left text-body font-medium " +
                         (m.hasText ? "text-brand-deep hover:underline" : "text-ink")
                       }
                     >
                       {m.fileName}
                     </button>
                     {m.parseStatus === "error" && (m.errorUz || m.errorRu) && (
-                      <p className="truncate text-[12px] text-rose">{locale === "ru" ? m.errorRu : m.errorUz}</p>
+                      <p className="truncate text-note text-rose">{locale === "ru" ? m.errorRu : m.errorUz}</p>
                     )}
                   </div>
 
@@ -168,7 +168,7 @@ export function MaterialsSection({ topicId, materials }: { topicId: number; mate
             <Spinner size={24} />
           </div>
         ) : (
-          <pre className="max-h-[60vh] overflow-auto whitespace-pre-wrap rounded-control bg-bg p-4 text-[13px] text-ink">
+          <pre className="max-h-[60vh] overflow-auto whitespace-pre-wrap rounded-control bg-bg p-4 text-body text-ink">
             {viewText || "—"}
           </pre>
         )}
