@@ -51,6 +51,26 @@
     "teacherAssignedSection": "Oʻqituvchi topshiriqlari",
     "markDone": "Bajarildi"
   },
+  "teachAssign": {
+    "newBtn": "Yangi topshiriq",
+    "title": "Talabaga topshiriq",
+    "target": "Kimga",
+    "targetGroup": "Guruhga (barcha talaba)",
+    "targetStudent": "Bitta talabaga",
+    "group": "Guruh",
+    "student": "Talaba",
+    "taskTitle": "Sarlavha",
+    "taskTitlePh": "Masalan: Maqolani oʻqib xulosa yozing",
+    "desc": "Izoh (ixtiyoriy)",
+    "due": "Muddat (ixtiyoriy)",
+    "assign": "Tayinlash",
+    "assigned": "{{count}} talabaga tayinlandi",
+    "cancel": "Bekor qilish",
+    "error": "Xatolik yuz berdi",
+    "mySection": "Men bergan topshiriqlar",
+    "deleteTitle": "Topshiriqni oʻchirish",
+    "deleteMsg": "Ishonchingiz komilmi? Bu barcha talabalardan oʻchiradi."
+  },
   "adminTasks": {
     "title": "Topshiriqlar",
     "hint": "Oʻqituvchilarga vazifa tayinlash",
