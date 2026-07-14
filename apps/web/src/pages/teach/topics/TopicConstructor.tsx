@@ -161,7 +161,8 @@ export function TopicConstructor() {
       </div>
 
       {/* Sticky stepper — one glance at where you are; click an unlocked step to jump. */}
-      <div className="sticky top-0 z-20 mt-5 border-b border-line bg-bg py-3">
+      {/* top-[57px]: sits right below the sticky global-search bar */}
+      <div className="sticky top-[57px] z-20 mt-5 border-b border-line bg-bg py-3">
         <div className="flex items-center gap-1 overflow-x-auto">
           {STEP_ORDER.map((key, i) => {
             const st = stateOf(key, available, done);

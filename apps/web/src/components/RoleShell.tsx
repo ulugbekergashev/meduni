@@ -27,10 +27,12 @@ export function RoleShell({
   brand,
   items,
   children,
+  headerSlot,
 }: {
   brand: string;
   items: RoleShellItem[];
   children: ReactNode;
+  headerSlot?: ReactNode;
 }) {
   const { data: me } = useMe();
   const { pathname } = useLocation();
@@ -51,6 +53,7 @@ export function RoleShell({
     <SidebarLayout
       brand={brand}
       items={sidebarItems}
+      headerSlot={headerSlot}
       LinkComponent={RouterLink}
       userBlock={
         <div className="flex items-center justify-between gap-2">

@@ -15,6 +15,8 @@ export interface SidebarLayoutProps {
   items: SidebarItem[];
   userBlock?: ReactNode;
   children: ReactNode;
+  /** Optional sticky top bar above the content (e.g. a global search). */
+  headerSlot?: ReactNode;
   /** Defaults to a plain <a> — pass next/link's Link (or similar) to get client-side navigation. */
   LinkComponent?: ComponentType<{ href: string; className?: string; children: ReactNode }>;
 }
@@ -27,7 +29,7 @@ function DefaultLink({ href, className, children }: { href: string; className?: 
   );
 }
 
-export function SidebarLayout({ brand, items, userBlock, children, LinkComponent }: SidebarLayoutProps) {
+export function SidebarLayout({ brand, items, userBlock, children, headerSlot, LinkComponent }: SidebarLayoutProps) {
   const Link = LinkComponent ?? DefaultLink;
 
   return (
@@ -56,8 +58,15 @@ export function SidebarLayout({ brand, items, userBlock, children, LinkComponent
         </nav>
         {userBlock && <div className="border-t border-line px-5 py-4">{userBlock}</div>}
       </aside>
-      <main className="flex-1 overflow-y-auto px-5 py-7 sm:px-8">
-        <div className="mx-auto w-full max-w-[1180px]">{children}</div>
+      <main className="flex-1 overflow-y-auto">
+        {headerSlot && (
+          <div className="sticky top-0 z-30 border-b border-line bg-surface px-5 py-2.5 sm:px-8">
+            <div className="mx-auto w-full max-w-[1180px]">{headerSlot}</div>
+          </div>
+        )}
+        <div className="px-5 py-7 sm:px-8">
+          <div className="mx-auto w-full max-w-[1180px]">{children}</div>
+        </div>
       </main>
     </div>
   );

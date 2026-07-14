@@ -5,6 +5,7 @@ import * as templates from "./templates";
 import * as monitoring from "./monitoring";
 import * as audit from "./audit";
 import { adminStats } from "./stats";
+import { adminSearch } from "../search/service";
 
 const wrap =
   (fn: RequestHandler): RequestHandler =>
@@ -35,6 +36,7 @@ export const adminRouter = Router();
 adminRouter.use(requireRoles("ADMIN"));
 
 adminRouter.get("/stats", wrap(async (_req, res) => res.json(await adminStats())));
+adminRouter.get("/search", wrap(async (req, res) => res.json(await adminSearch(typeof req.query.q === "string" ? req.query.q : ""))));
 adminRouter.get("/ai-usage", wrap(async (req, res) => res.json(await monitoring.getAiUsage({ month: qstr(req.query.month), departmentId: qnum(req.query.departmentId) }))));
 adminRouter.get("/quotas", wrap(async (_req, res) => res.json(await monitoring.getQuotas())));
 adminRouter.put("/quotas/:departmentId", wrap(async (req, res) => res.json(await monitoring.setQuota(req.user!.id, parseId(req.params.departmentId), req.body ?? {}))));

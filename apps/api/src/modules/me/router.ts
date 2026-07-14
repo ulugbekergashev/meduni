@@ -6,6 +6,7 @@ import * as svc from "./service";
 import * as lesson from "./lesson";
 import * as profile from "./profile";
 import { computeStudentAutoTasks, listAssigned } from "../tasks/service";
+import { studentSearch } from "../search/service";
 
 export const meRouter = Router();
 meRouter.use(requireRoles("STUDENT"));
@@ -30,6 +31,7 @@ function parseBody<T extends ZodTypeAny>(schema: T, body: unknown): z.infer<T> {
 // ---------- Dashboard + path (Module 11) ----------
 
 meRouter.get("/dashboard", wrap(async (req, res) => res.json(await svc.getDashboard(req.user!.id))));
+meRouter.get("/search", wrap(async (req, res) => res.json(await studentSearch(req.user!.id, typeof req.query.q === "string" ? req.query.q : ""))));
 meRouter.get("/tasks", wrap(async (req, res) => {
   const [auto, assigned] = await Promise.all([computeStudentAutoTasks(req.user!.id), listAssigned(req.user!.id)]);
   res.json({ auto, assigned });
