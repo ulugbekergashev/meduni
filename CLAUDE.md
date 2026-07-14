@@ -500,6 +500,27 @@ Modul 8 real Nano Banana Pro rasmlari pulli kalitni kutmoqda.
 
 Barcha modullar tugadi (1-17).
 
+- **Modul 18 — Mening vazifalarim (tayyor).** "Keys tekshirish" navi barcha rollar
+  uchun vazifalar markaziga almashdi. Prisma: `Task` (TaskStatus OPEN|DONE|DISMISSED,
+  TaskPriority, batchId — guruh/kafedra fan-out, createdBy/assignedTo). Backend
+  `modules/tasks/`: `computeTeacherAutoTasks` (8 tur: keys tekshirish, material yo'q,
+  konspekt tasdiqlash, kontent yaratish/chop etish, faktcheck, yo'qlama belgilanmagan,
+  orqada qolganlar — mavjud loadCourse/buildMatrix/computeTopics'dan jonli hisoblanadi,
+  saqlanmaydi), `computeStudentAutoTasks` (5 tur: davom ettirish, test, keys, baho keldi,
+  past davomat<75%), qo'lда topshiriqlar CRUD (`createTask` yo'nalish validatsiyasi:
+  ADMIN→o'qituvchi/kafedra, TEACHER→o'z talabasi/guruhi, aks holda 403; `setTaskDone`
+  faqat assignee; `deleteTask` faqat creator+butun batch). Router `/api/v1/tasks`
+  (mine=GET /teach/tasks + /me/tasks → {auto,assigned}, /tasks/created, POST/PATCH/
+  DELETE). Frontend: `/teach/tasks` (kafedra topshiriqlari + avto kartalar deep-link
+  bilan [wizard ?step=, review, progress] + "Yangi topshiriq" modal guruh/talaba +
+  "Men bergan" k/N) · `/app/tasks` (o'qituvchi topshiriqlari + avto o'quv vazifalari) ·
+  `/admin/tasks` (o'qituvchi/kafedraga tayinlash + k/N ro'yxat). Umumiy komponentlar:
+  `TaskCard`, `AssignedTaskList`, `CreatedTaskList`. Nav badge = ochiq vazifalar.
+  `/teach/cases/review` sahifasi qoladi (avto-kartadan ochiladi). **To'liq tekshirildi**
+  (e2e real login): avto hisob (teacher 4 tur, student 3 tur), admin→o'qituvchi→
+  bajarildi→1/1, o'qituvchi→guruh fan-out 6 talaba→1/6, begona guruh/vazifa→403,
+  talaba yarata olmaydi→403; tsc+build toza.
+
 ---
 
 ## 9. Loyiha holati va ishga tushirish (operatsion — sessiya 0)
