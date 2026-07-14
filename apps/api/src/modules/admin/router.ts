@@ -1,8 +1,6 @@
 import { Router, type RequestHandler } from "express";
-import multer from "multer";
-import { badRequest, notFound } from "../../lib/errors";
+import { notFound } from "../../lib/errors";
 import { requireRoles } from "../../middleware/rbac";
-import * as glossary from "./glossary";
 import * as templates from "./templates";
 import * as monitoring from "./monitoring";
 import * as audit from "./audit";
@@ -19,26 +17,8 @@ function parseId(raw: string): number {
   return id;
 }
 
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
 const qnum = (v: unknown) => (v ? Number(v) : undefined);
 const qstr = (v: unknown) => (typeof v === "string" && v ? v : undefined);
-
-// ---------- Glossary (ADMIN + TEACHER) ----------
-export const glossaryRouter = Router();
-glossaryRouter.use(requireRoles("ADMIN", "TEACHER"));
-
-glossaryRouter.get("/", wrap(async (req, res) => res.json(await glossary.listGlossary(req.user!, { departmentId: qnum(req.query.departmentId), search: qstr(req.query.search) }))));
-glossaryRouter.post("/", wrap(async (req, res) => res.json(await glossary.createTerm(req.user!, req.body ?? {}))));
-glossaryRouter.patch("/:id", wrap(async (req, res) => res.json(await glossary.updateTerm(req.user!, parseId(req.params.id), req.body ?? {}))));
-glossaryRouter.delete("/:id", wrap(async (req, res) => res.json(await glossary.deleteTerm(req.user!, parseId(req.params.id)))));
-glossaryRouter.post(
-  "/import",
-  upload.single("file"),
-  wrap(async (req, res) => {
-    if (!req.file) throw badRequest("Fayl yuklang", "Загрузите файл");
-    res.json(await glossary.importGlossary(req.user!, qnum(req.body?.departmentId), req.file.buffer));
-  })
-);
 
 // ---------- Templates (ADMIN) ----------
 export const templatesRouter = Router();

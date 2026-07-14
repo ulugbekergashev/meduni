@@ -13,7 +13,7 @@ import { topicsRouter, materialsRouter } from "./modules/topics/router";
 import { generateRouter, contentRouter, presentationsRouter, videosRouter } from "./modules/content/router";
 import { meRouter } from "./modules/me/router";
 import { accountRouter } from "./modules/account/router";
-import { glossaryRouter, templatesRouter, adminRouter } from "./modules/admin/router";
+import { templatesRouter, adminRouter } from "./modules/admin/router";
 import { tasksRouter } from "./modules/tasks/router";
 
 const app = express();
@@ -40,7 +40,6 @@ app.use("/api/v1/presentations", presentationsRouter);
 app.use("/api/v1/videos", videosRouter);
 app.use("/api/v1/users", usersRouter);
 app.use("/api/v1/courses", coursesRouter);
-app.use("/api/v1/glossary", glossaryRouter);
 app.use("/api/v1/templates", templatesRouter);
 app.use("/api/v1/admin", adminRouter);
 app.use("/api/v1", orgRouter);

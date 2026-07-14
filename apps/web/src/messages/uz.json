@@ -14,7 +14,6 @@
     "courses": "Kurslar",
     "attendance": "Davomat",
     "profile": "Profil",
-    "glossary": "Lugʻat",
     "templates": "Shablonlar",
     "ai": "AI monitoring",
     "audit": "Audit",
@@ -102,7 +101,11 @@
   "settingsAcc": {
     "title": "Sozlamalar",
     "loadError": "Maʼlumot yuklanmadi",
-    "role": { "ADMIN": "Administrator", "TEACHER": "Oʻqituvchi", "STUDENT": "Talaba" },
+    "role": {
+      "ADMIN": "Administrator",
+      "TEACHER": "Oʻqituvchi",
+      "STUDENT": "Talaba"
+    },
     "department": "Kafedra",
     "group": "Guruh",
     "email": "Email",
@@ -150,7 +153,11 @@
   },
   "userProfile": {
     "back": "← Foydalanuvchilar",
-    "kind": { "teacher": "Oʻqituvchi", "student": "Talaba", "admin": "Administrator" },
+    "kind": {
+      "teacher": "Oʻqituvchi",
+      "student": "Talaba",
+      "admin": "Administrator"
+    },
     "inactive": "Nofaol",
     "phone": "Telefon",
     "group": "Guruh",
@@ -167,13 +174,25 @@
     "back": "← Guruhlar",
     "progress": "Progress",
     "attendance": "Davomat",
-    "att": { "pct": "Davomat", "present": "Keldi", "absent": "Kelmadi", "late": "Kechikdi", "excused": "Sababli", "avgGrade": "Oʻrt. baho" },
+    "att": {
+      "pct": "Davomat",
+      "present": "Keldi",
+      "absent": "Kelmadi",
+      "late": "Kechikdi",
+      "excused": "Sababli",
+      "avgGrade": "Oʻrt. baho"
+    },
     "work": "Mavzular boʻyicha ishi",
     "noTopics": "Hali chop etilgan mavzu yoʻq.",
     "quiz": "Test",
     "case": "Keys",
     "underReview": "tekshiruvda",
-    "state": { "COMPLETED": "Tugallandi", "IN_PROGRESS": "Jarayonda", "AVAILABLE": "Ochiq", "LOCKED": "Yopiq" }
+    "state": {
+      "COMPLETED": "Tugallandi",
+      "IN_PROGRESS": "Jarayonda",
+      "AVAILABLE": "Ochiq",
+      "LOCKED": "Yopiq"
+    }
   },
   "journal": {
     "hint": "Katakni bosing — yoʻqlama va baho qoʻying.",
@@ -185,7 +204,12 @@
     "grade": "Baho (ixtiyoriy)",
     "gradeHint": "Boʻsh qoldirsangiz — faqat yoʻqlama belgilanadi.",
     "gradeRange": "Baho 0–100 oraligʻida boʻlsin",
-    "status": { "PRESENT": "Keldi", "ABSENT": "Kelmadi", "LATE": "Kechikdi", "EXCUSED": "Sababli" },
+    "status": {
+      "PRESENT": "Keldi",
+      "ABSENT": "Kelmadi",
+      "LATE": "Kechikdi",
+      "EXCUSED": "Sababli"
+    },
     "save": "Saqlash",
     "cancel": "Bekor",
     "saved": "Saqlandi",
@@ -216,59 +240,80 @@
   },
   "adminHome": {
     "hello": "Salom",
-    "students": "Talabalar", "studentsHint": "faol hisoblar",
-    "teachers": "Oʻqituvchilar", "teachersHint": "kafedralar boʻyicha",
-    "courses": "Kurslar", "coursesHint": "joriy semestr",
-    "publishedTopics": "Chop etilgan mavzular", "publishedTopicsHint": "talabalarga ochiq",
-    "publishedContent": "Chop etilgan kontent", "publishedContentHint": "test, keys, video",
+    "students": "Talabalar",
+    "studentsHint": "faol hisoblar",
+    "teachers": "Oʻqituvchilar",
+    "teachersHint": "kafedralar boʻyicha",
+    "courses": "Kurslar",
+    "coursesHint": "joriy semestr",
+    "publishedTopics": "Chop etilgan mavzular",
+    "publishedTopicsHint": "talabalarga ochiq",
+    "publishedContent": "Chop etilgan kontent",
+    "publishedContentHint": "test, keys, video",
     "attention": "Diqqat talab qiladi",
     "allClear": "Hammasi joyida. Diqqat talab qiladigan narsa yoʻq.",
-    "casesToReview": "keys tekshiruvda", "contentToApprove": "kontent tasdiqda", "overQuota": "kvotasi tugagan kafedra",
+    "casesToReview": "keys tekshiruvda",
+    "contentToApprove": "kontent tasdiqda",
+    "overQuota": "kvotasi tugagan kafedra",
     "aiThisMonth": "AI sarfi — bu oy",
-    "tokens": "tokenlar", "images": "rasmlar", "cost": "narx",
+    "tokens": "tokenlar",
+    "images": "rasmlar",
+    "cost": "narx",
     "activity7d": "Faollik — 7 kun",
-    "contentCreated": "yaratilgan kontent", "activeStudents": "faol talaba"
-  },
-  "glossary": {
-    "title": "Lugʻat",
-    "subtitle": "Oʻzbek tibbiy terminologiyasi. Bu lugʻat har AI generatsiyaga qoʻshiladi — barcha materialda atamalar bir xil boʻladi.",
-    "search": "Qidiruv...",
-    "import": "Excel import",
-    "imported": "Import: {{added}} qoʻshildi, {{skipped}} oʻtkazib yuborildi",
-    "importError": "Import xatosi",
-    "termRu": "Termin (ru)", "termUz": "Termin (uz)", "termLat": "Lotincha",
-    "add": "Qoʻshish", "added": "Qoʻshildi", "dupError": "Bu termin allaqachon bor",
-    "empty": "Bu kafedrada hali atama yoʻq. Qoʻshing yoki Excel import qiling.",
-    "teacherSubtitle": "Oʻz kafedrangiz atamalari. Bu lugʻat siz yaratgan har bir AI materialga qoʻshiladi.",
-    "emptyTeacher": "Hali atama yoʻq. Yangi termin qoʻshing.",
-    "deleteTitle": "Terminni oʻchirish", "deleteConfirm": "\"{{term}}\" oʻchirilsinmi?", "deleted": "Oʻchirildi"
+    "contentCreated": "yaratilgan kontent",
+    "activeStudents": "faol talaba"
   },
   "templates": {
     "title": "Shablonlar",
     "subtitle": "Prezentatsiyalar universitet brendida boʻlsin — ranglar, logo.",
     "newTemplate": "Yangi shablon",
-    "name": "Nom", "namePlaceholder": "Masalan: Universitet brendi",
-    "primary": "Asosiy rang", "secondary": "Ikkilamchi rang",
-    "add": "Qoʻshish", "created": "Shablon yaratildi", "empty": "Hali shablon yoʻq. Yangi shablon qoʻshing.",
-    "default": "Standart", "makeDefault": "Standart qilish", "defaultSet": "Standart qilindi",
-    "deleteTitle": "Shablonni oʻchirish", "deleteConfirm": "\"{{name}}\" oʻchirilsinmi?", "deleted": "Oʻchirildi"
+    "name": "Nom",
+    "namePlaceholder": "Masalan: Universitet brendi",
+    "primary": "Asosiy rang",
+    "secondary": "Ikkilamchi rang",
+    "add": "Qoʻshish",
+    "created": "Shablon yaratildi",
+    "empty": "Hali shablon yoʻq. Yangi shablon qoʻshing.",
+    "default": "Standart",
+    "makeDefault": "Standart qilish",
+    "defaultSet": "Standart qilindi",
+    "deleteTitle": "Shablonni oʻchirish",
+    "deleteConfirm": "\"{{name}}\" oʻchirilsinmi?",
+    "deleted": "Oʻchirildi"
   },
   "ai": {
     "title": "AI monitoring",
     "subtitle": "AI sarfini kuzating va kafedralarga oylik kvota qoʻying.",
     "thisMonth": "Bu oy sarfi",
-    "tokens": "Tokenlar", "images": "Rasmlar", "cost": "Narx",
-    "byKind": "Tur boʻyicha", "byDept": "Kafedralar boʻyicha",
-    "dept": "Kafedra", "quotaUse": "Kvota", "quota": "Kvota", "setQuota": "Kvota sozlash",
-    "editQuota": "Kvotani sozlash", "zeroUnlimited": "0 = cheklovsiz",
-    "tokenLimit": "Oylik token limiti", "imageLimit": "Oylik rasm limiti", "costLimit": "Oylik narx limiti ($)",
-    "cancel": "Bekor", "save": "Saqlash", "saved": "Kvota saqlandi"
+    "tokens": "Tokenlar",
+    "images": "Rasmlar",
+    "cost": "Narx",
+    "byKind": "Tur boʻyicha",
+    "byDept": "Kafedralar boʻyicha",
+    "dept": "Kafedra",
+    "quotaUse": "Kvota",
+    "quota": "Kvota",
+    "setQuota": "Kvota sozlash",
+    "editQuota": "Kvotani sozlash",
+    "zeroUnlimited": "0 = cheklovsiz",
+    "tokenLimit": "Oylik token limiti",
+    "imageLimit": "Oylik rasm limiti",
+    "costLimit": "Oylik narx limiti ($)",
+    "cancel": "Bekor",
+    "save": "Saqlash",
+    "saved": "Kvota saqlandi"
   },
   "audit": {
     "title": "Audit",
     "subtitle": "Muhim harakatlar tarixi: chop etish, baholash, yoʻqlama, kvota.",
-    "actor": "Foydalanuvchi...", "allActions": "Barcha harakatlar",
-    "time": "Vaqt", "who": "Kim", "action": "Harakat", "object": "Obyekt", "details": "Tafsilot", "view": "Koʻrish",
+    "actor": "Foydalanuvchi...",
+    "allActions": "Barcha harakatlar",
+    "time": "Vaqt",
+    "who": "Kim",
+    "action": "Harakat",
+    "object": "Obyekt",
+    "details": "Tafsilot",
+    "view": "Koʻrish",
     "empty": "Hali audit yozuvi yoʻq."
   },
   "attendanceMe": {
@@ -281,7 +326,12 @@
     "late": "Kechikdi",
     "excused": "Sababli",
     "allCourses": "Hamma kurslar",
-    "status": { "PRESENT": "Keldi", "ABSENT": "Kelmadi", "LATE": "Kechikdi", "EXCUSED": "Sababli" }
+    "status": {
+      "PRESENT": "Keldi",
+      "ABSENT": "Kelmadi",
+      "LATE": "Kechikdi",
+      "EXCUSED": "Sababli"
+    }
   },
   "profile": {
     "title": "Profil",
@@ -488,7 +538,12 @@
     "rebuild": "Qayta ovozlash va montaj",
     "script": "Ovoz skripti",
     "segment": "Segment",
-    "visual": { "title": "Sarlavha", "points": "Tezislar", "term": "Atama", "warning": "Ogohlantirish" },
+    "visual": {
+      "title": "Sarlavha",
+      "points": "Tezislar",
+      "term": "Atama",
+      "warning": "Ogohlantirish"
+    },
     "save": "Skriptni saqlash",
     "saved": "Saqlandi",
     "building": "Video tayyorlanmoqda…",
@@ -564,7 +619,11 @@
     "clean": "Barcha daʼvolar manbaga mos",
     "notRun": "Tekshirilmagan",
     "flagged": "{n} ta belgi",
-    "sev": { "high": "Yuqori", "medium": "Oʻrta", "low": "Past" },
+    "sev": {
+      "high": "Yuqori",
+      "medium": "Oʻrta",
+      "low": "Past"
+    },
     "at": "Qayerda",
     "confirm": "Tasdiqlayman",
     "fix": "Tuzataman",
@@ -850,7 +909,12 @@
     "reference": "Etalon javob",
     "score": "Ball",
     "feedbackPlaceholder": "Talabaga izoh (ixtiyoriy)...",
-    "templates": ["Ajoyib javob", "Toʻgʻri, lekin toʻliq emas", "Differensial diagnoz yetishmaydi", "Qayta koʻrib chiqing"],
+    "templates": [
+      "Ajoyib javob",
+      "Toʻgʻri, lekin toʻliq emas",
+      "Differensial diagnoz yetishmaydi",
+      "Qayta koʻrib chiqing"
+    ],
     "scoreRequired": "Ball kiriting (0–100)",
     "saveFailed": "Saqlanmadi, qayta urinib koʻring",
     "saved": "Baho saqlandi",
@@ -867,8 +931,17 @@
     "tabJournal": "Jurnal",
     "tabReport": "Hisobot",
     "avgGrade": "Oʻrtacha baho",
-    "status": { "PRESENT": "Keldi", "ABSENT": "Kelmadi", "LATE": "Kechikdi", "EXCUSED": "Sababli" },
-    "sessionStatus": { "UNMARKED": "Belgilanmagan", "PARTIAL": "Qisman", "FULL": "Toʻliq" },
+    "status": {
+      "PRESENT": "Keldi",
+      "ABSENT": "Kelmadi",
+      "LATE": "Kechikdi",
+      "EXCUSED": "Sababli"
+    },
+    "sessionStatus": {
+      "UNMARKED": "Belgilanmagan",
+      "PARTIAL": "Qisman",
+      "FULL": "Toʻliq"
+    },
     "date": "Sana",
     "lessonTitle": "Dars mavzusi",
     "room": "Xona",

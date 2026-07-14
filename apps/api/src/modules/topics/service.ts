@@ -5,7 +5,7 @@ import { deletePath, readText, readFileBuffer, saveMaterialFile, saveParsedText 
 import { extractText, fileTypeFromName, parseErrorMessages, type ParseErrorCode } from "./parse";
 import { generateStructured } from "../../ai/gemini";
 import { assertQuota } from "../../ai/quota";
-import { departmentForTopic, getGlossaryForDepartment, glossaryBlock } from "../../ai/glossary";
+import { departmentForTopic } from "../../ai/glossary";
 import { digestSchema, digestResponseSchema, type DigestJson } from "../../ai/types";
 import { digestSystemPrompt, digestUserContent } from "../../ai/prompts/digest";
 
@@ -200,10 +200,9 @@ export async function generateDigest(topicId: number, teacherId: number) {
 
   const departmentId = await departmentForTopic(topicId);
   await assertQuota(departmentId);
-  const glossary = glossaryBlock(await getGlossaryForDepartment(departmentId));
 
   const raw = await generateStructured<DigestJson>({
-    systemInstruction: digestSystemPrompt(lang) + glossary,
+    systemInstruction: digestSystemPrompt(lang),
     userContent: digestUserContent(materialText),
     responseSchema: digestResponseSchema,
     kind: "DIGEST",

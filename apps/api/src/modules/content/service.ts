@@ -3,7 +3,7 @@ import { ApiError, badRequest, notFound } from "../../lib/errors";
 import { readText } from "../../lib/storage";
 import { generateStructured } from "../../ai/gemini";
 import { assertQuota } from "../../ai/quota";
-import { departmentForTopic, getGlossaryForDepartment, glossaryBlock } from "../../ai/glossary";
+import { departmentForTopic } from "../../ai/glossary";
 import { factcheckSystemPrompt, factcheckUserContent } from "../../ai/prompts/factcheck";
 import { factcheckGenSchema, factcheckResponseSchema, type FactcheckFlag, type FactcheckGen } from "../../ai/types";
 import {
@@ -139,10 +139,8 @@ export async function generateQuiz(
   const digest = await approvedDigest(topicId, teacherId);
   const departmentId = await departmentForTopic(topicId);
   await assertQuota(departmentId);
-  const glossary = glossaryBlock(await getGlossaryForDepartment(departmentId));
-
   const gen = await generateStructured<QuizGen>({
-    systemInstruction: quizSystemPrompt(opts.language, opts.questionCount, opts.difficulty) + glossary,
+    systemInstruction: quizSystemPrompt(opts.language, opts.questionCount, opts.difficulty),
     userContent: quizUserContent(digest),
     responseSchema: quizResponseSchema,
     kind: "QUIZ",
@@ -199,10 +197,8 @@ export async function generateCase(
   const digest = await approvedDigest(topicId, teacherId);
   const departmentId = await departmentForTopic(topicId);
   await assertQuota(departmentId);
-  const glossary = glossaryBlock(await getGlossaryForDepartment(departmentId));
-
   const gen = await generateStructured<CaseJson>({
-    systemInstruction: caseSystemPrompt(opts.language, opts.format) + glossary,
+    systemInstruction: caseSystemPrompt(opts.language, opts.format),
     userContent: caseUserContent(digest),
     responseSchema: caseResponseSchema,
     kind: "CASE",

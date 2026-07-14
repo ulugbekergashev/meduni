@@ -16,32 +16,6 @@ export function useDepartments() {
   return useQuery({ queryKey: ["departments"], queryFn: () => api<Dept[]>("/api/v1/departments") });
 }
 
-// ---------------- Glossary ----------------
-export interface Term {
-  id: number;
-  departmentId: number;
-  termRu: string;
-  termUz: string;
-  termLat: string | null;
-}
-export function useGlossary(departmentId: number | undefined, search: string) {
-  const p = new URLSearchParams();
-  if (departmentId) p.set("departmentId", String(departmentId));
-  if (search.trim()) p.set("search", search.trim());
-  return useQuery({ queryKey: ["glossary", departmentId, search], queryFn: () => api<Term[]>(`/api/v1/glossary?${p}`), enabled: departmentId !== undefined });
-}
-export function useCreateTerm() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (b: { departmentId: number; termRu: string; termUz: string; termLat?: string }) => api("/api/v1/glossary", { method: "POST", body: JSON.stringify(b) }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["glossary"] }),
-  });
-}
-export function useDeleteTerm() {
-  const qc = useQueryClient();
-  return useMutation({ mutationFn: (id: number) => api(`/api/v1/glossary/${id}`, { method: "DELETE" }), onSuccess: () => qc.invalidateQueries({ queryKey: ["glossary"] }) });
-}
-
 // ---------------- Templates ----------------
 export interface Template {
   id: number;
