@@ -131,7 +131,6 @@ export interface Slide {
 
 export interface PresentationContent {
   id: number;
-  templateId: number | null;
   slides: Slide[];
 }
 
@@ -335,7 +334,7 @@ export const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
 export function useGeneratePresentation(topicId: number) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: { language: "uz" | "ru"; templateId?: number | null }) =>
+    mutationFn: (body: { language: "uz" | "ru" }) =>
       api<ContentFull>(`/api/v1/topics/${topicId}/generate/presentation`, { method: "POST", body: JSON.stringify(body) }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["topic", topicId] }),
   });

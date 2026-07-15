@@ -34,7 +34,6 @@ const genCaseSchema = z.object({
 });
 const genPresSchema = z.object({
   language: z.enum(["uz", "ru"]),
-  templateId: z.number().int().positive().optional().nullable(),
 });
 const genVideoSchema = z.object({
   language: z.enum(["uz", "ru"]),

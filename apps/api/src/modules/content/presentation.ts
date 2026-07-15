@@ -47,7 +47,7 @@ function slidesOf(pres: { slidesJson: unknown }): Slide[] {
 export async function generatePresentation(
   topicId: number,
   teacherId: number,
-  opts: { language: "uz" | "ru"; templateId?: number | null }
+  opts: { language: "uz" | "ru" }
 ) {
   const topic = await topicForTeacher(topicId, teacherId);
   if (!topic.digest || !topic.digest.approvedByTeacher) {
@@ -91,8 +91,8 @@ export async function generatePresentation(
 
     await tx.presentation.upsert({
       where: { contentItemId: item.id },
-      create: { contentItemId: item.id, slidesJson: slides as object, templateId: opts.templateId ?? null },
-      update: { slidesJson: slides as object, templateId: opts.templateId ?? null, pptxUrl: null, pdfUrl: null },
+      create: { contentItemId: item.id, slidesJson: slides as object },
+      update: { slidesJson: slides as object, pptxUrl: null, pdfUrl: null },
     });
     return item;
   });

@@ -90,7 +90,6 @@ function toContentOut(item: ContentFull) {
     presentation: item.presentation
       ? {
           id: item.presentation.id,
-          templateId: item.presentation.templateId,
           slides: (item.presentation.slidesJson as unknown as Slide[]).map((slide, si) => ({
             id: slide.id,
             layout: slide.layout,

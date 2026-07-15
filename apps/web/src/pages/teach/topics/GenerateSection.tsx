@@ -184,16 +184,9 @@ function PresentationCard({ topic }: { topic: TopicDetail }) {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-2 gap-3">
-            <Field label={t("template")}>
-              <Select disabled>
-                <option>{t("templateDefault")}</option>
-              </Select>
-            </Field>
-            <Field label={t("language")}>
-              <LangSelect value={language} onChange={setLanguage} />
-            </Field>
-          </div>
+          <Field label={t("language")}>
+            <LangSelect value={language} onChange={setLanguage} />
+          </Field>
           <p className="text-note text-ink-faint">{t("imagesNote")}</p>
           {gen.isError && <p className="text-body text-rose">{apiErrorMessage(gen.error, locale) ?? t("error")}</p>}
           <Button
