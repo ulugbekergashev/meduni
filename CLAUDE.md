@@ -81,12 +81,14 @@ emerald: #059669 / #E4F6EF (muvaffaqiyat, tugadi)
 
 ### O'lchamlar
 - Karta radius 16px, tugma/input 10px, badge/pill 20px (dumaloq)
-- Sarlavha h1: 25px/700, katta raqam: 34px/700 tabular-nums, bo'lim: 14.5px/700, matn: 13.5px, izoh: 12px/ink-faint
+- Sarlavha h1: 28px/700, katta raqam: 36px/700 tabular-nums, bo'lim: 16px/700, matn: 14px, izoh: 12.5px/ink-faint (2026-07 scale-up: hammasi kattalashtirildi)
+- Soyalar tokenli: `--shadow-card` / `--shadow-card-hover` (ink-tinted, dark'da o'z varianti); Tailwind `shadow-card`/`shadow-card-hover`
+- Sana formati: `lib/date.ts::formatDate(locale, date, "long|short|shortYear")` — uz oy nomlari qo'lda ("15-iyul, 2026-yil"; uz-UZ ICU "M07" buzuq), toLocaleDateString'ni oy-nomli formatda ISHLATMA
 - Panel padding 20-22px, kartalar orasi 14-16px
 - Shrift: Inter / system-ui
 
 ### Umumiy komponentlar (packages/ui da)
-Button (primary/deep/ghost/soft/danger, sm/md/lg, ikonka, hoverда brand→brand-deep), StatusPill (draft/review/published), Card (hoverда ko'tariladi+soya), Icon (SVG, stroke 1.7 yoki lucide-react), Input/Textarea (focusда brand chegara), Modal (markazда, Escape+tashqi bosishда yopiladi), Toast (pastда, 2.6s, ok/warn), Spinner, EmptyState, Sidebar layout (248px, faol=brand-soft fon).
+Button (primary/deep/ghost/soft/danger, sm/md/lg, ikonka, hoverда brand→brand-deep, active:scale-98), StatusPill (draft/review/published), Card (p-6, shadow-card, hoverда ko'tariladi), Icon (SVG, stroke 1.7 yoki lucide-react), Input/Textarea (focusда brand chegara+ring), Modal (markazда, Escape+tashqi bosishда yopiladi), Toast (pastда, 2.6s, ok/warn), Spinner, EmptyState, **Sidebar layout (272px, PREMIUM to'q-teal gradient `--side-*` tokenlar, faol=side-active chip + chap indikator; userBlock side-ink ranglarda)**, Charts (ProgressRing def 116/11, BarRow, StackedBar 2px-gap segmentlar). Kontent max-w 1280px. Tablar: segmented uslub (bordered surface track p-1, faol=brand-soft chip) — TabNav/GroupProfile/LessonPage bir xil.
 
 ### Tamoyillar
 - Har statistika o'z rangida (talaba=ko'k, o'qituvchi=violet, kurs=teal, ...)

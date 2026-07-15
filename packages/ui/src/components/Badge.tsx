@@ -10,14 +10,14 @@ const toneClass: Record<BadgeTone, string> = {
   amber: "bg-amber-soft text-amber",
   rose: "bg-rose-soft text-rose",
   emerald: "bg-emerald-soft text-emerald",
-  slate: "bg-slate-100 text-ink-soft",
+  slate: "bg-bg text-ink-soft",
 };
 
 export function Badge({ tone = "slate", children }: { tone?: BadgeTone; children: ReactNode }) {
   return (
     <span
       className={cls(
-        "inline-flex items-center rounded-pill px-2.5 py-0.5 text-[12px] font-semibold",
+        "inline-flex items-center rounded-pill px-2.5 py-1 text-[12.5px] font-semibold",
         toneClass[tone]
       )}
     >

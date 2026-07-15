@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { CheckCircle2, Trash2 } from "lucide-react";
 import { Card, Icon } from "@meduni/ui";
+import { formatDate } from "../lib/date";
 
 export interface CreatedTaskGroupItem {
   key: string;
@@ -26,7 +27,7 @@ export function CreatedTaskList({
 }) {
   const { t } = useTranslation(undefined, { keyPrefix: "adminTasks" });
   const { t: tc } = useTranslation(undefined, { keyPrefix: "common" });
-  const fmt = (iso: string) => new Date(iso).toLocaleDateString(locale === "ru" ? "ru-RU" : "uz-UZ", { day: "2-digit", month: "short", year: "numeric" });
+  const fmt = (iso: string) => formatDate(locale === "ru" ? "ru" : "uz", iso, "shortYear");
 
   return (
     <div className="space-y-2">

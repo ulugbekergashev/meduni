@@ -184,15 +184,15 @@ export function GroupProfile() {
               {/* Group metrics */}
               <GroupStats group={group} />
 
-              {/* Tabs */}
-              <div className="mt-6 flex gap-1 overflow-x-auto border-b border-line">
+              {/* Tabs — segmented track, active tab sits on a brand chip */}
+              <div className="mt-6 inline-flex max-w-full gap-1 overflow-x-auto rounded-control border border-line bg-surface p-1 shadow-card">
                 {TABS.map((x) => (
                   <button
                     key={x.key}
                     onClick={() => setTab(x.key)}
                     className={cls(
-                      "flex shrink-0 items-center gap-1.5 border-b-2 px-3 py-2.5 text-[13.5px] font-semibold transition-colors",
-                      tab === x.key ? "border-brand text-brand-deep" : "border-transparent text-ink-soft hover:text-ink"
+                      "flex shrink-0 items-center gap-2 whitespace-nowrap rounded-[8px] px-4 py-2 text-[14px] font-semibold transition-all",
+                      tab === x.key ? "bg-brand-soft text-brand-deep" : "text-ink-soft hover:bg-bg hover:text-ink"
                     )}
                   >
                     <Icon icon={x.icon} size={16} />

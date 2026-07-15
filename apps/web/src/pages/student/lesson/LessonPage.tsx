@@ -13,10 +13,10 @@ import { CaseTab } from "./CaseTab";
 type TabKey = "video" | "slides" | "quiz" | "case";
 
 const tabColor: Record<string, { active: string; dot: string }> = {
-  violet: { active: "border-violet text-violet", dot: "bg-violet" },
-  brand: { active: "border-brand text-brand-deep", dot: "bg-brand" },
-  blue: { active: "border-blue text-blue", dot: "bg-blue" },
-  rose: { active: "border-rose text-rose", dot: "bg-rose" },
+  violet: { active: "bg-violet-soft text-violet", dot: "bg-violet" },
+  brand: { active: "bg-brand-soft text-brand-deep", dot: "bg-brand" },
+  blue: { active: "bg-blue-soft text-blue", dot: "bg-blue" },
+  rose: { active: "bg-rose-soft text-rose", dot: "bg-rose" },
 };
 
 function buildTabs(lesson: Lesson) {
@@ -97,8 +97,8 @@ export function LessonPage() {
                   </div>
                 )}
 
-                {/* Tab bar */}
-                <div className="mt-5 flex gap-1 overflow-x-auto border-b border-line">
+                {/* Tab bar — segmented track; each tab keeps its element color */}
+                <div className="mt-5 inline-flex max-w-full gap-1 overflow-x-auto rounded-control border border-line bg-surface p-1 shadow-card">
                   {tabs.map((tb) => {
                     const on = tb.key === active;
                     const c = tabColor[tb.color];
@@ -107,8 +107,8 @@ export function LessonPage() {
                         key={tb.key}
                         onClick={() => setTab(tb.key)}
                         className={cls(
-                          "flex shrink-0 items-center gap-1.5 border-b-2 px-3 py-2.5 text-[13.5px] font-semibold transition-colors",
-                          on ? c.active : "border-transparent text-ink-soft hover:text-ink"
+                          "flex shrink-0 items-center gap-2 whitespace-nowrap rounded-[8px] px-3.5 py-2 text-[14px] font-semibold transition-all",
+                          on ? c.active : "text-ink-soft hover:bg-bg hover:text-ink"
                         )}
                       >
                         <Icon icon={tb.icon} size={16} />

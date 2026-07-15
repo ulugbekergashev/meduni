@@ -13,9 +13,9 @@ const variantClass: Record<Variant, string> = {
 };
 
 const sizeClass: Record<Size, string> = {
-  sm: "h-8 px-3 text-[12.5px] gap-1.5",
-  md: "h-10 px-4 text-[13.5px] gap-2",
-  lg: "h-12 px-5 text-[15px] gap-2",
+  sm: "h-9 px-3.5 text-[13px] gap-1.5",
+  md: "h-11 px-5 text-[14px] gap-2",
+  lg: "h-12 px-6 text-[15.5px] gap-2.5",
 };
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -35,7 +35,7 @@ export function Button({
   return (
     <button
       className={cls(
-        "inline-flex items-center justify-center rounded-control font-semibold transition-colors disabled:opacity-50 disabled:pointer-events-none",
+        "inline-flex items-center justify-center rounded-control font-semibold transition-all active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none",
         variantClass[variant],
         sizeClass[size],
         className

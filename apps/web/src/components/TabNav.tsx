@@ -6,19 +6,20 @@ export interface TabItem {
   label: string;
 }
 
+/** Segmented tab bar: bordered track, the active tab sits on a brand chip. */
 export function TabNav({ items }: { items: TabItem[] }) {
   return (
-    <div className="flex gap-1 border-b border-line">
+    <div className="inline-flex max-w-full gap-1 overflow-x-auto rounded-control border border-line bg-surface p-1 shadow-card">
       {items.map((item) => (
         <NavLink
           key={item.to}
           to={item.to}
           className={({ isActive }) =>
             cls(
-              "-mb-px border-b-2 px-4 py-2.5 text-[13.5px] font-semibold transition-colors",
+              "shrink-0 whitespace-nowrap rounded-[8px] px-4 py-2 text-[14px] font-semibold transition-all",
               isActive
-                ? "border-brand text-brand-deep"
-                : "border-transparent text-ink-soft hover:text-ink"
+                ? "bg-brand-soft text-brand-deep"
+                : "text-ink-soft hover:bg-bg hover:text-ink"
             )
           }
         >

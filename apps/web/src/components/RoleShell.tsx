@@ -58,12 +58,12 @@ export function RoleShell({
       userBlock={
         <div className="flex items-center justify-between gap-2">
           <div className="min-w-0">
-            <p className="truncate text-[13px] font-semibold text-ink">{me?.full_name}</p>
-            <p className="truncate text-[12px] text-ink-faint">{me?.email}</p>
+            <p className="truncate text-[13.5px] font-semibold text-side-ink">{me?.full_name}</p>
+            <p className="truncate text-[12px] text-side-soft">{me?.email}</p>
           </div>
           <button
             onClick={() => logout.mutate(undefined, { onSuccess: () => navigate("/login", { replace: true }) })}
-            className="shrink-0 rounded-control p-2 text-ink-soft hover:bg-bg"
+            className="shrink-0 rounded-control p-2 text-side-soft transition-colors hover:bg-side-hover hover:text-side-ink"
             aria-label="logout"
           >
             <Icon icon={LogOut} size={16} />

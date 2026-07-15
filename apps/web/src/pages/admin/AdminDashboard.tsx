@@ -4,6 +4,7 @@ import { AlertTriangle, BookOpen, CheckCircle2, ClipboardCheck, FileClock, FileS
 import { Card, Icon, Spinner, cls } from "@meduni/ui";
 import { useMe } from "../../lib/auth";
 import { useLocale } from "../../lib/useLocale";
+import { formatDate } from "../../lib/date";
 import { useAdminStats } from "./api";
 
 function StatCard({ icon, value, label, hint, tone, onClick }: { icon: typeof Users; value: number; label: string; hint: string; tone: string; onClick: () => void }) {
@@ -28,7 +29,7 @@ export function AdminDashboard() {
   const locale = useLocale();
   const q = useAdminStats();
   const s = q.data;
-  const today = new Date().toLocaleDateString(locale === "ru" ? "ru-RU" : "uz-UZ", { day: "numeric", month: "long", year: "numeric" });
+  const today = formatDate(locale === "ru" ? "ru" : "uz", new Date(), "long");
 
   if (q.isLoading) return <div className="flex min-h-[40vh] items-center justify-center"><Spinner size={26} /></div>;
 
