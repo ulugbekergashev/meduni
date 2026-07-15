@@ -14,21 +14,31 @@ import {
 import { BarRow, Card, Icon, ProgressRing, Spinner } from "@meduni/ui";
 import { AsyncSection } from "../../components/AsyncSection";
 import { pickName, useLocale } from "../../lib/useLocale";
+import { formatDate } from "../../lib/date";
 import { useMe } from "../../lib/auth";
 import { useTeachCourses, useTeachDashboard } from "./api";
 import { CourseCard } from "./CourseCard";
 
-function QuickAction({ icon, label, tone, onClick }: { icon: LucideIcon; label: string; tone: string; onClick: () => void }) {
+function QuickAction({ icon, label, tone, chip, onClick }: { icon: LucideIcon; label: string; tone: string; chip: string; onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      className="flex items-center gap-3 rounded-card border border-line bg-surface p-3.5 text-left transition-all hover:-translate-y-0.5 hover:shadow-sm"
+      className={`flex items-center gap-3.5 rounded-card border p-4 text-left shadow-card transition-all hover:-translate-y-0.5 hover:shadow-card-hover ${tone}`}
     >
-      <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${tone}`}>
-        <Icon icon={icon} size={18} />
+      <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-control text-white ${chip}`}>
+        <Icon icon={icon} size={20} />
       </div>
-      <span className="text-body font-semibold text-ink">{label}</span>
+      <span className="text-[14.5px] font-semibold text-ink">{label}</span>
     </button>
+  );
+}
+
+function HeroStat({ value, label }: { value: string | number; label: string }) {
+  return (
+    <div className="min-w-[72px]">
+      <p className="text-[26px] font-bold leading-none tabular-nums">{value}</p>
+      <p className="mt-1 text-[12.5px] font-medium text-white/70">{label}</p>
+    </div>
   );
 }
 
@@ -70,24 +80,38 @@ export function TeachDashboard() {
   const courses = list.data ?? [];
   const tasks = dash.data?.tasks;
   const stats = dash.data?.stats;
-  const today = new Date().toLocaleDateString(locale === "ru" ? "ru-RU" : "uz-UZ", { day: "numeric", month: "long", year: "numeric" });
+  const today = formatDate(locale === "ru" ? "ru" : "uz", new Date(), "long");
   const firstCourseId = courses[0]?.id;
   const noTasks = tasks && tasks.casesToReview === 0 && tasks.contentToApprove === 0 && tasks.studentsBehind === 0;
   const publishedPct = stats && stats.totalTopics > 0 ? Math.round((stats.publishedTopics / stats.totalTopics) * 100) : 0;
 
   return (
     <div>
-      <h1 className="text-h1 font-bold text-ink">
-        {t("hello")}, {me?.full_name?.split(" ")[0]}
-      </h1>
-      <p className="mt-0.5 text-note text-ink-faint">{today}</p>
+      {/* Hero band: greeting + date + at-a-glance numbers */}
+      <div className="rounded-card bg-gradient-to-br from-brand-deep to-brand p-6 text-white shadow-card sm:p-7">
+        <div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-5">
+          <div className="min-w-0">
+            <h1 className="text-[26px] font-bold leading-tight tracking-tight">
+              {t("hello")}, {me?.full_name?.split(" ")[0]}
+            </h1>
+            <p className="mt-1 text-[13.5px] font-medium text-white/70">{today}</p>
+          </div>
+          {stats && (
+            <div className="flex gap-8">
+              <HeroStat value={stats.students} label={t("statStudents")} />
+              <HeroStat value={stats.courses} label={t("qaCourses")} />
+              <HeroStat value={stats.groupList.length} label={t("qaGroups")} />
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* Quick actions */}
-      <div className="mt-5 grid gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
-        <QuickAction icon={ListChecks} label={t("qaTasks")} tone="bg-brand-soft text-brand-deep" onClick={() => navigate("/teach/tasks")} />
-        <QuickAction icon={ClipboardCheck} label={t("qaReview")} tone="bg-amber-soft text-amber" onClick={() => navigate("/teach/cases/review")} />
-        <QuickAction icon={BookOpen} label={t("qaCourses")} tone="bg-blue-soft text-blue" onClick={() => navigate("/teach/courses")} />
-        <QuickAction icon={Users2} label={t("qaGroups")} tone="bg-violet-soft text-violet" onClick={() => navigate("/teach/groups")} />
+      <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <QuickAction icon={ListChecks} label={t("qaTasks")} tone="border-brand/20 bg-brand-soft" chip="bg-brand" onClick={() => navigate("/teach/tasks")} />
+        <QuickAction icon={ClipboardCheck} label={t("qaReview")} tone="border-amber/20 bg-amber-soft" chip="bg-amber" onClick={() => navigate("/teach/cases/review")} />
+        <QuickAction icon={BookOpen} label={t("qaCourses")} tone="border-blue/20 bg-blue-soft" chip="bg-blue" onClick={() => navigate("/teach/courses")} />
+        <QuickAction icon={Users2} label={t("qaGroups")} tone="border-violet/20 bg-violet-soft" chip="bg-violet" onClick={() => navigate("/teach/groups")} />
       </div>
 
       {/* Tasks */}
@@ -170,7 +194,7 @@ export function TeachDashboard() {
                   <p className="truncate text-body font-semibold text-ink">{s.title ?? pickName(locale, s.subjectNameUz, s.subjectNameRu)}</p>
                   <p className="truncate text-note text-ink-faint">{pickName(locale, s.subjectNameUz, s.subjectNameRu)}{s.room ? ` · ${s.room}` : ""}</p>
                 </div>
-                <span className="shrink-0 text-note font-medium text-ink-soft">{new Date(s.date).toLocaleDateString(locale === "ru" ? "ru-RU" : "uz-UZ", { day: "2-digit", month: "short" })}</span>
+                <span className="shrink-0 text-note font-medium text-ink-soft">{formatDate(locale === "ru" ? "ru" : "uz", s.date, "short")}</span>
               </button>
             ))}
           </div>

@@ -1,13 +1,13 @@
 :root {
-  --bg: #f7f8fa;
+  --bg: #f4f6f9;
   --surface: #ffffff;
   --ink: #0f172a;
-  --ink-soft: #64748b;
-  --ink-faint: #94a3b8;
-  --line: #e9edf2;
+  --ink-soft: #5b6b7f;
+  --ink-faint: #93a0b0;
+  --line: #e6eaf0;
 
   --brand: #0f9e8e;
-  --brand-soft: #e6f5f3;
+  --brand-soft: #e3f4f1;
   --brand-deep: #0b7a6e;
 
   --blue: #2563eb;
@@ -21,9 +21,23 @@
   --emerald: #059669;
   --emerald-soft: #e4f6ef;
 
+  /* Premium sidebar (deep teal-ink, both themes get their own values). */
+  --side-bg: #0c2723;
+  --side-bg-deep: #082019;
+  --side-ink: #e8f2f0;
+  --side-ink-soft: #93b3ad;
+  --side-line: rgba(255, 255, 255, 0.08);
+  --side-active-bg: rgba(20, 184, 166, 0.16);
+  --side-active-ink: #5eead4;
+  --side-hover-bg: rgba(255, 255, 255, 0.06);
+
   --radius-card: 16px;
   --radius-control: 10px;
   --radius-pill: 20px;
+
+  /* Soft, ink-tinted elevation (no harsh black shadows). */
+  --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.04), 0 6px 20px -8px rgba(15, 23, 42, 0.08);
+  --shadow-card-hover: 0 2px 4px rgba(15, 23, 42, 0.05), 0 14px 32px -10px rgba(15, 23, 42, 0.14);
 }
 
 /* Dark theme — neutrals inverted, soft tints darkened. Accent bases stay so that
@@ -52,4 +66,16 @@
   --rose-soft: #341420;
   --emerald: #10b981;
   --emerald-soft: #103026;
+
+  --side-bg: #0b1219;
+  --side-bg-deep: #080d13;
+  --side-ink: #e6edf3;
+  --side-ink-soft: #8fa0af;
+  --side-line: rgba(255, 255, 255, 0.07);
+  --side-active-bg: rgba(20, 184, 166, 0.18);
+  --side-active-ink: #5eead4;
+  --side-hover-bg: rgba(255, 255, 255, 0.05);
+
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.25), 0 6px 20px -8px rgba(0, 0, 0, 0.35);
+  --shadow-card-hover: 0 2px 4px rgba(0, 0, 0, 0.3), 0 14px 32px -10px rgba(0, 0, 0, 0.5);
 }

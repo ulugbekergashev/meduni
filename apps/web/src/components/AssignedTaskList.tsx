@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { CheckCircle2, Clock, UserRound } from "lucide-react";
 import { Button, Card, Icon } from "@meduni/ui";
+import { formatDate } from "../lib/date";
 
 export interface AssignedTaskItem {
   id: number;
@@ -25,7 +26,7 @@ export function AssignedTaskList({
   locale: string;
 }) {
   const { t } = useTranslation(undefined, { keyPrefix: "tasks" });
-  const fmt = (iso: string) => new Date(iso).toLocaleDateString(locale === "ru" ? "ru-RU" : "uz-UZ", { day: "2-digit", month: "short" });
+  const fmt = (iso: string) => formatDate(locale === "ru" ? "ru" : "uz", iso, "short");
 
   return (
     <div className="space-y-2">
