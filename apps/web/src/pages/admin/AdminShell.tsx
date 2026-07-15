@@ -6,6 +6,7 @@ import { Icon } from "@meduni/ui";
 import { RoleShell } from "../../components/RoleShell";
 import { GlobalSearch, type SearchSection } from "../../components/GlobalSearch";
 import { api } from "../../lib/api";
+import { useMe } from "../../lib/auth";
 import { pickName, useLocale } from "../../lib/useLocale";
 
 interface AdminSearchResp {
@@ -18,6 +19,8 @@ interface AdminSearchResp {
 export function AdminShell() {
   const { t } = useTranslation(undefined, { keyPrefix: "nav" });
   const locale = useLocale();
+  const { data: me } = useMe();
+  const isSuper = me?.role === "superadmin" || me?.role === "admin";
 
   const search = useCallback(
     async (q: string): Promise<SearchSection[]> => {
@@ -69,7 +72,8 @@ export function AdminShell() {
         { href: "/admin/courses", label: t("courses"), icon: <Icon icon={BookOpen} /> },
         { href: "/admin/tasks", label: t("tasks"), icon: <Icon icon={ListChecks} /> },
         { href: "/admin/ai", label: t("ai"), icon: <Icon icon={Sparkles} /> },
-        { href: "/admin/audit", label: t("audit"), icon: <Icon icon={ScrollText} /> },
+        // University-wide audit trail is superadmin-only (backend enforces too).
+        ...(isSuper ? [{ href: "/admin/audit", label: t("audit"), icon: <Icon icon={ScrollText} /> }] : []),
         { href: "/admin/settings", label: t("settings"), icon: <Icon icon={Settings} /> },
       ]}
     >

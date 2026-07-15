@@ -50,7 +50,7 @@ export function App() {
       <Route
         path="/admin"
         element={
-          <RequireRole roles={["admin"]}>
+          <RequireRole roles={["admin", "superadmin", "faculty_admin", "dept_admin"]}>
             <AdminShell />
           </RequireRole>
         }

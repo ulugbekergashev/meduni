@@ -2,10 +2,34 @@ import { Router, type RequestHandler } from "express";
 import { z, type ZodTypeAny } from "zod";
 import { badRequest, notFound } from "../../lib/errors";
 import { requireRoles } from "../../middleware/rbac";
+import { ADMIN_ROLES, adminScope, assertDeptScope, type AdminScope } from "../../middleware/adminScope";
+import { prisma } from "../../lib/prisma";
 import * as svc from "./service";
 
 export const coursesRouter = Router();
-coursesRouter.use(requireRoles("ADMIN"));
+coursesRouter.use(requireRoles(...ADMIN_ROLES));
+
+/** Assert the course's subject department is inside the admin's scope. */
+async function assertCourseInScope(scope: AdminScope, courseId: number) {
+  if (scope.level === "SUPER") return;
+  const course = await prisma.course.findUnique({
+    where: { id: courseId },
+    select: { subject: { select: { department: { select: { id: true, facultyId: true } } } } },
+  });
+  if (!course) throw notFound("Kurs");
+  assertDeptScope(scope, course.subject.department);
+}
+
+/** Check the subject (by id) is inside the admin's scope. */
+async function assertSubjectInScope(scope: AdminScope, subjectId: number) {
+  if (scope.level === "SUPER") return;
+  const subject = await prisma.subject.findUnique({
+    where: { id: subjectId },
+    select: { department: { select: { id: true, facultyId: true } } },
+  });
+  if (!subject) throw notFound("Fan");
+  assertDeptScope(scope, subject.department);
+}
 
 const wrap =
   (fn: RequestHandler): RequestHandler =>
@@ -40,29 +64,63 @@ const updateSchema = z.object({
   groupIds: z.array(z.number().int().positive()).optional(),
 });
 
-coursesRouter.get("/", wrap(async (_req, res) => res.json(await svc.listCourses())));
+coursesRouter.get("/", wrap(async (req, res) => {
+  const scope = await adminScope(req);
+  const where =
+    scope.level === "SUPER"
+      ? undefined
+      : scope.level === "FACULTY"
+        ? { subject: { department: { facultyId: scope.facultyId! } } }
+        : { subject: { departmentId: scope.departmentId! } };
+  res.json(await svc.listCourses(where));
+}));
 
-coursesRouter.get("/:id", wrap(async (req, res) => res.json(await svc.getCourseDetail(parseId(req.params.id)))));
+coursesRouter.get("/:id", wrap(async (req, res) => {
+  const scope = await adminScope(req);
+  const id = parseId(req.params.id);
+  await assertCourseInScope(scope, id);
+  res.json(await svc.getCourseDetail(id));
+}));
 
 coursesRouter.get(
   "/:id/students",
-  wrap(async (req, res) => res.json(await svc.listCourseStudents(parseId(req.params.id))))
+  wrap(async (req, res) => {
+    const scope = await adminScope(req);
+    const id = parseId(req.params.id);
+    await assertCourseInScope(scope, id);
+    res.json(await svc.listCourseStudents(id));
+  })
 );
 
 coursesRouter.post(
   "/",
-  wrap(async (req, res) => res.status(201).json(await svc.createCourse(parseBody(createSchema, req.body))))
+  wrap(async (req, res) => {
+    const scope = await adminScope(req);
+    const body = parseBody(createSchema, req.body);
+    await assertSubjectInScope(scope, body.subjectId);
+    res.status(201).json(await svc.createCourse(body));
+  })
 );
 
 coursesRouter.patch(
   "/:id",
-  wrap(async (req, res) => res.json(await svc.updateCourse(parseId(req.params.id), parseBody(updateSchema, req.body))))
+  wrap(async (req, res) => {
+    const scope = await adminScope(req);
+    const id = parseId(req.params.id);
+    await assertCourseInScope(scope, id);
+    const body = parseBody(updateSchema, req.body);
+    if (body.subjectId) await assertSubjectInScope(scope, body.subjectId);
+    res.json(await svc.updateCourse(id, body));
+  })
 );
 
 coursesRouter.delete(
   "/:id",
   wrap(async (req, res) => {
-    await svc.deleteCourse(parseId(req.params.id));
+    const scope = await adminScope(req);
+    const id = parseId(req.params.id);
+    await assertCourseInScope(scope, id);
+    await svc.deleteCourse(id);
     res.status(204).end();
   })
 );

@@ -14,9 +14,13 @@ const localDay = (d: Date) => {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
 };
 
-export async function getAiUsage(opts: { month?: string; departmentId?: number }) {
+export async function getAiUsage(opts: { month?: string; departmentId?: number; facultyId?: number }) {
   const { start, end } = monthBounds(opts.month);
-  const where = { createdAt: { gte: start, lt: end }, ...(opts.departmentId ? { departmentId: opts.departmentId } : {}) };
+  const where = {
+    createdAt: { gte: start, lt: end },
+    ...(opts.departmentId ? { departmentId: opts.departmentId } : {}),
+    ...(opts.facultyId ? { department: { facultyId: opts.facultyId } } : {}),
+  };
 
   // Usage volume is modest, so fetch the month's rows once and aggregate in JS —
   // lets us build day/model/user cuts that groupBy can't express (date-trunc, top-N).
@@ -110,10 +114,14 @@ export async function getAiUsage(opts: { month?: string; departmentId?: number }
   };
 }
 
-export async function getQuotas() {
+export async function getQuotas(scope?: { facultyId?: number; departmentId?: number }) {
   const { start, end } = monthBounds();
+  const deptWhere = {
+    ...(scope?.facultyId ? { facultyId: scope.facultyId } : {}),
+    ...(scope?.departmentId ? { id: scope.departmentId } : {}),
+  };
   const [depts, usage] = await Promise.all([
-    prisma.department.findMany({ include: { aiQuota: true, faculty: true }, orderBy: { id: "asc" } }),
+    prisma.department.findMany({ where: deptWhere, include: { aiQuota: true, faculty: true }, orderBy: { id: "asc" } }),
     prisma.aiUsage.groupBy({ by: ["departmentId"], where: { createdAt: { gte: start, lt: end } }, _sum: { totalTokens: true, images: true, costUsd: true } }),
   ]);
   const uMap = new Map(usage.filter((u) => u.departmentId).map((u) => [u.departmentId!, u._sum]));
@@ -151,8 +159,14 @@ export async function setQuota(actorId: number, departmentId: number, body: { mo
 }
 
 /** Count departments currently over any of their monthly limits (for the dashboard). */
-export async function departmentsOverQuota(): Promise<number> {
-  const quotas = await prisma.aiQuota.findMany();
+export async function departmentsOverQuota(scope?: { level?: string; facultyId?: number | null; departmentId?: number | null }): Promise<number> {
+  const where =
+    scope && scope.level === "FACULTY" && scope.facultyId
+      ? { department: { facultyId: scope.facultyId } }
+      : scope && scope.level === "DEPT" && scope.departmentId
+        ? { departmentId: scope.departmentId }
+        : undefined;
+  const quotas = await prisma.aiQuota.findMany({ where });
   if (quotas.length === 0) return 0;
   const { start, end } = monthBounds();
   const usage = await prisma.aiUsage.groupBy({ by: ["departmentId"], where: { createdAt: { gte: start, lt: end } }, _sum: { totalTokens: true, images: true, costUsd: true } });

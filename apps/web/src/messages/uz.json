@@ -103,7 +103,10 @@
     "role": {
       "ADMIN": "Administrator",
       "TEACHER": "Oʻqituvchi",
-      "STUDENT": "Talaba"
+      "STUDENT": "Talaba",
+      "SUPERADMIN": "Superadmin",
+      "FACULTY_ADMIN": "Fakultet admini",
+      "DEPT_ADMIN": "Kafedra admini"
     },
     "department": "Kafedra",
     "group": "Guruh",
@@ -772,12 +775,17 @@
     "roleFilter": {
       "all": "Barchasi",
       "student": "Talaba",
-      "teacher": "Oʻqituvchi"
+      "teacher": "Oʻqituvchi",
+      "deptAdmin": "Kafedra adminlari",
+      "facultyAdmin": "Fakultet adminlari"
     },
     "role": {
       "admin": "Admin",
       "teacher": "Oʻqituvchi",
-      "student": "Talaba"
+      "student": "Talaba",
+      "superadmin": "Superadmin",
+      "faculty_admin": "Fakultet admini",
+      "dept_admin": "Kafedra admini"
     },
     "form": {
       "selectRole": "Rol",
@@ -795,7 +803,11 @@
       "password": "Parol",
       "passwordHint": "Boʻsh qoldirsangiz — avtomatik yaratiladi",
       "noGroupsHint": "Avval guruh qoʻshing (Tuzilma boʻlimi).",
-      "noDepartmentsHint": "Avval kafedra qoʻshing (Tuzilma boʻlimi)."
+      "noDepartmentsHint": "Avval kafedra qoʻshing (Tuzilma boʻlimi).",
+      "deptAdmin": "Kafedra admini",
+      "facultyAdmin": "Fakultet admini",
+      "faculty": "Fakultet",
+      "selectFaculty": "Fakultetni tanlang"
     },
     "table": {
       "name": "FISH",

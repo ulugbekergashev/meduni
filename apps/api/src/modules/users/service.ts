@@ -3,19 +3,24 @@ import type { Prisma, Role } from "../../lib/prisma";
 import { prisma } from "../../lib/prisma";
 import { badRequest, conflict, notFound } from "../../lib/errors";
 import { generatePassword } from "../../lib/password";
+import type { AdminScope } from "../../middleware/adminScope";
 
 const PAGE_SIZE = 20;
 
 type UserWithRelations = Prisma.UserGetPayload<{
-  include: { group: true; teacherProfile: { include: { department: true } } };
+  include: { group: true; teacherProfile: { include: { department: true } }; faculty: true; adminDepartment: true };
 }>;
 
 const withRelations = {
   group: true,
   teacherProfile: { include: { department: true } },
+  faculty: true,
+  adminDepartment: true,
 } satisfies Prisma.UserInclude;
 
 function toUserOut(u: UserWithRelations) {
+  // Admin-tier users carry their scope in the same department/faculty fields the UI shows.
+  const dept = u.teacherProfile?.department ?? u.adminDepartment ?? null;
   return {
     id: u.id,
     fullName: u.fullName,
@@ -26,11 +31,31 @@ function toUserOut(u: UserWithRelations) {
     isActive: u.isActive,
     groupId: u.groupId,
     groupName: u.group?.name ?? null,
-    departmentId: u.teacherProfile?.departmentId ?? null,
-    departmentNameUz: u.teacherProfile?.department.nameUz ?? null,
-    departmentNameRu: u.teacherProfile?.department.nameRu ?? null,
+    departmentId: dept?.id ?? null,
+    departmentNameUz: dept?.nameUz ?? null,
+    departmentNameRu: dept?.nameRu ?? null,
+    facultyId: u.facultyId,
+    facultyNameUz: u.faculty?.nameUz ?? null,
+    facultyNameRu: u.faculty?.nameRu ?? null,
     position: u.teacherProfile?.position ?? null,
   };
+}
+
+/** Prisma filter limiting users to the admin's faculty/department scope. */
+function scopeWhere(scope?: AdminScope): Prisma.UserWhereInput {
+  if (!scope || scope.level === "SUPER") return {};
+  if (scope.level === "FACULTY") {
+    const f = scope.facultyId!;
+    return {
+      OR: [
+        { group: { facultyId: f } }, // students
+        { teacherProfile: { department: { facultyId: f } } }, // teachers
+        { adminDepartment: { facultyId: f } }, // dept admins
+      ],
+    };
+  }
+  const d = scope.departmentId!;
+  return { OR: [{ teacherProfile: { departmentId: d } }, { adminDepartmentId: d }] };
 }
 
 // ---------- List (filter + search + pagination) ----------
@@ -40,9 +65,10 @@ export async function listUsers(params: {
   groupId?: number;
   search?: string;
   page?: number;
+  scope?: AdminScope;
 }) {
   const page = Math.max(1, params.page ?? 1);
-  const where: Prisma.UserWhereInput = {};
+  const where: Prisma.UserWhereInput = { AND: [scopeWhere(params.scope)] };
   if (params.role) where.role = params.role;
   if (params.groupId) where.groupId = params.groupId;
   if (params.search) {
@@ -77,6 +103,7 @@ interface CreateUserInput {
   password?: string | null;
   groupId?: number | null;
   departmentId?: number | null;
+  facultyId?: number | null;
   position?: string | null;
 }
 
@@ -98,11 +125,16 @@ export async function createUser(input: CreateUserInput) {
     const group = await prisma.studentGroup.findUnique({ where: { id: input.groupId } });
     if (!group) throw notFound("Guruh");
   }
-  if (input.role === "TEACHER") {
+  if (input.role === "TEACHER" || input.role === "DEPT_ADMIN") {
     if (!input.departmentId)
-      throw badRequest("Oʻqituvchi uchun kafedra majburiy", "Для преподавателя кафедра обязательна");
+      throw badRequest("Kafedra majburiy", "Кафедра обязательна");
     const dept = await prisma.department.findUnique({ where: { id: input.departmentId } });
     if (!dept) throw notFound("Kafedra");
+  }
+  if (input.role === "FACULTY_ADMIN") {
+    if (!input.facultyId) throw badRequest("Fakultet majburiy", "Факультет обязателен");
+    const fac = await prisma.faculty.findUnique({ where: { id: input.facultyId } });
+    if (!fac) throw notFound("Fakultet");
   }
 
   const generated = input.password?.trim() ? null : generatePassword();
@@ -118,6 +150,8 @@ export async function createUser(input: CreateUserInput) {
       locale: input.locale === "ru" ? "ru" : "uz",
       passwordHash,
       groupId: input.role === "STUDENT" ? input.groupId : null,
+      facultyId: input.role === "FACULTY_ADMIN" ? input.facultyId : null,
+      adminDepartmentId: input.role === "DEPT_ADMIN" ? input.departmentId : null,
       teacherProfile:
         input.role === "TEACHER"
           ? { create: { departmentId: input.departmentId!, position: input.position?.trim() || null } }

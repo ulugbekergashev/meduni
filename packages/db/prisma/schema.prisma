@@ -8,7 +8,10 @@ datasource db {
 }
 
 enum Role {
-  ADMIN
+  ADMIN // deprecated — data-migrated to SUPERADMIN; kept so the enum drop isn't needed
+  SUPERADMIN
+  FACULTY_ADMIN
+  DEPT_ADMIN
   TEACHER
   STUDENT
 }
@@ -114,6 +117,11 @@ model User {
   isActive       Boolean         @default(true)
   groupId        Int?
   group          StudentGroup?   @relation(fields: [groupId], references: [id])
+  // Admin-tier scopes: FACULTY_ADMIN is pinned to a faculty, DEPT_ADMIN to a department.
+  facultyId         Int?
+  faculty           Faculty?        @relation("FacultyAdmins", fields: [facultyId], references: [id])
+  adminDepartmentId Int?
+  adminDepartment   Department?     @relation("DepartmentAdmins", fields: [adminDepartmentId], references: [id])
   teacherProfile    TeacherProfile?
   taughtCourses     Course[]         @relation("CourseTeacher")
   enrollments       Enrollment[]
@@ -171,6 +179,7 @@ model Faculty {
   createdAt   DateTime       @default(now())
   departments Department[]
   groups      StudentGroup[]
+  admins      User[]         @relation("FacultyAdmins")
 
   @@unique([nameUz])
   @@unique([nameRu])
@@ -189,6 +198,7 @@ model Department {
   glossary  Glossary[]
   aiUsage   AiUsage[]
   aiQuota   AiQuota?
+  admins    User[]           @relation("DepartmentAdmins")
 
   @@unique([facultyId, nameUz])
   @@unique([facultyId, nameRu])

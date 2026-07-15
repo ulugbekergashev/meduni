@@ -19,14 +19,21 @@ import { UserFormModal } from "./UserFormModal";
 import { PasswordModal } from "./PasswordModal";
 import { ImportModal } from "./ImportModal";
 
-const roleTone: Record<UserRole, BadgeTone> = { admin: "amber", teacher: "violet", student: "blue" };
+const roleTone: Record<UserRole, BadgeTone> = {
+  admin: "amber",
+  superadmin: "amber",
+  faculty_admin: "amber",
+  dept_admin: "emerald",
+  teacher: "violet",
+  student: "blue",
+};
 
 export function UsersPage() {
   const { t } = useTranslation(undefined, { keyPrefix: "users" });
   const { t: tc } = useTranslation(undefined, { keyPrefix: "common" });
   const { show } = useToast();
 
-  const [roleFilter, setRoleFilter] = useState<"" | "STUDENT" | "TEACHER">("");
+  const [roleFilter, setRoleFilter] = useState<"" | "STUDENT" | "TEACHER" | "DEPT_ADMIN" | "FACULTY_ADMIN">("");
   const [searchInput, setSearchInput] = useState("");
   const search = useDebounced(searchInput, 300);
   const [page, setPage] = useState(1);
@@ -65,10 +72,12 @@ export function UsersPage() {
     });
   };
 
-  const roleTabs: { value: "" | "STUDENT" | "TEACHER"; label: string }[] = [
+  const roleTabs: { value: "" | "STUDENT" | "TEACHER" | "DEPT_ADMIN" | "FACULTY_ADMIN"; label: string }[] = [
     { value: "", label: t("roleFilter.all") },
     { value: "STUDENT", label: t("roleFilter.student") },
     { value: "TEACHER", label: t("roleFilter.teacher") },
+    { value: "DEPT_ADMIN", label: t("roleFilter.deptAdmin") },
+    { value: "FACULTY_ADMIN", label: t("roleFilter.facultyAdmin") },
   ];
 
   return (

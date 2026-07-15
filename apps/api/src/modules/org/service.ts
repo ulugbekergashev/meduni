@@ -3,8 +3,8 @@ import { conflict, duplicate, notFound } from "../../lib/errors";
 
 // ---------- Faculties ----------
 
-export async function listFaculties() {
-  const rows = await prisma.faculty.findMany({ orderBy: { id: "asc" } });
+export async function listFaculties(onlyId?: number) {
+  const rows = await prisma.faculty.findMany({ where: onlyId ? { id: onlyId } : undefined, orderBy: { id: "asc" } });
   return rows.map((f) => ({ id: f.id, nameUz: f.nameUz, nameRu: f.nameRu }));
 }
 
@@ -53,9 +53,9 @@ export async function deleteFaculty(id: number) {
 
 // ---------- Departments ----------
 
-export async function listDepartments(facultyId?: number) {
+export async function listDepartments(facultyId?: number, departmentId?: number) {
   const rows = await prisma.department.findMany({
-    where: facultyId ? { facultyId } : undefined,
+    where: { ...(facultyId ? { facultyId } : {}), ...(departmentId ? { id: departmentId } : {}) },
     orderBy: { id: "asc" },
     include: { faculty: true },
   });
@@ -119,9 +119,12 @@ export async function deleteDepartment(id: number) {
 
 // ---------- Subjects ----------
 
-export async function listSubjects(departmentId?: number) {
+export async function listSubjects(departmentId?: number, facultyId?: number) {
   const rows = await prisma.subject.findMany({
-    where: departmentId ? { departmentId } : undefined,
+    where: {
+      ...(departmentId ? { departmentId } : {}),
+      ...(facultyId ? { department: { facultyId } } : {}),
+    },
     orderBy: { id: "asc" },
     include: { department: true },
   });

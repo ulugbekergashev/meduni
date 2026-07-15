@@ -227,12 +227,37 @@ export async function createTask(creator: { id: number; role: Role }, input: Cre
   let departmentId: number | null = null;
   let groupId: number | null = null;
 
-  if (creator.role === "ADMIN") {
+  const isAdminTier = creator.role === "ADMIN" || creator.role === "SUPERADMIN" || creator.role === "FACULTY_ADMIN" || creator.role === "DEPT_ADMIN";
+  if (isAdminTier) {
+    // Resolve the admin's own faculty/department pin (SUPER has none).
+    let scopeFacultyId: number | null = null;
+    let scopeDeptId: number | null = null;
+    if (creator.role === "FACULTY_ADMIN" || creator.role === "DEPT_ADMIN") {
+      const me = await prisma.user.findUnique({
+        where: { id: creator.id },
+        select: { facultyId: true, adminDepartmentId: true, adminDepartment: { select: { facultyId: true } } },
+      });
+      scopeFacultyId = me?.facultyId ?? me?.adminDepartment?.facultyId ?? null;
+      scopeDeptId = me?.adminDepartmentId ?? null;
+      if (creator.role === "FACULTY_ADMIN" && !scopeFacultyId) throw forbidden();
+      if (creator.role === "DEPT_ADMIN" && !scopeDeptId) throw forbidden();
+    }
+
     if (input.teacherId) {
-      const u = await prisma.user.findUnique({ where: { id: input.teacherId }, select: { role: true } });
+      const u = await prisma.user.findUnique({
+        where: { id: input.teacherId },
+        select: { role: true, teacherProfile: { select: { departmentId: true, department: { select: { facultyId: true } } } } },
+      });
       if (u?.role !== "TEACHER") throw badRequest("Faqat oʻqituvchiga tayinlanadi", "Можно назначить только преподавателю");
+      if (scopeDeptId && u.teacherProfile?.departmentId !== scopeDeptId) throw forbidden();
+      if (!scopeDeptId && scopeFacultyId && u.teacherProfile?.department.facultyId !== scopeFacultyId) throw forbidden();
       recipients = [input.teacherId];
     } else if (input.departmentId) {
+      if (scopeDeptId && input.departmentId !== scopeDeptId) throw forbidden();
+      if (!scopeDeptId && scopeFacultyId) {
+        const dept = await prisma.department.findUnique({ where: { id: input.departmentId }, select: { facultyId: true } });
+        if (dept?.facultyId !== scopeFacultyId) throw forbidden();
+      }
       const teachers = await prisma.teacherProfile.findMany({ where: { departmentId: input.departmentId }, select: { userId: true } });
       recipients = teachers.map((t) => t.userId);
       departmentId = input.departmentId;
