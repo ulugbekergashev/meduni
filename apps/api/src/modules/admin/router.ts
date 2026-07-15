@@ -1,7 +1,6 @@
 import { Router, type RequestHandler } from "express";
 import { notFound } from "../../lib/errors";
 import { requireRoles } from "../../middleware/rbac";
-import * as templates from "./templates";
 import * as monitoring from "./monitoring";
 import * as audit from "./audit";
 import { adminStats } from "./stats";
@@ -20,16 +19,6 @@ function parseId(raw: string): number {
 
 const qnum = (v: unknown) => (v ? Number(v) : undefined);
 const qstr = (v: unknown) => (typeof v === "string" && v ? v : undefined);
-
-// ---------- Templates (ADMIN) ----------
-export const templatesRouter = Router();
-templatesRouter.use(requireRoles("ADMIN"));
-
-templatesRouter.get("/", wrap(async (_req, res) => res.json(await templates.listTemplates())));
-templatesRouter.post("/", wrap(async (req, res) => res.json(await templates.createTemplate(req.body ?? {}))));
-templatesRouter.patch("/:id", wrap(async (req, res) => res.json(await templates.updateTemplate(parseId(req.params.id), req.body ?? {}))));
-templatesRouter.delete("/:id", wrap(async (req, res) => res.json(await templates.deleteTemplate(parseId(req.params.id)))));
-templatesRouter.post("/:id/set-default", wrap(async (req, res) => res.json(await templates.setDefault(parseId(req.params.id)))));
 
 // ---------- Admin: AI monitoring / quotas / audit / stats (ADMIN) ----------
 export const adminRouter = Router();

@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import { Outlet } from "react-router-dom";
-import { BookOpen, GraduationCap, Home, ListChecks, Network, Palette, ScrollText, Settings, Sparkles, UserRound, Users, Users2 } from "lucide-react";
+import { BookOpen, GraduationCap, Home, ListChecks, Network, ScrollText, Settings, Sparkles, UserRound, Users, Users2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Icon } from "@meduni/ui";
 import { RoleShell } from "../../components/RoleShell";
@@ -68,7 +68,6 @@ export function AdminShell() {
         { href: "/admin/users", label: t("users"), icon: <Icon icon={Users} /> },
         { href: "/admin/courses", label: t("courses"), icon: <Icon icon={BookOpen} /> },
         { href: "/admin/tasks", label: t("tasks"), icon: <Icon icon={ListChecks} /> },
-        { href: "/admin/templates", label: t("templates"), icon: <Icon icon={Palette} /> },
         { href: "/admin/ai", label: t("ai"), icon: <Icon icon={Sparkles} /> },
         { href: "/admin/audit", label: t("audit"), icon: <Icon icon={ScrollText} /> },
         { href: "/admin/settings", label: t("settings"), icon: <Icon icon={Settings} /> },

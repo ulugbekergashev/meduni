@@ -16,42 +16,26 @@ export function useDepartments() {
   return useQuery({ queryKey: ["departments"], queryFn: () => api<Dept[]>("/api/v1/departments") });
 }
 
-// ---------------- Templates ----------------
-export interface Template {
-  id: number;
-  name: string;
-  colors: { primary: string; secondary: string };
-  logoUrl: string | null;
-  hasMaster: boolean;
-  isDefault: boolean;
-}
-export function useTemplates() {
-  return useQuery({ queryKey: ["templates"], queryFn: () => api<Template[]>("/api/v1/templates") });
-}
-export function useCreateTemplate() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (b: { name: string; colors: { primary: string; secondary: string }; logoUrl?: string }) => api("/api/v1/templates", { method: "POST", body: JSON.stringify(b) }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["templates"] }),
-  });
-}
-export function useDeleteTemplate() {
-  const qc = useQueryClient();
-  return useMutation({ mutationFn: (id: number) => api(`/api/v1/templates/${id}`, { method: "DELETE" }), onSuccess: () => qc.invalidateQueries({ queryKey: ["templates"] }) });
-}
-export function useSetDefaultTemplate() {
-  const qc = useQueryClient();
-  return useMutation({ mutationFn: (id: number) => api(`/api/v1/templates/${id}/set-default`, { method: "POST" }), onSuccess: () => qc.invalidateQueries({ queryKey: ["templates"] }) });
-}
 
 // ---------------- AI monitoring ----------------
 export interface AiUsage {
   totals: { tokens: number; images: number; ttsChars: number; cost: number };
-  byDept: { departmentId: number; nameUz: string; nameRu: string; tokens: number; images: number; ttsChars: number; cost: number; quota: { token: number; image: number; cost: number } | null; tokenPct: number | null; costPct: number | null }[];
+  byDay: { day: string; tokens: number; images: number; cost: number }[];
   byKind: { kind: string; tokens: number; images: number; ttsChars: number; cost: number }[];
+  byModel: { model: string; tokens: number; cost: number }[];
+  byDept: {
+    departmentId: number; nameUz: string; nameRu: string;
+    tokens: number; images: number; ttsChars: number; cost: number;
+    quota: { token: number; image: number; cost: number } | null;
+    tokenPct: number | null; imagePct: number | null; costPct: number | null;
+  }[];
+  byUser: { userId: number; name: string; tokens: number; cost: number }[];
 }
-export function useAiUsage() {
-  return useQuery({ queryKey: ["ai-usage"], queryFn: () => api<AiUsage>("/api/v1/admin/ai-usage") });
+export function useAiUsage(month?: string) {
+  return useQuery({
+    queryKey: ["ai-usage", month ?? "current"],
+    queryFn: () => api<AiUsage>(`/api/v1/admin/ai-usage${month ? `?month=${month}` : ""}`),
+  });
 }
 export interface Quota {
   departmentId: number;

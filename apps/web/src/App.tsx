@@ -14,7 +14,6 @@ import { UsersPage } from "./pages/admin/users/UsersPage";
 import { UserProfilePage } from "./pages/admin/users/UserProfilePage";
 import { CoursesPage } from "./pages/admin/courses/CoursesPage";
 import { CourseDetail } from "./pages/admin/courses/CourseDetail";
-import { TemplatesPage } from "./pages/admin/templates/TemplatesPage";
 import { AiMonitoringPage } from "./pages/admin/ai/AiMonitoringPage";
 import { AuditPage } from "./pages/admin/audit/AuditPage";
 import { AdminTasksPage } from "./pages/admin/tasks/AdminTasksPage";
@@ -69,7 +68,6 @@ export function App() {
         <Route path="courses" element={<CoursesPage />} />
         <Route path="courses/:id" element={<CourseDetail />} />
         <Route path="tasks" element={<AdminTasksPage />} />
-        <Route path="templates" element={<TemplatesPage />} />
         <Route path="ai" element={<AiMonitoringPage />} />
         <Route path="audit" element={<AuditPage />} />
         <Route path="settings" element={<AccountSettings />} />

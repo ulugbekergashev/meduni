@@ -544,6 +544,22 @@ Barcha modullar tugadi (1-17).
   pct bar + baholanmagan keysга "Baholash→". **Tekshirildi (e2e):** 3 rol qidiruv +
   ownership/403, guruh payload matritsa bilan mos (avgProgress 17/behind 1); tsc+build toza.
 
+- **Modul 20 — Admin overhaul (Faza 1: shablonlar o'chirildi + AI-audit boyitildi).**
+  **Reja:** admin tomoni 4-bosqichli ierarxiyaga o'tadi (SuperAdmin→Fakultet-admin→Kafedra-
+  admin→O'qituvchi; Faza 2) va kontent kafedra-markazlashadi (Topic→subjectId; Faza 3) —
+  `.claude/plans/`da. (A) **PresentationTemplate BUTUNLAY olib tashlandi** (dekorativ edi —
+  templateId hech qayerda ishlatilmasди, eksport ranglarni hardkod qiladi): nav/route/
+  `pages/admin/templates/`, `modules/admin/templates.ts`+`templatesRouter`, `admin/api.ts`
+  hooklari, `templates` i18n, `genPresSchema`/`generatePresentation`dan templateId. Prisma
+  `PresentationTemplate`+`Presentation.templateId` bazада qoladi (kod ishlatmaydi). (B)
+  **AI-audit (`/admin/ai`) boyitildi:** `monitoring.ts::getAiUsage` endi oyning barcha
+  yozuvlarini olib JSда agregat qiladi → `byDay` (31-kun timeline), `byModel`, `byUser`
+  (top-8 o'qituvchi), `byKind` (cost), `byDept` (3 kvota-% token/image/cost), totals+ttsChars.
+  Yangi `packages/ui/Charts.tsx::MiniBars` (vertikal timeline). Sahifa: oy tanlagich +
+  gradient hero (4 metrik) + kunlik MiniBars + cost-by-kind/model RankRow + top-o'qituvchilar
+  + kafedra jadvali (3 kvota-bar) + kvota modal. **Tekshirildi (e2e admin):** `/templates`→404,
+  ai-usage 6 agregat real ma'lumot bilan (image=$1.16/jami $1.44, byUser, 31-kun); tsc+build toza.
+
 ---
 
 ## 9. Loyiha holati va ishga tushirish (operatsion — sessiya 0)

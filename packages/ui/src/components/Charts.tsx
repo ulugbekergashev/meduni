@@ -96,6 +96,40 @@ export function BarRow({
   );
 }
 
+/** Compact vertical bar timeline (e.g. AI usage per day). One value per bar,
+ *  ink-token labels, recessive baseline; native title tooltip per bar. */
+export function MiniBars({
+  data,
+  tone = "brand",
+  height = 120,
+  format = (v) => String(Math.round(v)),
+}: {
+  data: { label: string; value: number; tip?: string }[];
+  tone?: ToneKey;
+  height?: number;
+  format?: (v: number) => string;
+}) {
+  const max = Math.max(1, ...data.map((d) => d.value));
+  return (
+    <div className="w-full">
+      <div className="flex items-end gap-[3px]" style={{ height }}>
+        {data.map((d, i) => {
+          const h = d.value > 0 ? Math.max(3, (d.value / max) * height) : 0;
+          return (
+            <div key={i} className="group relative flex flex-1 items-end justify-center" style={{ height }}>
+              <div
+                className="w-full max-w-[16px] rounded-t-[3px] transition-all"
+                style={{ height: h, background: d.value > 0 ? toneVar[tone] : "var(--line)", minHeight: d.value > 0 ? 3 : 2 }}
+                title={d.tip ?? `${d.label}: ${format(d.value)}`}
+              />
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 /** Horizontal stacked bar of colored segments (e.g. attendance breakdown).
  *  Segments are separated by a 2px surface gap so adjacent fills stay readable. */
 export function StackedBar({ segments }: { segments: { value: number; tone: ToneKey }[] }) {
