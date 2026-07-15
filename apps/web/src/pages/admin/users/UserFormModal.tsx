@@ -4,6 +4,7 @@ import { Button, Input, Modal, Select } from "@meduni/ui";
 import { Field } from "../../../components/Field";
 import { apiErrorMessage } from "../../../lib/api";
 import { useList } from "../../../lib/crud";
+import { useMe } from "../../../lib/auth";
 import { pickName, useLocale } from "../../../lib/useLocale";
 import type { Department } from "../structure/types";
 import { useCreateUser, useUpdateUser, type CreateUserBody, type UserRow } from "./api";
@@ -13,7 +14,20 @@ interface Group {
   name: string;
 }
 
-type FormRole = "STUDENT" | "TEACHER";
+interface FacultyOpt {
+  id: number;
+  nameUz: string;
+  nameRu: string;
+}
+
+type FormRole = "STUDENT" | "TEACHER" | "DEPT_ADMIN" | "FACULTY_ADMIN";
+
+/** Which roles the current admin tier may create (mirrors the backend rule). */
+function creatableRoles(myRole?: string): FormRole[] {
+  if (myRole === "dept_admin") return ["TEACHER"];
+  if (myRole === "faculty_admin") return ["STUDENT", "TEACHER", "DEPT_ADMIN"];
+  return ["STUDENT", "TEACHER", "DEPT_ADMIN", "FACULTY_ADMIN"];
+}
 
 function UserForm({
   editing,
@@ -30,18 +44,24 @@ function UserForm({
   const { t: tc } = useTranslation(undefined, { keyPrefix: "common" });
   const locale = useLocale();
 
+  const { data: me } = useMe();
+  const roleOptions = creatableRoles(me?.role);
+
   const groups = useList<Group>("groups");
   const departments = useList<Department>("departments");
+  const faculties = useList<FacultyOpt>("faculties");
   const groupOptions = groups.data ?? [];
   const deptOptions = departments.data ?? [];
+  const facultyOptions = faculties.data ?? [];
 
   const isEdit = !!editing;
   const create = useCreateUser();
   const update = useUpdateUser();
 
   const [role, setRole] = useState<FormRole>(
-    editing ? (editing.role === "teacher" ? "TEACHER" : "STUDENT") : "STUDENT"
+    editing ? (editing.role === "teacher" ? "TEACHER" : "STUDENT") : roleOptions[0]
   );
+  const [facultyId, setFacultyId] = useState<string>("");
   const [fullName, setFullName] = useState(editing?.fullName ?? "");
   const [email, setEmail] = useState(editing?.email ?? "");
   const [phone, setPhone] = useState(editing?.phone ?? "");
@@ -54,8 +74,9 @@ function UserForm({
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
 
+  const needsDept = role === "TEACHER" || role === "DEPT_ADMIN";
   const noGroups = role === "STUDENT" && groupOptions.length === 0;
-  const noDepts = role === "TEACHER" && deptOptions.length === 0;
+  const noDepts = needsDept && deptOptions.length === 0;
 
   const onSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -91,7 +112,8 @@ function UserForm({
       locale: langValue,
       password: password.trim() || null,
       groupId: role === "STUDENT" ? Number(groupId) : null,
-      departmentId: role === "TEACHER" ? Number(departmentId) : null,
+      departmentId: needsDept ? Number(departmentId) : null,
+      facultyId: role === "FACULTY_ADMIN" ? Number(facultyId) : null,
       position: role === "TEACHER" ? position.trim() || null : null,
     };
     create.mutate(body, {
@@ -107,20 +129,20 @@ function UserForm({
       {/* Role selector (create only) */}
       {!isEdit && (
         <Field label={t("selectRole")}>
-          <div className="flex gap-2">
-            {(["STUDENT", "TEACHER"] as const).map((r) => (
+          <div className="flex flex-wrap gap-2">
+            {roleOptions.map((r) => (
               <button
                 key={r}
                 type="button"
                 onClick={() => setRole(r)}
                 className={
-                  "flex-1 rounded-control border px-3 py-2 text-[13.5px] font-semibold transition-colors " +
+                  "flex-1 whitespace-nowrap rounded-control border px-3 py-2 text-[13.5px] font-semibold transition-colors " +
                   (role === r
                     ? "border-brand bg-brand-soft text-brand-deep"
                     : "border-line text-ink-soft hover:bg-bg")
                 }
               >
-                {r === "STUDENT" ? t("student") : t("teacher")}
+                {r === "STUDENT" ? t("student") : r === "TEACHER" ? t("teacher") : r === "DEPT_ADMIN" ? t("deptAdmin") : t("facultyAdmin")}
               </button>
             ))}
           </div>
@@ -163,7 +185,7 @@ function UserForm({
           </Field>
         )}
 
-        {role === "TEACHER" && (
+        {needsDept && (
           <>
             <Field label={t("department")}>
               {noDepts ? (
@@ -181,10 +203,27 @@ function UserForm({
                 </Select>
               )}
             </Field>
-            <Field label={t("position")}>
-              <Input value={position} onChange={(e) => setPosition(e.target.value)} />
-            </Field>
+            {role === "TEACHER" && (
+              <Field label={t("position")}>
+                <Input value={position} onChange={(e) => setPosition(e.target.value)} />
+              </Field>
+            )}
           </>
+        )}
+
+        {role === "FACULTY_ADMIN" && (
+          <Field label={t("faculty")}>
+            <Select value={facultyId} onChange={(e) => setFacultyId(e.target.value)} required>
+              <option value="" disabled>
+                {t("selectFaculty")}
+              </option>
+              {facultyOptions.map((f) => (
+                <option key={f.id} value={f.id}>
+                  {pickName(locale, f.nameUz, f.nameRu)}
+                </option>
+              ))}
+            </Select>
+          </Field>
         )}
 
         {!isEdit && (

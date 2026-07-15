@@ -48,35 +48,45 @@ export async function teacherSearch(teacherId: number, q: string) {
 }
 
 /** ADMIN: the whole university — students, teachers, groups, courses. */
-export async function adminSearch(q: string) {
+export async function adminSearch(q: string, scope?: { facultyId?: number | null; departmentId?: number | null }) {
   if (!q.trim()) return { students: [], teachers: [], groups: [], courses: [] };
   const needle = q.trim();
-  const userWhere = (role: "STUDENT" | "TEACHER") => ({
-    role,
-    OR: [{ fullName: contains(needle) }, { email: contains(needle) }],
-  });
+  const f = scope?.facultyId ?? undefined;
+  const d = scope?.departmentId ?? undefined;
+
+  const studentScope = d
+    ? { enrollments: { some: { status: "ACTIVE" as const, course: { subject: { departmentId: d } } } } }
+    : f
+      ? { group: { facultyId: f } }
+      : {};
+  const teacherScope = d
+    ? { teacherProfile: { departmentId: d } }
+    : f
+      ? { teacherProfile: { department: { facultyId: f } } }
+      : {};
+  const courseScope = d ? { subject: { departmentId: d } } : f ? { subject: { department: { facultyId: f } } } : {};
 
   const [students, teachers, groups, courses] = await Promise.all([
     prisma.user.findMany({
-      where: userWhere("STUDENT"),
+      where: { role: "STUDENT", ...studentScope, OR: [{ fullName: contains(needle) }, { email: contains(needle) }] },
       select: { id: true, fullName: true, group: { select: { name: true } } },
       orderBy: { fullName: "asc" },
       take: LIMIT,
     }),
     prisma.user.findMany({
-      where: userWhere("TEACHER"),
+      where: { role: "TEACHER", ...teacherScope, OR: [{ fullName: contains(needle) }, { email: contains(needle) }] },
       select: { id: true, fullName: true, teacherProfile: { select: { department: { select: { nameUz: true, nameRu: true } } } } },
       orderBy: { fullName: "asc" },
       take: LIMIT,
     }),
     prisma.studentGroup.findMany({
-      where: { name: contains(needle) },
+      where: { name: contains(needle), ...(f ? { facultyId: f } : {}) },
       select: { id: true, name: true, _count: { select: { students: true } } },
       orderBy: { name: "asc" },
       take: LIMIT,
     }),
     prisma.course.findMany({
-      where: { OR: [{ subject: { nameUz: contains(needle) } }, { subject: { nameRu: contains(needle) } }] },
+      where: { ...courseScope, OR: [{ subject: { nameUz: contains(needle) } }, { subject: { nameRu: contains(needle) } }] },
       select: { id: true, semester: true, subject: { select: { nameUz: true, nameRu: true } } },
       orderBy: { id: "asc" },
       take: LIMIT,

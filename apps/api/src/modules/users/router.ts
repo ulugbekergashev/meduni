@@ -1,8 +1,9 @@
 import { Router, type RequestHandler } from "express";
 import multer from "multer";
 import { z, type ZodTypeAny } from "zod";
-import { badRequest, notFound } from "../../lib/errors";
+import { badRequest, forbidden, notFound } from "../../lib/errors";
 import { requireRoles } from "../../middleware/rbac";
+import { ADMIN_ROLES, adminScope, assertDeptScope, assertFacultyScope, type AdminScope } from "../../middleware/adminScope";
 import { prisma } from "../../lib/prisma";
 import { importUsers } from "./import";
 import * as svc from "./service";
@@ -11,7 +12,41 @@ const audit = (actorId: number, action: string, entityId: number, details?: obje
   prisma.auditLog.create({ data: { actorId, action, entity: "User", entityId, detailsJson: details ?? undefined } }).catch(() => {});
 
 export const usersRouter = Router();
-usersRouter.use(requireRoles("ADMIN"));
+usersRouter.use(requireRoles(...ADMIN_ROLES));
+
+/** Which roles each admin tier may create. */
+const CREATABLE: Record<AdminScope["level"], string[]> = {
+  SUPER: ["FACULTY_ADMIN", "DEPT_ADMIN", "TEACHER", "STUDENT"],
+  FACULTY: ["DEPT_ADMIN", "TEACHER", "STUDENT"],
+  DEPT: ["TEACHER"],
+};
+
+/** Assert the target user belongs to the caller's scope (and isn't a higher tier). */
+async function assertUserInScope(scope: AdminScope, userId: number) {
+  if (scope.level === "SUPER") return;
+  const u = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      role: true,
+      facultyId: true,
+      adminDepartmentId: true,
+      adminDepartment: { select: { facultyId: true } },
+      group: { select: { facultyId: true } },
+      teacherProfile: { select: { departmentId: true, department: { select: { facultyId: true } } } },
+    },
+  });
+  if (!u) throw notFound("Foydalanuvchi");
+  if (u.role === "SUPERADMIN" || u.role === "ADMIN" || u.role === "FACULTY_ADMIN") throw forbidden();
+  if (scope.level === "FACULTY") {
+    const fid = u.group?.facultyId ?? u.teacherProfile?.department.facultyId ?? u.adminDepartment?.facultyId ?? u.facultyId;
+    if (fid !== scope.facultyId) throw forbidden("Bu sizning fakultetingiz emas", "Это не ваш факультет");
+    return;
+  }
+  // DEPT: may manage only teachers of the own department.
+  if (u.role !== "TEACHER" || u.teacherProfile?.departmentId !== scope.departmentId) {
+    throw forbidden("Bu sizning kafedrangiz emas", "Это не ваша кафедра");
+  }
+}
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
 
@@ -32,7 +67,7 @@ function parseId(raw: string): number {
   return id;
 }
 
-const roleEnum = z.enum(["STUDENT", "TEACHER"]);
+const roleEnum = z.enum(["STUDENT", "TEACHER", "DEPT_ADMIN", "FACULTY_ADMIN"]);
 const localeEnum = z.enum(["uz", "ru"]);
 
 const createSchema = z.object({
@@ -44,6 +79,7 @@ const createSchema = z.object({
   password: z.string().trim().min(4).optional().nullable(),
   groupId: z.number().int().positive().optional().nullable(),
   departmentId: z.number().int().positive().optional().nullable(),
+  facultyId: z.number().int().positive().optional().nullable(),
   position: z.string().trim().optional().nullable(),
 });
 
@@ -57,16 +93,19 @@ const updateSchema = z.object({
   position: z.string().trim().optional().nullable(),
 });
 
+const ROLE_FILTERS = ["STUDENT", "TEACHER", "ADMIN", "SUPERADMIN", "FACULTY_ADMIN", "DEPT_ADMIN"];
+
 // List ------------------------------------------------------------------
 usersRouter.get(
   "/",
   wrap(async (req, res) => {
+    const scope = await adminScope(req);
     const roleRaw = String(req.query.role ?? "").toUpperCase();
-    const role = roleRaw === "STUDENT" || roleRaw === "TEACHER" || roleRaw === "ADMIN" ? roleRaw : undefined;
+    const role = ROLE_FILTERS.includes(roleRaw) ? (roleRaw as never) : undefined;
     const groupId = req.query.groupId ? Number(req.query.groupId) : undefined;
     const search = req.query.search ? String(req.query.search) : undefined;
     const page = req.query.page ? Number(req.query.page) : 1;
-    res.json(await svc.listUsers({ role, groupId, search, page }));
+    res.json(await svc.listUsers({ role, groupId, search, page, scope }));
   })
 );
 
@@ -74,7 +113,10 @@ usersRouter.get(
 usersRouter.get(
   "/:id/profile",
   wrap(async (req, res) => {
-    res.json(await svc.getUserProfile(parseId(req.params.id)));
+    const scope = await adminScope(req);
+    const id = parseId(req.params.id);
+    await assertUserInScope(scope, id);
+    res.json(await svc.getUserProfile(id));
   })
 );
 
@@ -82,7 +124,29 @@ usersRouter.get(
 usersRouter.post(
   "/",
   wrap(async (req, res) => {
-    const created = await svc.createUser(parseBody(createSchema, req.body));
+    const scope = await adminScope(req);
+    const body = parseBody(createSchema, req.body);
+    if (!CREATABLE[scope.level].includes(body.role)) throw forbidden();
+
+    // Direction/scope rules per created role.
+    if (body.role === "STUDENT" && body.groupId) {
+      const group = await prisma.studentGroup.findUnique({ where: { id: body.groupId }, select: { facultyId: true } });
+      if (!group) throw notFound("Guruh");
+      assertFacultyScope(scope, group.facultyId);
+    }
+    if ((body.role === "TEACHER" || body.role === "DEPT_ADMIN")) {
+      const deptId = scope.level === "DEPT" ? scope.departmentId! : body.departmentId;
+      if (!deptId) throw badRequest("Kafedra majburiy", "Кафедра обязательна");
+      const dept = await prisma.department.findUnique({ where: { id: deptId }, select: { id: true, facultyId: true } });
+      if (!dept) throw notFound("Kafedra");
+      assertDeptScope(scope, dept);
+      body.departmentId = deptId;
+    }
+    if (body.role === "FACULTY_ADMIN" && !body.facultyId) {
+      throw badRequest("Fakultet majburiy", "Факультет обязателен");
+    }
+
+    const created = await svc.createUser(body);
     await audit(req.user!.id, "CREATE_USER", created.id, { role: created.role, email: created.email });
     res.status(201).json(created);
   })
@@ -92,7 +156,10 @@ usersRouter.post(
 usersRouter.patch(
   "/:id",
   wrap(async (req, res) => {
-    res.json(await svc.updateUser(parseId(req.params.id), parseBody(updateSchema, req.body)));
+    const scope = await adminScope(req);
+    const id = parseId(req.params.id);
+    await assertUserInScope(scope, id);
+    res.json(await svc.updateUser(id, parseBody(updateSchema, req.body)));
   })
 );
 
@@ -100,7 +167,10 @@ usersRouter.patch(
 usersRouter.post(
   "/:id/toggle-active",
   wrap(async (req, res) => {
-    const u = await svc.toggleActive(parseId(req.params.id));
+    const scope = await adminScope(req);
+    const id = parseId(req.params.id);
+    await assertUserInScope(scope, id);
+    const u = await svc.toggleActive(id);
     await audit(req.user!.id, u.isActive ? "ACTIVATE_USER" : "DEACTIVATE_USER", u.id);
     res.json(u);
   })
@@ -110,15 +180,20 @@ usersRouter.post(
 usersRouter.post(
   "/:id/reset-password",
   wrap(async (req, res) => {
-    res.json(await svc.resetPassword(parseId(req.params.id)));
+    const scope = await adminScope(req);
+    const id = parseId(req.params.id);
+    await assertUserInScope(scope, id);
+    res.json(await svc.resetPassword(id));
   })
 );
 
-// XLSX import -----------------------------------------------------------
+// XLSX import (bulk) — university-wide, SUPERADMIN only ------------------
 usersRouter.post(
   "/import",
   upload.single("file"),
   wrap(async (req, res) => {
+    const scope = await adminScope(req);
+    if (scope.level !== "SUPER") throw forbidden();
     if (!req.file) throw badRequest("Fayl yuklanmadi", "Файл не загружен");
     res.json(await importUsers(req.file.buffer));
   })

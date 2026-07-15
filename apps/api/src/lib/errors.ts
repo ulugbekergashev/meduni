@@ -17,8 +17,8 @@ export function notFound(entity = "Ma'lumot"): ApiError {
   return new ApiError(404, "not_found", `${entity} topilmadi`, "Не найдено");
 }
 
-export function forbidden(): ApiError {
-  return new ApiError(403, "forbidden", "Ruxsat yoʻq", "Нет доступа");
+export function forbidden(messageUz = "Ruxsat yoʻq", messageRu = "Нет доступа"): ApiError {
+  return new ApiError(403, "forbidden", messageUz, messageRu);
 }
 
 export function unauthorized(): ApiError {

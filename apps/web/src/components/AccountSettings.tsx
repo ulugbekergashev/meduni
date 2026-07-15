@@ -13,7 +13,7 @@ interface Account {
   fullName: string;
   email: string;
   phone: string | null;
-  role: "ADMIN" | "TEACHER" | "STUDENT";
+  role: "ADMIN" | "SUPERADMIN" | "FACULTY_ADMIN" | "DEPT_ADMIN" | "TEACHER" | "STUDENT";
   locale: "uz" | "ru";
   contextType: "group" | "department" | null;
   contextUz: string | null;
@@ -32,6 +32,9 @@ function Row({ icon, label, value }: { icon: typeof Mail; label: string; value: 
 
 const roleTone: Record<Account["role"], string> = {
   ADMIN: "bg-rose-soft text-rose",
+  SUPERADMIN: "bg-rose-soft text-rose",
+  FACULTY_ADMIN: "bg-amber-soft text-amber",
+  DEPT_ADMIN: "bg-emerald-soft text-emerald",
   TEACHER: "bg-violet-soft text-violet",
   STUDENT: "bg-blue-soft text-blue",
 };

@@ -6,7 +6,13 @@ const prisma = new PrismaClient();
 async function main() {
   const existing = await prisma.user.findUnique({ where: { email: "admin@meduni.uz" } });
   if (existing) {
-    console.log("Сиды уже применены — пропускаю.");
+    // Legacy seeds created the root account with the deprecated ADMIN role.
+    if (existing.role !== "SUPERADMIN") {
+      await prisma.user.update({ where: { id: existing.id }, data: { role: "SUPERADMIN" } });
+      console.log("admin@meduni.uz roli SUPERADMIN'ga ko'tarildi.");
+    } else {
+      console.log("Сиды уже применены — пропускаю.");
+    }
     return;
   }
 
@@ -16,12 +22,12 @@ async function main() {
       fullName: "Administrator",
       email: "admin@meduni.uz",
       passwordHash,
-      role: "ADMIN",
+      role: "SUPERADMIN",
       locale: "uz",
     },
   });
 
-  console.log("Готово: admin@meduni.uz / admin123");
+  console.log("Готово: admin@meduni.uz / admin123 (SUPERADMIN)");
 }
 
 main()

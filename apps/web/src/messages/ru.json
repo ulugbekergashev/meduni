@@ -103,7 +103,10 @@
     "role": {
       "ADMIN": "Администратор",
       "TEACHER": "Преподаватель",
-      "STUDENT": "Студент"
+      "STUDENT": "Студент",
+      "SUPERADMIN": "Суперадмин",
+      "FACULTY_ADMIN": "Админ факультета",
+      "DEPT_ADMIN": "Админ кафедры"
     },
     "department": "Кафедра",
     "group": "Группа",
@@ -772,12 +775,17 @@
     "roleFilter": {
       "all": "Все",
       "student": "Студент",
-      "teacher": "Преподаватель"
+      "teacher": "Преподаватель",
+      "deptAdmin": "Админы кафедр",
+      "facultyAdmin": "Админы факультетов"
     },
     "role": {
       "admin": "Админ",
       "teacher": "Преподаватель",
-      "student": "Студент"
+      "student": "Студент",
+      "superadmin": "Суперадмин",
+      "faculty_admin": "Админ факультета",
+      "dept_admin": "Админ кафедры"
     },
     "form": {
       "selectRole": "Роль",
@@ -795,7 +803,11 @@
       "password": "Пароль",
       "passwordHint": "Оставьте пустым — создастся автоматически",
       "noGroupsHint": "Сначала добавьте группу (раздел Структура).",
-      "noDepartmentsHint": "Сначала добавьте кафедру (раздел Структура)."
+      "noDepartmentsHint": "Сначала добавьте кафедру (раздел Структура).",
+      "deptAdmin": "Админ кафедры",
+      "facultyAdmin": "Админ факультета",
+      "faculty": "Факультет",
+      "selectFaculty": "Выберите факультет"
     },
     "table": {
       "name": "ФИО",

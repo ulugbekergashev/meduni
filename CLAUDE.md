@@ -110,7 +110,10 @@ Button (primary/deep/ghost/soft/danger, sm/md/lg, ikonka, hoverда brand→bran
 
 ## 6. BIZNES QOIDALARI
 
-- Faqat 3 rol: admin, teacher, student. **XP, badge, leaderboard, streak, QR, audio-podkast — YO'Q.**
+- Rollar: **SUPERADMIN → FACULTY_ADMIN → DEPT_ADMIN → TEACHER → STUDENT** (Modul 20 Faza 2;
+  ilgari faqat 3 rol edi, `ADMIN` enum'da deprecated qoldi, seed'da SUPERADMIN'ga ko'chiriladi).
+  Admin-scope User.facultyId (fakultet-admin) / User.adminDepartmentId (kafedra-admin);
+  teacher scope o'sha TeacherProfile.departmentId. **XP, badge, leaderboard, streak, QR — YO'Q.**
 - **Hech narsa avtomatik publish bo'lmaydi.** Ikki qulf: (1) o'qituvchi konspektni tasdiqlaydi, keyingina generatsiya; (2) o'qituvchi kontentни tasdiqlaydi, keyingina talaba ko'radi.
 - **AI faqat yuklangan materialdan** (RAG). O'zidan fakt/doza/protokol qo'shmaydi. Faktcheck bu buzilmaganini tekshiradi.
 - Yo'qlama — sodda (o'qituvchi qo'lda belgilaydi: keldi/kelmadi/kechikdi/sababli). QR YO'Q.
@@ -291,6 +294,24 @@ Tayyor:
   QISQA (1-2 so'z), imlosi aniq yorliq so'raydi → to'g'ri ("Атипичные клетки",
   "Микрокальцинаты", "Базальная мембрана"). **Tekshirildi (topic 43, ru):**
   script→TTS→render→DONE, aac audio, HERO kadrlar, dozalar amber karta, imlo to'g'ri.
+
+  **Modul 20 Faza 2 — 4-bosqichli rol ierarxiyasi:** Prisma `Role` enum += SUPERADMIN/
+  FACULTY_ADMIN/DEPT_ADMIN (`ADMIN` deprecated qoldi — Postgres enum-drop kerak emas;
+  migratsiya `role_hierarchy`, seed admin→SUPERADMIN). `User.facultyId?`+`adminDepartmentId?`
+  (admin scope). RBAC: `middleware/adminScope.ts` (`ADMIN_ROLES`, `adminScope(req)` — user
+  rowdан scope, JWTдан emas → demotion darrov; `assertFacultyScope`/`assertDeptScope`).
+  Scope hamma admin route'da: **org** (faculty CUD=SUPER; dept=fakultet-admin o'z fakulteti;
+  subject=kafedra-admin o'z kafedrasi; group=fakultet darajasi), **users** (`CREATABLE` map
+  per tier + `assertUserInScope`; yuqori tierni boshqara olmaydi; import=SUPER only),
+  **courses** (subject dept scope), **tasks** (kafedra-admin faqat o'z kafedra o'qituvchisi),
+  **admin router** (stats/search/ai-usage/quotas fakultet/kafedra scoped; audit=SUPER only;
+  quota-set fakultet-admin o'z fakulteti). Frontend: `lib/auth` 6 rol + `ADMIN_ROLES`,
+  App guard barcha admin tier, AdminShell audit faqat SUPER, `UserFormModal` tier'ga qarab
+  yaratsa bo'ladigan rollar (+fakultet picker), UsersPage filtr+badge, AccountSettings role
+  yorliqlari. **e2e 12/12 (4 rol login):** fakultet-admin fakultet ocholmaydi(403)/o'z
+  fakultetida kafedra ochadi(201)/audit(403); kafedra-admin kafedra ocholmaydi(403)/o'z
+  kafedrasida o'qituvchi ochadi(201)/fakultet-admin ocholmaydi(403)/subjects=o'z kafedra;
+  SUPER audit(200). tsc+build toza. **Faza 3 (kafedra-markazlashgan kontent) — keyingi.**
 
 - **Modul 10 — Faktcheck + Chop etish (ikkinchi qulf) + Kurs sozlamalari (tayyor).
   O'qituvchi tomonining YAKUNI.** Prisma: ContentItem += factcheckFlagsJson,

@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../../lib/api";
 
-export type UserRole = "admin" | "teacher" | "student";
+export type UserRole = "admin" | "superadmin" | "faculty_admin" | "dept_admin" | "teacher" | "student";
 
 export interface UserRow {
   id: number;
@@ -16,6 +16,9 @@ export interface UserRow {
   departmentId: number | null;
   departmentNameUz: string | null;
   departmentNameRu: string | null;
+  facultyId: number | null;
+  facultyNameUz: string | null;
+  facultyNameRu: string | null;
   position: string | null;
 }
 
@@ -29,12 +32,13 @@ export interface UsersPageResp {
 export interface CreateUserBody {
   fullName: string;
   email: string;
-  role: "STUDENT" | "TEACHER";
+  role: "STUDENT" | "TEACHER" | "DEPT_ADMIN" | "FACULTY_ADMIN";
   phone?: string | null;
   locale: "uz" | "ru";
   password?: string | null;
   groupId?: number | null;
   departmentId?: number | null;
+  facultyId?: number | null;
   position?: string | null;
 }
 

@@ -30,8 +30,8 @@ function toCourseOut(c: CourseWithRelations) {
   };
 }
 
-export async function listCourses() {
-  const rows = await prisma.course.findMany({ orderBy: { id: "asc" }, include: courseInclude });
+export async function listCourses(where?: Prisma.CourseWhereInput) {
+  const rows = await prisma.course.findMany({ where, orderBy: { id: "asc" }, include: courseInclude });
   return rows.map(toCourseOut);
 }
 
