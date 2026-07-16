@@ -123,6 +123,7 @@ export interface AdminStats {
   attention: { casesToReview: number; contentToApprove: number; departmentsOverQuota: number };
   aiThisMonth: { tokens: number; images: number; cost: number };
   activity: { contentLast7Days: number; activeStudentsLast7Days: number };
+  activitySeries: { day: string; activeStudents: number; contentPublished: number }[];
 }
 export function useAdminStats() {
   return useQuery({ queryKey: ["admin-stats"], queryFn: () => api<AdminStats>("/api/v1/admin/stats") });

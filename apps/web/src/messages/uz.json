@@ -273,8 +273,18 @@
     "images": "rasmlar",
     "cost": "narx",
     "activity7d": "Faollik — 7 kun",
-    "contentCreated": "yaratilgan kontent",
-    "activeStudents": "faol talaba"
+    "contentCreated": "kontent chop etildi (7 kun)",
+    "activeStudents": "faol talaba (7 kun)",
+    "publishedIn": "{{count}} mavzuda",
+    "composition": "Universitet tarkibi",
+    "compositionTotal": "foydalanuvchi",
+    "admins": "Adminlar",
+    "timeline14": "Faollik — 14 kun",
+    "timeline14Hint": "kuniga faol talabalar",
+    "activeShort": "faol",
+    "publishedShort": "kontent",
+    "timelineEmpty": "Bu davrda faollik boʻlmadi.",
+    "aiDetails": "Batafsil"
   },
   "ai": {
     "title": "AI monitoring",
@@ -720,6 +730,7 @@
   "structure": {
     "title": "Tuzilma",
     "subtitle": "Universitet skeletini quring: fakultet → kafedra → fan → guruh",
+    "countLabel": "Jami: {{count}} ta",
     "tabs": {
       "faculties": "Fakultetlar",
       "departments": "Kafedralar",

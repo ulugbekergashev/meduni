@@ -643,7 +643,18 @@ Barcha modullar tugadi (1-17).
   **Tekshirildi:** 14/14 smoke qayta o'tdi (barcha rol loginlari, org CRUD, teacher/student
   oqim), import route auth bilan → 404; tsc+build toza.
 
----
+- **Dizayn overhaul Faza 2 — admin redizayn (2026-07-17).** (A) **AdminDashboard qayta
+  qurildi:** 4 stat-karta (kontent kartasi hint="N mavzuda") + **Donut "Universitet tarkibi"**
+  (talaba/o'qituvchi/admin, useUserStats'dan) + **MiniBars "Faollik — 14 kun"** (kuniga faol
+  talabalar, tooltip'da sana+kontent; 7 kunlik jamlanma footer'da) + attention kartalar
+  (AttentionCard: ikonka-chip+son+chevron, 0 bo'lsa xira) + AI gradient karta ("Batafsil →").
+  Backend `admin/stats.ts` += `activitySeries` (14 kun, progress+publish JSда kunlab
+  agregat; ⚠️ dayKey MAHALLIY vaqtda — toISOString UTC'ga surar edi). (B) **Doimo ochiq
+  add-formalar modalga ko'chirildi** (foydalanuvchi: "keraksiz joyda"): Tuzilma 4 tabи
+  (fakultet/kafedra/fan/guruh — toolbar: filtr + "Jami: N ta" + o'ngда qo'shish tugmasi,
+  forma Modal'да autoFocus bilan) va Kurslar sahifasi (sarlavha yonида tugma, forma
+  max-w-2xl modal). i18n: `structure.countLabel`, adminHome yangi kalitlar (composition/
+  timeline14/publishedIn/aiDetails...). tsc+build toza, /admin/stats smoke tekshirildi.
 
 ## 9. Loyiha holati va ishga tushirish (operatsion — sessiya 0)
 

@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
-import { Users } from "lucide-react";
-import { Button, Card, Icon, Input, Modal, Select, useToast } from "@meduni/ui";
+import { Plus, Users } from "lucide-react";
+import { Button, Icon, Input, Modal, Select, useToast } from "@meduni/ui";
 import { AsyncSection } from "../../../components/AsyncSection";
 import { DataTable, RowActions } from "../../../components/DataTable";
 import { ConfirmDialog } from "../../../components/ConfirmDialog";
@@ -31,6 +31,7 @@ export function GroupsTab() {
   const update = useUpdate<GroupInput, Group>("groups");
   const remove = useRemove("groups");
 
+  const [addOpen, setAddOpen] = useState(false);
   const [facultyId, setFacultyId] = useState<string>("");
   const [name, setName] = useState("");
   const [yearOfStudy, setYearOfStudy] = useState<string>("1");
@@ -52,6 +53,7 @@ export function GroupsTab() {
       {
         onSuccess: () => {
           setName("");
+          setAddOpen(false);
           show(tc("added"));
         },
         onError: (err) => setFormError(apiErrorMessage(err, locale) ?? tc("genericError")),
@@ -93,57 +95,10 @@ export function GroupsTab() {
   const rows = list.data ?? [];
 
   return (
-    <div className="space-y-6">
-      {/* Add form */}
-      <Card>
-        <h2 className="mb-4 text-section font-bold text-ink">{t("addGroupForm")}</h2>
-        {!hasFaculties ? (
-          <p className="text-[13.5px] text-ink-soft">{t("noFacultyFirst")}</p>
-        ) : (
-          <form onSubmit={onAdd} className="grid gap-4 sm:grid-cols-3">
-            <Field label={t("faculty")}>
-              <Select value={facultyId} onChange={(e) => setFacultyId(e.target.value)} required>
-                <option value="" disabled>
-                  {t("selectFaculty")}
-                </option>
-                {facultyOptions.map((f) => (
-                  <option key={f.id} value={f.id}>
-                    {f.name}
-                  </option>
-                ))}
-              </Select>
-            </Field>
-            <Field label={t("groupName")}>
-              <Input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder={t("groupNamePlaceholder")}
-                required
-              />
-            </Field>
-            <Field label={t("yearOfStudy")}>
-              <Select value={yearOfStudy} onChange={(e) => setYearOfStudy(e.target.value)}>
-                {YEARS.map((y) => (
-                  <option key={y} value={y}>
-                    {y}
-                  </option>
-                ))}
-              </Select>
-            </Field>
-            {formError && <p className="text-[13px] text-rose sm:col-span-3">{formError}</p>}
-            <div className="sm:col-span-3">
-              <Button type="submit" icon={<span className="text-lg leading-none">+</span>} disabled={create.isPending}>
-                {tc("add")}
-              </Button>
-            </div>
-          </form>
-        )}
-      </Card>
-
-      {/* Filter */}
-      {hasFaculties && (
-        <div className="flex items-center gap-2">
-          <span className="text-[12.5px] font-semibold text-ink-soft">{t("filterByFaculty")}:</span>
+    <div className="space-y-4">
+      {/* Toolbar: filter + add */}
+      <div className="flex flex-wrap items-center gap-3">
+        {hasFaculties && (
           <div className="w-56">
             <Select value={filterFaculty} onChange={(e) => setFilterFaculty(e.target.value)}>
               <option value="">{t("allFaculties")}</option>
@@ -154,8 +109,70 @@ export function GroupsTab() {
               ))}
             </Select>
           </div>
+        )}
+        <p className="text-[13px] text-ink-faint">{t("countLabel", { count: rows.length })}</p>
+        <div className="ml-auto">
+          {hasFaculties ? (
+            <Button
+              icon={<Icon icon={Plus} size={16} />}
+              onClick={() => {
+                setFormError(null);
+                setName("");
+                setAddOpen(true);
+              }}
+            >
+              {t("addGroupForm")}
+            </Button>
+          ) : (
+            <p className="text-[13px] text-ink-soft">{t("noFacultyFirst")}</p>
+          )}
         </div>
-      )}
+      </div>
+
+      {/* Add modal */}
+      <Modal open={addOpen} onClose={() => setAddOpen(false)} title={t("addGroupForm")}>
+        <form onSubmit={onAdd} className="space-y-4">
+          <Field label={t("faculty")}>
+            <Select value={facultyId} onChange={(e) => setFacultyId(e.target.value)} required>
+              <option value="" disabled>
+                {t("selectFaculty")}
+              </option>
+              {facultyOptions.map((f) => (
+                <option key={f.id} value={f.id}>
+                  {f.name}
+                </option>
+              ))}
+            </Select>
+          </Field>
+          <Field label={t("groupName")}>
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder={t("groupNamePlaceholder")}
+              autoFocus
+              required
+            />
+          </Field>
+          <Field label={t("yearOfStudy")}>
+            <Select value={yearOfStudy} onChange={(e) => setYearOfStudy(e.target.value)}>
+              {YEARS.map((y) => (
+                <option key={y} value={y}>
+                  {y}
+                </option>
+              ))}
+            </Select>
+          </Field>
+          {formError && <p className="text-[13px] text-rose">{formError}</p>}
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="ghost" onClick={() => setAddOpen(false)}>
+              {tc("cancel")}
+            </Button>
+            <Button type="submit" disabled={create.isPending}>
+              {tc("add")}
+            </Button>
+          </div>
+        </form>
+      </Modal>
 
       {/* Table */}
       <AsyncSection

@@ -273,8 +273,18 @@
     "images": "изображения",
     "cost": "стоимость",
     "activity7d": "Активность — 7 дней",
-    "contentCreated": "создано контента",
-    "activeStudents": "активных студентов"
+    "contentCreated": "контента опубликовано (7 дн.)",
+    "activeStudents": "активных студентов (7 дн.)",
+    "publishedIn": "в {{count}} темах",
+    "composition": "Состав университета",
+    "compositionTotal": "пользователей",
+    "admins": "Админы",
+    "timeline14": "Активность — 14 дней",
+    "timeline14Hint": "активные студенты по дням",
+    "activeShort": "активн.",
+    "publishedShort": "контента",
+    "timelineEmpty": "В этом периоде активности не было.",
+    "aiDetails": "Подробнее"
   },
   "ai": {
     "title": "AI мониторинг",
@@ -720,6 +730,7 @@
   "structure": {
     "title": "Структура",
     "subtitle": "Постройте скелет университета: факультет → кафедра → предмет → группа",
+    "countLabel": "Всего: {{count}}",
     "tabs": {
       "faculties": "Факультеты",
       "departments": "Кафедры",
