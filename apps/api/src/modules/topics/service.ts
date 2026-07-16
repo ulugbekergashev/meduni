@@ -43,7 +43,13 @@ async function materialForTeacher(materialId: number, teacherId: number) {
 
 // ---------- Topic serialization ----------
 
-function toTopicOut(t: Topic & { _count?: { materials: number } }) {
+function toTopicOut(
+  t: Topic & {
+    _count?: { materials: number };
+    digest?: { approvedByTeacher: boolean } | null;
+    contentItems?: { kind: string; status: string }[];
+  }
+) {
   return {
     id: t.id,
     courseId: t.courseId,
@@ -51,6 +57,9 @@ function toTopicOut(t: Topic & { _count?: { materials: number } }) {
     orderIndex: t.orderIndex,
     status: t.status.toLowerCase(),
     materialCount: t._count?.materials ?? 0,
+    // Pipeline summary for the list rows (empty when not included, e.g. create/update).
+    digestState: t.digest ? (t.digest.approvedByTeacher ? "approved" : "draft") : null,
+    contentKinds: (t.contentItems ?? []).map((ci) => ({ kind: ci.kind.toLowerCase(), status: ci.status.toLowerCase() })),
   };
 }
 
@@ -61,7 +70,11 @@ export async function listTopics(courseId: number, teacherId: number) {
   const rows = await prisma.topic.findMany({
     where: { courseId },
     orderBy: { orderIndex: "asc" },
-    include: { _count: { select: { materials: true } } },
+    include: {
+      _count: { select: { materials: true } },
+      digest: { select: { approvedByTeacher: true } },
+      contentItems: { select: { kind: true, status: true } },
+    },
   });
   return rows.map(toTopicOut);
 }

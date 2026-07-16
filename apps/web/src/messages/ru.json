@@ -436,6 +436,12 @@
   },
   "topics": {
     "addForm": "Новая тема",
+    "chipMaterial": "Материал",
+    "chipDigest": "Конспект",
+    "chipQuiz": "Тест",
+    "chipCase": "Кейс",
+    "chipSlides": "Слайды",
+    "chipVideo": "Видео",
     "titleOne": "Название темы",
     "titlePlaceholder": "Например: Анатомия сердца",
     "titleRequired": "Введите название темы",

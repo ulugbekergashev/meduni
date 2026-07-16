@@ -656,6 +656,15 @@ Barcha modullar tugadi (1-17).
   max-w-2xl modal). i18n: `structure.countLabel`, adminHome yangi kalitlar (composition/
   timeline14/publishedIn/aiDetails...). tsc+build toza, /admin/stats smoke tekshirildi.
 
+- **Dizayn overhaul Faza 3 — o'qituvchi (2026-07-17).** TeachDashboard/heatmap/keys-navbat
+  Modul 19'da allaqachon boy edi (tokenlar bilan avtomatik yangi qiyofaga o'tdi) — asosiy
+  qo'shimcha: **TopicsTab pipeline chiplari.** `listTopics` endi `digestState`
+  ("approved"|"draft"|null) va `contentKinds` ({kind,status}[]) qaytaradi (TopicDetail'dagi
+  `digest`/`content` bilan to'qnashmasin deb shunday nomlangan). Har mavzu qatorида 6 chip:
+  Material N / Konspekt / Test / Keys / Slaydlar / Video — emerald=tayyor(published),
+  amber=jarayonda, konturli=yo'q. Sarlavha bosilsa konstruktor ochiladi. i18n `topics.chip*`.
+  Smoke: real teacher bilan tekshirildi. tsc+build toza.
+
 ## 9. Loyiha holati va ishga tushirish (operatsion — sessiya 0)
 
 **Monorepo (npm workspaces):**
