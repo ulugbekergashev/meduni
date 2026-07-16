@@ -101,7 +101,6 @@
     "title": "Настройки",
     "loadError": "Не удалось загрузить данные",
     "role": {
-      "ADMIN": "Администратор",
       "TEACHER": "Преподаватель",
       "STUDENT": "Студент",
       "SUPERADMIN": "Суперадмин",
@@ -768,7 +767,6 @@
     "title": "Пользователи",
     "subtitle": "Добавьте студентов и преподавателей (регистрации нет)",
     "addUser": "Добавить пользователя",
-    "excelImport": "Excel импорт",
     "searchPlaceholder": "Поиск по имени или email",
     "stats": {
       "students": "Студенты",
@@ -799,7 +797,6 @@
       "facultyAdmin": "Админы факультетов"
     },
     "role": {
-      "admin": "Админ",
       "teacher": "Преподаватель",
       "student": "Студент",
       "superadmin": "Суперадмин",
@@ -867,17 +864,6 @@
       "prev": "Назад",
       "next": "Далее",
       "pageOf": "{{page}} / {{total}}"
-    },
-    "import": {
-      "title": "Excel импорт",
-      "columns": "Столбцы: fullName, email, role, phone, locale, group",
-      "note": "role — STUDENT или TEACHER. group — название группы (например 101-A). Преподаватель через импорт не добавляется.",
-      "choose": "Выбрать файл",
-      "importing": "Загрузка...",
-      "resultAdded": "Добавлено: {n}",
-      "resultErrors": "Ошибок: {n}",
-      "row": "строка",
-      "close": "Закрыть"
     }
   },
   "courses": {

@@ -3,8 +3,8 @@ import { prisma } from "../lib/prisma";
 import type { Role } from "../lib/prisma";
 import { forbidden } from "../lib/errors";
 
-/** All admin tiers. Legacy ADMIN is treated as SUPERADMIN (pre-hierarchy data). */
-export const ADMIN_ROLES: Role[] = ["SUPERADMIN", "FACULTY_ADMIN", "DEPT_ADMIN", "ADMIN"];
+/** All admin tiers. */
+export const ADMIN_ROLES: Role[] = ["SUPERADMIN", "FACULTY_ADMIN", "DEPT_ADMIN"];
 
 export interface AdminScope {
   level: "SUPER" | "FACULTY" | "DEPT";
@@ -21,7 +21,7 @@ export interface AdminScope {
  */
 export async function adminScope(req: Request): Promise<AdminScope> {
   const auth = req.user!;
-  if (auth.role === "SUPERADMIN" || auth.role === "ADMIN") {
+  if (auth.role === "SUPERADMIN") {
     return { level: "SUPER", facultyId: null, departmentId: null };
   }
   const user = await prisma.user.findUnique({

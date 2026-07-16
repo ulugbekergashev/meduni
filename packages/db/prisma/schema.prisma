@@ -8,7 +8,6 @@ datasource db {
 }
 
 enum Role {
-  ADMIN // deprecated — data-migrated to SUPERADMIN; kept so the enum drop isn't needed
   SUPERADMIN
   FACULTY_ADMIN
   DEPT_ADMIN
@@ -136,7 +135,6 @@ model User {
   createdSessions   LessonSession[]  @relation("SessionCreator")
   attendanceMarked  Attendance[]     @relation("AttendanceMarker")
   attendanceRecords Attendance[]     @relation("AttendanceStudent")
-  glossaryTerms     Glossary[]       @relation("GlossaryCreator")
   aiUsage           AiUsage[]
   tasksCreated      Task[]           @relation("TaskCreator")
   tasksAssigned     Task[]           @relation("TaskAssignee")
@@ -192,41 +190,12 @@ model Department {
   createdAt DateTime  @default(now())
   subjects  Subject[]
   teachers  TeacherProfile[]
-  glossary  Glossary[]
   aiUsage   AiUsage[]
   aiQuota   AiQuota?
   admins    User[]           @relation("DepartmentAdmins")
 
   @@unique([facultyId, name])
   @@map("departments")
-}
-
-model Glossary {
-  id           Int        @id @default(autoincrement())
-  departmentId Int
-  department   Department @relation(fields: [departmentId], references: [id])
-  termRu       String
-  termUz       String
-  termLat      String?
-  approved     Boolean    @default(true)
-  createdById  Int
-  createdBy    User       @relation("GlossaryCreator", fields: [createdById], references: [id])
-  createdAt    DateTime   @default(now())
-
-  @@unique([departmentId, termRu])
-  @@map("glossary")
-}
-
-model PresentationTemplate {
-  id            Int      @id @default(autoincrement())
-  name          String
-  pptxMasterUrl String?
-  colorsJson    Json
-  logoUrl       String?
-  isDefault     Boolean  @default(false)
-  createdAt     DateTime @default(now())
-
-  @@map("presentation_templates")
 }
 
 model AiQuota {
@@ -482,7 +451,6 @@ model Presentation {
   slidesJson    Json
   pptxUrl       String?
   pdfUrl        String?
-  templateId    Int?
 
   @@map("presentations")
 }

@@ -1,11 +1,9 @@
 import { Router, type RequestHandler } from "express";
-import multer from "multer";
 import { z, type ZodTypeAny } from "zod";
 import { badRequest, forbidden, notFound } from "../../lib/errors";
 import { requireRoles } from "../../middleware/rbac";
 import { ADMIN_ROLES, adminScope, assertDeptScope, assertFacultyScope, type AdminScope } from "../../middleware/adminScope";
 import { prisma } from "../../lib/prisma";
-import { importUsers } from "./import";
 import * as svc from "./service";
 
 const audit = (actorId: number, action: string, entityId: number, details?: object) =>
@@ -36,7 +34,7 @@ async function assertUserInScope(scope: AdminScope, userId: number) {
     },
   });
   if (!u) throw notFound("Foydalanuvchi");
-  if (u.role === "SUPERADMIN" || u.role === "ADMIN" || u.role === "FACULTY_ADMIN") throw forbidden();
+  if (u.role === "SUPERADMIN" || u.role === "FACULTY_ADMIN") throw forbidden();
   if (scope.level === "FACULTY") {
     const fid = u.group?.facultyId ?? u.teacherProfile?.department.facultyId ?? u.adminDepartment?.facultyId ?? u.facultyId;
     if (fid !== scope.facultyId) throw forbidden("Bu sizning fakultetingiz emas", "Это не ваш факультет");
@@ -47,8 +45,6 @@ async function assertUserInScope(scope: AdminScope, userId: number) {
     throw forbidden("Bu sizning kafedrangiz emas", "Это не ваша кафедра");
   }
 }
-
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
 
 const wrap =
   (fn: RequestHandler): RequestHandler =>
@@ -94,7 +90,7 @@ const updateSchema = z.object({
   position: z.string().trim().optional().nullable(),
 });
 
-const ROLE_FILTERS = ["STUDENT", "TEACHER", "ADMIN", "SUPERADMIN", "FACULTY_ADMIN", "DEPT_ADMIN"];
+const ROLE_FILTERS = ["STUDENT", "TEACHER", "SUPERADMIN", "FACULTY_ADMIN", "DEPT_ADMIN"];
 
 // List ------------------------------------------------------------------
 usersRouter.get(
@@ -213,14 +209,3 @@ usersRouter.post(
   })
 );
 
-// XLSX import (bulk) — university-wide, SUPERADMIN only ------------------
-usersRouter.post(
-  "/import",
-  upload.single("file"),
-  wrap(async (req, res) => {
-    const scope = await adminScope(req);
-    if (scope.level !== "SUPER") throw forbidden();
-    if (!req.file) throw badRequest("Fayl yuklanmadi", "Файл не загружен");
-    res.json(await importUsers(req.file.buffer));
-  })
-);

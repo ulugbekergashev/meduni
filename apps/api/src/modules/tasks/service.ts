@@ -227,7 +227,7 @@ export async function createTask(creator: { id: number; role: Role }, input: Cre
   let departmentId: number | null = null;
   let groupId: number | null = null;
 
-  const isAdminTier = creator.role === "ADMIN" || creator.role === "SUPERADMIN" || creator.role === "FACULTY_ADMIN" || creator.role === "DEPT_ADMIN";
+  const isAdminTier = creator.role === "SUPERADMIN" || creator.role === "FACULTY_ADMIN" || creator.role === "DEPT_ADMIN";
   if (isAdminTier) {
     // Resolve the admin's own faculty/department pin (SUPER has none).
     let scopeFacultyId: number | null = null;

@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../../lib/api";
 
-export type UserRole = "admin" | "superadmin" | "faculty_admin" | "dept_admin" | "teacher" | "student";
+export type UserRole = "superadmin" | "faculty_admin" | "dept_admin" | "teacher" | "student";
 
 export interface UserRow {
   id: number;
@@ -42,11 +42,6 @@ export interface CreateUserBody {
 
 export interface CreatedUser extends UserRow {
   generatedPassword: string | null;
-}
-
-export interface ImportResult {
-  added: number;
-  errors: { row: number; messageUz: string; messageRu: string }[];
 }
 
 export interface UserStats {
@@ -123,20 +118,3 @@ export function useResetPassword() {
   });
 }
 
-export function useImportUsers() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (file: File) => {
-      const form = new FormData();
-      form.append("file", file);
-      const res = await fetch(`${import.meta.env.VITE_API_URL ?? "http://localhost:8000"}/api/v1/users/import`, {
-        method: "POST",
-        credentials: "include",
-        body: form,
-      });
-      if (!res.ok) throw new Error("import_failed");
-      return (await res.json()) as ImportResult;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["users"] }),
-  });
-}
