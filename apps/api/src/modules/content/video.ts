@@ -99,8 +99,8 @@ async function renderSlidePng(slide: Slide, imageBuf: Buffer | null): Promise<Bu
 
   const titleLines = wrap(slide.title, hasImg ? 34 : 52);
   const parts: string[] = [];
-  parts.push(`<rect width="${W}" height="${H}" fill="#F7F8FA"/>`);
-  parts.push(`<rect width="${W}" height="150" fill="#0F9E8E"/>`);
+  parts.push(`<rect width="${W}" height="${H}" fill="#F6F7F9"/>`);
+  parts.push(`<rect width="${W}" height="150" fill="#4F46E5"/>`);
   titleLines.slice(0, 2).forEach((ln, i) => {
     parts.push(
       `<text x="70" y="${95 + i * 60}" font-family="Segoe UI, Arial, sans-serif" font-size="52" font-weight="700" fill="#FFFFFF">${esc(ln)}</text>`
@@ -110,7 +110,7 @@ async function renderSlidePng(slide: Slide, imageBuf: Buffer | null): Promise<Bu
   let y = 280;
   for (const b of slide.bullets) {
     const lines = wrap(b, textW);
-    parts.push(`<circle cx="82" cy="${y - 12}" r="8" fill="#0F9E8E"/>`);
+    parts.push(`<circle cx="82" cy="${y - 12}" r="8" fill="#4F46E5"/>`);
     lines.forEach((ln, i) => {
       parts.push(
         `<text x="110" y="${y + i * 46}" font-family="Segoe UI, Arial, sans-serif" font-size="36" fill="#0F172A">${esc(ln)}</text>`
@@ -134,8 +134,8 @@ async function renderSlidePng(slide: Slide, imageBuf: Buffer | null): Promise<Bu
 
 async function renderVisualPng(visual: VideoVisual, imageBuf: Buffer | null): Promise<Buffer> {
   const W = 1920, H = 1080;
-  const BRAND = "#0F9E8E", INK = "#0F172A", BG = "#F7F8FA";
-  const AMBER = "#D97706", AMBER_BG = "#FCF2E2";
+  const BRAND = "#4F46E5", INK = "#101828", BG = "#F6F7F9";
+  const AMBER = "#D97706", AMBER_BG = "#FEF3E2";
 
   const txt = (x: number, y: number, size: number, weight: number, fill: string, s: string, anchor = "start") =>
     `<text x="${x}" y="${y}" text-anchor="${anchor}" font-family="Segoe UI, Arial, sans-serif" font-size="${size}" font-weight="${weight}" fill="${fill}">${esc(s)}</text>`;

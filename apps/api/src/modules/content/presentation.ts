@@ -178,8 +178,8 @@ export async function getSlotImage(presentationId: number, teacherId: number, sl
 
 // ---------- Exports (branded default template) ----------
 
-const BRAND = "0F9E8E";
-const INK = "0F172A";
+const BRAND = "4F46E5";
+const INK = "101828";
 
 async function slotImageDataUri(url: string | null): Promise<string | null> {
   if (!url) return null;

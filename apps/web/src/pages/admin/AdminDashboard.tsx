@@ -1,26 +1,11 @@
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { AlertTriangle, BookOpen, CheckCircle2, ClipboardCheck, FileClock, FileStack, GraduationCap, Layers, Sparkles, TrendingUp, Users } from "lucide-react";
-import { Card, Icon, Spinner, cls } from "@meduni/ui";
+import { Card, Icon, Spinner, StatCard, cls } from "@meduni/ui";
 import { useMe } from "../../lib/auth";
 import { useLocale } from "../../lib/useLocale";
 import { formatDate } from "../../lib/date";
 import { useAdminStats } from "./api";
-
-function StatCard({ icon, value, label, hint, tone, onClick }: { icon: typeof Users; value: number; label: string; hint: string; tone: string; onClick: () => void }) {
-  return (
-    <Card interactive onClick={onClick} className="flex flex-col gap-2">
-      <div className={cls("flex h-10 w-10 items-center justify-center rounded-full", tone)}>
-        <Icon icon={icon} size={19} />
-      </div>
-      <span className="text-[30px] font-bold leading-none tabular-nums text-ink">{value}</span>
-      <div>
-        <p className="text-[13.5px] font-semibold text-ink">{label}</p>
-        <p className="text-[12px] text-ink-faint">{hint}</p>
-      </div>
-    </Card>
-  );
-}
 
 export function AdminDashboard() {
   const { t } = useTranslation(undefined, { keyPrefix: "adminHome" });

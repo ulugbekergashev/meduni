@@ -10,7 +10,7 @@ import type { Slide, SlideLayout, VideoVisual } from "../../types";
 const BASE_STYLE = [
   "Style: detailed educational medical diagram in a clean flat-vector textbook-atlas style (like a modern medical illustration atlas, not a photo).",
   "It must EXPLAIN, not merely decorate: accurate anatomical/physiological structures with thin leader lines pointing to the few most important parts.",
-  "Composition: organized and uncluttered, generous white space, soft neutral off-white background, teal (#0F9E8E) as the primary accent; use color coding meaningfully (e.g. blue = deoxygenated, red = oxygenated).",
+  "Composition: organized and uncluttered, generous white space, soft neutral off-white background, indigo (#4F46E5) as the primary accent; use color coding meaningfully (e.g. blue = deoxygenated, red = oxygenated).",
   "Accuracy: medically correct proportions and relationships; no invented structures, no gore, no photorealism, no watermark, no logo.",
   "High resolution, 16:9 aspect ratio.",
 ].join(" ");

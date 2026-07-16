@@ -4,6 +4,7 @@ export * from "./components/Badge";
 export * from "./components/Toggle";
 export * from "./components/StatusPill";
 export * from "./components/Card";
+export * from "./components/StatCard";
 export * from "./components/ChipSelect";
 export * from "./components/Icon";
 export * from "./components/Input";

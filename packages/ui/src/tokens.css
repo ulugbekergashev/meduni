@@ -1,65 +1,68 @@
 :root {
-  --bg: #f4f6f9;
+  /* Indigo Pro palette (2026-07 redesign). Categorical chart set — brand, emerald,
+     amber, blue(sky), rose — is CVD/contrast-validated; amber↔emerald only ever
+     sit adjacent with a 2px gap or direct labels. Violet stays a UI accent (video). */
+  --bg: #f6f7f9;
   --surface: #ffffff;
-  --ink: #0f172a;
-  --ink-soft: #5b6b7f;
-  --ink-faint: #93a0b0;
-  --line: #e6eaf0;
+  --ink: #101828;
+  --ink-soft: #5b6474;
+  --ink-faint: #98a1b2;
+  --line: #e7eaf0;
 
-  --brand: #0f9e8e;
-  --brand-soft: #e3f4f1;
-  --brand-deep: #0b7a6e;
+  --brand: #4f46e5;
+  --brand-soft: #eef2ff;
+  --brand-deep: #3730a3;
 
-  --blue: #2563eb;
-  --blue-soft: #eaf1fe;
+  --blue: #0284c7;
+  --blue-soft: #e0f2fe;
   --violet: #7c3aed;
   --violet-soft: #f1ebfe;
   --amber: #d97706;
-  --amber-soft: #fcf2e2;
+  --amber-soft: #fef3e2;
   --rose: #e11d48;
   --rose-soft: #fde9ee;
   --emerald: #059669;
-  --emerald-soft: #e4f6ef;
+  --emerald-soft: #e6f7f0;
 
-  /* Premium sidebar (deep teal-ink, both themes get their own values). */
-  --side-bg: #0c2723;
-  --side-bg-deep: #082019;
-  --side-ink: #e8f2f0;
-  --side-ink-soft: #93b3ad;
-  --side-line: rgba(255, 255, 255, 0.08);
-  --side-active-bg: rgba(20, 184, 166, 0.16);
-  --side-active-ink: #5eead4;
-  --side-hover-bg: rgba(255, 255, 255, 0.06);
+  /* Light sidebar (2026-07): white surface, soft indigo active chip. */
+  --side-bg: #ffffff;
+  --side-bg-deep: #fbfbfd;
+  --side-ink: #101828;
+  --side-ink-soft: #5b6474;
+  --side-line: #e7eaf0;
+  --side-active-bg: #eef2ff;
+  --side-active-ink: #4338ca;
+  --side-hover-bg: #f4f5f8;
 
   --radius-card: 16px;
   --radius-control: 10px;
   --radius-pill: 20px;
 
   /* Soft, ink-tinted elevation (no harsh black shadows). */
-  --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.04), 0 6px 20px -8px rgba(15, 23, 42, 0.08);
-  --shadow-card-hover: 0 2px 4px rgba(15, 23, 42, 0.05), 0 14px 32px -10px rgba(15, 23, 42, 0.14);
+  --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.04), 0 8px 24px -12px rgba(16, 24, 40, 0.1);
+  --shadow-card-hover: 0 2px 4px rgba(16, 24, 40, 0.05), 0 16px 36px -12px rgba(16, 24, 40, 0.16);
 }
 
-/* Dark theme — neutrals inverted, soft tints darkened. Accent bases stay so that
+/* Dark theme — neutrals inverted, soft tints darkened. Accent bases stay strong so
    `bg-<accent> text-white` chips/buttons keep contrast; only the tints flip. */
 :root[data-theme="dark"] {
   color-scheme: dark;
 
-  --bg: #0e141b;
-  --surface: #161d27;
-  --ink: #e6edf3;
-  --ink-soft: #9aa7b6;
-  --ink-faint: #6b7887;
-  --line: #263141;
+  --bg: #0d1120;
+  --surface: #151a29;
+  --ink: #e7ebf4;
+  --ink-soft: #9aa4b8;
+  --ink-faint: #6a7488;
+  --line: #252d42;
 
-  --brand: #14b8a6;
-  --brand-soft: #10312c;
-  --brand-deep: #0d9488;
+  --brand: #6366f1;
+  --brand-soft: #1e2445;
+  --brand-deep: #4f46e5;
 
-  --blue: #3b82f6;
-  --blue-soft: #16223c;
-  --violet: #8b5cf6;
-  --violet-soft: #21193a;
+  --blue: #38bdf8;
+  --blue-soft: #12283a;
+  --violet: #a78bfa;
+  --violet-soft: #241b3e;
   --amber: #e0900f;
   --amber-soft: #33260f;
   --rose: #f43f5e;
@@ -67,15 +70,15 @@
   --emerald: #10b981;
   --emerald-soft: #103026;
 
-  --side-bg: #0b1219;
-  --side-bg-deep: #080d13;
-  --side-ink: #e6edf3;
-  --side-ink-soft: #8fa0af;
-  --side-line: rgba(255, 255, 255, 0.07);
-  --side-active-bg: rgba(20, 184, 166, 0.18);
-  --side-active-ink: #5eead4;
+  --side-bg: #12161f;
+  --side-bg-deep: #0f131b;
+  --side-ink: #e7ebf4;
+  --side-ink-soft: #8f99ad;
+  --side-line: #232b3d;
+  --side-active-bg: rgba(99, 102, 241, 0.18);
+  --side-active-ink: #a5b4fc;
   --side-hover-bg: rgba(255, 255, 255, 0.05);
 
-  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.25), 0 6px 20px -8px rgba(0, 0, 0, 0.35);
-  --shadow-card-hover: 0 2px 4px rgba(0, 0, 0, 0.3), 0 14px 32px -10px rgba(0, 0, 0, 0.5);
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.25), 0 8px 24px -12px rgba(0, 0, 0, 0.4);
+  --shadow-card-hover: 0 2px 4px rgba(0, 0, 0, 0.3), 0 16px 36px -12px rgba(0, 0, 0, 0.55);
 }
