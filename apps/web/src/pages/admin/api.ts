@@ -7,10 +7,8 @@ export { API_URL };
 export interface Dept {
   id: number;
   facultyId: number;
-  nameUz: string;
-  nameRu: string;
-  facultyNameUz: string;
-  facultyNameRu: string;
+  name: string;
+  facultyName: string;
 }
 export function useDepartments() {
   return useQuery({ queryKey: ["departments"], queryFn: () => api<Dept[]>("/api/v1/departments") });
@@ -24,7 +22,7 @@ export interface AiUsage {
   byKind: { kind: string; tokens: number; images: number; ttsChars: number; cost: number }[];
   byModel: { model: string; tokens: number; cost: number }[];
   byDept: {
-    departmentId: number; nameUz: string; nameRu: string;
+    departmentId: number; name: string;
     tokens: number; images: number; ttsChars: number; cost: number;
     quota: { token: number; image: number; cost: number } | null;
     tokenPct: number | null; imagePct: number | null; costPct: number | null;
@@ -39,10 +37,8 @@ export function useAiUsage(month?: string) {
 }
 export interface Quota {
   departmentId: number;
-  nameUz: string;
-  nameRu: string;
-  facultyNameUz: string;
-  facultyNameRu: string;
+  name: string;
+  facultyName: string;
   quota: { monthlyTokenLimit: number; monthlyImageLimit: number; monthlyCostLimit: number };
   used: { tokens: number; images: number; cost: number };
 }
@@ -88,8 +84,7 @@ export function useAudit(q: { actor: string; action: string; from: string; to: s
 // ---------------- User profile (role-aware) ----------------
 export interface TeacherProfileCourse {
   id: number;
-  subjectNameUz: string;
-  subjectNameRu: string;
+  subjectName: string;
   semester: number;
   academicYear: string;
   groups: string[];
@@ -97,8 +92,7 @@ export interface TeacherProfileCourse {
 }
 export interface StudentProfileCourse {
   id: number;
-  subjectNameUz: string;
-  subjectNameRu: string;
+  subjectName: string;
   semester: number;
   completed: number;
   total: number;
@@ -112,8 +106,7 @@ export interface UserProfile {
   role: string;
   isActive: boolean;
   groupName: string | null;
-  departmentNameUz: string | null;
-  departmentNameRu: string | null;
+  departmentName: string | null;
   position: string | null;
   kind: "teacher" | "student" | "admin";
   stats?: { courses: number; students: number; publishedTopics: number };

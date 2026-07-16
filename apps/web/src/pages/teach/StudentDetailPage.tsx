@@ -3,21 +3,19 @@ import { useTranslation } from "react-i18next";
 import { ArrowLeft, Check, ClipboardList, Mail, Stethoscope, Users } from "lucide-react";
 import { Badge, Card, Icon, ProgressBar, ProgressRing, Spinner, StackedBar, cls, type BadgeTone } from "@meduni/ui";
 import { AsyncSection } from "../../components/AsyncSection";
-import { useLocale, pickName } from "../../lib/useLocale";
 import { useStudentDetail, type CellState, type StudentDetail, type StudentDetailCourse } from "./api";
 
 const stateTone: Record<CellState, BadgeTone> = { COMPLETED: "emerald", IN_PROGRESS: "amber", AVAILABLE: "blue", LOCKED: "slate" };
 
 function CourseSection({ course, onReview }: { course: StudentDetailCourse; onReview: () => void }) {
   const { t } = useTranslation(undefined, { keyPrefix: "studentDetail" });
-  const locale = useLocale();
   const a = course.attendance;
 
   return (
     <Card className="space-y-4">
       <div>
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-section font-bold text-ink">{pickName(locale, course.subjectNameUz, course.subjectNameRu)}</h2>
+          <h2 className="text-section font-bold text-ink">{course.subjectName}</h2>
           <span className="text-note font-semibold text-ink-soft">{course.completedCount}/{course.topicsTotal} {t("topicsDone")}</span>
         </div>
         <div className="mt-2 flex items-center gap-2">
@@ -61,7 +59,7 @@ function CourseSection({ course, onReview }: { course: StudentDetailCourse; onRe
               return (
                 <div key={tp.id} className="rounded-control border border-line p-3">
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <p className="text-body font-semibold text-ink">{pickName(locale, tp.titleUz, tp.titleRu)}</p>
+                    <p className="text-body font-semibold text-ink">{tp.title}</p>
                     <Badge tone={stateTone[tp.state]}>{t(`state.${tp.state}`)}</Badge>
                   </div>
                   <div className="mt-2 flex items-center gap-2">

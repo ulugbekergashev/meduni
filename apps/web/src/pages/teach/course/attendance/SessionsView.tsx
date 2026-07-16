@@ -4,7 +4,7 @@ import { CalendarPlus, ClipboardList, Download, Pencil, Search, Trash2 } from "l
 import { Badge, Button, Icon, Spinner, useToast, type BadgeTone } from "@meduni/ui";
 import { AsyncSection } from "../../../../components/AsyncSection";
 import { ConfirmDialog } from "../../../../components/ConfirmDialog";
-import { useLocale, pickName } from "../../../../lib/useLocale";
+import { useLocale } from "../../../../lib/useLocale";
 import { API_URL, useDeleteSession, useSessions, type SessionRow } from "../../api";
 import { fmtDate, monthRange } from "./meta";
 import { SessionModal } from "./SessionModal";
@@ -63,7 +63,7 @@ export function SessionsView({ courseId, groupId }: { courseId: number; groupId?
                   {sessions.map((s) => (
                     <tr key={s.id} className="border-b border-line last:border-0 hover:bg-bg">
                       <td className="whitespace-nowrap px-3 py-2.5 font-medium text-ink">{fmtDate(s.date, locale)}</td>
-                      <td className="px-3 py-2.5 text-ink">{s.title ? pickName(locale, s.titleUz ?? s.title, s.titleRu ?? s.title) : <span className="text-ink-faint">—</span>}</td>
+                      <td className="px-3 py-2.5 text-ink">{s.title ?? <span className="text-ink-faint">—</span>}</td>
                       <td className="px-3 py-2.5 text-ink-soft">{s.room ?? "—"}</td>
                       <td className="px-3 py-2.5 tabular-nums text-ink-soft">{s.markedCount}/{s.rosterSize}</td>
                       <td className="px-3 py-2.5"><Badge tone={statusTone[s.status]}>{t(`sessionStatus.${s.status}`)}</Badge></td>

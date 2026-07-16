@@ -49,11 +49,9 @@ export async function listReviewQueue(
     id: a.id,
     studentName: a.student.fullName,
     courseId: a.clinicalCase.contentItem.topic.course.id,
-    subjectNameUz: a.clinicalCase.contentItem.topic.course.subject.nameUz,
-    subjectNameRu: a.clinicalCase.contentItem.topic.course.subject.nameRu,
+    subjectName: a.clinicalCase.contentItem.topic.course.subject.name,
     topicId: a.clinicalCase.contentItem.topicId,
-    topicUz: a.clinicalCase.contentItem.topic.titleUz,
-    topicRu: a.clinicalCase.contentItem.topic.titleRu,
+    topic: a.clinicalCase.contentItem.topic.title,
     submittedAt: a.submittedAt,
     reviewedAt: a.reviewedAt,
     score: a.score,
@@ -67,13 +65,13 @@ export async function reviewFilters(teacherId: number) {
     where: { clinicalCase: { contentItem: { topic: { course: { teacherId } } } } },
     include: attemptInclude,
   });
-  const courses = new Map<number, { id: number; nameUz: string; nameRu: string }>();
-  const topics = new Map<number, { id: number; courseId: number; titleUz: string; titleRu: string }>();
+  const courses = new Map<number, { id: number; name: string }>();
+  const topics = new Map<number, { id: number; courseId: number; title: string }>();
   for (const a of rows) {
     const co = a.clinicalCase.contentItem.topic.course;
     const tp = a.clinicalCase.contentItem.topic;
-    courses.set(co.id, { id: co.id, nameUz: co.subject.nameUz, nameRu: co.subject.nameRu });
-    topics.set(tp.id, { id: tp.id, courseId: co.id, titleUz: tp.titleUz, titleRu: tp.titleRu });
+    courses.set(co.id, { id: co.id, name: co.subject.name });
+    topics.set(tp.id, { id: tp.id, courseId: co.id, title: tp.title });
   }
   return { courses: [...courses.values()], topics: [...topics.values()] };
 }
@@ -87,10 +85,8 @@ export async function getCaseAttemptForReview(teacherId: number, attemptId: numb
     id: a.id,
     studentName: a.student.fullName,
     courseId: a.clinicalCase.contentItem.topic.course.id,
-    subjectNameUz: a.clinicalCase.contentItem.topic.course.subject.nameUz,
-    subjectNameRu: a.clinicalCase.contentItem.topic.course.subject.nameRu,
-    topicUz: a.clinicalCase.contentItem.topic.titleUz,
-    topicRu: a.clinicalCase.contentItem.topic.titleRu,
+    subjectName: a.clinicalCase.contentItem.topic.course.subject.name,
+    topic: a.clinicalCase.contentItem.topic.title,
     blocks: { complaints: caseJson.complaints, anamnesis: caseJson.anamnesis, objectiveStatus: caseJson.objectiveStatus, labData: caseJson.labData },
     questions: caseJson.questions,
     referenceAnswer: caseJson.referenceAnswer,

@@ -174,15 +174,13 @@ model TeacherProfile {
 
 model Faculty {
   id          Int            @id @default(autoincrement())
-  nameUz      String
-  nameRu      String
+  name        String
   createdAt   DateTime       @default(now())
   departments Department[]
   groups      StudentGroup[]
   admins      User[]         @relation("FacultyAdmins")
 
-  @@unique([nameUz])
-  @@unique([nameRu])
+  @@unique([name])
   @@map("faculties")
 }
 
@@ -190,8 +188,7 @@ model Department {
   id        Int       @id @default(autoincrement())
   facultyId Int
   faculty   Faculty   @relation(fields: [facultyId], references: [id])
-  nameUz    String
-  nameRu    String
+  name      String
   createdAt DateTime  @default(now())
   subjects  Subject[]
   teachers  TeacherProfile[]
@@ -200,8 +197,7 @@ model Department {
   aiQuota   AiQuota?
   admins    User[]           @relation("DepartmentAdmins")
 
-  @@unique([facultyId, nameUz])
-  @@unique([facultyId, nameRu])
+  @@unique([facultyId, name])
   @@map("departments")
 }
 
@@ -248,14 +244,12 @@ model Subject {
   id           Int        @id @default(autoincrement())
   departmentId Int
   department   Department @relation(fields: [departmentId], references: [id])
-  nameUz       String
-  nameRu       String
+  name         String
   description  String?
   createdAt    DateTime   @default(now())
   courses      Course[]
 
-  @@unique([departmentId, nameUz])
-  @@unique([departmentId, nameRu])
+  @@unique([departmentId, name])
   @@map("subjects")
 }
 
@@ -296,8 +290,7 @@ model Topic {
   id             Int              @id @default(autoincrement())
   courseId       Int
   course         Course           @relation(fields: [courseId], references: [id])
-  titleUz        String
-  titleRu        String
+  title          String
   orderIndex     Int
   status         TopicStatus      @default(DRAFT)
   unlockRuleJson Json?

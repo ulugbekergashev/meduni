@@ -3,7 +3,6 @@ import { useTranslation } from "react-i18next";
 import { Users } from "lucide-react";
 import { Card, Icon } from "@meduni/ui";
 import { TabNav } from "../../../components/TabNav";
-import { pickName, useLocale } from "../../../lib/useLocale";
 import { useTeachCourseMeta } from "../api";
 
 function HeaderSkeleton() {
@@ -20,7 +19,6 @@ export function TeacherCourseShell() {
   const { id } = useParams();
   const courseId = Number(id);
   const { t } = useTranslation(undefined, { keyPrefix: "teach" });
-  const locale = useLocale();
   const navigate = useNavigate();
 
   // Metadata only — keyed by courseId, so switching tabs (which changes the
@@ -64,7 +62,7 @@ export function TeacherCourseShell() {
       >
         {t("backToCourses")}
       </button>
-      <h1 className="mt-3 text-h1 font-bold text-ink">{pickName(locale, c.subjectNameUz, c.subjectNameRu)}</h1>
+      <h1 className="mt-3 text-h1 font-bold text-ink">{c.subjectName}</h1>
       <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13.5px] text-ink-soft">
         {c.groups.length > 0 && (
           <>

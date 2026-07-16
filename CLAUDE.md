@@ -615,6 +615,22 @@ Barcha modullar tugadi (1-17).
   indigo (eski keshdagi media teal qoladi — qayta generatsiyada yangilanadi).
   tsc+build ikkala tomonda toza. **Keyingi: Faza 1 (bir tilli nomlar + keraksizlar auditi).**
 
+- **Dizayn overhaul Faza 1 — bir tilli nomlar (2026-07-16).** Foydalanuvchi qarori:
+  "fanlar nomini ikkita tilda kiritish keraksiz". **Data bir til, UI i18n (uz/ru) qoladi.**
+  Prisma: Faculty/Department/Subject `nameUz`+`nameRu` → `name`, Topic `titleUz`+`titleRu`
+  → `title` (2 ta QO'LDA yozilgan RENAME migratsiya — Prisma diff DROP+ADD qilardi, data
+  saqlanib qoldi: name=nameUz). Unique indekslar mos yangilandi. Backend: org router
+  sxemalari bitta `name`, topics router bitta `title` (oyna-mirroring mantiqlari o'chirildi),
+  barcha payload'lar `subjectName/departmentName/facultyName/courseName/title/nextTopic`
+  (Uz/Ru juftliklar yo'q); account `context` bitta. Frontend: structure formalarida bitta
+  "Nomi" input, TopicsTab/TopicConstructor bitta sarlavha, `pickName` endi entity nomlari
+  uchun ishlatilmaydi (faqat lib'da qoldi), 20+ sahifada ortiqcha locale/pickName tozalandi.
+  ⚠️ `messageUz/messageRu` (xato xabarlari) va `errorUz/errorRu` (material parse xatosi) —
+  UI ikki tilliligi, ATAYLAB saqlangan. **Tekshirildi:** 14/14 HTTP e2e (org CRUD bitta nom +
+  409, users departmentName, qidiruv, teacher mavzu title CRUD, student dashboard/kurs yo'li);
+  tsc+build ikkala tomonda toza. Migratsiya nomi: `single_language_names` +
+  `single_language_topic_title`.
+
 ---
 
 ## 9. Loyiha holati va ishga tushirish (operatsion — sessiya 0)

@@ -17,10 +17,8 @@ function toCourseOut(c: CourseWithRelations) {
   return {
     id: c.id,
     subjectId: c.subjectId,
-    subjectNameUz: c.subject.nameUz,
-    subjectNameRu: c.subject.nameRu,
-    departmentNameUz: c.subject.department.nameUz,
-    departmentNameRu: c.subject.department.nameRu,
+    subjectName: c.subject.name,
+    departmentName: c.subject.department.name,
     teacherId: c.teacherId,
     teacherName: c.teacher.fullName,
     semester: c.semester,
@@ -291,9 +289,8 @@ export async function getTeacherGroup(groupId: number, teacherId: number) {
     id: group.id,
     name: group.name,
     yearOfStudy: group.yearOfStudy,
-    facultyNameUz: group.faculty.nameUz,
-    facultyNameRu: group.faculty.nameRu,
-    courses: cgs.map((cg) => ({ id: cg.course.id, nameUz: cg.course.subject.nameUz, nameRu: cg.course.subject.nameRu })),
+    facultyName: group.faculty.name,
+    courses: cgs.map((cg) => ({ id: cg.course.id, name: cg.course.subject.name })),
     students: studentsOut,
     studentCount: students.length,
     avgProgress,
@@ -309,10 +306,10 @@ export async function listTeacherGroups(teacherId: number) {
     include: { group: { include: { faculty: true } }, course: { include: { subject: true } } },
   });
 
-  const map = new Map<number, { group: (typeof cgs)[number]["group"]; courses: Map<number, { id: number; nameUz: string; nameRu: string }> }>();
+  const map = new Map<number, { group: (typeof cgs)[number]["group"]; courses: Map<number, { id: number; name: string }> }>();
   for (const cg of cgs) {
     if (!map.has(cg.groupId)) map.set(cg.groupId, { group: cg.group, courses: new Map() });
-    map.get(cg.groupId)!.courses.set(cg.course.id, { id: cg.course.id, nameUz: cg.course.subject.nameUz, nameRu: cg.course.subject.nameRu });
+    map.get(cg.groupId)!.courses.set(cg.course.id, { id: cg.course.id, name: cg.course.subject.name });
   }
 
   const groupIds = [...map.keys()];
@@ -334,8 +331,7 @@ export async function listTeacherGroups(teacherId: number) {
       id: group.id,
       name: group.name,
       yearOfStudy: group.yearOfStudy,
-      facultyNameUz: group.faculty.nameUz,
-      facultyNameRu: group.faculty.nameRu,
+      facultyName: group.faculty.name,
       courses: [...courses.values()],
       students: (byGroup.get(group.id) ?? []).map((s) => ({ id: s.id, fullName: s.fullName, email: s.email })),
       studentCount: (byGroup.get(group.id) ?? []).length,
@@ -376,16 +372,14 @@ export async function getSyllabus(courseId: number, teacherId: number) {
   const meta = { ...emptyMeta(), ...((course.syllabusJson as Partial<SyllabusMeta> | null) ?? {}) };
   const topics = course.topics.map((t) => ({
     id: t.id,
-    titleUz: t.titleUz,
-    titleRu: t.titleRu,
+    title: t.title,
     orderIndex: t.orderIndex,
     hours: t.hours,
     note: t.syllabusNote ?? "",
   }));
   return {
     courseId,
-    subjectNameUz: course.subject.nameUz,
-    subjectNameRu: course.subject.nameRu,
+    subjectName: course.subject.name,
     description: meta.description,
     objectives: meta.objectives,
     literature: meta.literature,

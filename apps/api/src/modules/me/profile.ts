@@ -47,10 +47,8 @@ export async function getMyAttendance(studentId: number, opts: { courseId?: numb
     sessions: rows.map((r) => ({
       id: r.session.id,
       date: r.session.date,
-      courseNameUz: r.session.course.subject.nameUz,
-      courseNameRu: r.session.course.subject.nameRu,
-      titleUz: r.session.title ?? r.session.topic?.titleUz ?? null,
-      titleRu: r.session.title ?? r.session.topic?.titleRu ?? null,
+      courseName: r.session.course.subject.name,
+      title: r.session.title ?? r.session.topic?.title ?? null,
       status: r.status as Status,
     })),
   };

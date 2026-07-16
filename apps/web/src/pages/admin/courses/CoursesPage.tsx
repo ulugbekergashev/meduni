@@ -9,7 +9,7 @@ import { DataTable } from "../../../components/DataTable";
 import { Field } from "../../../components/Field";
 import { apiErrorMessage } from "../../../lib/api";
 import { useList } from "../../../lib/crud";
-import { pickName, useLocale } from "../../../lib/useLocale";
+import { useLocale } from "../../../lib/useLocale";
 import type { Subject } from "../structure/types";
 import { useCourses, useCreateCourse, useDeleteCourse, useTeachers, type CourseRow } from "./api";
 
@@ -117,7 +117,7 @@ export function CoursesPage() {
                   </option>
                   {subjectOptions.map((s) => (
                     <option key={s.id} value={s.id}>
-                      {pickName(locale, s.nameUz, s.nameRu)} ({pickName(locale, s.departmentNameUz, s.departmentNameRu)})
+                      {s.name} ({s.departmentName})
                     </option>
                   ))}
                 </Select>
@@ -199,7 +199,7 @@ export function CoursesPage() {
                     onClick={() => navigate(`/admin/courses/${c.id}`)}
                     className="font-medium text-brand-deep hover:underline"
                   >
-                    {pickName(locale, c.subjectNameUz, c.subjectNameRu)}
+                    {c.subjectName}
                   </button>
                 </td>
                 <td className="px-4 py-3 text-ink-soft">{c.teacherName}</td>

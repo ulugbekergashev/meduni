@@ -17,8 +17,7 @@ export interface TopicElements {
 
 export interface StudentTopic {
   id: number;
-  titleUz: string;
-  titleRu: string;
+  title: string;
   orderIndex: number;
   state: TopicState;
   pct: number;
@@ -28,29 +27,25 @@ export interface StudentTopic {
 
 export interface CourseSummary {
   id: number;
-  subjectNameUz: string;
-  subjectNameRu: string;
+  subjectName: string;
   teacherName: string;
   groupName: string | null;
   topicsTotal: number;
   topicsCompleted: number;
   progressPct: number;
-  nextTopicUz: string | null;
-  nextTopicRu: string | null;
+  nextTopic: string | null;
   nextTopicId: number | null;
 }
 
-export interface CoursePath extends Omit<CourseSummary, "nextTopicUz" | "nextTopicRu" | "nextTopicId"> {
+export interface CoursePath extends Omit<CourseSummary, "nextTopic" | "nextTopicId"> {
   topics: StudentTopic[];
 }
 
 export interface Resume {
   courseId: number;
-  subjectNameUz: string;
-  subjectNameRu: string;
+  subjectName: string;
   topicId: number;
-  topicUz: string;
-  topicRu: string;
+  topic: string;
   pct: number;
 }
 
@@ -58,8 +53,7 @@ export interface Notification {
   type: "case_reviewed";
   caseAttemptId: number;
   topicId: number;
-  topicUz: string;
-  topicRu: string;
+  topic: string;
   score: number | null;
   reviewedAt: string;
 }
@@ -195,8 +189,7 @@ export interface CaseTabData {
 export interface Lesson {
   topicId: number;
   orderIndex: number;
-  titleUz: string;
-  titleRu: string;
+  title: string;
   courseId: number;
   state: TopicState;
   completed: boolean;
@@ -326,10 +319,8 @@ export interface MyAttendance {
   sessions: {
     id: number;
     date: string;
-    courseNameUz: string;
-    courseNameRu: string;
-    titleUz: string | null;
-    titleRu: string | null;
+    courseName: string;
+    title: string | null;
     status: AttStatus;
   }[];
 }

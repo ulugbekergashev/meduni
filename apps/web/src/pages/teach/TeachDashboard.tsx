@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { BarRow, Card, Icon, ProgressRing, Spinner } from "@meduni/ui";
 import { AsyncSection } from "../../components/AsyncSection";
-import { pickName, useLocale } from "../../lib/useLocale";
+import { useLocale } from "../../lib/useLocale";
 import { formatDate } from "../../lib/date";
 import { useMe } from "../../lib/auth";
 import { useTeachCourses, useTeachDashboard } from "./api";
@@ -151,7 +151,7 @@ export function TeachDashboard() {
                 {dash.data.courses.map((c) => (
                   <BarRow
                     key={c.id}
-                    label={pickName(locale, c.subjectNameUz, c.subjectNameRu)}
+                    label={c.subjectName}
                     value={c.avgProgress}
                     onClick={() => navigate(`/teach/courses/${c.id}/progress`)}
                   />
@@ -191,8 +191,8 @@ export function TeachDashboard() {
                   <Icon icon={CalendarDays} size={18} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-body font-semibold text-ink">{s.title ?? pickName(locale, s.subjectNameUz, s.subjectNameRu)}</p>
-                  <p className="truncate text-note text-ink-faint">{pickName(locale, s.subjectNameUz, s.subjectNameRu)}{s.room ? ` · ${s.room}` : ""}</p>
+                  <p className="truncate text-body font-semibold text-ink">{s.title ?? s.subjectName}</p>
+                  <p className="truncate text-note text-ink-faint">{s.subjectName}{s.room ? ` · ${s.room}` : ""}</p>
                 </div>
                 <span className="shrink-0 text-note font-medium text-ink-soft">{formatDate(locale === "ru" ? "ru" : "uz", s.date, "short")}</span>
               </button>

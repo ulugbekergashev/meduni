@@ -5,7 +5,7 @@ import { Field } from "../../../components/Field";
 import { apiErrorMessage } from "../../../lib/api";
 import { useList } from "../../../lib/crud";
 import { useMe } from "../../../lib/auth";
-import { pickName, useLocale } from "../../../lib/useLocale";
+import { useLocale } from "../../../lib/useLocale";
 import type { Department } from "../structure/types";
 import { useCreateUser, useUpdateUser, type CreateUserBody, type UserRow } from "./api";
 
@@ -17,8 +17,7 @@ interface Group {
 
 interface FacultyOpt {
   id: number;
-  nameUz: string;
-  nameRu: string;
+  name: string;
 }
 
 /** SUPER covers superadmin + legacy admin rows — affiliation fields are hidden for them. */
@@ -217,7 +216,7 @@ function UserForm({
               <option value="">{t("allFaculties")}</option>
               {facultyOptions.map((f) => (
                 <option key={f.id} value={f.id}>
-                  {pickName(locale, f.nameUz, f.nameRu)}
+                  {f.name}
                 </option>
               ))}
             </Select>
@@ -259,7 +258,7 @@ function UserForm({
                   </option>
                   {deptOptions.map((d) => (
                     <option key={d.id} value={d.id}>
-                      {pickName(locale, d.nameUz, d.nameRu)}
+                      {d.name}
                     </option>
                   ))}
                 </Select>
@@ -281,7 +280,7 @@ function UserForm({
               </option>
               {facultyOptions.map((f) => (
                 <option key={f.id} value={f.id}>
-                  {pickName(locale, f.nameUz, f.nameRu)}
+                  {f.name}
                 </option>
               ))}
             </Select>

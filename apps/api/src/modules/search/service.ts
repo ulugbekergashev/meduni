@@ -32,9 +32,9 @@ export async function teacherSearch(teacherId: number, q: string) {
     prisma.course.findMany({
       where: {
         teacherId,
-        OR: [{ subject: { nameUz: contains(needle) } }, { subject: { nameRu: contains(needle) } }],
+        subject: { name: contains(needle) },
       },
-      select: { id: true, semester: true, subject: { select: { nameUz: true, nameRu: true } } },
+      select: { id: true, semester: true, subject: { select: { name: true } } },
       orderBy: { id: "asc" },
       take: LIMIT,
     }),
@@ -43,7 +43,7 @@ export async function teacherSearch(teacherId: number, q: string) {
   return {
     students: students.map((s) => ({ id: s.id, fullName: s.fullName, groupName: s.group?.name ?? null })),
     groups: groups.map((g) => ({ id: g.id, name: g.name, studentCount: g._count.students })),
-    courses: courses.map((c) => ({ id: c.id, nameUz: c.subject.nameUz, nameRu: c.subject.nameRu, semester: c.semester })),
+    courses: courses.map((c) => ({ id: c.id, name: c.subject.name, semester: c.semester })),
   };
 }
 
@@ -75,7 +75,7 @@ export async function adminSearch(q: string, scope?: { facultyId?: number | null
     }),
     prisma.user.findMany({
       where: { role: "TEACHER", ...teacherScope, OR: [{ fullName: contains(needle) }, { email: contains(needle) }] },
-      select: { id: true, fullName: true, teacherProfile: { select: { department: { select: { nameUz: true, nameRu: true } } } } },
+      select: { id: true, fullName: true, teacherProfile: { select: { department: { select: { name: true } } } } },
       orderBy: { fullName: "asc" },
       take: LIMIT,
     }),
@@ -86,8 +86,8 @@ export async function adminSearch(q: string, scope?: { facultyId?: number | null
       take: LIMIT,
     }),
     prisma.course.findMany({
-      where: { ...courseScope, OR: [{ subject: { nameUz: contains(needle) } }, { subject: { nameRu: contains(needle) } }] },
-      select: { id: true, semester: true, subject: { select: { nameUz: true, nameRu: true } } },
+      where: { ...courseScope, subject: { name: contains(needle) } },
+      select: { id: true, semester: true, subject: { select: { name: true } } },
       orderBy: { id: "asc" },
       take: LIMIT,
     }),
@@ -98,11 +98,10 @@ export async function adminSearch(q: string, scope?: { facultyId?: number | null
     teachers: teachers.map((t) => ({
       id: t.id,
       fullName: t.fullName,
-      departmentUz: t.teacherProfile?.department.nameUz ?? null,
-      departmentRu: t.teacherProfile?.department.nameRu ?? null,
+      department: t.teacherProfile?.department.name ?? null,
     })),
     groups: groups.map((g) => ({ id: g.id, name: g.name, studentCount: g._count.students })),
-    courses: courses.map((c) => ({ id: c.id, nameUz: c.subject.nameUz, nameRu: c.subject.nameRu, semester: c.semester })),
+    courses: courses.map((c) => ({ id: c.id, name: c.subject.name, semester: c.semester })),
   };
 }
 
@@ -116,9 +115,9 @@ export async function studentSearch(studentId: number, q: string) {
     prisma.course.findMany({
       where: {
         enrollments: enrolled,
-        OR: [{ subject: { nameUz: contains(needle) } }, { subject: { nameRu: contains(needle) } }],
+        subject: { name: contains(needle) },
       },
-      select: { id: true, semester: true, subject: { select: { nameUz: true, nameRu: true } } },
+      select: { id: true, semester: true, subject: { select: { name: true } } },
       orderBy: { id: "asc" },
       take: LIMIT,
     }),
@@ -126,22 +125,20 @@ export async function studentSearch(studentId: number, q: string) {
       where: {
         course: { enrollments: enrolled },
         contentItems: { some: { status: "PUBLISHED" } }, // students only see published topics
-        OR: [{ titleUz: contains(needle) }, { titleRu: contains(needle) }],
+        title: contains(needle),
       },
-      select: { id: true, titleUz: true, titleRu: true, course: { select: { subject: { select: { nameUz: true, nameRu: true } } } } },
+      select: { id: true, title: true, course: { select: { subject: { select: { name: true } } } } },
       orderBy: { id: "asc" },
       take: LIMIT,
     }),
   ]);
 
   return {
-    courses: courses.map((c) => ({ id: c.id, nameUz: c.subject.nameUz, nameRu: c.subject.nameRu, semester: c.semester })),
+    courses: courses.map((c) => ({ id: c.id, name: c.subject.name, semester: c.semester })),
     topics: topics.map((t) => ({
       id: t.id,
-      titleUz: t.titleUz,
-      titleRu: t.titleRu,
-      courseUz: t.course.subject.nameUz,
-      courseRu: t.course.subject.nameRu,
+      title: t.title,
+      courseName: t.course.subject.name,
     })),
   };
 }

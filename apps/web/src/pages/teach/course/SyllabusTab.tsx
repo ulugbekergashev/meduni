@@ -3,7 +3,6 @@ import { useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { BookText, Clock, Plus, Target, Trash2 } from "lucide-react";
 import { Button, Card, Icon, Spinner, useToast } from "@meduni/ui";
-import { useLocale } from "../../../lib/useLocale";
 import { useSaveSyllabus, useSyllabus, type SyllabusTopic } from "../api";
 
 function EditableList({ items, onChange, accent, placeholder, addLabel }: { items: string[]; onChange: (v: string[]) => void; accent: string; placeholder: string; addLabel: string }) {
@@ -27,7 +26,6 @@ export function SyllabusTab() {
   const { id } = useParams();
   const courseId = Number(id);
   const { t } = useTranslation(undefined, { keyPrefix: "syllabus" });
-  const locale = useLocale();
   const { show } = useToast();
   const q = useSyllabus(courseId);
   const save = useSaveSyllabus(courseId);
@@ -105,7 +103,7 @@ export function SyllabusTab() {
                 {topics.map((tp, i) => (
                   <tr key={tp.id} className="border-b border-line last:border-0">
                     <td className="px-3 py-2 text-ink-soft">{i + 1}</td>
-                    <td className="px-3 py-2 font-medium text-ink">{locale === "ru" ? tp.titleRu : tp.titleUz}</td>
+                    <td className="px-3 py-2 font-medium text-ink">{tp.title}</td>
                     <td className="px-3 py-2">
                       <input type="number" min={0} value={tp.hours} onChange={(e) => setTopic(tp.id, { hours: Number(e.target.value) })} className="w-16 rounded-control border border-line px-2 py-1 text-[13px] outline-none focus:border-brand" />
                     </td>

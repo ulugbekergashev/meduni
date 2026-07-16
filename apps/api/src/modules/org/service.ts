@@ -5,27 +5,23 @@ import { conflict, duplicate, notFound } from "../../lib/errors";
 
 export async function listFaculties(onlyId?: number) {
   const rows = await prisma.faculty.findMany({ where: onlyId ? { id: onlyId } : undefined, orderBy: { id: "asc" } });
-  return rows.map((f) => ({ id: f.id, nameUz: f.nameUz, nameRu: f.nameRu }));
+  return rows.map((f) => ({ id: f.id, name: f.name }));
 }
 
-export async function createFaculty(data: { nameUz: string; nameRu: string }) {
-  const clash = await prisma.faculty.findFirst({
-    where: { OR: [{ nameUz: data.nameUz }, { nameRu: data.nameRu }] },
-  });
+export async function createFaculty(data: { name: string }) {
+  const clash = await prisma.faculty.findFirst({ where: { name: data.name } });
   if (clash) throw duplicate();
   const f = await prisma.faculty.create({ data });
-  return { id: f.id, nameUz: f.nameUz, nameRu: f.nameRu };
+  return { id: f.id, name: f.name };
 }
 
-export async function updateFaculty(id: number, data: { nameUz: string; nameRu: string }) {
+export async function updateFaculty(id: number, data: { name: string }) {
   const existing = await prisma.faculty.findUnique({ where: { id } });
   if (!existing) throw notFound("Fakultet");
-  const clash = await prisma.faculty.findFirst({
-    where: { id: { not: id }, OR: [{ nameUz: data.nameUz }, { nameRu: data.nameRu }] },
-  });
+  const clash = await prisma.faculty.findFirst({ where: { id: { not: id }, name: data.name } });
   if (clash) throw duplicate();
   const f = await prisma.faculty.update({ where: { id }, data });
-  return { id: f.id, nameUz: f.nameUz, nameRu: f.nameRu };
+  return { id: f.id, name: f.name };
 }
 
 export async function deleteFaculty(id: number) {
@@ -62,10 +58,8 @@ export async function listDepartments(facultyId?: number, departmentId?: number)
   return rows.map((d) => ({
     id: d.id,
     facultyId: d.facultyId,
-    nameUz: d.nameUz,
-    nameRu: d.nameRu,
-    facultyNameUz: d.faculty.nameUz,
-    facultyNameRu: d.faculty.nameRu,
+    name: d.name,
+    facultyName: d.faculty.name,
   }));
 }
 
@@ -74,33 +68,30 @@ async function ensureFaculty(facultyId: number) {
   if (!f) throw notFound("Fakultet");
 }
 
-export async function createDepartment(data: { facultyId: number; nameUz: string; nameRu: string }) {
+export async function createDepartment(data: { facultyId: number; name: string }) {
   await ensureFaculty(data.facultyId);
   const clash = await prisma.department.findFirst({
-    where: { facultyId: data.facultyId, OR: [{ nameUz: data.nameUz }, { nameRu: data.nameRu }] },
+    where: { facultyId: data.facultyId, name: data.name },
   });
   if (clash) throw duplicate();
   const d = await prisma.department.create({ data });
-  return { id: d.id, facultyId: d.facultyId, nameUz: d.nameUz, nameRu: d.nameRu };
+  return { id: d.id, facultyId: d.facultyId, name: d.name };
 }
 
-export async function updateDepartment(
-  id: number,
-  data: { facultyId?: number; nameUz: string; nameRu: string }
-) {
+export async function updateDepartment(id: number, data: { facultyId?: number; name: string }) {
   const existing = await prisma.department.findUnique({ where: { id } });
   if (!existing) throw notFound("Kafedra");
   const facultyId = data.facultyId ?? existing.facultyId;
   if (data.facultyId) await ensureFaculty(data.facultyId);
   const clash = await prisma.department.findFirst({
-    where: { id: { not: id }, facultyId, OR: [{ nameUz: data.nameUz }, { nameRu: data.nameRu }] },
+    where: { id: { not: id }, facultyId, name: data.name },
   });
   if (clash) throw duplicate();
   const d = await prisma.department.update({
     where: { id },
-    data: { facultyId, nameUz: data.nameUz, nameRu: data.nameRu },
+    data: { facultyId, name: data.name },
   });
-  return { id: d.id, facultyId: d.facultyId, nameUz: d.nameUz, nameRu: d.nameRu };
+  return { id: d.id, facultyId: d.facultyId, name: d.name };
 }
 
 export async function deleteDepartment(id: number) {
@@ -131,11 +122,9 @@ export async function listSubjects(departmentId?: number, facultyId?: number) {
   return rows.map((s) => ({
     id: s.id,
     departmentId: s.departmentId,
-    nameUz: s.nameUz,
-    nameRu: s.nameRu,
+    name: s.name,
     description: s.description,
-    departmentNameUz: s.department.nameUz,
-    departmentNameRu: s.department.nameRu,
+    departmentName: s.department.name,
   }));
 }
 
@@ -146,48 +135,35 @@ async function ensureDepartment(departmentId: number) {
 
 export async function createSubject(data: {
   departmentId: number;
-  nameUz: string;
-  nameRu: string;
+  name: string;
   description?: string | null;
 }) {
   await ensureDepartment(data.departmentId);
   const clash = await prisma.subject.findFirst({
-    where: { departmentId: data.departmentId, OR: [{ nameUz: data.nameUz }, { nameRu: data.nameRu }] },
+    where: { departmentId: data.departmentId, name: data.name },
   });
   if (clash) throw duplicate();
   const s = await prisma.subject.create({ data });
-  return {
-    id: s.id,
-    departmentId: s.departmentId,
-    nameUz: s.nameUz,
-    nameRu: s.nameRu,
-    description: s.description,
-  };
+  return { id: s.id, departmentId: s.departmentId, name: s.name, description: s.description };
 }
 
 export async function updateSubject(
   id: number,
-  data: { departmentId?: number; nameUz: string; nameRu: string; description?: string | null }
+  data: { departmentId?: number; name: string; description?: string | null }
 ) {
   const existing = await prisma.subject.findUnique({ where: { id } });
   if (!existing) throw notFound("Fan");
   const departmentId = data.departmentId ?? existing.departmentId;
   if (data.departmentId) await ensureDepartment(data.departmentId);
   const clash = await prisma.subject.findFirst({
-    where: { id: { not: id }, departmentId, OR: [{ nameUz: data.nameUz }, { nameRu: data.nameRu }] },
+    where: { id: { not: id }, departmentId, name: data.name },
   });
   if (clash) throw duplicate();
   const s = await prisma.subject.update({
     where: { id },
-    data: { departmentId, nameUz: data.nameUz, nameRu: data.nameRu, description: data.description },
+    data: { departmentId, name: data.name, description: data.description },
   });
-  return {
-    id: s.id,
-    departmentId: s.departmentId,
-    nameUz: s.nameUz,
-    nameRu: s.nameRu,
-    description: s.description,
-  };
+  return { id: s.id, departmentId: s.departmentId, name: s.name, description: s.description };
 }
 
 export async function deleteSubject(id: number) {
@@ -209,8 +185,7 @@ export async function listGroups(facultyId?: number) {
     facultyId: g.facultyId,
     name: g.name,
     yearOfStudy: g.yearOfStudy,
-    facultyNameUz: g.faculty.nameUz,
-    facultyNameRu: g.faculty.nameRu,
+    facultyName: g.faculty.name,
     studentCount: g._count.students,
   }));
 }

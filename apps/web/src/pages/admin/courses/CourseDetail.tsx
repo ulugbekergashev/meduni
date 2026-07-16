@@ -7,7 +7,7 @@ import { Avatar } from "../../../components/Avatar";
 import { DataTable } from "../../../components/DataTable";
 import { apiErrorMessage } from "../../../lib/api";
 import { useList } from "../../../lib/crud";
-import { pickName, useLocale } from "../../../lib/useLocale";
+import { useLocale } from "../../../lib/useLocale";
 import { useCourse, useUpdateCourse } from "./api";
 
 interface GroupLite {
@@ -94,10 +94,10 @@ export function CourseDetail() {
       </button>
 
       <h1 className="mt-3 text-h1 font-bold text-ink">
-        {pickName(locale, c.subjectNameUz, c.subjectNameRu)}
+        {c.subjectName}
       </h1>
       <p className="mt-1 text-[13.5px] text-ink-soft">
-        {pickName(locale, c.departmentNameUz, c.departmentNameRu)} ·{" "}
+        {c.departmentName} ·{" "}
         <button onClick={() => navigate(`/admin/users/${c.teacherId}`)} className="font-medium text-brand-deep hover:underline">
           {c.teacherName}
         </button>{" "}

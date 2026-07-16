@@ -8,10 +8,10 @@ import { ConfirmDialog } from "../../../components/ConfirmDialog";
 import { Field } from "../../../components/Field";
 import { apiErrorMessage } from "../../../lib/api";
 import { useCreate, useList, useRemove, useUpdate } from "../../../lib/crud";
-import { pickName, useLocale } from "../../../lib/useLocale";
+import { useLocale } from "../../../lib/useLocale";
 import type { Department, Subject } from "./types";
 
-type SubjectInput = { departmentId: number; nameUz: string; nameRu: string; description?: string | null };
+type SubjectInput = { departmentId: number; name: string; description?: string | null };
 
 export function SubjectsTab() {
   const { t } = useTranslation(undefined, { keyPrefix: "structure" });
@@ -30,8 +30,7 @@ export function SubjectsTab() {
   const remove = useRemove("subjects");
 
   const [departmentId, setDepartmentId] = useState<string>("");
-  const [nameUz, setNameUz] = useState("");
-  const [nameRu, setNameRu] = useState("");
+  const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -46,21 +45,19 @@ export function SubjectsTab() {
   const onAdd = (e: FormEvent) => {
     e.preventDefault();
     setFormError(null);
-    if (!nameUz.trim() && !nameRu.trim()) {
+    if (!name.trim()) {
       setFormError(tc("nameRequired"));
       return;
     }
     create.mutate(
       {
         departmentId: Number(departmentId),
-        nameUz: nameUz.trim(),
-        nameRu: nameRu.trim(),
+        name: name.trim(),
         description: description.trim() || null,
       },
       {
         onSuccess: () => {
-          setNameUz("");
-          setNameRu("");
+          setName("");
           setDescription("");
           show(tc("added"));
         },
@@ -78,8 +75,7 @@ export function SubjectsTab() {
         id: editing.id,
         body: {
           departmentId: editing.departmentId,
-          nameUz: editing.nameUz.trim(),
-          nameRu: editing.nameRu.trim(),
+          name: editing.name.trim(),
           description: editing.description?.trim() || null,
         },
       },
@@ -123,19 +119,15 @@ export function SubjectsTab() {
                 </option>
                 {deptOptions.map((d) => (
                   <option key={d.id} value={d.id}>
-                    {pickName(locale, d.nameUz, d.nameRu)}
+                    {d.name}
                   </option>
                 ))}
               </Select>
             </Field>
             <div className="hidden sm:block" />
-            <Field label={tc("nameUz")}>
-              <Input value={nameUz} onChange={(e) => setNameUz(e.target.value)} />
+            <Field label={tc("name")}>
+              <Input value={name} onChange={(e) => setName(e.target.value)} />
             </Field>
-            <Field label={tc("nameRu")}>
-              <Input value={nameRu} onChange={(e) => setNameRu(e.target.value)} />
-            </Field>
-            <p className="text-[12px] text-ink-faint sm:col-span-2">{tc("oneLangHint")}</p>
             <div className="sm:col-span-2">
               <Field label={t("descriptionOptional")}>
                 <Textarea value={description} onChange={(e) => setDescription(e.target.value)} />
@@ -160,7 +152,7 @@ export function SubjectsTab() {
               <option value="">{t("allDepartments")}</option>
               {deptOptions.map((d) => (
                 <option key={d.id} value={d.id}>
-                  {pickName(locale, d.nameUz, d.nameRu)}
+                  {d.name}
                 </option>
               ))}
             </Select>
@@ -177,12 +169,11 @@ export function SubjectsTab() {
         emptyText={t("emptySubjects")}
         onRetry={() => list.refetch()}
       >
-        <DataTable headers={[t("department"), tc("nameUz"), tc("nameRu"), tc("actions")]}>
+        <DataTable headers={[t("department"), tc("name"), tc("actions")]}>
           {rows.map((s) => (
             <tr key={s.id} className="border-b border-line last:border-0">
-              <td className="px-4 py-3 text-ink-soft">{pickName(locale, s.departmentNameUz, s.departmentNameRu)}</td>
-              <td className="px-4 py-3 font-medium text-ink">{s.nameUz}</td>
-              <td className="px-4 py-3 text-ink-soft">{s.nameRu}</td>
+              <td className="px-4 py-3 text-ink-soft">{s.departmentName}</td>
+              <td className="px-4 py-3 font-medium text-ink">{s.name}</td>
               <td className="px-4 py-3">
                 <RowActions
                   onEdit={() => {
@@ -211,22 +202,15 @@ export function SubjectsTab() {
               >
                 {deptOptions.map((d) => (
                   <option key={d.id} value={d.id}>
-                    {pickName(locale, d.nameUz, d.nameRu)}
+                    {d.name}
                   </option>
                 ))}
               </Select>
             </Field>
-            <Field label={tc("nameUz")}>
+            <Field label={tc("name")}>
               <Input
-                value={editing.nameUz}
-                onChange={(e) => setEditing({ ...editing, nameUz: e.target.value })}
-                required
-              />
-            </Field>
-            <Field label={tc("nameRu")}>
-              <Input
-                value={editing.nameRu}
-                onChange={(e) => setEditing({ ...editing, nameRu: e.target.value })}
+                value={editing.name}
+                onChange={(e) => setEditing({ ...editing, name: e.target.value })}
                 required
               />
             </Field>

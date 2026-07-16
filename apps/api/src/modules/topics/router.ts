@@ -29,17 +29,12 @@ function parseId(raw: string): number {
 export const topicsRouter = Router();
 topicsRouter.use(requireRoles("TEACHER"));
 
-const createSchema = z
-  .object({
-    courseId: z.number().int().positive(),
-    titleUz: z.string().trim().optional(),
-    titleRu: z.string().trim().optional(),
-  })
-  // Only one language is required; the service mirrors it into the other.
-  .refine((d) => !!(d.titleUz || d.titleRu), { message: "title required" });
+const createSchema = z.object({
+  courseId: z.number().int().positive(),
+  title: z.string().trim().min(1),
+});
 const updateSchema = z.object({
-  titleUz: z.string().trim().min(1).optional(),
-  titleRu: z.string().trim().min(1).optional(),
+  title: z.string().trim().min(1).optional(),
   status: z.enum(["DRAFT", "PUBLISHED"]).optional(),
 });
 const reorderSchema = z.object({ orderedIds: z.array(z.number().int().positive()) });

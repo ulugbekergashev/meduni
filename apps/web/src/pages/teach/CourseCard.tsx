@@ -2,19 +2,17 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { BookOpen, Users } from "lucide-react";
 import { Card, Icon } from "@meduni/ui";
-import { pickName, useLocale } from "../../lib/useLocale";
 import type { TeachCourse } from "./api";
 
 export function CourseCard({ course, avgProgress }: { course: TeachCourse; avgProgress: number }) {
   const { t } = useTranslation(undefined, { keyPrefix: "teach" });
-  const locale = useLocale();
   const navigate = useNavigate();
 
   return (
     <Card interactive onClick={() => navigate(`/teach/courses/${course.id}`)} className="flex h-full flex-col gap-3">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <h3 className="line-clamp-2 text-[16px] font-bold leading-snug text-ink">{pickName(locale, course.subjectNameUz, course.subjectNameRu)}</h3>
+          <h3 className="line-clamp-2 text-[16px] font-bold leading-snug text-ink">{course.subjectName}</h3>
           <p className="mt-0.5 text-[12px] text-ink-faint">{course.academicYear}</p>
         </div>
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand-deep">

@@ -43,9 +43,8 @@ export function TopicsTab() {
       setFormError(t("titleRequired"));
       return;
     }
-    // One field only — typed in the interface language; the backend mirrors the other.
     create.mutate(
-      locale === "ru" ? { titleRu: title.trim() } : { titleUz: title.trim() },
+      { title: title.trim() },
       {
         onSuccess: () => {
           setTitle("");
@@ -121,12 +120,7 @@ export function TopicsTab() {
                 </span>
 
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-medium text-ink">
-                    {locale === "ru" ? tp.titleRu : tp.titleUz}
-                  </p>
-                  <p className="truncate text-[12px] text-ink-faint">
-                    {locale === "ru" ? tp.titleUz : tp.titleRu}
-                  </p>
+                  <p className="truncate font-medium text-ink">{tp.title}</p>
                 </div>
 
                 <Badge tone={tp.status === "published" ? "emerald" : "slate"}>

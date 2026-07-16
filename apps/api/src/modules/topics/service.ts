@@ -47,8 +47,7 @@ function toTopicOut(t: Topic & { _count?: { materials: number } }) {
   return {
     id: t.id,
     courseId: t.courseId,
-    titleUz: t.titleUz,
-    titleRu: t.titleRu,
+    title: t.title,
     orderIndex: t.orderIndex,
     status: t.status.toLowerCase(),
     materialCount: t._count?.materials ?? 0,
@@ -67,33 +66,29 @@ export async function listTopics(courseId: number, teacherId: number) {
   return rows.map(toTopicOut);
 }
 
-export async function createTopic(input: { courseId: number; titleUz?: string; titleRu?: string }, teacherId: number) {
+export async function createTopic(input: { courseId: number; title: string }, teacherId: number) {
   await assertCourseOwner(input.courseId, teacherId);
-  // One language is enough — mirror it into the other so both display fields are set.
-  const titleUz = (input.titleUz?.trim() || input.titleRu?.trim())!;
-  const titleRu = (input.titleRu?.trim() || input.titleUz?.trim())!;
   const last = await prisma.topic.findFirst({
     where: { courseId: input.courseId },
     orderBy: { orderIndex: "desc" },
   });
   const orderIndex = (last?.orderIndex ?? -1) + 1;
   const t = await prisma.topic.create({
-    data: { courseId: input.courseId, titleUz, titleRu, orderIndex },
+    data: { courseId: input.courseId, title: input.title.trim(), orderIndex },
   });
   return toTopicOut(t);
 }
 
 export async function updateTopic(
   id: number,
-  input: { titleUz?: string; titleRu?: string; status?: "DRAFT" | "PUBLISHED" },
+  input: { title?: string; status?: "DRAFT" | "PUBLISHED" },
   teacherId: number
 ) {
   await topicForTeacher(id, teacherId);
   const t = await prisma.topic.update({
     where: { id },
     data: {
-      titleUz: input.titleUz?.trim(),
-      titleRu: input.titleRu?.trim(),
+      title: input.title?.trim(),
       status: input.status,
     },
   });

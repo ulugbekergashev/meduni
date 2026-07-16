@@ -3,7 +3,6 @@ import { useTranslation } from "react-i18next";
 import { GraduationCap, Users2 } from "lucide-react";
 import { Card, Icon, Spinner } from "@meduni/ui";
 import { AsyncSection } from "../../../components/AsyncSection";
-import { useLocale, pickName } from "../../../lib/useLocale";
 import { useCourseGroupsStats } from "../api";
 
 // Which groups this course is taught in — each card opens the group profile.
@@ -11,7 +10,6 @@ export function CourseGroupsTab() {
   const { id } = useParams();
   const courseId = Number(id);
   const { t } = useTranslation(undefined, { keyPrefix: "courseGroups" });
-  const locale = useLocale();
   const navigate = useNavigate();
 
   const q = useCourseGroupsStats(courseId);
@@ -38,7 +36,7 @@ export function CourseGroupsTab() {
                   <div className="min-w-0">
                     <h3 className="text-[16px] font-bold text-ink">{g.name}</h3>
                     <p className="truncate text-[12px] text-ink-faint">
-                      {t("yearN", { n: g.yearOfStudy })} · {pickName(locale, g.facultyNameUz, g.facultyNameRu)}
+                      {t("yearN", { n: g.yearOfStudy })} · {g.facultyName}
                     </p>
                   </div>
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand-deep">

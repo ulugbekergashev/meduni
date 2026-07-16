@@ -22,16 +22,13 @@ async function getAccount(userId: number) {
   if (!user) throw notFound("Foydalanuvchi");
 
   let contextType: "group" | "department" | null = null;
-  let contextUz: string | null = null;
-  let contextRu: string | null = null;
+  let context: string | null = null;
   if (user.role === "STUDENT" && user.group) {
     contextType = "group";
-    contextUz = user.group.name;
-    contextRu = user.group.name;
+    context = user.group.name;
   } else if (user.role === "TEACHER" && user.teacherProfile) {
     contextType = "department";
-    contextUz = user.teacherProfile.department.nameUz;
-    contextRu = user.teacherProfile.department.nameRu;
+    context = user.teacherProfile.department.name;
   }
 
   return {
@@ -41,8 +38,7 @@ async function getAccount(userId: number) {
     role: user.role,
     locale: user.locale,
     contextType,
-    contextUz,
-    contextRu,
+    context,
   };
 }
 

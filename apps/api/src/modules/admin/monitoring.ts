@@ -81,8 +81,7 @@ export async function getAiUsage(opts: { month?: string; departmentId?: number; 
       const pct = (used: number, lim?: number) => (q && lim && lim > 0 ? Math.round((used / lim) * 100) : null);
       return {
         departmentId: id,
-        nameUz: d?.nameUz ?? "—",
-        nameRu: d?.nameRu ?? "—",
+        name: d?.name ?? "—",
         tokens: v.tokens,
         images: v.images,
         ttsChars: v.ttsChars,
@@ -129,10 +128,8 @@ export async function getQuotas(scope?: { facultyId?: number; departmentId?: num
     const u = uMap.get(d.id);
     return {
       departmentId: d.id,
-      nameUz: d.nameUz,
-      nameRu: d.nameRu,
-      facultyNameUz: d.faculty.nameUz,
-      facultyNameRu: d.faculty.nameRu,
+      name: d.name,
+      facultyName: d.faculty.name,
       quota: {
         monthlyTokenLimit: d.aiQuota?.monthlyTokenLimit ?? 0,
         monthlyImageLimit: d.aiQuota?.monthlyImageLimit ?? 0,

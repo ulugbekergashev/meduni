@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { ArrowLeft, BarChart3, CalendarDays, ChevronRight, GraduationCap, NotebookPen, Users2 } from "lucide-react";
 import { Badge, Card, Icon, ProgressBar, ProgressRing, Spinner, cls } from "@meduni/ui";
 import { AsyncSection } from "../../../components/AsyncSection";
-import { useLocale, pickName } from "../../../lib/useLocale";
+import { useLocale } from "../../../lib/useLocale";
 import { useTeachGroup, type GroupStudent, type TeachGroup } from "../api";
 import { JournalView } from "../course/attendance/JournalView";
 import { SessionsView } from "../course/attendance/SessionsView";
@@ -106,7 +106,6 @@ function StudentsTab({ group }: { group: TeachGroup }) {
 
 /** Course picker shown above journal/sessions/report when the group takes >1 course. */
 function CoursePicker({ group, courseId, onPick }: { group: TeachGroup; courseId: number; onPick: (id: number) => void }) {
-  const locale = useLocale();
   if (group.courses.length <= 1) return null;
   return (
     <div className="mb-4 flex flex-wrap gap-1.5">
@@ -119,7 +118,7 @@ function CoursePicker({ group, courseId, onPick }: { group: TeachGroup; courseId
             c.id === courseId ? "bg-brand text-white" : "bg-surface text-ink-soft border border-line hover:bg-bg"
           )}
         >
-          {pickName(locale, c.nameUz, c.nameRu)}
+          {c.name}
         </button>
       ))}
     </div>
@@ -130,7 +129,6 @@ export function GroupProfile() {
   const { id } = useParams();
   const groupId = Number(id);
   const { t } = useTranslation(undefined, { keyPrefix: "groupProfile" });
-  const locale = useLocale();
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
 
@@ -167,7 +165,7 @@ export function GroupProfile() {
                   <p className="flex flex-wrap items-center gap-x-2 text-[13px] text-ink-soft">
                     <span>{t("yearN", { n: group.yearOfStudy })}</span>
                     <span>·</span>
-                    <span>{pickName(locale, group.facultyNameUz, group.facultyNameRu)}</span>
+                    <span>{group.facultyName}</span>
                     <span>·</span>
                     <span className="inline-flex items-center gap-1"><Icon icon={GraduationCap} size={14} /> {t("studentsN", { n: group.studentCount })}</span>
                   </p>
@@ -175,7 +173,7 @@ export function GroupProfile() {
                 <div className="flex flex-wrap gap-1.5">
                   {group.courses.map((c) => (
                     <button key={c.id} onClick={() => navigate(`/teach/courses/${c.id}`)} className="rounded-pill bg-brand-soft px-2.5 py-1 text-[12.5px] font-semibold text-brand-deep transition-colors hover:bg-brand/10">
-                      {pickName(locale, c.nameUz, c.nameRu)}
+                      {c.name}
                     </button>
                   ))}
                 </div>

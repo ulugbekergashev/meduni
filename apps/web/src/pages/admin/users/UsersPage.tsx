@@ -23,7 +23,6 @@ import { ConfirmDialog } from "../../../components/ConfirmDialog";
 import { DataTable } from "../../../components/DataTable";
 import { useDebounced } from "../../../lib/useDebounced";
 import { useList } from "../../../lib/crud";
-import { pickName, useLocale } from "../../../lib/useLocale";
 import type { Department, Faculty, Group } from "../structure/types";
 import {
   useResetPassword,
@@ -54,7 +53,6 @@ export function UsersPage() {
   const { t: tc } = useTranslation(undefined, { keyPrefix: "common" });
   const { show } = useToast();
   const navigate = useNavigate();
-  const locale = useLocale();
 
   const [roleFilter, setRoleFilter] = useState<RoleFilter>("");
   const [inactiveOnly, setInactiveOnly] = useState(false);
@@ -145,8 +143,8 @@ export function UsersPage() {
     });
   };
 
-  const deptName = (u: UserRow) => pickName(locale, u.departmentNameUz ?? "", u.departmentNameRu ?? "");
-  const facName = (u: UserRow) => pickName(locale, u.facultyNameUz ?? "", u.facultyNameRu ?? "");
+  const deptName = (u: UserRow) => u.departmentName ?? "";
+  const facName = (u: UserRow) => u.facultyName ?? "";
 
   /** Context ("Tegishlilik") for the mixed view — each role shows its own anchor. */
   const affiliation = (u: UserRow) => {
@@ -170,7 +168,7 @@ export function UsersPage() {
   const groupFaculty = (u: UserRow) => {
     const g = (groups.data ?? []).find((x) => x.id === u.groupId);
     if (!g) return "—";
-    return pickName(locale, g.facultyNameUz, g.facultyNameRu) || "—";
+    return g.facultyName || "—";
   };
 
   const midCells = (u: UserRow) => {
@@ -275,7 +273,7 @@ export function UsersPage() {
               <option value="">{t("filter.allFaculties")}</option>
               {facultyOptions.map((f) => (
                 <option key={f.id} value={f.id}>
-                  {pickName(locale, f.nameUz, f.nameRu)}
+                  {f.name}
                 </option>
               ))}
             </Select>
@@ -294,7 +292,7 @@ export function UsersPage() {
               <option value="">{t("filter.allDepartments")}</option>
               {deptOptions.map((d) => (
                 <option key={d.id} value={d.id}>
-                  {pickName(locale, d.nameUz, d.nameRu)}
+                  {d.name}
                 </option>
               ))}
             </Select>
