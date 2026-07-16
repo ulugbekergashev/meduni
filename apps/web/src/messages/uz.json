@@ -920,6 +920,10 @@
   },
   "student": {
     "hello": "Salom",
+    "overall": "Umumiy",
+    "summaryTopics": "Tugallangan mavzular",
+    "summaryAttendance": "Davomat",
+    "summaryCourses": "Kurslar",
     "continueLabel": "Davom ettirish",
     "continue": "Davom ettirish",
     "done": "tugadi",

@@ -665,6 +665,13 @@ Barcha modullar tugadi (1-17).
   amber=jarayonda, konturli=yo'q. Sarlavha bosilsa konstruktor ochiladi. i18n `topics.chip*`.
   Smoke: real teacher bilan tekshirildi. tsc+build toza.
 
+- **Dizayn overhaul Faza 4 — talaba (2026-07-17). OVERHAUL YAKUNLANDI.** Talaba tomoni
+  Modul 11-16'da mobil-birinchi qurilgan (tokenlar bilan avtomatik yangilandi) — qo'shimcha:
+  **StudentDashboard umumiy holat paneli** (salom ostida): ProgressRing (kurslar bo'yicha
+  o'rtacha %) + 3 tile — tugallangan mavzular (jami k/N), davomat % (<75 rose, useMyProfile'dan),
+  kurslar soni. i18n `student.overall/summary*`. tsc+build toza, /me/profile smoke.
+  **Barcha fazalar (0/1/1B/2/3/4) bajarildi** — reja `.claude/plans/design-overhaul-2026-07.md`.
+
 ## 9. Loyiha holati va ishga tushirish (operatsion — sessiya 0)
 
 **Monorepo (npm workspaces):**
