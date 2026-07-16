@@ -772,6 +772,27 @@
     "addUser": "Добавить пользователя",
     "excelImport": "Excel импорт",
     "searchPlaceholder": "Поиск по имени или email",
+    "stats": {
+      "students": "Студенты",
+      "studentsHint": "прикреплены к группам",
+      "teachers": "Преподаватели",
+      "teachersHint": "прикреплены к кафедрам",
+      "deptAdmins": "Админы кафедр",
+      "deptAdminsHint": "управление кафедрой",
+      "facultyAdmins": "Админы факультетов",
+      "facultyAdminsHint": "управление факультетом",
+      "inactive": "Неактивные",
+      "inactiveHint": "вход закрыт"
+    },
+    "filter": {
+      "allFaculties": "Все факультеты",
+      "allDepartments": "Все кафедры",
+      "allGroups": "Все группы",
+      "clear": "Сбросить",
+      "totalCount": "Всего: {{count}}"
+    },
+    "wholeUniversity": "Весь университет",
+    "emptyFiltered": "По фильтру никого не найдено. Попробуйте изменить фильтр.",
     "roleFilter": {
       "all": "Все",
       "student": "Студент",
@@ -807,14 +828,27 @@
       "deptAdmin": "Админ кафедры",
       "facultyAdmin": "Админ факультета",
       "faculty": "Факультет",
-      "selectFaculty": "Выберите факультет"
+      "selectFaculty": "Выберите факультет",
+      "roleLocked": "Роль не меняется",
+      "facultyFilter": "Факультет (фильтр)",
+      "allFaculties": "Все факультеты",
+      "noInFacultyHint": "На этом факультете нет подходящих записей — выберите другой."
     },
     "table": {
       "name": "ФИО",
       "email": "Email",
       "role": "Роль",
       "active": "Активен",
-      "actions": "Действия"
+      "actions": "Действия",
+      "group": "Группа",
+      "faculty": "Факультет",
+      "phone": "Телефон",
+      "department": "Кафедра",
+      "position": "Должность",
+      "departmentScope": "Кафедра (охват)",
+      "facultyScope": "Факультет (охват)",
+      "affiliation": "Принадлежность",
+      "profile": "Профиль"
     },
     "empty": "Пока нет пользователей. Добавьте или импортируйте из Excel.",
     "editUser": "Редактировать пользователя",
@@ -834,7 +868,7 @@
     "pagination": {
       "prev": "Назад",
       "next": "Далее",
-      "pageOf": "{page} / {total}"
+      "pageOf": "{{page}} / {{total}}"
     },
     "import": {
       "title": "Excel импорт",

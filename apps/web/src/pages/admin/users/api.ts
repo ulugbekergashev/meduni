@@ -51,15 +51,44 @@ export interface ImportResult {
   errors: { row: number; messageUz: string; messageRu: string }[];
 }
 
-export function useUsers(params: { role: string; search: string; page: number }) {
+export interface UserStats {
+  total: number;
+  students: number;
+  teachers: number;
+  deptAdmins: number;
+  facultyAdmins: number;
+  superAdmins: number;
+  inactive: number;
+}
+
+export function useUsers(params: {
+  role: string;
+  search: string;
+  page: number;
+  facultyId?: string;
+  departmentId?: string;
+  groupId?: string;
+  active?: string;
+}) {
   const qs = new URLSearchParams();
   if (params.role) qs.set("role", params.role);
   if (params.search) qs.set("search", params.search);
+  if (params.facultyId) qs.set("facultyId", params.facultyId);
+  if (params.departmentId) qs.set("departmentId", params.departmentId);
+  if (params.groupId) qs.set("groupId", params.groupId);
+  if (params.active) qs.set("active", params.active);
   qs.set("page", String(params.page));
   return useQuery({
     queryKey: ["users", params],
     queryFn: () => api<UsersPageResp>(`/api/v1/users?${qs.toString()}`),
     placeholderData: (prev) => prev,
+  });
+}
+
+export function useUserStats() {
+  return useQuery({
+    queryKey: ["users", "stats"],
+    queryFn: () => api<UserStats>("/api/v1/users/stats"),
   });
 }
 

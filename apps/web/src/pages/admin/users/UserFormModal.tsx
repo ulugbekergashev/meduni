@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
-import { Button, Input, Modal, Select } from "@meduni/ui";
+import { Badge, Button, Input, Modal, Select } from "@meduni/ui";
 import { Field } from "../../../components/Field";
 import { apiErrorMessage } from "../../../lib/api";
 import { useList } from "../../../lib/crud";
@@ -12,6 +12,7 @@ import { useCreateUser, useUpdateUser, type CreateUserBody, type UserRow } from 
 interface Group {
   id: number;
   name: string;
+  facultyId: number;
 }
 
 interface FacultyOpt {
@@ -20,10 +21,26 @@ interface FacultyOpt {
   nameRu: string;
 }
 
-type FormRole = "STUDENT" | "TEACHER" | "DEPT_ADMIN" | "FACULTY_ADMIN";
+/** SUPER covers superadmin + legacy admin rows — affiliation fields are hidden for them. */
+type FormRole = "STUDENT" | "TEACHER" | "DEPT_ADMIN" | "FACULTY_ADMIN" | "SUPER";
+
+function roleFromRow(row: UserRow): FormRole {
+  switch (row.role) {
+    case "student":
+      return "STUDENT";
+    case "teacher":
+      return "TEACHER";
+    case "dept_admin":
+      return "DEPT_ADMIN";
+    case "faculty_admin":
+      return "FACULTY_ADMIN";
+    default:
+      return "SUPER";
+  }
+}
 
 /** Which roles the current admin tier may create (mirrors the backend rule). */
-function creatableRoles(myRole?: string): FormRole[] {
+function creatableRoles(myRole?: string): Exclude<FormRole, "SUPER">[] {
   if (myRole === "dept_admin") return ["TEACHER"];
   if (myRole === "faculty_admin") return ["STUDENT", "TEACHER", "DEPT_ADMIN"];
   return ["STUDENT", "TEACHER", "DEPT_ADMIN", "FACULTY_ADMIN"];
@@ -41,6 +58,7 @@ function UserForm({
   onUpdated: () => void;
 }) {
   const { t } = useTranslation(undefined, { keyPrefix: "users.form" });
+  const { t: tr } = useTranslation(undefined, { keyPrefix: "users.role" });
   const { t: tc } = useTranslation(undefined, { keyPrefix: "common" });
   const locale = useLocale();
 
@@ -50,18 +68,16 @@ function UserForm({
   const groups = useList<Group>("groups");
   const departments = useList<Department>("departments");
   const faculties = useList<FacultyOpt>("faculties");
-  const groupOptions = groups.data ?? [];
-  const deptOptions = departments.data ?? [];
   const facultyOptions = faculties.data ?? [];
 
   const isEdit = !!editing;
   const create = useCreateUser();
   const update = useUpdateUser();
 
-  const [role, setRole] = useState<FormRole>(
-    editing ? (editing.role === "teacher" ? "TEACHER" : "STUDENT") : roleOptions[0]
-  );
-  const [facultyId, setFacultyId] = useState<string>("");
+  const [role, setRole] = useState<FormRole>(editing ? roleFromRow(editing) : roleOptions[0]);
+  // Faculty picker: FACULTY_ADMIN scope for that role; otherwise a cascade filter for group/department lists.
+  const [facultyId, setFacultyId] = useState<string>(editing?.facultyId ? String(editing.facultyId) : "");
+  const [cascadeFacultyId, setCascadeFacultyId] = useState<string>("");
   const [fullName, setFullName] = useState(editing?.fullName ?? "");
   const [email, setEmail] = useState(editing?.email ?? "");
   const [phone, setPhone] = useState(editing?.phone ?? "");
@@ -74,9 +90,19 @@ function UserForm({
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
 
+  const groupOptions = (groups.data ?? []).filter(
+    (g) => !cascadeFacultyId || g.facultyId === Number(cascadeFacultyId)
+  );
+  const deptOptions = (departments.data ?? []).filter(
+    (d) => !cascadeFacultyId || d.facultyId === Number(cascadeFacultyId)
+  );
+
   const needsDept = role === "TEACHER" || role === "DEPT_ADMIN";
-  const noGroups = role === "STUDENT" && groupOptions.length === 0;
-  const noDepts = needsDept && deptOptions.length === 0;
+  const needsGroup = role === "STUDENT";
+  const needsFaculty = role === "FACULTY_ADMIN";
+  const showCascade = !isEdit && (needsGroup || needsDept) && facultyOptions.length > 1;
+  const noGroups = needsGroup && (groups.data ?? []).length === 0;
+  const noDepts = needsDept && (departments.data ?? []).length === 0;
 
   const onSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -89,11 +115,13 @@ function UserForm({
         phone: phone.trim() || null,
         locale: langValue,
       };
-      if (role === "STUDENT") body.groupId = Number(groupId);
+      if (role === "STUDENT" && groupId) body.groupId = Number(groupId);
       if (role === "TEACHER") {
-        body.departmentId = Number(departmentId);
+        if (departmentId) body.departmentId = Number(departmentId);
         body.position = position.trim() || null;
       }
+      if (role === "DEPT_ADMIN" && departmentId) body.departmentId = Number(departmentId);
+      if (role === "FACULTY_ADMIN" && facultyId) body.facultyId = Number(facultyId);
       update.mutate(
         { id: editing.id, body },
         {
@@ -107,13 +135,13 @@ function UserForm({
     const body: CreateUserBody = {
       fullName: fullName.trim(),
       email: email.trim(),
-      role,
+      role: role as Exclude<FormRole, "SUPER">,
       phone: phone.trim() || null,
       locale: langValue,
       password: password.trim() || null,
-      groupId: role === "STUDENT" ? Number(groupId) : null,
+      groupId: needsGroup ? Number(groupId) : null,
       departmentId: needsDept ? Number(departmentId) : null,
-      facultyId: role === "FACULTY_ADMIN" ? Number(facultyId) : null,
+      facultyId: needsFaculty ? Number(facultyId) : null,
       position: role === "TEACHER" ? position.trim() || null : null,
     };
     create.mutate(body, {
@@ -124,10 +152,13 @@ function UserForm({
 
   const pending = create.isPending || update.isPending;
 
+  const roleLabel = (r: Exclude<FormRole, "SUPER">) =>
+    r === "STUDENT" ? t("student") : r === "TEACHER" ? t("teacher") : r === "DEPT_ADMIN" ? t("deptAdmin") : t("facultyAdmin");
+
   return (
     <form onSubmit={onSubmit} className="space-y-4">
-      {/* Role selector (create only) */}
-      {!isEdit && (
+      {/* Role: selector on create, read-only badge on edit */}
+      {!isEdit ? (
         <Field label={t("selectRole")}>
           <div className="flex flex-wrap gap-2">
             {roleOptions.map((r) => (
@@ -142,9 +173,16 @@ function UserForm({
                     : "border-line text-ink-soft hover:bg-bg")
                 }
               >
-                {r === "STUDENT" ? t("student") : r === "TEACHER" ? t("teacher") : r === "DEPT_ADMIN" ? t("deptAdmin") : t("facultyAdmin")}
+                {roleLabel(r)}
               </button>
             ))}
+          </div>
+        </Field>
+      ) : (
+        <Field label={t("selectRole")}>
+          <div className="flex items-center gap-2">
+            <Badge tone="slate">{tr(editing!.role)}</Badge>
+            <span className="text-[12px] text-ink-faint">{t("roleLocked")}</span>
           </div>
         </Field>
       )}
@@ -166,10 +204,32 @@ function UserForm({
           </Select>
         </Field>
 
-        {role === "STUDENT" && (
+        {showCascade && (
+          <Field label={t("facultyFilter")}>
+            <Select
+              value={cascadeFacultyId}
+              onChange={(e) => {
+                setCascadeFacultyId(e.target.value);
+                setGroupId("");
+                setDepartmentId("");
+              }}
+            >
+              <option value="">{t("allFaculties")}</option>
+              {facultyOptions.map((f) => (
+                <option key={f.id} value={f.id}>
+                  {pickName(locale, f.nameUz, f.nameRu)}
+                </option>
+              ))}
+            </Select>
+          </Field>
+        )}
+
+        {needsGroup && (
           <Field label={t("group")}>
             {noGroups ? (
               <p className="text-[13px] text-amber">{t("noGroupsHint")}</p>
+            ) : groupOptions.length === 0 ? (
+              <p className="text-[13px] text-amber">{t("noInFacultyHint")}</p>
             ) : (
               <Select value={groupId} onChange={(e) => setGroupId(e.target.value)} required>
                 <option value="" disabled>
@@ -190,6 +250,8 @@ function UserForm({
             <Field label={t("department")}>
               {noDepts ? (
                 <p className="text-[13px] text-amber">{t("noDepartmentsHint")}</p>
+              ) : deptOptions.length === 0 ? (
+                <p className="text-[13px] text-amber">{t("noInFacultyHint")}</p>
               ) : (
                 <Select value={departmentId} onChange={(e) => setDepartmentId(e.target.value)} required>
                   <option value="" disabled>
@@ -211,7 +273,7 @@ function UserForm({
           </>
         )}
 
-        {role === "FACULTY_ADMIN" && (
+        {needsFaculty && (
           <Field label={t("faculty")}>
             <Select value={facultyId} onChange={(e) => setFacultyId(e.target.value)} required>
               <option value="" disabled>
@@ -240,7 +302,7 @@ function UserForm({
         <Button type="button" variant="ghost" onClick={onClose}>
           {tc("cancel")}
         </Button>
-        <Button type="submit" disabled={pending || noGroups || noDepts}>
+        <Button type="submit" disabled={pending || (!isEdit && (noGroups || noDepts))}>
           {isEdit ? tc("save") : tc("add")}
         </Button>
       </div>

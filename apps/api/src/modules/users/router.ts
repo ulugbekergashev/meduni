@@ -90,6 +90,7 @@ const updateSchema = z.object({
   locale: localeEnum.optional(),
   groupId: z.number().int().positive().optional().nullable(),
   departmentId: z.number().int().positive().optional().nullable(),
+  facultyId: z.number().int().positive().optional().nullable(),
   position: z.string().trim().optional().nullable(),
 });
 
@@ -103,9 +104,22 @@ usersRouter.get(
     const roleRaw = String(req.query.role ?? "").toUpperCase();
     const role = ROLE_FILTERS.includes(roleRaw) ? (roleRaw as never) : undefined;
     const groupId = req.query.groupId ? Number(req.query.groupId) : undefined;
+    const departmentId = req.query.departmentId ? Number(req.query.departmentId) : undefined;
+    const facultyId = req.query.facultyId ? Number(req.query.facultyId) : undefined;
+    const active =
+      req.query.active === "true" ? true : req.query.active === "false" ? false : undefined;
     const search = req.query.search ? String(req.query.search) : undefined;
     const page = req.query.page ? Number(req.query.page) : 1;
-    res.json(await svc.listUsers({ role, groupId, search, page, scope }));
+    res.json(await svc.listUsers({ role, groupId, departmentId, facultyId, active, search, page, scope }));
+  })
+);
+
+// Stats (role counts within scope) ----------------------------------------
+usersRouter.get(
+  "/stats",
+  wrap(async (req, res) => {
+    const scope = await adminScope(req);
+    res.json(await svc.userStats(scope));
   })
 );
 
@@ -159,7 +173,19 @@ usersRouter.patch(
     const scope = await adminScope(req);
     const id = parseId(req.params.id);
     await assertUserInScope(scope, id);
-    res.json(await svc.updateUser(id, parseBody(updateSchema, req.body)));
+    const body = parseBody(updateSchema, req.body);
+    // New affiliation values must also lie inside the caller's scope.
+    if (body.groupId) {
+      const group = await prisma.studentGroup.findUnique({ where: { id: body.groupId }, select: { facultyId: true } });
+      if (!group) throw notFound("Guruh");
+      assertFacultyScope(scope, group.facultyId);
+    }
+    if (body.departmentId) {
+      const dept = await prisma.department.findUnique({ where: { id: body.departmentId }, select: { id: true, facultyId: true } });
+      if (!dept) throw notFound("Kafedra");
+      assertDeptScope(scope, dept);
+    }
+    res.json(await svc.updateUser(id, body));
   })
 );
 
