@@ -2,7 +2,7 @@ import { useState, type FormEvent } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ChevronDown, ChevronRight, ChevronUp, FileText, Trash2 } from "lucide-react";
-import { Badge, Button, Card, Icon, Input, useToast } from "@meduni/ui";
+import { Badge, Button, Card, Icon, Input, cls, useToast } from "@meduni/ui";
 import { AsyncSection } from "../../../components/AsyncSection";
 import { ConfirmDialog } from "../../../components/ConfirmDialog";
 import { Field } from "../../../components/Field";
@@ -15,6 +15,45 @@ import {
   useTopics,
   type TopicRow,
 } from "../topics/api";
+
+/** Tiny pipeline chip: filled soft tone when the stage is done/published, outline otherwise. */
+function StageChip({ label, state }: { label: string; state: "done" | "pending" | "missing" }) {
+  return (
+    <span
+      className={cls(
+        "rounded-pill px-2 py-0.5 text-[11px] font-semibold",
+        state === "done" && "bg-emerald-soft text-emerald",
+        state === "pending" && "bg-amber-soft text-amber",
+        state === "missing" && "border border-line text-ink-faint"
+      )}
+    >
+      {label}
+    </span>
+  );
+}
+
+/** Per-topic pipeline summary: material → konspekt → kontent turlari. */
+function PipelineChips({ tp, t }: { tp: TopicRow; t: (k: string) => string }) {
+  const kind = (k: string) => tp.contentKinds.find((c) => c.kind === k);
+  const kindState = (k: string): "done" | "pending" | "missing" => {
+    const c = kind(k);
+    if (!c) return "missing";
+    return c.status === "published" ? "done" : "pending";
+  };
+  return (
+    <div className="mt-1 flex flex-wrap items-center gap-1">
+      <StageChip label={`${t("chipMaterial")} ${tp.materialCount}`} state={tp.materialCount > 0 ? "done" : "missing"} />
+      <StageChip
+        label={t("chipDigest")}
+        state={tp.digestState === "approved" ? "done" : tp.digestState === "draft" ? "pending" : "missing"}
+      />
+      <StageChip label={t("chipQuiz")} state={kindState("quiz")} />
+      <StageChip label={t("chipCase")} state={kindState("case")} />
+      <StageChip label={t("chipSlides")} state={kindState("presentation")} />
+      <StageChip label={t("chipVideo")} state={kindState("video")} />
+    </div>
+  );
+}
 
 export function TopicsTab() {
   const { id } = useParams();
@@ -120,7 +159,13 @@ export function TopicsTab() {
                 </span>
 
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-medium text-ink">{tp.title}</p>
+                  <button
+                    onClick={() => navigate(`/teach/topics/${tp.id}`)}
+                    className="block max-w-full truncate text-left font-medium text-ink hover:text-brand-deep hover:underline"
+                  >
+                    {tp.title}
+                  </button>
+                  <PipelineChips tp={tp} t={t} />
                 </div>
 
                 <Badge tone={tp.status === "published" ? "emerald" : "slate"}>

@@ -11,6 +11,9 @@ export interface TopicRow {
   orderIndex: number;
   status: TopicStatus;
   materialCount: number;
+  /** Pipeline summary for list rows: konspekt holati + mavjud kontent turlari. */
+  digestState: "approved" | "draft" | null;
+  contentKinds: { kind: "quiz" | "case" | "presentation" | "video"; status: string }[];
 }
 
 export interface Material {

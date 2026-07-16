@@ -436,6 +436,12 @@
   },
   "topics": {
     "addForm": "Yangi mavzu",
+    "chipMaterial": "Material",
+    "chipDigest": "Konspekt",
+    "chipQuiz": "Test",
+    "chipCase": "Keys",
+    "chipSlides": "Slaydlar",
+    "chipVideo": "Video",
     "titleOne": "Mavzu nomi",
     "titlePlaceholder": "Masalan: Yurak anatomiyasi",
     "titleRequired": "Mavzu nomini kiriting",
