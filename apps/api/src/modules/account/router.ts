@@ -7,7 +7,7 @@ import { changePassword, setLocale } from "../me/profile";
 // Account settings shared by every authenticated role (admin/teacher/student):
 // personal info (read-only), interface language, and password.
 export const accountRouter = Router();
-accountRouter.use(requireRoles("ADMIN", "SUPERADMIN", "FACULTY_ADMIN", "DEPT_ADMIN", "TEACHER", "STUDENT"));
+accountRouter.use(requireRoles("SUPERADMIN", "FACULTY_ADMIN", "DEPT_ADMIN", "TEACHER", "STUDENT"));
 
 const wrap =
   (fn: RequestHandler): RequestHandler =>

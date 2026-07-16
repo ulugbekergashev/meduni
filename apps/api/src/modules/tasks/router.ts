@@ -5,7 +5,7 @@ import * as tasks from "./service";
 
 export const tasksRouter = Router();
 // Any authenticated user; the service enforces per-action direction/ownership.
-tasksRouter.use(requireRoles("ADMIN", "SUPERADMIN", "FACULTY_ADMIN", "DEPT_ADMIN", "TEACHER", "STUDENT"));
+tasksRouter.use(requireRoles("SUPERADMIN", "FACULTY_ADMIN", "DEPT_ADMIN", "TEACHER", "STUDENT"));
 
 const wrap =
   (fn: RequestHandler): RequestHandler =>

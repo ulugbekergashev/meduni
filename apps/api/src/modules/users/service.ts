@@ -130,7 +130,7 @@ export async function userStats(scope?: AdminScope) {
     teachers: count("TEACHER"),
     deptAdmins: count("DEPT_ADMIN"),
     facultyAdmins: count("FACULTY_ADMIN"),
-    superAdmins: count("SUPERADMIN", "ADMIN"),
+    superAdmins: count("SUPERADMIN"),
     inactive,
   };
 }

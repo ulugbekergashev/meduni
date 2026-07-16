@@ -631,6 +631,18 @@ Barcha modullar tugadi (1-17).
   tsc+build ikkala tomonda toza. Migratsiya nomi: `single_language_names` +
   `single_language_topic_title`.
 
+- **Dizayn overhaul Faza 1B — struktura tozalash (2026-07-17, foydalanuvchi tasdiqladi).**
+  (1) **O'lik jadvallar DROP**: `glossary`, `presentation_templates`, `Presentation.templateId`
+  (kod Modul 19/20'dan beri ishlatmasdi). (2) **Excel import olib tashlandi**: `/users/import`
+  route + `users/import.ts` + `ImportModal` + hook/i18n (multer endi faqat materiallar
+  yuklashда). (3) **Eski ADMIN roli enum'dan o'chirildi** — Postgres'da DROP VALUE yo'q,
+  migratsiya enum'ni almashtiradi (Role_old→yangi Role, qolgan ADMIN qatorlar SUPERADMIN'ga).
+  Kod: ADMIN_ROLES (api+web), adminScope, requireRoles ro'yxatlari, RoleFilter/roleTone,
+  App guard, i18n'dagi admin/ADMIN kalitlar tozalandi (`userProfile.kind.admin` QOLDI —
+  backend kind:"admin" qaytaradi). Migratsiya: `drop_dead_tables_and_admin_role`.
+  **Tekshirildi:** 14/14 smoke qayta o'tdi (barcha rol loginlari, org CRUD, teacher/student
+  oqim), import route auth bilan → 404; tsc+build toza.
+
 ---
 
 ## 9. Loyiha holati va ishga tushirish (operatsion — sessiya 0)

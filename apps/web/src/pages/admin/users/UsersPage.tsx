@@ -11,7 +11,6 @@ import {
   Landmark,
   Pencil,
   Search,
-  Upload,
   UserPlus,
   UserX,
   Users,
@@ -34,13 +33,11 @@ import {
 } from "./api";
 import { UserFormModal } from "./UserFormModal";
 import { PasswordModal } from "./PasswordModal";
-import { ImportModal } from "./ImportModal";
 
 type RoleFilter = "" | "STUDENT" | "TEACHER" | "DEPT_ADMIN" | "FACULTY_ADMIN";
 
 /** Tier colors follow the architecture scheme: super=slate, faculty=teal, dept=amber, teacher=violet, student=blue. */
 const roleTone: Record<UserRole, BadgeTone> = {
-  admin: "slate",
   superadmin: "slate",
   faculty_admin: "brand",
   dept_admin: "amber",
@@ -90,7 +87,6 @@ export function UsersPage() {
 
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<UserRow | null>(null);
-  const [importOpen, setImportOpen] = useState(false);
   const [revealPassword, setRevealPassword] = useState<string | null>(null);
   const [resetTarget, setResetTarget] = useState<UserRow | null>(null);
 
@@ -340,9 +336,6 @@ export function UsersPage() {
         )}
 
         <div className="ml-auto flex gap-2">
-          <Button variant="ghost" icon={<Icon icon={Upload} size={16} />} onClick={() => setImportOpen(true)}>
-            {t("excelImport")}
-          </Button>
           <Button icon={<Icon icon={UserPlus} size={16} />} onClick={openAdd}>
             {t("addUser")}
           </Button>
@@ -451,8 +444,6 @@ export function UsersPage() {
       />
 
       <PasswordModal password={revealPassword} onClose={() => setRevealPassword(null)} />
-
-      <ImportModal open={importOpen} onClose={() => setImportOpen(false)} />
 
       <ConfirmDialog
         open={!!resetTarget}

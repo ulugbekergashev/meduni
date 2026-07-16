@@ -101,7 +101,6 @@
     "title": "Sozlamalar",
     "loadError": "Maʼlumot yuklanmadi",
     "role": {
-      "ADMIN": "Administrator",
       "TEACHER": "Oʻqituvchi",
       "STUDENT": "Talaba",
       "SUPERADMIN": "Superadmin",
@@ -768,7 +767,6 @@
     "title": "Foydalanuvchilar",
     "subtitle": "Talaba va oʻqituvchilarni qoʻshing (roʻyxatdan oʻtish yoʻq)",
     "addUser": "Foydalanuvchi qoʻshish",
-    "excelImport": "Excel import",
     "searchPlaceholder": "Ism yoki email boʻyicha qidirish",
     "stats": {
       "students": "Talabalar",
@@ -799,7 +797,6 @@
       "facultyAdmin": "Fakultet adminlari"
     },
     "role": {
-      "admin": "Admin",
       "teacher": "Oʻqituvchi",
       "student": "Talaba",
       "superadmin": "Superadmin",
@@ -867,17 +864,6 @@
       "prev": "Oldingi",
       "next": "Keyingi",
       "pageOf": "{{page}} / {{total}}"
-    },
-    "import": {
-      "title": "Excel import",
-      "columns": "Ustunlar: fullName, email, role, phone, locale, group",
-      "note": "role — STUDENT yoki TEACHER. group — guruh nomi (masalan 101-A). Oʻqituvchi import orqali qoʻshilmaydi.",
-      "choose": "Fayl tanlash",
-      "importing": "Yuklanmoqda...",
-      "resultAdded": "{n} ta qoʻshildi",
-      "resultErrors": "{n} ta xato",
-      "row": "qator",
-      "close": "Yopish"
     }
   },
   "courses": {

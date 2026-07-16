@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "./api";
 
-export type Role = "admin" | "superadmin" | "faculty_admin" | "dept_admin" | "teacher" | "student";
+export type Role = "superadmin" | "faculty_admin" | "dept_admin" | "teacher" | "student";
 
 export interface Me {
   id: number;
@@ -12,11 +12,10 @@ export interface Me {
 }
 
 /** All admin tiers share the /admin area; data is scoped server-side. */
-export const ADMIN_ROLES: Role[] = ["admin", "superadmin", "faculty_admin", "dept_admin"];
+export const ADMIN_ROLES: Role[] = ["superadmin", "faculty_admin", "dept_admin"];
 export const isAdminRole = (r: Role) => ADMIN_ROLES.includes(r);
 
 export const roleHome: Record<Role, string> = {
-  admin: "/admin",
   superadmin: "/admin",
   faculty_admin: "/admin",
   dept_admin: "/admin",

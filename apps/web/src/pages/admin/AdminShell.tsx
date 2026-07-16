@@ -20,7 +20,7 @@ export function AdminShell() {
   const { t } = useTranslation(undefined, { keyPrefix: "nav" });
   const locale = useLocale();
   const { data: me } = useMe();
-  const isSuper = me?.role === "superadmin" || me?.role === "admin";
+  const isSuper = me?.role === "superadmin";
 
   const search = useCallback(
     async (q: string): Promise<SearchSection[]> => {
