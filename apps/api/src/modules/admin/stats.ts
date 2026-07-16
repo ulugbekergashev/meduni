@@ -41,7 +41,11 @@ export async function adminStats(scope?: AdminScope) {
             : { departmentId: scope!.departmentId! },
       };
 
-  const [students, teachers, courses, publishedTopics, publishedContent, casesToReview, contentToApprove, overQuota, aiAgg, recentContent, activeStudents] = await Promise.all([
+  const twoWeeksAgo = new Date();
+  twoWeeksAgo.setHours(0, 0, 0, 0);
+  twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 13);
+
+  const [students, teachers, courses, publishedTopics, publishedContent, casesToReview, contentToApprove, overQuota, aiAgg, recentContent, activeStudents, progressRows, publishedRows] = await Promise.all([
     prisma.user.count({ where: studentWhere }),
     prisma.user.count({ where: teacherWhere }),
     prisma.course.count({ where: course }),
@@ -53,7 +57,44 @@ export async function adminStats(scope?: AdminScope) {
     prisma.aiUsage.aggregate({ where: { createdAt: { gte: monthStart }, ...aiDeptWhere }, _sum: { totalTokens: true, images: true, costUsd: true } }),
     prisma.contentItem.count({ where: { status: "PUBLISHED", approvedAt: { gte: weekAgo }, ...(scoped ? { topic: { course } } : {}) } }),
     prisma.progress.findMany({ where: { updatedAt: { gte: weekAgo }, ...(scoped ? { topic: { course } } : {}) }, select: { studentId: true }, distinct: ["studentId"] }),
+    // 14-day activity series inputs (small at pilot scale; aggregated in JS by day).
+    prisma.progress.findMany({
+      where: { updatedAt: { gte: twoWeeksAgo }, ...(scoped ? { topic: { course } } : {}) },
+      select: { studentId: true, updatedAt: true },
+    }),
+    prisma.contentItem.findMany({
+      where: { status: "PUBLISHED", approvedAt: { gte: twoWeeksAgo }, ...(scoped ? { topic: { course } } : {}) },
+      select: { approvedAt: true },
+    }),
   ]);
+
+  // Build the per-day series: active (distinct) students + published content.
+  // Local-time day key (toISOString would shift days across the UTC boundary).
+  const dayKey = (d: Date) =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  const activeByDay = new Map<string, Set<number>>();
+  for (const r of progressRows) {
+    const k = dayKey(r.updatedAt);
+    if (!activeByDay.has(k)) activeByDay.set(k, new Set());
+    activeByDay.get(k)!.add(r.studentId);
+  }
+  const publishedByDay = new Map<string, number>();
+  for (const r of publishedRows) {
+    if (!r.approvedAt) continue;
+    const k = dayKey(r.approvedAt);
+    publishedByDay.set(k, (publishedByDay.get(k) ?? 0) + 1);
+  }
+  const activitySeries: { day: string; activeStudents: number; contentPublished: number }[] = [];
+  for (let i = 0; i < 14; i++) {
+    const d = new Date(twoWeeksAgo);
+    d.setDate(d.getDate() + i);
+    const k = dayKey(d);
+    activitySeries.push({
+      day: k,
+      activeStudents: activeByDay.get(k)?.size ?? 0,
+      contentPublished: publishedByDay.get(k) ?? 0,
+    });
+  }
 
   return {
     counts: { students, teachers, courses, publishedTopics, publishedContent },
@@ -64,5 +105,6 @@ export async function adminStats(scope?: AdminScope) {
       cost: Math.round((aiAgg._sum.costUsd ?? 0) * 1e4) / 1e4,
     },
     activity: { contentLast7Days: recentContent, activeStudentsLast7Days: activeStudents.length },
+    activitySeries,
   };
 }

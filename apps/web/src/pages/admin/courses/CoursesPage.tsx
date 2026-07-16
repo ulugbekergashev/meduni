@@ -1,8 +1,8 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { GraduationCap, Trash2 } from "lucide-react";
-import { Badge, Button, Card, ChipSelect, Icon, Input, Select, useToast } from "@meduni/ui";
+import { GraduationCap, Plus, Trash2 } from "lucide-react";
+import { Badge, Button, ChipSelect, Icon, Input, Modal, Select, useToast } from "@meduni/ui";
 import { AsyncSection } from "../../../components/AsyncSection";
 import { ConfirmDialog } from "../../../components/ConfirmDialog";
 import { DataTable } from "../../../components/DataTable";
@@ -38,6 +38,7 @@ export function CoursesPage() {
   const teacherOptions = teachers.data ?? [];
   const groupOptions = groups.data ?? [];
 
+  const [addOpen, setAddOpen] = useState(false);
   const [subjectId, setSubjectId] = useState("");
   const [teacherId, setTeacherId] = useState("");
   const [semester, setSemester] = useState("1");
@@ -69,6 +70,7 @@ export function CoursesPage() {
           setSemester("1");
           setAcademicYear("");
           setGroupIds([]);
+          setAddOpen(false);
           show(t("created", { n: c.enrolledCount }));
         },
         onError: (err) => setFormError(apiErrorMessage(err, locale) ?? tc("genericError")),
@@ -95,81 +97,94 @@ export function CoursesPage() {
 
   return (
     <div>
-      <h1 className="text-h1 font-bold text-ink">{t("title")}</h1>
-      <p className="mt-1 text-[13.5px] text-ink-soft">{t("subtitle")}</p>
-
-      {/* Create form */}
-      <Card className="mt-6">
-        <h2 className="mb-4 text-section font-bold text-ink">{t("create")}</h2>
-        {!ready ? (
-          <div className="space-y-1 text-[13.5px] text-ink-soft">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="text-h1 font-bold text-ink">{t("title")}</h1>
+          <p className="mt-1 text-[13.5px] text-ink-soft">{t("subtitle")}</p>
+        </div>
+        {ready ? (
+          <Button
+            icon={<Icon icon={Plus} size={16} />}
+            onClick={() => {
+              setFormError(null);
+              setAddOpen(true);
+            }}
+          >
+            {t("create")}
+          </Button>
+        ) : (
+          <div className="space-y-0.5 text-right text-[12.5px]">
             {subjectOptions.length === 0 && <p className="text-amber">{t("noSubjects")}</p>}
             {teacherOptions.length === 0 && <p className="text-amber">{t("noTeachers")}</p>}
             {groupOptions.length === 0 && <p className="text-amber">{t("noGroups")}</p>}
           </div>
-        ) : (
-          <form onSubmit={onCreate} className="space-y-4">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field label={t("subject")}>
-                <Select value={subjectId} onChange={(e) => setSubjectId(e.target.value)} required>
-                  <option value="" disabled>
-                    {t("selectSubject")}
+        )}
+      </div>
+
+      {/* Create modal */}
+      <Modal open={addOpen} onClose={() => setAddOpen(false)} title={t("create")} className="max-w-2xl">
+        <form onSubmit={onCreate} className="space-y-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label={t("subject")}>
+              <Select value={subjectId} onChange={(e) => setSubjectId(e.target.value)} required>
+                <option value="" disabled>
+                  {t("selectSubject")}
+                </option>
+                {subjectOptions.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name} ({s.departmentName})
                   </option>
-                  {subjectOptions.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name} ({s.departmentName})
-                    </option>
-                  ))}
-                </Select>
-              </Field>
-              <Field label={t("teacher")}>
-                <Select value={teacherId} onChange={(e) => setTeacherId(e.target.value)} required>
-                  <option value="" disabled>
-                    {t("selectTeacher")}
+                ))}
+              </Select>
+            </Field>
+            <Field label={t("teacher")}>
+              <Select value={teacherId} onChange={(e) => setTeacherId(e.target.value)} required>
+                <option value="" disabled>
+                  {t("selectTeacher")}
+                </option>
+                {teacherOptions.map((tt) => (
+                  <option key={tt.id} value={tt.id}>
+                    {tt.fullName}
                   </option>
-                  {teacherOptions.map((tt) => (
-                    <option key={tt.id} value={tt.id}>
-                      {tt.fullName}
-                    </option>
-                  ))}
-                </Select>
-              </Field>
-              <Field label={t("semester")}>
-                <Select value={semester} onChange={(e) => setSemester(e.target.value)}>
-                  {SEMESTERS.map((s) => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
-                  ))}
-                </Select>
-              </Field>
-              <Field label={t("academicYear")}>
-                <Input
-                  value={academicYear}
-                  onChange={(e) => setAcademicYear(e.target.value)}
-                  placeholder={t("academicYearPlaceholder")}
-                  required
-                />
-              </Field>
-            </div>
-            <Field label={t("groups")}>
-              <ChipSelect
-                options={groupOptions.map((g) => ({ id: g.id, label: g.name }))}
-                selected={groupIds}
-                onToggle={toggleGroup}
+                ))}
+              </Select>
+            </Field>
+            <Field label={t("semester")}>
+              <Select value={semester} onChange={(e) => setSemester(e.target.value)}>
+                {SEMESTERS.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+            <Field label={t("academicYear")}>
+              <Input
+                value={academicYear}
+                onChange={(e) => setAcademicYear(e.target.value)}
+                placeholder={t("academicYearPlaceholder")}
+                required
               />
             </Field>
-            {formError && <p className="text-[13px] text-rose">{formError}</p>}
-            <Button
-              type="submit"
-              icon={<span className="text-lg leading-none">+</span>}
-              disabled={create.isPending || groupIds.length === 0}
-            >
+          </div>
+          <Field label={t("groups")}>
+            <ChipSelect
+              options={groupOptions.map((g) => ({ id: g.id, label: g.name }))}
+              selected={groupIds}
+              onToggle={toggleGroup}
+            />
+          </Field>
+          {formError && <p className="text-[13px] text-rose">{formError}</p>}
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="ghost" onClick={() => setAddOpen(false)}>
+              {tc("cancel")}
+            </Button>
+            <Button type="submit" disabled={create.isPending || groupIds.length === 0}>
               {tc("add")}
             </Button>
-          </form>
-        )}
-      </Card>
+          </div>
+        </form>
+      </Modal>
 
       {/* Table */}
       <div className="mt-6">

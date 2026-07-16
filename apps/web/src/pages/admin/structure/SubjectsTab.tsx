@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
-import { BookMarked } from "lucide-react";
-import { Button, Card, Icon, Input, Modal, Select, Textarea, useToast } from "@meduni/ui";
+import { BookMarked, Plus } from "lucide-react";
+import { Button, Icon, Input, Modal, Select, Textarea, useToast } from "@meduni/ui";
 import { AsyncSection } from "../../../components/AsyncSection";
 import { DataTable, RowActions } from "../../../components/DataTable";
 import { ConfirmDialog } from "../../../components/ConfirmDialog";
@@ -29,6 +29,7 @@ export function SubjectsTab() {
   const update = useUpdate<SubjectInput, Subject>("subjects");
   const remove = useRemove("subjects");
 
+  const [addOpen, setAddOpen] = useState(false);
   const [departmentId, setDepartmentId] = useState<string>("");
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -59,6 +60,7 @@ export function SubjectsTab() {
         onSuccess: () => {
           setName("");
           setDescription("");
+          setAddOpen(false);
           show(tc("added"));
         },
         onError: (err) => setFormError(apiErrorMessage(err, locale) ?? tc("genericError")),
@@ -104,49 +106,10 @@ export function SubjectsTab() {
   const rows = list.data ?? [];
 
   return (
-    <div className="space-y-6">
-      {/* Add form */}
-      <Card>
-        <h2 className="mb-4 text-section font-bold text-ink">{t("addSubjectForm")}</h2>
-        {!hasDepartments ? (
-          <p className="text-[13.5px] text-ink-soft">{t("noDepartmentFirst")}</p>
-        ) : (
-          <form onSubmit={onAdd} className="grid gap-4 sm:grid-cols-2">
-            <Field label={t("department")}>
-              <Select value={departmentId} onChange={(e) => setDepartmentId(e.target.value)} required>
-                <option value="" disabled>
-                  {t("selectDepartment")}
-                </option>
-                {deptOptions.map((d) => (
-                  <option key={d.id} value={d.id}>
-                    {d.name}
-                  </option>
-                ))}
-              </Select>
-            </Field>
-            <div className="hidden sm:block" />
-            <Field label={tc("name")}>
-              <Input value={name} onChange={(e) => setName(e.target.value)} />
-            </Field>
-            <div className="sm:col-span-2">
-              <Field label={t("descriptionOptional")}>
-                <Textarea value={description} onChange={(e) => setDescription(e.target.value)} />
-              </Field>
-            </div>
-            {formError && <p className="text-[13px] text-rose sm:col-span-2">{formError}</p>}
-            <div className="sm:col-span-2">
-              <Button type="submit" icon={<span className="text-lg leading-none">+</span>} disabled={create.isPending}>
-                {tc("add")}
-              </Button>
-            </div>
-          </form>
-        )}
-      </Card>
-
-      {/* Filter */}
-      {hasDepartments && (
-        <div className="flex items-center gap-2">
-          <span className="text-[12.5px] font-semibold text-ink-soft">{t("filterByDepartment")}:</span>
+    <div className="space-y-4">
+      {/* Toolbar: filter + add */}
+      <div className="flex flex-wrap items-center gap-3">
+        {hasDepartments && (
           <div className="w-56">
             <Select value={filterDept} onChange={(e) => setFilterDept(e.target.value)}>
               <option value="">{t("allDepartments")}</option>
@@ -157,8 +120,59 @@ export function SubjectsTab() {
               ))}
             </Select>
           </div>
+        )}
+        <p className="text-[13px] text-ink-faint">{t("countLabel", { count: rows.length })}</p>
+        <div className="ml-auto">
+          {hasDepartments ? (
+            <Button
+              icon={<Icon icon={Plus} size={16} />}
+              onClick={() => {
+                setFormError(null);
+                setName("");
+                setDescription("");
+                setAddOpen(true);
+              }}
+            >
+              {t("addSubjectForm")}
+            </Button>
+          ) : (
+            <p className="text-[13px] text-ink-soft">{t("noDepartmentFirst")}</p>
+          )}
         </div>
-      )}
+      </div>
+
+      {/* Add modal */}
+      <Modal open={addOpen} onClose={() => setAddOpen(false)} title={t("addSubjectForm")}>
+        <form onSubmit={onAdd} className="space-y-4">
+          <Field label={t("department")}>
+            <Select value={departmentId} onChange={(e) => setDepartmentId(e.target.value)} required>
+              <option value="" disabled>
+                {t("selectDepartment")}
+              </option>
+              {deptOptions.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.name}
+                </option>
+              ))}
+            </Select>
+          </Field>
+          <Field label={tc("name")}>
+            <Input value={name} onChange={(e) => setName(e.target.value)} autoFocus />
+          </Field>
+          <Field label={t("descriptionOptional")}>
+            <Textarea value={description} onChange={(e) => setDescription(e.target.value)} />
+          </Field>
+          {formError && <p className="text-[13px] text-rose">{formError}</p>}
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="ghost" onClick={() => setAddOpen(false)}>
+              {tc("cancel")}
+            </Button>
+            <Button type="submit" disabled={create.isPending}>
+              {tc("add")}
+            </Button>
+          </div>
+        </form>
+      </Modal>
 
       {/* Table */}
       <AsyncSection

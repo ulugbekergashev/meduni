@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
-import { Building2 } from "lucide-react";
-import { Button, Card, Icon, Input, Modal, useToast } from "@meduni/ui";
+import { Building2, Plus } from "lucide-react";
+import { Button, Icon, Input, Modal, useToast } from "@meduni/ui";
 import { AsyncSection } from "../../../components/AsyncSection";
 import { DataTable, RowActions } from "../../../components/DataTable";
 import { ConfirmDialog } from "../../../components/ConfirmDialog";
@@ -24,6 +24,7 @@ export function FacultiesTab() {
   const update = useUpdate<NameInput, Faculty>("faculties");
   const remove = useRemove("faculties");
 
+  const [addOpen, setAddOpen] = useState(false);
   const [name, setName] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -45,6 +46,7 @@ export function FacultiesTab() {
       {
         onSuccess: () => {
           setName("");
+          setAddOpen(false);
           show(tc("added"));
         },
         onError: (err) => setFormError(apiErrorMessage(err, locale) ?? tc("genericError")),
@@ -83,22 +85,39 @@ export function FacultiesTab() {
   const rows = list.data ?? [];
 
   return (
-    <div className="space-y-6">
-      {/* Add form */}
-      <Card>
-        <h2 className="mb-4 text-section font-bold text-ink">{t("addFacultyForm")}</h2>
-        <form onSubmit={onAdd} className="flex flex-wrap items-end gap-4">
-          <div className="min-w-[260px] flex-1">
-            <Field label={tc("name")}>
-              <Input value={name} onChange={(e) => setName(e.target.value)} />
-            </Field>
+    <div className="space-y-4">
+      {/* Toolbar */}
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-[13px] text-ink-faint">{t("countLabel", { count: rows.length })}</p>
+        <Button
+          icon={<Icon icon={Plus} size={16} />}
+          onClick={() => {
+            setFormError(null);
+            setName("");
+            setAddOpen(true);
+          }}
+        >
+          {t("addFacultyForm")}
+        </Button>
+      </div>
+
+      {/* Add modal */}
+      <Modal open={addOpen} onClose={() => setAddOpen(false)} title={t("addFacultyForm")}>
+        <form onSubmit={onAdd} className="space-y-4">
+          <Field label={tc("name")}>
+            <Input value={name} onChange={(e) => setName(e.target.value)} autoFocus />
+          </Field>
+          {formError && <p className="text-[13px] text-rose">{formError}</p>}
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="ghost" onClick={() => setAddOpen(false)}>
+              {tc("cancel")}
+            </Button>
+            <Button type="submit" disabled={create.isPending}>
+              {tc("add")}
+            </Button>
           </div>
-          <Button type="submit" icon={<span className="text-lg leading-none">+</span>} disabled={create.isPending}>
-            {tc("add")}
-          </Button>
-          {formError && <p className="w-full text-[13px] text-rose">{formError}</p>}
         </form>
-      </Card>
+      </Modal>
 
       {/* Table */}
       <AsyncSection
