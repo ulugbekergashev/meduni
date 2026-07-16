@@ -772,6 +772,27 @@
     "addUser": "Foydalanuvchi qoʻshish",
     "excelImport": "Excel import",
     "searchPlaceholder": "Ism yoki email boʻyicha qidirish",
+    "stats": {
+      "students": "Talabalar",
+      "studentsHint": "guruhlarga biriktirilgan",
+      "teachers": "Oʻqituvchilar",
+      "teachersHint": "kafedralarga biriktirilgan",
+      "deptAdmins": "Kafedra adminlari",
+      "deptAdminsHint": "kafedra boshqaruvi",
+      "facultyAdmins": "Fakultet adminlari",
+      "facultyAdminsHint": "fakultet boshqaruvi",
+      "inactive": "Nofaol",
+      "inactiveHint": "kirish yopilgan"
+    },
+    "filter": {
+      "allFaculties": "Barcha fakultetlar",
+      "allDepartments": "Barcha kafedralar",
+      "allGroups": "Barcha guruhlar",
+      "clear": "Tozalash",
+      "totalCount": "Jami: {{count}} ta"
+    },
+    "wholeUniversity": "Butun universitet",
+    "emptyFiltered": "Filtrga mos foydalanuvchi topilmadi. Filtrni oʻzgartirib koʻring.",
     "roleFilter": {
       "all": "Barchasi",
       "student": "Talaba",
@@ -807,14 +828,27 @@
       "deptAdmin": "Kafedra admini",
       "facultyAdmin": "Fakultet admini",
       "faculty": "Fakultet",
-      "selectFaculty": "Fakultetni tanlang"
+      "selectFaculty": "Fakultetni tanlang",
+      "roleLocked": "Rol oʻzgartirilmaydi",
+      "facultyFilter": "Fakultet (filtr)",
+      "allFaculties": "Barcha fakultetlar",
+      "noInFacultyHint": "Bu fakultetda mos yozuv yoʻq — boshqa fakultetni tanlang."
     },
     "table": {
       "name": "FISH",
       "email": "Email",
       "role": "Rol",
       "active": "Faol",
-      "actions": "Amallar"
+      "actions": "Amallar",
+      "group": "Guruh",
+      "faculty": "Fakultet",
+      "phone": "Telefon",
+      "department": "Kafedra",
+      "position": "Lavozim",
+      "departmentScope": "Kafedra (qamrov)",
+      "facultyScope": "Fakultet (qamrov)",
+      "affiliation": "Tegishlilik",
+      "profile": "Profil"
     },
     "empty": "Hali foydalanuvchi yoʻq. Qoʻshing yoki Excel import qiling.",
     "editUser": "Foydalanuvchini tahrirlash",
@@ -834,7 +868,7 @@
     "pagination": {
       "prev": "Oldingi",
       "next": "Keyingi",
-      "pageOf": "{page} / {total}"
+      "pageOf": "{{page}} / {{total}}"
     },
     "import": {
       "title": "Excel import",

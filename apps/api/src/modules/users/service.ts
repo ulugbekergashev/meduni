@@ -63,20 +63,43 @@ function scopeWhere(scope?: AdminScope): Prisma.UserWhereInput {
 export async function listUsers(params: {
   role?: Role;
   groupId?: number;
+  departmentId?: number;
+  facultyId?: number;
+  active?: boolean;
   search?: string;
   page?: number;
   scope?: AdminScope;
 }) {
   const page = Math.max(1, params.page ?? 1);
-  const where: Prisma.UserWhereInput = { AND: [scopeWhere(params.scope)] };
-  if (params.role) where.role = params.role;
-  if (params.groupId) where.groupId = params.groupId;
-  if (params.search) {
-    where.OR = [
-      { fullName: { contains: params.search, mode: "insensitive" } },
-      { email: { contains: params.search, mode: "insensitive" } },
-    ];
+  const and: Prisma.UserWhereInput[] = [scopeWhere(params.scope)];
+  if (params.role) and.push({ role: params.role });
+  if (params.groupId) and.push({ groupId: params.groupId });
+  if (params.active !== undefined) and.push({ isActive: params.active });
+  if (params.departmentId) {
+    // Teachers of the department + its dept-admins.
+    and.push({
+      OR: [{ teacherProfile: { departmentId: params.departmentId } }, { adminDepartmentId: params.departmentId }],
+    });
+  } else if (params.facultyId) {
+    // Anyone affiliated with the faculty through any relation.
+    and.push({
+      OR: [
+        { group: { facultyId: params.facultyId } },
+        { teacherProfile: { department: { facultyId: params.facultyId } } },
+        { adminDepartment: { facultyId: params.facultyId } },
+        { facultyId: params.facultyId },
+      ],
+    });
   }
+  if (params.search) {
+    and.push({
+      OR: [
+        { fullName: { contains: params.search, mode: "insensitive" } },
+        { email: { contains: params.search, mode: "insensitive" } },
+      ],
+    });
+  }
+  const where: Prisma.UserWhereInput = { AND: and };
 
   const [rows, total] = await Promise.all([
     prisma.user.findMany({
@@ -90,6 +113,28 @@ export async function listUsers(params: {
   ]);
 
   return { items: rows.map(toUserOut), total, page, pageSize: PAGE_SIZE };
+}
+
+// ---------- Stats (role counts within the caller's scope) ----------
+
+export async function userStats(scope?: AdminScope) {
+  const base = scopeWhere(scope);
+  const [byRole, inactive, total] = await Promise.all([
+    prisma.user.groupBy({ by: ["role"], where: base, _count: true }),
+    prisma.user.count({ where: { AND: [base, { isActive: false }] } }),
+    prisma.user.count({ where: base }),
+  ]);
+  const count = (...roles: Role[]) =>
+    byRole.filter((r) => roles.includes(r.role)).reduce((sum, r) => sum + r._count, 0);
+  return {
+    total,
+    students: count("STUDENT"),
+    teachers: count("TEACHER"),
+    deptAdmins: count("DEPT_ADMIN"),
+    facultyAdmins: count("FACULTY_ADMIN"),
+    superAdmins: count("SUPERADMIN", "ADMIN"),
+    inactive,
+  };
 }
 
 // ---------- Create ----------
@@ -172,6 +217,7 @@ interface UpdateUserInput {
   locale?: "uz" | "ru";
   groupId?: number | null;
   departmentId?: number | null;
+  facultyId?: number | null;
   position?: string | null;
 }
 
@@ -196,6 +242,16 @@ export async function updateUser(id: number, input: UpdateUserInput) {
   if (input.locale !== undefined) data.locale = input.locale === "ru" ? "ru" : "uz";
   if (existing.role === "STUDENT" && input.groupId !== undefined) {
     data.group = { connect: { id: input.groupId! } };
+  }
+  if (existing.role === "DEPT_ADMIN" && input.departmentId) {
+    const dept = await prisma.department.findUnique({ where: { id: input.departmentId } });
+    if (!dept) throw notFound("Kafedra");
+    data.adminDepartment = { connect: { id: input.departmentId } };
+  }
+  if (existing.role === "FACULTY_ADMIN" && input.facultyId) {
+    const fac = await prisma.faculty.findUnique({ where: { id: input.facultyId } });
+    if (!fac) throw notFound("Fakultet");
+    data.faculty = { connect: { id: input.facultyId } };
   }
 
   await prisma.user.update({ where: { id }, data });

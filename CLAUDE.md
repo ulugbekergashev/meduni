@@ -581,6 +581,22 @@ Barcha modullar tugadi (1-17).
   + kafedra jadvali (3 kvota-bar) + kvota modal. **Tekshirildi (e2e admin):** `/templates`→404,
   ai-usage 6 agregat real ma'lumot bilan (image=$1.16/jami $1.44, byUser, 31-kun); tsc+build toza.
 
+- **Foydalanuvchilar sahifasi overhaul (2026-07-16, foydalanuvchi: "primitiv").** Backend
+  `users/`: `GET /users/stats` (rol bo'yicha son + nofaol, admin-scope bilan), list filtrlari
+  `facultyId`/`departmentId`/`active` qo'shildi (groupId bor edi), PATCH endi YANGI guruh/kafedra
+  qiymatini ham scope'da tekshiradi (ilgari fakultet-admin talabani begona fakultet guruhiga
+  ko'chira olardi), `updateUser` DEPT_ADMIN kafedrasini va FACULTY_ADMIN fakultetini o'zgartiradi.
+  Frontend `/admin/users`: 5 **bosiladigan stat-karta** (rol filtri vazifasida, nofaol=rose),
+  kaskadli filtr (fakultet→kafedra/guruh), **rolga moslashuvchan ustunlar** (talaba→guruh/fakultet/
+  tel; o'qituvchi→kafedra/lavozim; adminlar→qamrov; aralash→rol+tegishlilik), FISH ostида email,
+  tier ranglari to'g'irlandi (super=slate, fakultet=brand, kafedra=amber — ilgari 3 tier bir xil
+  amber edi), profil-ko'z amali, jami hisob. `UserFormModal` **edit-bug fix**: rol endi to'g'ri
+  aniqlanadi (ilgari admin rollar STUDENT deb yuborilardi → forma buzuq), edit'da rol badge
+  (o'zgarmas), fakultet kaskadi formaда ham. i18n: `pageOf` `{page}`→`{{page}}` fix (interpolatsiya
+  ishlamasди). **Tekshirildi:** 10/10 HTTP e2e (stats, 4 filtr, dept/faculty-admin PATCH,
+  scoped stats, begona guruhga ko'chirish→403); tsc+build ikkala tomonda toza.
+  ⚠️ Eslatma: auth router `/auth` prefiksida (`/api/v1/auth` EMAS) — e2e yozganда adashma.
+
 ---
 
 ## 9. Loyiha holati va ishga tushirish (operatsion — sessiya 0)
