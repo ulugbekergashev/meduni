@@ -1,9 +1,9 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ArrowRight, BookOpen, ClipboardCheck, GraduationCap, PlayCircle } from "lucide-react";
-import { Card, EmptyState, Icon } from "@meduni/ui";
+import { ArrowRight, BookOpen, CalendarCheck2, ClipboardCheck, GraduationCap, Layers, PlayCircle } from "lucide-react";
+import { Card, EmptyState, Icon, ProgressRing, cls } from "@meduni/ui";
 import { AsyncSection } from "../../components/AsyncSection";
-import { useMyDashboard, type CourseSummary } from "./api";
+import { useMyDashboard, useMyProfile, type CourseSummary } from "./api";
 
 function ProgressBar({ pct, tone = "brand" }: { pct: number; tone?: "brand" | "white" }) {
   return (
@@ -53,10 +53,30 @@ function CourseCard({ course }: { course: CourseSummary }) {
   );
 }
 
+function SummaryTile({ icon, value, label, tone }: { icon: typeof Layers; value: string; label: string; tone: string }) {
+  return (
+    <div className="flex items-center gap-2.5">
+      <div className={cls("flex h-9 w-9 shrink-0 items-center justify-center rounded-full", tone)}>
+        <Icon icon={icon} size={16} />
+      </div>
+      <div className="min-w-0">
+        <p className="text-[18px] font-bold leading-none tabular-nums text-ink">{value}</p>
+        <p className="mt-0.5 truncate text-[11.5px] text-ink-soft">{label}</p>
+      </div>
+    </div>
+  );
+}
+
 export function StudentDashboard() {
   const { t } = useTranslation(undefined, { keyPrefix: "student" });
   const q = useMyDashboard();
+  const profile = useMyProfile();
   const d = q.data;
+  const p = profile.data;
+  const overallPct =
+    d && d.courses.length > 0
+      ? Math.round(d.courses.reduce((sum, c) => sum + c.progressPct, 0) / d.courses.length)
+      : 0;
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -73,6 +93,37 @@ export function StudentDashboard() {
             <h1 className="text-h1 font-bold text-ink">
               {t("hello")}, {d.fullName.split(" ")[0]}
             </h1>
+
+            {/* Overall summary: ring + tiles */}
+            {d.courses.length > 0 && (
+              <Card className="mt-5 flex flex-wrap items-center gap-x-7 gap-y-4 !p-5">
+                <ProgressRing value={overallPct} size={96} stroke={10} label={t("overall")} />
+                <div className="grid min-w-0 flex-1 grid-cols-1 gap-3 sm:grid-cols-3">
+                  <SummaryTile
+                    icon={Layers}
+                    value={`${d.courses.reduce((s, c) => s + c.topicsCompleted, 0)}/${d.courses.reduce((s, c) => s + c.topicsTotal, 0)}`}
+                    label={t("summaryTopics")}
+                    tone="bg-emerald-soft text-emerald"
+                  />
+                  <SummaryTile
+                    icon={CalendarCheck2}
+                    value={p?.attendancePct !== null && p?.attendancePct !== undefined ? `${p.attendancePct}%` : "—"}
+                    label={t("summaryAttendance")}
+                    tone={
+                      p?.attendancePct !== null && p?.attendancePct !== undefined && p.attendancePct < 75
+                        ? "bg-rose-soft text-rose"
+                        : "bg-blue-soft text-blue"
+                    }
+                  />
+                  <SummaryTile
+                    icon={BookOpen}
+                    value={String(d.courses.length)}
+                    label={t("summaryCourses")}
+                    tone="bg-brand-soft text-brand-deep"
+                  />
+                </div>
+              </Card>
+            )}
 
             {/* Resume — the primary action, most prominent block */}
             {d.resume && (
