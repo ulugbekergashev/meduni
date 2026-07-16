@@ -34,9 +34,9 @@ export function SidebarLayout({ brand, items, userBlock, children, headerSlot, L
 
   return (
     <div className="flex min-h-screen bg-bg">
-      {/* Premium deep-teal sidebar: identity anchor of the app. Colors come from
-          --side-* tokens so light and dark themes each tune their own values. */}
-      <aside className="flex w-[272px] shrink-0 flex-col bg-gradient-to-b from-side to-side-deep">
+      {/* Light sidebar (2026-07 redesign): white surface, soft active chip. Colors
+          come from --side-* tokens so light and dark themes each tune their own values. */}
+      <aside className="flex w-[272px] shrink-0 flex-col border-r border-side-line bg-gradient-to-b from-side to-side-deep">
         <div className="px-6 pb-5 pt-7 text-[17px] font-bold tracking-tight text-side-ink">{brand}</div>
         <nav className="flex flex-1 flex-col gap-1 px-3.5">
           {items.map((item) => (

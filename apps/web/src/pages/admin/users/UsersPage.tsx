@@ -16,7 +16,7 @@ import {
   UserX,
   Users,
 } from "lucide-react";
-import { Badge, Button, Card, Icon, Input, Select, Toggle, cls, useToast, type BadgeTone } from "@meduni/ui";
+import { Badge, Button, Icon, Input, Select, StatCard, Toggle, useToast, type BadgeTone } from "@meduni/ui";
 import { AsyncSection } from "../../../components/AsyncSection";
 import { Avatar } from "../../../components/Avatar";
 import { ConfirmDialog } from "../../../components/ConfirmDialog";
@@ -48,41 +48,6 @@ const roleTone: Record<UserRole, BadgeTone> = {
   teacher: "violet",
   student: "blue",
 };
-
-function StatCard({
-  icon,
-  value,
-  label,
-  hint,
-  tone,
-  selected,
-  onClick,
-}: {
-  icon: typeof Users;
-  value: number | undefined;
-  label: string;
-  hint: string;
-  tone: string;
-  selected: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <Card
-      interactive
-      onClick={onClick}
-      className={cls("flex flex-col gap-2", selected && "border-brand ring-2 ring-brand/25")}
-    >
-      <div className={cls("flex h-9 w-9 items-center justify-center rounded-full", tone)}>
-        <Icon icon={icon} size={17} />
-      </div>
-      <span className="text-[26px] font-bold leading-none tabular-nums text-ink">{value ?? "—"}</span>
-      <div>
-        <p className="text-[13px] font-semibold text-ink">{label}</p>
-        <p className="text-[11.5px] text-ink-faint">{hint}</p>
-      </div>
-    </Card>
-  );
-}
 
 export function UsersPage() {
   const { t } = useTranslation(undefined, { keyPrefix: "users" });

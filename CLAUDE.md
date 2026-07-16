@@ -68,15 +68,17 @@ Agar biror band bajarilmagan bo'lsa — MENGA aytmasдан o'zing tuzat. Faqat q
 
 ## 4. DIZAYN TIZIMI (packages/ui — barcha sahifa shundan foydalanadi)
 
-### Ranglar (tokenlar)
+### Ranglar (tokenlar) — Indigo Pro (2026-07 redizayn, Faza 0)
 ```
-bg: #F7F8FA | surface: #FFFFFF | ink: #0F172A | ink-soft: #64748B | ink-faint: #94A3B8 | line: #E9EDF2
-brand: #0F9E8E | brand-soft: #E6F5F3 | brand-deep: #0B7A6E
-blue: #2563EB / #EAF1FE (test, ma'lumot)
-violet: #7C3AED / #F1EBFE (video)
-amber: #D97706 / #FCF2E2 (ogohlantirish, tekshiruv)
+bg: #F6F7F9 | surface: #FFFFFF | ink: #101828 | ink-soft: #5B6474 | ink-faint: #98A1B2 | line: #E7EAF0
+brand: #4F46E5 | brand-soft: #EEF2FF | brand-deep: #3730A3   (indigo — asosiy)
+blue: #0284C7 / #E0F2FE (sky — test, ma'lumot; indigo'dan uzoq turishi uchun sky tanlangan)
+violet: #7C3AED / #F1EBFE (video — UI aksent, asosiy diagramma to'plamiga kirmaydi)
+amber: #D97706 / #FEF3E2 (ogohlantirish, tekshiruv)
 rose: #E11D48 / #FDE9EE (keys, xato)
-emerald: #059669 / #E4F6EF (muvaffaqiyat, tugadi)
+emerald: #059669 / #E6F7F0 (muvaffaqiyat, tugadi)
+Diagramma (kategorial) to'plami — CVD/kontrast validatordan o'tgan:
+brand, emerald, amber, blue, rose (amber↔emerald yonma-yon faqat 2px oraliq/yorliq bilan).
 ```
 
 ### O'lchamlar
@@ -88,10 +90,10 @@ emerald: #059669 / #E4F6EF (muvaffaqiyat, tugadi)
 - Shrift: Inter / system-ui
 
 ### Umumiy komponentlar (packages/ui da)
-Button (primary/deep/ghost/soft/danger, sm/md/lg, ikonka, hoverда brand→brand-deep, active:scale-98), StatusPill (draft/review/published), Card (p-6, shadow-card, hoverда ko'tariladi), Icon (SVG, stroke 1.7 yoki lucide-react), Input/Textarea (focusда brand chegara+ring), Modal (markazда, Escape+tashqi bosishда yopiladi), Toast (pastда, 2.6s, ok/warn), Spinner, EmptyState, **Sidebar layout (272px, PREMIUM to'q-teal gradient `--side-*` tokenlar, faol=side-active chip + chap indikator; userBlock side-ink ranglarda)**, Charts (ProgressRing def 116/11, BarRow, StackedBar 2px-gap segmentlar). Kontent max-w 1280px. Tablar: segmented uslub (bordered surface track p-1, faol=brand-soft chip) — TabNav/GroupProfile/LessonPage bir xil.
+Button (primary/deep/ghost/soft/danger, sm/md/lg, ikonka, hoverда brand→brand-deep, active:scale-98), StatusPill (draft/review/published), Card (p-6, shadow-card, hoverда ko'tariladi), **StatCard (ikonka-chip + katta raqam + label/hint; tone=class string; selected=filtr holati; compact)**, Icon (SVG, stroke 1.7 yoki lucide-react), Input/Textarea (focusда brand chegara+ring), Modal (markazда, Escape+tashqi bosishда yopiladi), Toast (pastда, 2.6s, ok/warn), Spinner, EmptyState (text+hint+action, dashed karta), **Sidebar layout (272px, YORUG' — oq surface, border-r, faol=brand-soft chip + chap indigo indikator; `--side-*` tokenlar, dark'da o'z varianti)**, Charts (ProgressRing def 116/11, **Donut (segmentli, 2px oraliq, markazda qiymat) + LegendRow**, BarRow, MiniBars, StackedBar 2px-gap segmentlar). Kontent max-w 1280px. Tablar: segmented uslub (bordered surface track p-1, faol=brand-soft chip) — TabNav/GroupProfile/LessonPage bir xil.
 
 ### Tamoyillar
-- Har statistika o'z rangida (talaba=ko'k, o'qituvchi=violet, kurs=teal, ...)
+- Har statistika o'z rangida (talaba=ko'k, o'qituvchi=violet, kurs=brand/indigo, ...)
 - Har karta interaktiv (hover jonlanadi)
 - Gradient faqat urg'u uchun (brand-deep→brand)
 - Bo'shliq ko'p, nafas oladi
@@ -596,6 +598,22 @@ Barcha modullar tugadi (1-17).
   ishlamasди). **Tekshirildi:** 10/10 HTTP e2e (stats, 4 filtr, dept/faculty-admin PATCH,
   scoped stats, begona guruhga ko'chirish→403); tsc+build ikkala tomonda toza.
   ⚠️ Eslatma: auth router `/auth` prefiksida (`/api/v1/auth` EMAS) — e2e yozganда adashma.
+
+- **Dizayn overhaul Faza 0 — Indigo Pro yadro (2026-07-16).** Reja:
+  `.claude/plans/design-overhaul-2026-07.md` (5 faza; foydalanuvchi: yorug' tema,
+  data bir til, palitra A tanlandi — artifact "MedUni — Palitra takliflari").
+  (1) **Tokenlar**: teal→indigo (#4F46E5/#EEF2FF/#3730A3), blue→sky #0284C7,
+  neytrallar yangilandi (4-bo'limga qarang), soyalar yumshatildi; dark blok mos
+  yangilandi. Hardcode YO'Q edi — token almashinuvi butun frontendga o'z-o'zidan
+  tarqaldi. (2) **Sidebar YORUG'** (oq surface + border-r, faol=indigo soft chip;
+  RoleShell token-asosli — o'zgarishsiz moslashdi). (3) **StatCard umumiy komponentga**
+  (packages/ui) — AdminDashboard/UsersPage/ProgressTab'dagi 3 nusxa o'chirildi
+  (ProgressTab: active→selected, compact). (4) **Donut + LegendRow** Charts.tsx'ga
+  (segmentlar orasида 2px oraliq — validator sharti). (5) EmptyState (+hint, katta
+  ikonka), DataTable (thead bg-bg). (6) **Kontent eksportlari ham rebrend**:
+  presentation.ts BRAND=4F46E5, video.ts slayd/HERO ranglari, rasm-prompt accent
+  indigo (eski keshdagi media teal qoladi — qayta generatsiyada yangilanadi).
+  tsc+build ikkala tomonda toza. **Keyingi: Faza 1 (bir tilli nomlar + keraksizlar auditi).**
 
 ---
 

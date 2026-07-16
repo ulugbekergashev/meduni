@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { AlertTriangle, Download, GraduationCap, LayoutGrid, List, Search, TrendingUp, Unlock, Users } from "lucide-react";
-import { Badge, Button, Card, Icon, Modal, Spinner, cls, useToast } from "@meduni/ui";
+import { Badge, Button, Card, Icon, Modal, Spinner, StatCard, cls, useToast } from "@meduni/ui";
 import { useLocale, pickName } from "../../../lib/useLocale";
 import { AsyncSection } from "../../../components/AsyncSection";
 import {
@@ -37,24 +37,6 @@ function LastActive({ iso }: { iso: string | null }) {
   if (d >= 7) return <span className="font-semibold text-rose">{t("inactiveDays", { count: d })}</span>;
   if (d === 0) return <span className="text-ink-soft">{t("today")}</span>;
   return <span className="text-ink-soft">{t("daysAgo", { count: d })}</span>;
-}
-
-function StatCard({ icon, label, value, tone, active, onClick }: { icon: typeof Users; label: string; value: number | string; tone: string; active: boolean; onClick: () => void }) {
-  return (
-    <button
-      onClick={onClick}
-      className={cls(
-        "flex flex-col gap-1 rounded-card border bg-surface p-3.5 text-left transition-all hover:-translate-y-0.5 hover:shadow-md",
-        active ? "border-brand ring-1 ring-brand" : "border-line"
-      )}
-    >
-      <div className={cls("flex h-8 w-8 items-center justify-center rounded-full", tone)}>
-        <Icon icon={icon} size={16} />
-      </div>
-      <span className="text-[28px] font-bold leading-none tabular-nums text-ink">{value}</span>
-      <span className="text-[12px] text-ink-soft">{label}</span>
-    </button>
-  );
 }
 
 function cellSummary(c: ProgressCell, t: (k: string) => string): string {
@@ -267,11 +249,11 @@ export function ProgressTab() {
             <>
               {/* Stat cards */}
               <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-5">
-                <StatCard icon={Users} label={t("statTotal")} value={data.stats.total} tone="bg-blue-soft text-blue" active={filter === "all"} onClick={() => setFilter("all")} />
-                <StatCard icon={TrendingUp} label={t("statActive")} value={data.stats.active} tone="bg-brand-soft text-brand-deep" active={filter === "active"} onClick={() => setFilter("active")} />
-                <StatCard icon={AlertTriangle} label={t("statBehind")} value={data.stats.behind} tone="bg-rose-soft text-rose" active={filter === "behind"} onClick={() => setFilter("behind")} />
-                <StatCard icon={TrendingUp} label={t("statAvg")} value={`${data.stats.avgProgress}%`} tone="bg-amber-soft text-amber" active={false} onClick={() => setFilter("all")} />
-                <StatCard icon={GraduationCap} label={t("statCompleted")} value={data.stats.completed} tone="bg-emerald-soft text-emerald" active={filter === "completed"} onClick={() => setFilter("completed")} />
+                <StatCard compact icon={Users} label={t("statTotal")} value={data.stats.total} tone="bg-blue-soft text-blue" selected={filter === "all"} onClick={() => setFilter("all")} />
+                <StatCard compact icon={TrendingUp} label={t("statActive")} value={data.stats.active} tone="bg-brand-soft text-brand-deep" selected={filter === "active"} onClick={() => setFilter("active")} />
+                <StatCard compact icon={AlertTriangle} label={t("statBehind")} value={data.stats.behind} tone="bg-rose-soft text-rose" selected={filter === "behind"} onClick={() => setFilter("behind")} />
+                <StatCard compact icon={TrendingUp} label={t("statAvg")} value={`${data.stats.avgProgress}%`} tone="bg-amber-soft text-amber" onClick={() => setFilter("all")} />
+                <StatCard compact icon={GraduationCap} label={t("statCompleted")} value={data.stats.completed} tone="bg-emerald-soft text-emerald" selected={filter === "completed"} onClick={() => setFilter("completed")} />
               </div>
 
               {/* Filter bar */}

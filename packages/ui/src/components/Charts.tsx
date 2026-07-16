@@ -58,6 +58,79 @@ export function ProgressRing({
   );
 }
 
+/** Multi-segment donut with a 2px surface gap between segments (adjacent fills
+ *  stay readable — CVD-safe with the validated categorical set). Center shows a
+ *  headline value; identity comes from a legend the caller renders next to it. */
+export function Donut({
+  segments,
+  size = 148,
+  stroke = 16,
+  centerValue,
+  centerLabel,
+}: {
+  segments: { value: number; tone: ToneKey }[];
+  size?: number;
+  stroke?: number;
+  centerValue?: ReactNode;
+  centerLabel?: ReactNode;
+}) {
+  const total = segments.reduce((a, s) => a + Math.max(0, s.value), 0);
+  const r = (size - stroke) / 2;
+  const c = 2 * Math.PI * r;
+  const visible = segments.filter((s) => s.value > 0);
+  const gap = visible.length > 1 ? 2.5 : 0; // px along the circumference
+
+  let offset = 0;
+  const arcs = visible.map((s, i) => {
+    const len = total > 0 ? (s.value / total) * c : 0;
+    const dash = Math.max(0, len - gap);
+    const arc = (
+      <circle
+        key={i}
+        cx={size / 2}
+        cy={size / 2}
+        r={r}
+        fill="none"
+        stroke={toneVar[s.tone]}
+        strokeWidth={stroke}
+        strokeDasharray={`${dash} ${c - dash}`}
+        strokeDashoffset={-offset}
+        className="transition-all duration-500"
+      />
+    );
+    offset += len;
+    return arc;
+  });
+
+  return (
+    <div className="relative inline-flex items-center justify-center" style={{ width: size, height: size }}>
+      <svg width={size} height={size} className="-rotate-90">
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--line)" strokeWidth={stroke} />
+        {arcs}
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        {centerValue !== undefined && (
+          <span className="text-[24px] font-bold leading-none tabular-nums text-ink">{centerValue}</span>
+        )}
+        {centerLabel && (
+          <span className="mt-1 max-w-[75%] truncate text-[11.5px] font-medium text-ink-faint">{centerLabel}</span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** Legend row for Donut/StackedBar: colored square + label + tabular value. */
+export function LegendRow({ tone, label, value }: { tone: ToneKey; label: string; value?: ReactNode }) {
+  return (
+    <div className="flex items-center gap-2.5 text-[13px]">
+      <span className="h-2.5 w-2.5 shrink-0 rounded-[3px]" style={{ background: toneVar[tone] }} />
+      <span className="min-w-0 flex-1 truncate text-ink-soft">{label}</span>
+      {value !== undefined && <span className="shrink-0 font-semibold tabular-nums text-ink">{value}</span>}
+    </div>
+  );
+}
+
 /** Thin horizontal progress bar (0–100). */
 export function ProgressBar({ value, tone = "brand", className = "" }: { value: number; tone?: ToneKey; className?: string }) {
   const v = Math.max(0, Math.min(100, value));
