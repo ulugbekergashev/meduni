@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Coins, Image as ImageIcon, Mic, Sparkles } from "lucide-react";
 import { Button, Card, Icon, MiniBars, Modal, Spinner, cls, useToast } from "@meduni/ui";
-import { useLocale, pickName } from "../../../lib/useLocale";
+import { useLocale } from "../../../lib/useLocale";
 import { formatDate } from "../../../lib/date";
 import { useAiUsage, useSetQuota, type AiUsage } from "../api";
 
@@ -57,7 +57,7 @@ function QuotaModal({ dept, onClose }: { dept: DeptRow; onClose: () => void }) {
 
   return (
     <Modal open onClose={onClose} title={t("editQuota")}>
-      <p className="mb-3 text-body text-ink-soft">{dept.nameUz} · <span className="text-ink-faint">{t("zeroUnlimited")}</span></p>
+      <p className="mb-3 text-body text-ink-soft">{dept.name} · <span className="text-ink-faint">{t("zeroUnlimited")}</span></p>
       <div className="space-y-3">
         {[{ l: t("tokenLimit"), v: tok, s: setTok }, { l: t("imageLimit"), v: img, s: setImg }, { l: t("costLimit"), v: cost, s: setCost }].map((f) => (
           <div key={f.l}>
@@ -197,7 +197,7 @@ export function AiMonitoringPage() {
                   <tbody>
                     {u.byDept.map((d) => (
                       <tr key={d.departmentId} className="border-b border-line last:border-0 hover:bg-bg">
-                        <td className="px-4 py-3 font-medium text-ink">{pickName(locale, d.nameUz, d.nameRu)}</td>
+                        <td className="px-4 py-3 font-medium text-ink">{d.name}</td>
                         <td className="px-4 py-3 font-semibold tabular-nums text-ink">{money(d.cost)}</td>
                         <td className="px-4 py-3"><QuotaBar pct={d.tokenPct} /></td>
                         <td className="px-4 py-3"><QuotaBar pct={d.imagePct} /></td>

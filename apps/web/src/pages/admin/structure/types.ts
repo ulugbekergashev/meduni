@@ -1,26 +1,21 @@
 export interface Faculty {
   id: number;
-  nameUz: string;
-  nameRu: string;
+  name: string;
 }
 
 export interface Department {
   id: number;
   facultyId: number;
-  nameUz: string;
-  nameRu: string;
-  facultyNameUz: string;
-  facultyNameRu: string;
+  name: string;
+  facultyName: string;
 }
 
 export interface Subject {
   id: number;
   departmentId: number;
-  nameUz: string;
-  nameRu: string;
+  name: string;
   description: string | null;
-  departmentNameUz: string;
-  departmentNameRu: string;
+  departmentName: string;
 }
 
 export interface Group {
@@ -28,7 +23,6 @@ export interface Group {
   facultyId: number;
   name: string;
   yearOfStudy: number;
-  facultyNameUz: string;
-  facultyNameRu: string;
+  facultyName: string;
   studentCount: number;
 }

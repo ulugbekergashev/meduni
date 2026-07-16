@@ -13,7 +13,7 @@ interface AdminSearchResp {
   students: { id: number; fullName: string; groupName: string | null }[];
   teachers: { id: number; fullName: string; departmentUz: string | null; departmentRu: string | null }[];
   groups: { id: number; name: string; studentCount: number }[];
-  courses: { id: number; nameUz: string; nameRu: string; semester: number }[];
+  courses: { id: number; name: string; semester: number }[];
 }
 
 export function AdminShell() {
@@ -51,7 +51,7 @@ export function AdminShell() {
           icon: BookOpen,
           items: r.courses.map((c) => ({
             key: `c${c.id}`,
-            label: pickName(locale, c.nameUz, c.nameRu),
+            label: c.name,
             sub: `${c.semester}-semestr`,
             link: `/admin/courses/${c.id}`,
           })),

@@ -3,7 +3,6 @@ import { useTranslation } from "react-i18next";
 import { ArrowLeft, BookOpen, Building2, CalendarCheck, GraduationCap, Layers, Mail, Phone, Users } from "lucide-react";
 import { Badge, Card, Icon, Spinner, cls } from "@meduni/ui";
 import { AsyncSection } from "../../../components/AsyncSection";
-import { useLocale, pickName } from "../../../lib/useLocale";
 import { useUserProfile, type StudentProfileCourse, type TeacherProfileCourse } from "../api";
 
 function Row({ icon, label, value }: { icon: typeof Mail; label: string; value: string }) {
@@ -34,7 +33,6 @@ export function UserProfilePage() {
   const { id } = useParams();
   const userId = Number(id);
   const { t } = useTranslation(undefined, { keyPrefix: "userProfile" });
-  const locale = useLocale();
   const navigate = useNavigate();
   const q = useUserProfile(userId);
   const p = q.data;
@@ -66,8 +64,8 @@ export function UserProfilePage() {
                     <Row icon={Mail} label="Email" value={p.email} />
                     {p.phone && <Row icon={Phone} label={t("phone")} value={p.phone} />}
                     {p.kind === "student" && p.groupName && <Row icon={Users} label={t("group")} value={p.groupName} />}
-                    {p.kind === "teacher" && p.departmentNameUz && (
-                      <Row icon={Building2} label={t("department")} value={pickName(locale, p.departmentNameUz, p.departmentNameRu ?? p.departmentNameUz)} />
+                    {p.kind === "teacher" && p.departmentName && (
+                      <Row icon={Building2} label={t("department")} value={p.departmentName} />
                     )}
                   </div>
                 </div>
@@ -89,7 +87,7 @@ export function UserProfilePage() {
                       <div className="grid gap-3 sm:grid-cols-2">
                         {(p.courses as TeacherProfileCourse[]).map((c) => (
                           <Card key={c.id} interactive onClick={() => navigate(`/admin/courses/${c.id}`)} className="flex flex-col gap-2">
-                            <h3 className="text-[15px] font-bold text-ink">{pickName(locale, c.subjectNameUz, c.subjectNameRu)}</h3>
+                            <h3 className="text-[15px] font-bold text-ink">{c.subjectName}</h3>
                             <div className="flex flex-wrap gap-1.5 text-[12px]">
                               <span className="rounded-pill bg-brand-soft px-2 py-0.5 font-semibold text-brand-deep">{c.semester}-semestr</span>
                               <span className="rounded-pill bg-bg px-2 py-0.5 text-ink-soft">{c.academicYear}</span>
@@ -119,7 +117,7 @@ export function UserProfilePage() {
                       <div className="space-y-2">
                         {(p.courses as StudentProfileCourse[]).map((c) => (
                           <Card key={c.id} interactive onClick={() => navigate(`/admin/courses/${c.id}`)} className="flex flex-wrap items-center gap-4 py-3">
-                            <span className="min-w-[140px] flex-1 text-[14px] font-semibold text-ink">{pickName(locale, c.subjectNameUz, c.subjectNameRu)}</span>
+                            <span className="min-w-[140px] flex-1 text-[14px] font-semibold text-ink">{c.subjectName}</span>
                             <span className="text-[12.5px] text-ink-soft">{c.completed}/{c.total}</span>
                             <div className="h-1.5 w-28 overflow-hidden rounded-pill bg-bg">
                               <div className="h-full rounded-pill bg-brand" style={{ width: `${Math.max(c.progressPct, 2)}%` }} />

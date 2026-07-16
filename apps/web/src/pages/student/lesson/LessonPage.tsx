@@ -3,7 +3,6 @@ import { useTranslation } from "react-i18next";
 import { ArrowLeft, Check, ClipboardList, FileText, PartyPopper, Stethoscope, Video } from "lucide-react";
 import { Icon, Spinner, cls } from "@meduni/ui";
 import { AsyncSection } from "../../../components/AsyncSection";
-import { useLocale, pickName } from "../../../lib/useLocale";
 import { useLesson, type Lesson } from "../api";
 import { VideoTab } from "./VideoTab";
 import { SlidesTab } from "./SlidesTab";
@@ -39,7 +38,6 @@ export function LessonPage() {
   const { id } = useParams();
   const topicId = Number(id);
   const { t } = useTranslation(undefined, { keyPrefix: "lesson" });
-  const locale = useLocale();
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
 
@@ -77,7 +75,7 @@ export function LessonPage() {
                 <p className="text-[11.5px] font-bold uppercase tracking-wide text-ink-faint">
                   {t("topic")} {lesson.orderIndex}
                 </p>
-                <h1 className="text-h1 font-bold text-ink">{pickName(locale, lesson.titleUz, lesson.titleRu)}</h1>
+                <h1 className="text-h1 font-bold text-ink">{lesson.title}</h1>
 
                 {lesson.completed && (
                   <div className="mt-4 flex items-center justify-between gap-3 rounded-card bg-emerald-soft p-4">

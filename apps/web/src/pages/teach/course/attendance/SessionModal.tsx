@@ -1,13 +1,11 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button, Modal, useToast } from "@meduni/ui";
-import { useLocale, pickName } from "../../../../lib/useLocale";
 import { useCreateSession, useUpdateSession, type SessionRow } from "../../api";
 import { useTopics } from "../../topics/api";
 
 export function SessionModal({ courseId, edit, onClose }: { courseId: number; edit: SessionRow | null; onClose: () => void }) {
   const { t } = useTranslation(undefined, { keyPrefix: "attendance" });
-  const locale = useLocale();
   const { show } = useToast();
   const topics = useTopics(courseId);
   const create = useCreateSession(courseId);
@@ -55,7 +53,7 @@ export function SessionModal({ courseId, edit, onClose }: { courseId: number; ed
             <select value={topicId} onChange={(e) => setTopicId(e.target.value ? Number(e.target.value) : "")} className="w-full rounded-control border border-line bg-surface px-3 py-2 text-[13.5px] outline-none focus:border-brand">
               <option value="">{t("selectTopic")}</option>
               {(topics.data ?? []).map((tp) => (
-                <option key={tp.id} value={tp.id}>{pickName(locale, tp.titleUz, tp.titleRu)}</option>
+                <option key={tp.id} value={tp.id}>{tp.title}</option>
               ))}
             </select>
           )}

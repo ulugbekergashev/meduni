@@ -42,8 +42,7 @@ function buildElements(facts: FullFacts) {
 
 export interface TopicOut {
   id: number;
-  titleUz: string;
-  titleRu: string;
+  title: string;
   orderIndex: number;
   state: "LOCKED" | "AVAILABLE" | "IN_PROGRESS" | "COMPLETED";
   pct: number;
@@ -82,8 +81,7 @@ export function computeTopics(course: CourseWithTopics, factsByTopic: Map<number
 
     out.push({
       id: topic.id,
-      titleUz: topic.titleUz,
-      titleRu: topic.titleRu,
+      title: topic.title,
       orderIndex: topic.orderIndex,
       state,
       pct,
@@ -174,15 +172,13 @@ function courseSummary(course: CourseWithTopics, topics: TopicOut[]) {
   const next = topics.find((t) => t.state === "AVAILABLE" || t.state === "IN_PROGRESS") ?? null;
   return {
     id: course.id,
-    subjectNameUz: course.subject.nameUz,
-    subjectNameRu: course.subject.nameRu,
+    subjectName: course.subject.name,
     teacherName: course.teacher.fullName,
     groupName: course.courseGroups[0]?.group.name ?? null,
     topicsTotal: total,
     topicsCompleted: completed,
     progressPct: total === 0 ? 0 : Math.round((completed / total) * 100),
-    nextTopicUz: next?.titleUz ?? null,
-    nextTopicRu: next?.titleRu ?? null,
+    nextTopic: next?.title ?? null,
     nextTopicId: next?.id ?? null,
   };
 }
@@ -230,8 +226,7 @@ export async function getMyCourse(studentId: number, courseId: number) {
   const topics = computeTopics(course, pm);
   return {
     id: course.id,
-    subjectNameUz: course.subject.nameUz,
-    subjectNameRu: course.subject.nameRu,
+    subjectName: course.subject.name,
     teacherName: course.teacher.fullName,
     groupName: course.courseGroups[0]?.group.name ?? null,
     topicsTotal: topics.length,
@@ -249,11 +244,9 @@ export async function getDashboard(studentId: number) {
   const courses = [];
   let resume: {
     courseId: number;
-    subjectNameUz: string;
-    subjectNameRu: string;
+    subjectName: string;
     topicId: number;
-    topicUz: string;
-    topicRu: string;
+    topic: string;
     pct: number;
   } | null = null;
 
@@ -269,11 +262,9 @@ export async function getDashboard(studentId: number) {
       if (current) {
         resume = {
           courseId: course.id,
-          subjectNameUz: course.subject.nameUz,
-          subjectNameRu: course.subject.nameRu,
+          subjectName: course.subject.name,
           topicId: current.id,
-          topicUz: current.titleUz,
-          topicRu: current.titleRu,
+          topic: current.title,
           pct: current.pct,
         };
       }
@@ -291,8 +282,7 @@ export async function getDashboard(studentId: number) {
     type: "case_reviewed" as const,
     caseAttemptId: a.id,
     topicId: a.clinicalCase.contentItem.topicId,
-    topicUz: a.clinicalCase.contentItem.topic.titleUz,
-    topicRu: a.clinicalCase.contentItem.topic.titleRu,
+    topic: a.clinicalCase.contentItem.topic.title,
     score: a.score,
     reviewedAt: a.reviewedAt,
   }));

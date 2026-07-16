@@ -4,10 +4,8 @@ import { api } from "../../../lib/api";
 export interface CourseRow {
   id: number;
   subjectId: number;
-  subjectNameUz: string;
-  subjectNameRu: string;
-  departmentNameUz: string;
-  departmentNameRu: string;
+  subjectName: string;
+  departmentName: string;
   teacherId: number;
   teacherName: string;
   semester: number;

@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { Badge, Card, Icon, Spinner, cls, useToast } from "@meduni/ui";
 import { AsyncSection } from "../../components/AsyncSection";
-import { useLocale, pickName } from "../../lib/useLocale";
+import { useLocale } from "../../lib/useLocale";
 import { useMyCourse, type StudentTopic, type TopicElements } from "./api";
 
 function Chip({ icon, label, done, hint }: { icon: typeof Video; label: string; done: boolean; hint?: string }) {
@@ -72,8 +72,7 @@ function TopicCard({ topic, last }: { topic: StudentTopic; last: boolean }) {
   const { t } = useTranslation(undefined, { keyPrefix: "student" });
   const locale = useLocale();
   const { show } = useToast();
-  const title = pickName(locale, topic.titleUz, topic.titleRu);
-  const subtitle = locale === "ru" ? topic.titleUz : topic.titleRu;
+  const title = topic.title;
   const current = topic.state === "AVAILABLE" || topic.state === "IN_PROGRESS";
 
   return (
@@ -97,7 +96,6 @@ function TopicCard({ topic, last }: { topic: StudentTopic; last: boolean }) {
                 {t("topic")} {topic.orderIndex}
               </p>
               <h3 className={cls("mt-0.5 text-section font-bold", topic.state === "LOCKED" ? "text-ink-soft" : "text-ink")}>{title}</h3>
-              <p className="truncate text-[12px] text-ink-faint">{subtitle}</p>
             </div>
             {topic.state === "COMPLETED" && <Badge tone="emerald">{t("statusDone")}</Badge>}
             {current && <Badge tone="brand">{t("statusCurrent")}</Badge>}
@@ -150,7 +148,6 @@ export function CoursePath() {
   const { id } = useParams();
   const courseId = Number(id);
   const { t } = useTranslation(undefined, { keyPrefix: "student" });
-  const locale = useLocale();
   const navigate = useNavigate();
   const q = useMyCourse(courseId);
   const c = q.data;
@@ -179,7 +176,7 @@ export function CoursePath() {
             <>
               {/* Course header */}
               <div className="rounded-card bg-gradient-to-br from-brand-deep to-brand p-5 text-white shadow-md">
-                <h1 className="text-h1 font-bold leading-tight">{pickName(locale, c.subjectNameUz, c.subjectNameRu)}</h1>
+                <h1 className="text-h1 font-bold leading-tight">{c.subjectName}</h1>
                 <p className="mt-1 text-[13px] text-white/85">
                   {c.teacherName}
                   {c.groupName && ` · ${c.groupName}`}

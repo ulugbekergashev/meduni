@@ -106,8 +106,7 @@ export async function getTopicLesson(studentId: number, topicId: number) {
   return {
     topicId: topic.id,
     orderIndex: topic.orderIndex,
-    titleUz: topic.titleUz,
-    titleRu: topic.titleRu,
+    title: topic.title,
     courseId: topic.courseId,
     state: state.state,
     completed: state.state === "COMPLETED",

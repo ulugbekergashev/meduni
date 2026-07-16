@@ -8,7 +8,7 @@ import { ConfirmDialog } from "../../../components/ConfirmDialog";
 import { Field } from "../../../components/Field";
 import { apiErrorMessage } from "../../../lib/api";
 import { useCreate, useList, useRemove, useUpdate } from "../../../lib/crud";
-import { pickName, useLocale } from "../../../lib/useLocale";
+import { useLocale } from "../../../lib/useLocale";
 import type { Faculty, Group } from "./types";
 
 type GroupInput = { facultyId: number; name: string; yearOfStudy: number };
@@ -108,7 +108,7 @@ export function GroupsTab() {
                 </option>
                 {facultyOptions.map((f) => (
                   <option key={f.id} value={f.id}>
-                    {pickName(locale, f.nameUz, f.nameRu)}
+                    {f.name}
                   </option>
                 ))}
               </Select>
@@ -149,7 +149,7 @@ export function GroupsTab() {
               <option value="">{t("allFaculties")}</option>
               {facultyOptions.map((f) => (
                 <option key={f.id} value={f.id}>
-                  {pickName(locale, f.nameUz, f.nameRu)}
+                  {f.name}
                 </option>
               ))}
             </Select>
@@ -169,7 +169,7 @@ export function GroupsTab() {
         <DataTable headers={[t("faculty"), t("groupName"), t("year"), t("studentCount"), tc("actions")]}>
           {rows.map((g) => (
             <tr key={g.id} className="border-b border-line last:border-0">
-              <td className="px-4 py-3 text-ink-soft">{pickName(locale, g.facultyNameUz, g.facultyNameRu)}</td>
+              <td className="px-4 py-3 text-ink-soft">{g.facultyName}</td>
               <td className="px-4 py-3 font-medium text-ink">{g.name}</td>
               <td className="px-4 py-3 text-ink-soft">{g.yearOfStudy}</td>
               <td className="px-4 py-3">
@@ -205,7 +205,7 @@ export function GroupsTab() {
               >
                 {facultyOptions.map((f) => (
                   <option key={f.id} value={f.id}>
-                    {pickName(locale, f.nameUz, f.nameRu)}
+                    {f.name}
                   </option>
                 ))}
               </Select>

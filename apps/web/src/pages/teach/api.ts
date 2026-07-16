@@ -6,10 +6,8 @@ export { API_URL };
 
 export interface TeachCourse {
   id: number;
-  subjectNameUz: string;
-  subjectNameRu: string;
-  departmentNameUz: string;
-  departmentNameRu: string;
+  subjectName: string;
+  departmentName: string;
   teacherName: string;
   semester: number;
   academicYear: string;
@@ -39,9 +37,8 @@ export interface TeachGroup {
   id: number;
   name: string;
   yearOfStudy: number;
-  facultyNameUz: string;
-  facultyNameRu: string;
-  courses: { id: number; nameUz: string; nameRu: string }[];
+  facultyName: string;
+  courses: { id: number; name: string }[];
   students: GroupStudent[];
   studentCount: number;
   avgProgress: number;
@@ -61,8 +58,7 @@ export interface CourseGroupStat {
   groupId: number;
   name: string;
   yearOfStudy: number;
-  facultyNameUz: string;
-  facultyNameRu: string;
+  facultyName: string;
   studentCount: number;
   avgProgress: number;
 }
@@ -73,8 +69,7 @@ export function useCourseGroupsStats(courseId: number) {
 
 export interface StudentDetailTopic {
   id: number;
-  titleUz: string;
-  titleRu: string;
+  title: string;
   state: CellState;
   pct: number;
   hasQuiz: boolean;
@@ -88,8 +83,7 @@ export interface StudentDetailTopic {
 }
 export interface StudentDetailCourse {
   courseId: number;
-  subjectNameUz: string;
-  subjectNameRu: string;
+  subjectName: string;
   topicsTotal: number;
   completedCount: number;
   overallPct: number;
@@ -107,16 +101,14 @@ export function useStudentDetail(studentId: number) {
 
 export interface SyllabusTopic {
   id: number;
-  titleUz: string;
-  titleRu: string;
+  title: string;
   orderIndex: number;
   hours: number;
   note: string;
 }
 export interface Syllabus {
   courseId: number;
-  subjectNameUz: string;
-  subjectNameRu: string;
+  subjectName: string;
   description: string;
   objectives: string[];
   literature: string[];
@@ -190,8 +182,7 @@ export interface ProgressStudent {
 
 export interface ProgressTopic {
   id: number;
-  titleUz: string;
-  titleRu: string;
+  title: string;
   orderIndex: number;
 }
 
@@ -222,8 +213,7 @@ export function useManualUnlock(courseId: number) {
 export interface TeachDashboard {
   courses: {
     id: number;
-    subjectNameUz: string;
-    subjectNameRu: string;
+    subjectName: string;
     groupName: string | null;
     semester: number;
     studentCount: number;
@@ -247,8 +237,7 @@ export interface TeachDashboard {
     courseId: number;
     groupId: number | null;
     date: string;
-    subjectNameUz: string;
-    subjectNameRu: string;
+    subjectName: string;
     title: string | null;
     room: string | null;
   }[];
@@ -340,11 +329,9 @@ export interface QueueItem {
   id: number;
   studentName: string;
   courseId: number;
-  subjectNameUz: string;
-  subjectNameRu: string;
+  subjectName: string;
   topicId: number;
-  topicUz: string;
-  topicRu: string;
+  topic: string;
   submittedAt: string;
   reviewedAt: string | null;
   score: number | null;
@@ -352,18 +339,16 @@ export interface QueueItem {
 }
 
 export interface ReviewFilters {
-  courses: { id: number; nameUz: string; nameRu: string }[];
-  topics: { id: number; courseId: number; titleUz: string; titleRu: string }[];
+  courses: { id: number; name: string }[];
+  topics: { id: number; courseId: number; title: string }[];
 }
 
 export interface CaseReviewDetail {
   id: number;
   studentName: string;
   courseId: number;
-  subjectNameUz: string;
-  subjectNameRu: string;
-  topicUz: string;
-  topicRu: string;
+  subjectName: string;
+  topic: string;
   blocks: { complaints: string; anamnesis: string; objectiveStatus: string; labData: string };
   questions: string[];
   referenceAnswer: string[];
@@ -430,8 +415,6 @@ export interface SessionRow {
   id: number;
   date: string;
   title: string | null;
-  titleUz: string | null;
-  titleRu: string | null;
   topicId: number | null;
   room: string | null;
   markedCount: number;
@@ -450,7 +433,7 @@ export interface AttCell {
 }
 
 export interface AttReport {
-  sessions: { id: number; date: string; title: string | null; titleUz: string | null; titleRu: string | null }[];
+  sessions: { id: number; date: string; title: string | null }[];
   students: {
     id: number;
     fullName: string;

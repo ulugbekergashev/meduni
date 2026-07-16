@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { AlertTriangle, CalendarCheck, Check, Clock, Minus, X } from "lucide-react";
 import { Card, Icon, Spinner, cls } from "@meduni/ui";
 import { AsyncSection } from "../../components/AsyncSection";
-import { useLocale, pickName } from "../../lib/useLocale";
+import { useLocale } from "../../lib/useLocale";
 import { useMyAttendance, useMyCourses, type AttStatus } from "./api";
 
 const META: Record<AttStatus, { icon: typeof Check; chip: string; dot: string }> = {
@@ -80,7 +80,7 @@ export function AttendancePage() {
                 <select value={courseId ?? ""} onChange={(e) => setCourseId(e.target.value ? Number(e.target.value) : undefined)} className="rounded-control border border-line bg-surface px-2 py-2 text-[13px] outline-none focus:border-brand">
                   <option value="">{t("allCourses")}</option>
                   {(coursesQ.data ?? []).map((c) => (
-                    <option key={c.id} value={c.id}>{pickName(locale, c.subjectNameUz, c.subjectNameRu)}</option>
+                    <option key={c.id} value={c.id}>{c.subjectName}</option>
                   ))}
                 </select>
                 <input type="date" value={range.from ?? ""} onChange={(e) => setRange((r) => ({ ...r, from: e.target.value || undefined }))} className="rounded-control border border-line px-2 py-2 text-[13px] outline-none focus:border-brand" />
@@ -99,10 +99,10 @@ export function AttendancePage() {
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-[13.5px] font-semibold text-ink">
-                          {s.titleUz ? pickName(locale, s.titleUz, s.titleRu ?? s.titleUz) : pickName(locale, s.courseNameUz, s.courseNameRu)}
+                          {s.title ?? s.courseName}
                         </p>
                         <p className="truncate text-[12px] text-ink-faint">
-                          {new Date(s.date).toLocaleDateString(locale === "ru" ? "ru-RU" : "uz-UZ")} · {pickName(locale, s.courseNameUz, s.courseNameRu)}
+                          {new Date(s.date).toLocaleDateString(locale === "ru" ? "ru-RU" : "uz-UZ")} · {s.courseName}
                         </p>
                       </div>
                       <span className={cls("shrink-0 rounded-pill px-2.5 py-0.5 text-[11.5px] font-semibold", m.chip)}>{t(`status.${s.status}`)}</span>

@@ -3,7 +3,6 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { AlertTriangle, Download, GraduationCap, LayoutGrid, List, Search, TrendingUp, Unlock, Users } from "lucide-react";
 import { Badge, Button, Card, Icon, Modal, Spinner, StatCard, cls, useToast } from "@meduni/ui";
-import { useLocale, pickName } from "../../../lib/useLocale";
 import { AsyncSection } from "../../../components/AsyncSection";
 import {
   API_URL,
@@ -51,7 +50,6 @@ function cellSummary(c: ProgressCell, t: (k: string) => string): string {
 
 function StudentModal({ student, topics, courseId, onClose }: { student: ProgressStudent; topics: ProgressTopic[]; courseId: number; onClose: () => void }) {
   const { t } = useTranslation(undefined, { keyPrefix: "progress" });
-  const locale = useLocale();
   const { show } = useToast();
   const navigate = useNavigate();
   const unlock = useManualUnlock(courseId);
@@ -76,7 +74,7 @@ function StudentModal({ student, topics, courseId, onClose }: { student: Progres
             <div key={tp.id} className="rounded-control border border-line p-3">
               <div className="flex items-center justify-between gap-2">
                 <p className="text-[13.5px] font-semibold text-ink">
-                  {tp.orderIndex}. {pickName(locale, tp.titleUz, tp.titleRu)}
+                  {tp.orderIndex}. {tp.title}
                 </p>
                 <Badge tone={c.state === "COMPLETED" ? "emerald" : c.state === "IN_PROGRESS" ? "amber" : c.state === "LOCKED" ? "slate" : "blue"}>
                   {t(`state.${c.state}`)}
@@ -121,7 +119,7 @@ function Heatmap({ data, students, onPick }: { data: CourseProgress; students: P
               {t("student")}
             </th>
             {data.topics.map((tp) => (
-              <th key={tp.id} className="min-w-[38px] border-b border-line bg-surface px-1 py-2 text-center font-bold text-ink-soft" title={tp.titleUz}>
+              <th key={tp.id} className="min-w-[38px] border-b border-line bg-surface px-1 py-2 text-center font-bold text-ink-soft" title={tp.title}>
                 {tp.orderIndex}
               </th>
             ))}

@@ -162,7 +162,7 @@ export async function getCourseProgress(courseId: number, teacherId: number) {
   return {
     courseId,
     stats: { total: students.length, active, behind, avgProgress: avgProgress ?? 0, completed },
-    topics: topics.map((t) => ({ id: t.id, titleUz: t.titleUz, titleRu: t.titleRu, orderIndex: t.orderIndex })),
+    topics: topics.map((t) => ({ id: t.id, title: t.title, orderIndex: t.orderIndex })),
     students,
   };
 }
@@ -207,8 +207,7 @@ export async function getCourseGroupsStats(courseId: number, teacherId: number) 
       groupId: cg.groupId,
       name: cg.group.name,
       yearOfStudy: cg.group.yearOfStudy,
-      facultyNameUz: cg.group.faculty.nameUz,
-      facultyNameRu: cg.group.faculty.nameRu,
+      facultyName: cg.group.faculty.name,
       studentCount: rows.length,
       avgProgress,
     };
@@ -262,8 +261,7 @@ export async function getStudentDetail(teacherId: number, studentId: number) {
     const completedCount = topicOuts.filter((t) => t.state === "COMPLETED").length;
     courses.push({
       courseId: course.id,
-      subjectNameUz: course.subject.nameUz,
-      subjectNameRu: course.subject.nameRu,
+      subjectName: course.subject.name,
       topicsTotal: topicOuts.length,
       completedCount,
       overallPct: topicOuts.length === 0 ? 0 : Math.round((completedCount / topicOuts.length) * 100),
@@ -279,8 +277,7 @@ export async function getStudentDetail(teacherId: number, studentId: number) {
         const ca = caseByTopic.get(t.id);
         return {
           id: t.id,
-          titleUz: t.titleUz,
-          titleRu: t.titleRu,
+          title: t.title,
           state: t.state,
           pct: t.pct,
           hasQuiz: t.elements.quiz.exists,
@@ -315,8 +312,7 @@ export async function getTeacherDashboard(teacherId: number) {
     studentsBehind += students.filter((s) => s.behind).length;
     courseCards.push({
       id: loaded.id,
-      subjectNameUz: loaded.subject.nameUz,
-      subjectNameRu: loaded.subject.nameRu,
+      subjectName: loaded.subject.name,
       groupName: loaded.courseGroups[0]?.group.name ?? null,
       semester: loaded.semester,
       studentCount: students.length,
@@ -376,9 +372,8 @@ export async function getTeacherDashboard(teacherId: number) {
       courseId: s.courseId,
       groupId: s.course.courseGroups[0]?.groupId ?? null, // sessions live in the group profile
       date: s.date,
-      subjectNameUz: s.course.subject.nameUz,
-      subjectNameRu: s.course.subject.nameRu,
-      title: s.title ?? s.topic?.titleUz ?? null,
+      subjectName: s.course.subject.name,
+      title: s.title ?? s.topic?.title ?? null,
       room: s.room,
     })),
   };
@@ -401,7 +396,7 @@ export async function exportProgress(courseId: number, teacherId: number, view: 
   const ws = wb.addWorksheet("Progress");
 
   if (view === "heatmap") {
-    ws.addRow(["Talaba", ...topics.map((t) => `${t.orderIndex}. ${t.titleUz}`), "Umumiy %"]);
+    ws.addRow(["Talaba", ...topics.map((t) => `${t.orderIndex}. ${t.title}`), "Umumiy %"]);
     for (const s of students) {
       const byTopic = new Map(s.cells.map((c) => [c.topicId, c]));
       ws.addRow([s.fullName, ...topics.map((t) => stateLabel[byTopic.get(t.id)?.state ?? "LOCKED"]), s.overallPct]);

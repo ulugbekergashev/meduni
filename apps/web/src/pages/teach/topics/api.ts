@@ -7,8 +7,7 @@ export type ParseStatus = "pending" | "processing" | "done" | "error";
 export interface TopicRow {
   id: number;
   courseId: number;
-  titleUz: string;
-  titleRu: string;
+  title: string;
   orderIndex: number;
   status: TopicStatus;
   materialCount: number;
@@ -185,7 +184,7 @@ export function useTopics(courseId: number) {
 export function useCreateTopic(courseId: number) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: { titleUz?: string; titleRu?: string }) =>
+    mutationFn: (body: { title?: string }) =>
       api<TopicRow>("/api/v1/topics", { method: "POST", body: JSON.stringify({ courseId, ...body }) }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["topics", courseId] }),
   });

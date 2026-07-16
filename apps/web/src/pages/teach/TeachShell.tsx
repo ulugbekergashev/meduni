@@ -6,13 +6,13 @@ import { Icon } from "@meduni/ui";
 import { RoleShell } from "../../components/RoleShell";
 import { GlobalSearch, type SearchSection } from "../../components/GlobalSearch";
 import { api } from "../../lib/api";
-import { pickName, useLocale } from "../../lib/useLocale";
+import { useLocale } from "../../lib/useLocale";
 import { useTeachTasks } from "./api";
 
 interface TeachSearchResp {
   students: { id: number; fullName: string; groupName: string | null }[];
   groups: { id: number; name: string; studentCount: number }[];
-  courses: { id: number; nameUz: string; nameRu: string; semester: number }[];
+  courses: { id: number; name: string; semester: number }[];
 }
 
 export function TeachShell() {
@@ -40,7 +40,7 @@ export function TeachShell() {
           icon: BookOpen,
           items: r.courses.map((c) => ({
             key: `c${c.id}`,
-            label: pickName(locale, c.nameUz, c.nameRu),
+            label: c.name,
             sub: `${c.semester}-semestr`,
             link: `/teach/courses/${c.id}`,
           })),

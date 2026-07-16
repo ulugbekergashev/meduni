@@ -714,11 +714,9 @@
     "deleted": "Oʻchirildi",
     "updated": "Yangilandi",
     "all": "Barchasi",
-    "nameUz": "Nomi (oʻzbek)",
-    "nameRu": "Nomi (rus)",
+    "name": "Nomi",
     "genericError": "Xatolik yuz berdi",
-    "oneLangHint": "Bittasini toʻldirsangiz yetarli — ikkinchisi avtomatik toʻldiriladi.",
-    "nameRequired": "Kamida bitta tilda nom kiriting"
+    "nameRequired": "Nomini kiriting"
   },
   "structure": {
     "title": "Tuzilma",

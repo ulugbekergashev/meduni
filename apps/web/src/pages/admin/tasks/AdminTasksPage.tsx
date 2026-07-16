@@ -7,7 +7,7 @@ import { ConfirmDialog } from "../../../components/ConfirmDialog";
 import { AsyncSection } from "../../../components/AsyncSection";
 import { CreatedTaskList } from "../../../components/CreatedTaskList";
 import { apiErrorMessage } from "../../../lib/api";
-import { pickName, useLocale } from "../../../lib/useLocale";
+import { useLocale } from "../../../lib/useLocale";
 import {
   useCreatedTasks,
   useCreateTask,
@@ -83,7 +83,7 @@ export function AdminTasksPage() {
               <Select value={departmentId} onChange={(e) => setDepartmentId(e.target.value)}>
                 <option value="">—</option>
                 {(depts.data ?? []).map((d) => (
-                  <option key={d.id} value={d.id}>{pickName(locale, d.nameUz, d.nameRu)}</option>
+                  <option key={d.id} value={d.id}>{d.name}</option>
                 ))}
               </Select>
             </Field>

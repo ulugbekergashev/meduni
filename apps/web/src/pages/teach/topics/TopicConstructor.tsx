@@ -13,7 +13,6 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { Badge, Button, Card, Icon, Spinner, cls } from "@meduni/ui";
-import { useLocale } from "../../../lib/useLocale";
 import { MaterialsSection } from "./MaterialsSection";
 import { DigestSection } from "./DigestSection";
 import { GenerateSection } from "./GenerateSection";
@@ -79,7 +78,6 @@ export function TopicConstructor() {
   const topicId = Number(id);
   const { t } = useTranslation(undefined, { keyPrefix: "constructor" });
   const { t: tt } = useTranslation(undefined, { keyPrefix: "topics" });
-  const locale = useLocale();
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
 
@@ -154,8 +152,7 @@ export function TopicConstructor() {
 
       <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-h1 font-bold text-ink">{locale === "ru" ? topic.titleRu : topic.titleUz}</h1>
-          <p className="text-note text-ink-faint">{locale === "ru" ? topic.titleUz : topic.titleRu}</p>
+          <h1 className="text-h1 font-bold text-ink">{topic.title}</h1>
         </div>
         <Badge tone={topic.status === "published" ? "emerald" : "slate"}>{tt(`status.${topic.status}`)}</Badge>
       </div>

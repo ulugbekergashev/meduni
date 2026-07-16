@@ -11,7 +11,7 @@ import { useCreate, useList, useRemove, useUpdate } from "../../../lib/crud";
 import { useLocale } from "../../../lib/useLocale";
 import type { Faculty } from "./types";
 
-type NameInput = { nameUz: string; nameRu: string };
+type NameInput = { name: string };
 
 export function FacultiesTab() {
   const { t } = useTranslation(undefined, { keyPrefix: "structure" });
@@ -24,8 +24,7 @@ export function FacultiesTab() {
   const update = useUpdate<NameInput, Faculty>("faculties");
   const remove = useRemove("faculties");
 
-  const [nameUz, setNameUz] = useState("");
-  const [nameRu, setNameRu] = useState("");
+  const [name, setName] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
 
   const [editing, setEditing] = useState<Faculty | null>(null);
@@ -37,16 +36,15 @@ export function FacultiesTab() {
   const onAdd = (e: FormEvent) => {
     e.preventDefault();
     setFormError(null);
-    if (!nameUz.trim() && !nameRu.trim()) {
+    if (!name.trim()) {
       setFormError(tc("nameRequired"));
       return;
     }
     create.mutate(
-      { nameUz: nameUz.trim(), nameRu: nameRu.trim() },
+      { name: name.trim() },
       {
         onSuccess: () => {
-          setNameUz("");
-          setNameRu("");
+          setName("");
           show(tc("added"));
         },
         onError: (err) => setFormError(apiErrorMessage(err, locale) ?? tc("genericError")),
@@ -59,7 +57,7 @@ export function FacultiesTab() {
     if (!editing) return;
     setEditError(null);
     update.mutate(
-      { id: editing.id, body: { nameUz: editing.nameUz.trim(), nameRu: editing.nameRu.trim() } },
+      { id: editing.id, body: { name: editing.name.trim() } },
       {
         onSuccess: () => {
           setEditing(null);
@@ -89,20 +87,16 @@ export function FacultiesTab() {
       {/* Add form */}
       <Card>
         <h2 className="mb-4 text-section font-bold text-ink">{t("addFacultyForm")}</h2>
-        <form onSubmit={onAdd} className="grid gap-4 sm:grid-cols-2">
-          <Field label={tc("nameUz")}>
-            <Input value={nameUz} onChange={(e) => setNameUz(e.target.value)} />
-          </Field>
-          <Field label={tc("nameRu")}>
-            <Input value={nameRu} onChange={(e) => setNameRu(e.target.value)} />
-          </Field>
-          <p className="text-[12px] text-ink-faint sm:col-span-2">{tc("oneLangHint")}</p>
-          {formError && <p className="text-[13px] text-rose sm:col-span-2">{formError}</p>}
-          <div className="sm:col-span-2">
-            <Button type="submit" icon={<span className="text-lg leading-none">+</span>} disabled={create.isPending}>
-              {tc("add")}
-            </Button>
+        <form onSubmit={onAdd} className="flex flex-wrap items-end gap-4">
+          <div className="min-w-[260px] flex-1">
+            <Field label={tc("name")}>
+              <Input value={name} onChange={(e) => setName(e.target.value)} />
+            </Field>
           </div>
+          <Button type="submit" icon={<span className="text-lg leading-none">+</span>} disabled={create.isPending}>
+            {tc("add")}
+          </Button>
+          {formError && <p className="w-full text-[13px] text-rose">{formError}</p>}
         </form>
       </Card>
 
@@ -115,11 +109,10 @@ export function FacultiesTab() {
         emptyText={t("emptyFaculties")}
         onRetry={() => list.refetch()}
       >
-        <DataTable headers={[tc("nameUz"), tc("nameRu"), tc("actions")]}>
+        <DataTable headers={[tc("name"), tc("actions")]}>
           {rows.map((f) => (
             <tr key={f.id} className="border-b border-line last:border-0">
-              <td className="px-4 py-3 font-medium text-ink">{f.nameUz}</td>
-              <td className="px-4 py-3 text-ink-soft">{f.nameRu}</td>
+              <td className="px-4 py-3 font-medium text-ink">{f.name}</td>
               <td className="px-4 py-3">
                 <RowActions
                   onEdit={() => {
@@ -141,17 +134,10 @@ export function FacultiesTab() {
       <Modal open={!!editing} onClose={() => setEditing(null)} title={t("editFaculty")}>
         {editing && (
           <form onSubmit={onSaveEdit} className="space-y-4">
-            <Field label={tc("nameUz")}>
+            <Field label={tc("name")}>
               <Input
-                value={editing.nameUz}
-                onChange={(e) => setEditing({ ...editing, nameUz: e.target.value })}
-                required
-              />
-            </Field>
-            <Field label={tc("nameRu")}>
-              <Input
-                value={editing.nameRu}
-                onChange={(e) => setEditing({ ...editing, nameRu: e.target.value })}
+                value={editing.name}
+                onChange={(e) => setEditing({ ...editing, name: e.target.value })}
                 required
               />
             </Field>

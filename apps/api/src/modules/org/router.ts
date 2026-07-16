@@ -42,27 +42,22 @@ const wrap = (fn: RequestHandler): RequestHandler => (req, res, next) =>
 
 // Schemas ---------------------------------------------------------------
 
-// One language is enough; the missing one is mirrored from the other.
-const nameOpt = { nameUz: z.string().trim().optional(), nameRu: z.string().trim().optional() };
-const atLeastName = (d: { nameUz?: string; nameRu?: string }) => !!(d.nameUz || d.nameRu);
-const nameMsg = { message: "Kamida bitta tilda nom kiriting / Введите название хотя бы на одном языке" };
-const fillNames = <T extends { nameUz?: string; nameRu?: string }>(d: T) => ({
-  ...d,
-  nameUz: (d.nameUz || d.nameRu)!,
-  nameRu: (d.nameRu || d.nameUz)!,
-});
+// Single-language names (Faza 1): one `name` field, entered as-is.
+const nameField = z.string().trim().min(1);
 
-const facultyIn = z.object(nameOpt).refine(atLeastName, nameMsg).transform(fillNames);
-const departmentIn = z.object({ facultyId: z.number().int().positive(), ...nameOpt }).refine(atLeastName, nameMsg).transform(fillNames);
-const departmentUpdate = z.object({ facultyId: z.number().int().positive().optional(), ...nameOpt }).refine(atLeastName, nameMsg).transform(fillNames);
-const subjectIn = z
-  .object({ departmentId: z.number().int().positive(), ...nameOpt, description: z.string().trim().optional().nullable() })
-  .refine(atLeastName, nameMsg)
-  .transform(fillNames);
-const subjectUpdate = z
-  .object({ departmentId: z.number().int().positive().optional(), ...nameOpt, description: z.string().trim().optional().nullable() })
-  .refine(atLeastName, nameMsg)
-  .transform(fillNames);
+const facultyIn = z.object({ name: nameField });
+const departmentIn = z.object({ facultyId: z.number().int().positive(), name: nameField });
+const departmentUpdate = z.object({ facultyId: z.number().int().positive().optional(), name: nameField });
+const subjectIn = z.object({
+  departmentId: z.number().int().positive(),
+  name: nameField,
+  description: z.string().trim().optional().nullable(),
+});
+const subjectUpdate = z.object({
+  departmentId: z.number().int().positive().optional(),
+  name: nameField,
+  description: z.string().trim().optional().nullable(),
+});
 const groupIn = z.object({
   facultyId: z.number().int().positive(),
   name: z.string().trim().min(1),

@@ -4,7 +4,6 @@ import { useTranslation } from "react-i18next";
 import { ArrowLeft, CheckCircle2, ChevronDown, ClipboardCheck, Clock, FlaskConical, HeartPulse, Search, Stethoscope, User } from "lucide-react";
 import { Badge, Button, Card, Icon, Spinner, cls, useToast } from "@meduni/ui";
 import { AsyncSection } from "../../components/AsyncSection";
-import { useLocale, pickName } from "../../lib/useLocale";
 import {
   useCaseReviewDetail,
   useReviewCase,
@@ -23,7 +22,6 @@ function daysAgoLabel(iso: string, t: (k: string, o?: any) => string): string {
 
 function QueueCard({ item, active, onClick }: { item: QueueItem; active: boolean; onClick: () => void }) {
   const { t } = useTranslation(undefined, { keyPrefix: "review" });
-  const locale = useLocale();
   return (
     <button
       onClick={onClick}
@@ -41,7 +39,7 @@ function QueueCard({ item, active, onClick }: { item: QueueItem; active: boolean
         )}
       </div>
       <p className="mt-0.5 truncate text-[12px] text-ink-soft">
-        {pickName(locale, item.subjectNameUz, item.subjectNameRu)} — {pickName(locale, item.topicUz, item.topicRu)}
+        {item.subjectName} — {item.topic}
       </p>
       <p className="mt-1 flex items-center gap-1 text-[11.5px] text-ink-faint">
         <Icon icon={Clock} size={12} /> {daysAgoLabel(item.submittedAt, t)}
@@ -83,7 +81,6 @@ function CaseBlocks({ blocks }: { blocks: CaseReviewDetail["blocks"] }) {
 
 function ReviewPanel({ id, onSavedNext, onClose }: { id: number; onSavedNext: () => void; onClose: () => void }) {
   const { t } = useTranslation(undefined, { keyPrefix: "review" });
-  const locale = useLocale();
   const { show } = useToast();
   const detailQ = useCaseReviewDetail(id);
   const review = useReviewCase();
@@ -136,7 +133,7 @@ function ReviewPanel({ id, onSavedNext, onClose }: { id: number; onSavedNext: ()
           {detail.status === "REVIEWED" && <Badge tone="emerald">{t("reviewed")}: {detail.score}</Badge>}
         </div>
         <p className="text-[12.5px] text-ink-faint">
-          {pickName(locale, detail.subjectNameUz, detail.subjectNameRu)} — {pickName(locale, detail.topicUz, detail.topicRu)}
+          {detail.subjectName} — {detail.topic}
         </p>
       </div>
 
@@ -214,7 +211,6 @@ function ReviewPanel({ id, onSavedNext, onClose }: { id: number; onSavedNext: ()
 
 export function CaseReviewQueue() {
   const { t } = useTranslation(undefined, { keyPrefix: "review" });
-  const locale = useLocale();
   const navigate = useNavigate();
 
   const [query, setQuery] = useState<QueueQuery>({ status: "PENDING", search: "", sort: "oldest" });
@@ -250,11 +246,11 @@ export function CaseReviewQueue() {
       <div className="mt-4 flex flex-wrap items-center gap-2">
         <select value={query.courseId ?? ""} onChange={(e) => patch({ courseId: e.target.value ? Number(e.target.value) : undefined, topicId: undefined })} className="rounded-control border border-line bg-surface px-2 py-2 text-[13px] outline-none focus:border-brand">
           <option value="">{t("allCourses")}</option>
-          {filtersQ.data?.courses.map((c) => <option key={c.id} value={c.id}>{pickName(locale, c.nameUz, c.nameRu)}</option>)}
+          {filtersQ.data?.courses.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
         <select value={query.topicId ?? ""} onChange={(e) => patch({ topicId: e.target.value ? Number(e.target.value) : undefined })} className="rounded-control border border-line bg-surface px-2 py-2 text-[13px] outline-none focus:border-brand">
           <option value="">{t("allTopics")}</option>
-          {topicsForCourse.map((tp) => <option key={tp.id} value={tp.id}>{pickName(locale, tp.titleUz, tp.titleRu)}</option>)}
+          {topicsForCourse.map((tp) => <option key={tp.id} value={tp.id}>{tp.title}</option>)}
         </select>
         <select value={query.status} onChange={(e) => patch({ status: e.target.value as QueueQuery["status"] })} className="rounded-control border border-line bg-surface px-2 py-2 text-[13px] outline-none focus:border-brand">
           <option value="PENDING">{t("pending")}</option>

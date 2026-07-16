@@ -3,7 +3,6 @@ import { useTranslation } from "react-i18next";
 import { ArrowRight, BookOpen, ClipboardCheck, GraduationCap, PlayCircle } from "lucide-react";
 import { Card, EmptyState, Icon } from "@meduni/ui";
 import { AsyncSection } from "../../components/AsyncSection";
-import { useLocale, pickName } from "../../lib/useLocale";
 import { useMyDashboard, type CourseSummary } from "./api";
 
 function ProgressBar({ pct, tone = "brand" }: { pct: number; tone?: "brand" | "white" }) {
@@ -19,15 +18,14 @@ function ProgressBar({ pct, tone = "brand" }: { pct: number; tone?: "brand" | "w
 
 function CourseCard({ course }: { course: CourseSummary }) {
   const { t } = useTranslation(undefined, { keyPrefix: "student" });
-  const locale = useLocale();
   const navigate = useNavigate();
-  const next = course.nextTopicId ? pickName(locale, course.nextTopicUz ?? "", course.nextTopicRu ?? "") : null;
+  const next = course.nextTopicId ? course.nextTopic : null;
 
   return (
     <Card interactive onClick={() => navigate(`/app/courses/${course.id}`)} className="flex flex-col gap-3">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h3 className="truncate text-section font-bold text-ink">{pickName(locale, course.subjectNameUz, course.subjectNameRu)}</h3>
+          <h3 className="truncate text-section font-bold text-ink">{course.subjectName}</h3>
           <p className="truncate text-[12.5px] text-ink-faint">{course.teacherName}</p>
         </div>
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand-deep">
@@ -57,7 +55,6 @@ function CourseCard({ course }: { course: CourseSummary }) {
 
 export function StudentDashboard() {
   const { t } = useTranslation(undefined, { keyPrefix: "student" });
-  const locale = useLocale();
   const q = useMyDashboard();
   const d = q.data;
 
@@ -81,8 +78,8 @@ export function StudentDashboard() {
             {d.resume && (
               <div className="mt-5 rounded-card bg-gradient-to-br from-brand-deep to-brand p-5 text-white shadow-md">
                 <p className="text-[12.5px] font-medium uppercase tracking-wide text-white/70">{t("continueLabel")}</p>
-                <p className="mt-1 text-[13px] text-white/85">{pickName(locale, d.resume.subjectNameUz, d.resume.subjectNameRu)}</p>
-                <h2 className="mt-0.5 text-[20px] font-bold leading-tight">{pickName(locale, d.resume.topicUz, d.resume.topicRu)}</h2>
+                <p className="mt-1 text-[13px] text-white/85">{d.resume.subjectName}</p>
+                <h2 className="mt-0.5 text-[20px] font-bold leading-tight">{d.resume.topic}</h2>
                 <div className="mt-3">
                   <ProgressBar pct={d.resume.pct} tone="white" />
                   <p className="mt-1.5 text-[12px] text-white/80">{d.resume.pct}% {t("done")}</p>
@@ -109,7 +106,7 @@ export function StudentDashboard() {
                         </div>
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-[13.5px] font-semibold text-ink">{t("caseGraded")}</p>
-                          <p className="truncate text-[12px] text-ink-soft">{pickName(locale, n.topicUz, n.topicRu)}</p>
+                          <p className="truncate text-[12px] text-ink-soft">{n.topic}</p>
                         </div>
                         {n.score !== null && <span className="text-[16px] font-bold text-emerald">{n.score}</span>}
                       </Card>

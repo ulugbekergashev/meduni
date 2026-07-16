@@ -32,11 +32,9 @@ function toUserOut(u: UserWithRelations) {
     groupId: u.groupId,
     groupName: u.group?.name ?? null,
     departmentId: dept?.id ?? null,
-    departmentNameUz: dept?.nameUz ?? null,
-    departmentNameRu: dept?.nameRu ?? null,
+    departmentName: dept?.name ?? null,
     facultyId: u.facultyId,
-    facultyNameUz: u.faculty?.nameUz ?? null,
-    facultyNameRu: u.faculty?.nameRu ?? null,
+    facultyName: u.faculty?.name ?? null,
     position: u.teacherProfile?.position ?? null,
   };
 }
@@ -328,8 +326,7 @@ export async function getUserProfile(id: number) {
       stats: { courses: courses.length, students: distinctStudents.length, publishedTopics },
       courses: courses.map((c) => ({
         id: c.id,
-        subjectNameUz: c.subject.nameUz,
-        subjectNameRu: c.subject.nameRu,
+        subjectName: c.subject.name,
         semester: c.semester,
         academicYear: c.academicYear,
         groups: c.courseGroups.map((cg) => cg.group.name),
@@ -374,8 +371,7 @@ export async function getUserProfile(id: number) {
         const done = completedByCourse.get(e.courseId) ?? 0;
         return {
           id: e.courseId,
-          subjectNameUz: e.course.subject.nameUz,
-          subjectNameRu: e.course.subject.nameRu,
+          subjectName: e.course.subject.name,
           semester: e.course.semester,
           completed: done,
           total,

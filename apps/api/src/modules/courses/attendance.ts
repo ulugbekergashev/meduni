@@ -66,9 +66,7 @@ export async function listSessions(courseId: number, teacherId: number, opts: { 
     return {
       id: s.id,
       date: s.date,
-      title: s.title ?? (s.topic ? s.topic.titleUz : null),
-      titleUz: s.title ?? s.topic?.titleUz ?? null,
-      titleRu: s.title ?? s.topic?.titleRu ?? null,
+      title: s.title ?? s.topic?.title ?? null,
       topicId: s.topicId,
       room: s.room,
       markedCount: marked,
@@ -236,7 +234,7 @@ async function buildReport(courseId: number, teacherId: number, opts: { from?: s
   });
 
   return {
-    sessions: sessions.map((s) => ({ id: s.id, date: s.date, title: s.title ?? s.topic?.titleUz ?? null, titleUz: s.title ?? s.topic?.titleUz ?? null, titleRu: s.title ?? s.topic?.titleRu ?? null })),
+    sessions: sessions.map((s) => ({ id: s.id, date: s.date, title: s.title ?? s.topic?.title ?? null })),
     students: rows,
   };
 }

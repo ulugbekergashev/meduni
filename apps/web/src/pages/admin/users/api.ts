@@ -14,11 +14,9 @@ export interface UserRow {
   groupId: number | null;
   groupName: string | null;
   departmentId: number | null;
-  departmentNameUz: string | null;
-  departmentNameRu: string | null;
+  departmentName: string | null;
   facultyId: number | null;
-  facultyNameUz: string | null;
-  facultyNameRu: string | null;
+  facultyName: string | null;
   position: string | null;
 }
 

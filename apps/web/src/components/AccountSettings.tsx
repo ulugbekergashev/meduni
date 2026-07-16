@@ -16,8 +16,7 @@ interface Account {
   role: "ADMIN" | "SUPERADMIN" | "FACULTY_ADMIN" | "DEPT_ADMIN" | "TEACHER" | "STUDENT";
   locale: "uz" | "ru";
   contextType: "group" | "department" | null;
-  contextUz: string | null;
-  contextRu: string | null;
+  context: string | null;
 }
 
 function Row({ icon, label, value }: { icon: typeof Mail; label: string; value: string }) {
@@ -84,7 +83,7 @@ export function AccountSettings() {
   if (q.isLoading) return <div className="flex min-h-[40vh] items-center justify-center"><Spinner size={26} /></div>;
 
   const initials = (a?.fullName ?? "").split(" ").filter(Boolean).slice(0, 2).map((s) => s[0]?.toUpperCase()).join("") || "?";
-  const context = a?.contextType ? (locale === "ru" ? a.contextRu : a.contextUz) : null;
+  const context = a?.contextType ? a.context : null;
 
   return (
     <div className="mx-auto max-w-md space-y-4">
