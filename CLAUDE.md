@@ -672,6 +672,19 @@ Barcha modullar tugadi (1-17).
   kurslar soni. i18n `student.overall/summary*`. tsc+build toza, /me/profile smoke.
   **Barcha fazalar (0/1/1B/2/3/4) bajarildi** — reja `.claude/plans/design-overhaul-2026-07.md`.
 
+- **Tuzilma → bitta DARAXT sahifa (2026-07-17, foydalanuvchi: "4 tab yoqmayapti").**
+  Ierarxik ma'lumot yassi jadvallarda edi — endi Google Workspace org-unit uslubidagi daraxt.
+  Backend: `GET /api/v1/structure/tree` (org router, scoped: SUPER=hamma, FACULTY=o'z
+  fakulteti, DEPT=o'z kafedrasi) — fakultet→kafedra(→fan+courseCount, teacherCount)+
+  guruhlar(studentCount) bir so'rovda. Frontend `StructurePage`: ochilib-yopiladigan daraxt
+  (fakultet Card → kafedra qatorlari → fan qatorlari + "Guruhlar (N)" tuguni), har darajada
+  son-chiplar, joyida qo'shish/tahrirlash/o'chirish (bitta generik modal + ConfirmDialog,
+  409 HAS_CHILDREN xatosi dialogда ko'rinadi), rol-gating (fakultet CUD=super; kafedra/
+  guruh=super+fakultet-admin; fan=uchchala tier). Yozuvlar tree + eski ro'yxat query'larni
+  invalidate qiladi. Eski 4 tab + StructureLayout O'CHIRILDI, `/admin/structure/*` →
+  redirect; `structure.*` i18n bo'limi yangidan yozildi (add/edit/confirmDelete nested).
+  Smoke: 3 admin tier daraxtni oladi; tsc+build toza.
+
 ## 9. Loyiha holati va ishga tushirish (operatsion — sessiya 0)
 
 **Monorepo (npm workspaces):**

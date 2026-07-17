@@ -5,11 +5,7 @@ import { RoleRedirect } from "./pages/RoleRedirect";
 import { Login } from "./pages/Login";
 import { AdminShell } from "./pages/admin/AdminShell";
 import { AdminDashboard } from "./pages/admin/AdminDashboard";
-import { StructureLayout } from "./pages/admin/structure/StructureLayout";
-import { FacultiesTab } from "./pages/admin/structure/FacultiesTab";
-import { DepartmentsTab } from "./pages/admin/structure/DepartmentsTab";
-import { SubjectsTab } from "./pages/admin/structure/SubjectsTab";
-import { GroupsTab } from "./pages/admin/structure/GroupsTab";
+import { StructurePage } from "./pages/admin/structure/StructurePage";
 import { UsersPage } from "./pages/admin/users/UsersPage";
 import { UserProfilePage } from "./pages/admin/users/UserProfilePage";
 import { CoursesPage } from "./pages/admin/courses/CoursesPage";
@@ -56,13 +52,9 @@ export function App() {
         }
       >
         <Route index element={<AdminDashboard />} />
-        <Route path="structure" element={<StructureLayout />}>
-          <Route index element={<Navigate to="faculties" replace />} />
-          <Route path="faculties" element={<FacultiesTab />} />
-          <Route path="departments" element={<DepartmentsTab />} />
-          <Route path="subjects" element={<SubjectsTab />} />
-          <Route path="groups" element={<GroupsTab />} />
-        </Route>
+        <Route path="structure" element={<StructurePage />} />
+        {/* Old tab URLs → the single tree page */}
+        <Route path="structure/*" element={<Navigate to="/admin/structure" replace />} />
         <Route path="users" element={<UsersPage />} />
         <Route path="users/:id" element={<UserProfilePage />} />
         <Route path="courses" element={<CoursesPage />} />
