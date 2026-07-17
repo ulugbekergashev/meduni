@@ -6,6 +6,8 @@ import { Login } from "./pages/Login";
 import { AdminShell } from "./pages/admin/AdminShell";
 import { AdminDashboard } from "./pages/admin/AdminDashboard";
 import { StructurePage } from "./pages/admin/structure/StructurePage";
+import { FacultyPage } from "./pages/admin/structure/FacultyPage";
+import { DepartmentPage } from "./pages/admin/structure/DepartmentPage";
 import { UsersPage } from "./pages/admin/users/UsersPage";
 import { UserProfilePage } from "./pages/admin/users/UserProfilePage";
 import { CoursesPage } from "./pages/admin/courses/CoursesPage";
@@ -53,7 +55,9 @@ export function App() {
       >
         <Route index element={<AdminDashboard />} />
         <Route path="structure" element={<StructurePage />} />
-        {/* Old tab URLs → the single tree page */}
+        <Route path="structure/f/:id" element={<FacultyPage />} />
+        <Route path="structure/d/:id" element={<DepartmentPage />} />
+        {/* Old tab URLs → the hub */}
         <Route path="structure/*" element={<Navigate to="/admin/structure" replace />} />
         <Route path="users" element={<UsersPage />} />
         <Route path="users/:id" element={<UserProfilePage />} />
