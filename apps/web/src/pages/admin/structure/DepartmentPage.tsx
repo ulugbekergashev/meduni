@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, BookMarked, Pencil, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, BookMarked, Pencil, Phone, Plus, Trash2, UserRound } from "lucide-react";
 import { Button, Card, Icon, Spinner } from "@meduni/ui";
 import { useMe } from "../../../lib/auth";
+import { PasswordModal } from "../users/PasswordModal";
 import {
   CountChip,
   EntityDeleteDialog,
@@ -28,6 +29,7 @@ export function DepartmentPage() {
 
   const [modal, setModal] = useState<ModalReq | null>(null);
   const [del, setDel] = useState<DeleteReq | null>(null);
+  const [revealPassword, setRevealPassword] = useState<string | null>(null);
 
   const role = me?.role;
   const canDept = role === "superadmin" || role === "faculty_admin";
@@ -59,6 +61,19 @@ export function DepartmentPage() {
       <div className="mt-3 flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-h1 font-bold text-ink">{d.name}</h1>
+          {d.admins.length > 0 && (
+            <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[13px] text-ink-soft">
+              <span className="inline-flex items-center gap-1.5">
+                <Icon icon={UserRound} size={14} className="text-brand" />
+                <span className="font-semibold text-ink">{t("headLabel")}:</span> {d.admins[0].fullName}
+              </span>
+              {d.admins[0].phone && (
+                <span className="inline-flex items-center gap-1 text-ink-faint">
+                  <Icon icon={Phone} size={13} /> {d.admins[0].phone}
+                </span>
+              )}
+            </p>
+          )}
           <div className="mt-1.5 flex flex-wrap gap-1.5">
             <CountChip>{t("nSubjects", { n: d.subjects.length })}</CountChip>
             <CountChip>{t("nTeachers", { n: d.teacherCount })}</CountChip>
@@ -127,7 +142,18 @@ export function DepartmentPage() {
         </div>
       </Card>
 
-      {modal && <EntityFormModal kind={modal.kind} parentId={modal.parentId} editing={modal.editing} onClose={() => setModal(null)} />}
+      {modal && (
+        <EntityFormModal
+          kind={modal.kind}
+          parentId={modal.parentId}
+          editing={modal.editing}
+          onClose={(pw) => {
+            setModal(null);
+            if (pw) setRevealPassword(pw);
+          }}
+        />
+      )}
+      <PasswordModal password={revealPassword} onClose={() => setRevealPassword(null)} />
       {del && (
         <EntityDeleteDialog
           kind={del.kind}

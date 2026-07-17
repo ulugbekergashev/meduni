@@ -9,10 +9,11 @@ import { useLocale } from "../../../lib/useLocale";
 
 // ---- Tree payload (one scoped query feeds all three structure pages) ----
 
+export interface TreeAdmin { fullName: string; phone: string | null }
 export interface TreeSubject { id: number; name: string; description: string | null; courseCount: number }
-export interface TreeDept { id: number; name: string; teacherCount: number; subjects: TreeSubject[] }
+export interface TreeDept { id: number; name: string; teacherCount: number; admins: TreeAdmin[]; subjects: TreeSubject[] }
 export interface TreeGroup { id: number; name: string; yearOfStudy: number; studentCount: number }
-export interface TreeFaculty { id: number; name: string; departments: TreeDept[]; groups: TreeGroup[] }
+export interface TreeFaculty { id: number; name: string; admins: TreeAdmin[]; departments: TreeDept[]; groups: TreeGroup[] }
 
 export function useStructureTree() {
   return useQuery({
@@ -59,6 +60,10 @@ export interface EntityEditing {
   parentId: number;
 }
 
+interface CreateUnitResp {
+  admin?: { generatedPassword: string | null } | null;
+}
+
 export function EntityFormModal({
   kind,
   parentId,
@@ -69,7 +74,8 @@ export function EntityFormModal({
   /** Parent for creates: faculty for dept/group, department for subject. */
   parentId?: number;
   editing?: EntityEditing;
-  onClose: () => void;
+  /** `revealPassword` is set when a unit admin was created with a generated password. */
+  onClose: (revealPassword?: string | null) => void;
 }) {
   const { t } = useTranslation(undefined, { keyPrefix: "structure" });
   const { t: tc } = useTranslation(undefined, { keyPrefix: "common" });
@@ -80,7 +86,19 @@ export function EntityFormModal({
   const [name, setName] = useState(editing?.name ?? "");
   const [description, setDescription] = useState(editing?.description ?? "");
   const [yearOfStudy, setYearOfStudy] = useState(String(editing?.yearOfStudy ?? 1));
+  // Optional unit admin (dekan/mudir) — create mode only.
+  const [adminFullName, setAdminFullName] = useState("");
+  const [adminEmail, setAdminEmail] = useState("");
+  const [adminPhone, setAdminPhone] = useState("");
+  const [adminPassword, setAdminPassword] = useState("");
+  // Optional AI quota — department create only. 0 = unlimited.
+  const [quotaTokens, setQuotaTokens] = useState("0");
+  const [quotaImages, setQuotaImages] = useState("0");
+  const [quotaCost, setQuotaCost] = useState("0");
   const [error, setError] = useState<string | null>(null);
+
+  const withAdmin = !editing && (kind === "faculty" || kind === "department");
+  const withQuota = !editing && kind === "department";
 
   const onSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -91,22 +109,49 @@ export function EntityFormModal({
     const parent = editing ? editing.parentId : parentId;
     if (kind === "department" || kind === "group") body.facultyId = parent;
     if (kind === "subject") body.departmentId = parent;
+
+    if (withAdmin) {
+      const anyAdmin = adminFullName.trim() || adminEmail.trim();
+      if (anyAdmin) {
+        if (!adminFullName.trim() || !adminEmail.trim()) {
+          setError(t("adminNeedsBoth"));
+          return;
+        }
+        body.admin = {
+          fullName: adminFullName.trim(),
+          email: adminEmail.trim(),
+          phone: adminPhone.trim() || null,
+          password: adminPassword.trim() || null,
+        };
+      }
+    }
+    if (withQuota) {
+      const tok = Number(quotaTokens) || 0;
+      const img = Number(quotaImages) || 0;
+      const cost = Number(quotaCost) || 0;
+      if (tok > 0 || img > 0 || cost > 0) {
+        body.quota = { monthlyTokenLimit: tok, monthlyImageLimit: img, monthlyCostLimit: cost };
+      }
+    }
+
     mutate.mutate(
       editing
         ? { method: "PATCH", path: `/api/v1/${RESOURCE[kind]}/${editing.id}`, body }
         : { method: "POST", path: `/api/v1/${RESOURCE[kind]}`, body },
       {
-        onSuccess: () => {
+        onSuccess: (resp) => {
           show(editing ? tc("updated") : tc("added"));
-          onClose();
+          onClose((resp as CreateUnitResp | undefined)?.admin?.generatedPassword ?? null);
         },
         onError: (err) => setError(apiErrorMessage(err, locale) ?? tc("genericError")),
       }
     );
   };
 
+  const adminSectionTitle = kind === "faculty" ? t("adminSection.faculty") : t("adminSection.department");
+
   return (
-    <Modal open onClose={onClose} title={editing ? t(`edit.${kind}`) : t(`add.${kind}`)}>
+    <Modal open onClose={() => onClose()} title={editing ? t(`edit.${kind}`) : t(`add.${kind}`)} className={withAdmin ? "max-w-2xl" : undefined}>
       <form onSubmit={onSubmit} className="space-y-4">
         <Field label={kind === "group" ? t("groupName") : tc("name")}>
           <Input
@@ -131,9 +176,50 @@ export function EntityFormModal({
             </Select>
           </Field>
         )}
+
+        {withAdmin && (
+          <div className="rounded-control border border-line bg-bg/50 p-4">
+            <p className="text-[13px] font-bold text-ink">{adminSectionTitle}</p>
+            <p className="mt-0.5 text-[12px] text-ink-faint">{t("adminSectionHint")}</p>
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              <Field label={t("adminFullName")}>
+                <Input value={adminFullName} onChange={(e) => setAdminFullName(e.target.value)} />
+              </Field>
+              <Field label={t("adminEmail")}>
+                <Input type="email" value={adminEmail} onChange={(e) => setAdminEmail(e.target.value)} />
+              </Field>
+              <Field label={t("adminPhone")}>
+                <Input value={adminPhone} onChange={(e) => setAdminPhone(e.target.value)} />
+              </Field>
+              <Field label={t("adminPassword")}>
+                <Input value={adminPassword} onChange={(e) => setAdminPassword(e.target.value)} placeholder="••••••" />
+                <p className="mt-1 text-[11.5px] text-ink-faint">{t("adminPasswordHint")}</p>
+              </Field>
+            </div>
+          </div>
+        )}
+
+        {withQuota && (
+          <div className="rounded-control border border-line bg-bg/50 p-4">
+            <p className="text-[13px] font-bold text-ink">{t("quotaSection")}</p>
+            <p className="mt-0.5 text-[12px] text-ink-faint">{t("quotaSectionHint")}</p>
+            <div className="mt-3 grid grid-cols-3 gap-3">
+              <Field label={t("quotaTokens")}>
+                <Input type="number" min={0} value={quotaTokens} onChange={(e) => setQuotaTokens(e.target.value)} />
+              </Field>
+              <Field label={t("quotaImages")}>
+                <Input type="number" min={0} value={quotaImages} onChange={(e) => setQuotaImages(e.target.value)} />
+              </Field>
+              <Field label={t("quotaCost")}>
+                <Input type="number" min={0} step="0.01" value={quotaCost} onChange={(e) => setQuotaCost(e.target.value)} />
+              </Field>
+            </div>
+          </div>
+        )}
+
         {error && <p className="text-[13px] text-rose">{error}</p>}
         <div className="flex justify-end gap-2">
-          <Button type="button" variant="ghost" onClick={onClose}>{tc("cancel")}</Button>
+          <Button type="button" variant="ghost" onClick={() => onClose()}>{tc("cancel")}</Button>
           <Button type="submit" disabled={mutate.isPending}>{editing ? tc("save") : tc("add")}</Button>
         </div>
       </form>

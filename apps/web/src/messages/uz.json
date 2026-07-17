@@ -775,7 +775,25 @@
     "departmentsSection": "Kafedralar",
     "groupsSection": "Guruhlar",
     "subjectsSection": "Fanlar",
-    "notFound": "Boʻlim topilmadi."
+    "notFound": "Boʻlim topilmadi.",
+    "adminSection": {
+      "faculty": "Dekan — fakultet admini (ixtiyoriy)",
+      "department": "Mudir — kafedra admini (ixtiyoriy)"
+    },
+    "adminSectionHint": "Toʻldirsangiz — unga login hisobi ochiladi va birlik unga biriktiriladi.",
+    "adminFullName": "FISH",
+    "adminEmail": "Email (login)",
+    "adminPhone": "Telefon (ixtiyoriy)",
+    "adminPassword": "Parol",
+    "adminPasswordHint": "Boʻsh qoldirsangiz — avtomatik yaratiladi va koʻrsatiladi.",
+    "adminNeedsBoth": "Admin hisobi uchun FISH va email ikkalasi kerak.",
+    "quotaSection": "AI limitlar (oylik)",
+    "quotaSectionHint": "0 = cheksiz. Keyin AI monitoring sahifasida oʻzgartirsa boʻladi.",
+    "quotaTokens": "Tokenlar",
+    "quotaImages": "Rasmlar",
+    "quotaCost": "Xarajat ($)",
+    "deanLabel": "Dekan",
+    "headLabel": "Mudir"
   },
   "users": {
     "title": "Foydalanuvchilar",

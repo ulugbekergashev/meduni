@@ -45,8 +45,28 @@ const wrap = (fn: RequestHandler): RequestHandler => (req, res, next) =>
 // Single-language names (Faza 1): one `name` field, entered as-is.
 const nameField = z.string().trim().min(1);
 
-const facultyIn = z.object({ name: nameField });
-const departmentIn = z.object({ facultyId: z.number().int().positive(), name: nameField });
+// Optional admin account (dekan/mudir) created together with the unit.
+const adminIn = z
+  .object({
+    fullName: z.string().trim().min(1),
+    email: z.string().trim().email(),
+    phone: z.string().trim().optional().nullable(),
+    password: z.string().trim().min(4).optional().nullable(),
+  })
+  .optional()
+  .nullable();
+const quotaIn = z
+  .object({
+    monthlyTokenLimit: z.number().int().min(0),
+    monthlyImageLimit: z.number().int().min(0),
+    monthlyCostLimit: z.number().min(0),
+  })
+  .optional()
+  .nullable();
+
+const facultyIn = z.object({ name: nameField, admin: adminIn });
+const facultyUpdate = z.object({ name: nameField });
+const departmentIn = z.object({ facultyId: z.number().int().positive(), name: nameField, admin: adminIn, quota: quotaIn });
 const departmentUpdate = z.object({ facultyId: z.number().int().positive().optional(), name: nameField });
 const subjectIn = z.object({
   departmentId: z.number().int().positive(),
@@ -85,12 +105,12 @@ orgRouter.get("/faculties", wrap(async (req, res) => {
 orgRouter.post("/faculties", wrap(async (req, res) => {
   const scope = await adminScope(req);
   if (scope.level !== "SUPER") throw forbidden();
-  res.status(201).json(await svc.createFaculty(parseBody(facultyIn, req.body)));
+  res.status(201).json(await svc.createFaculty(parseBody(facultyIn, req.body), req.user!.id));
 }));
 orgRouter.patch("/faculties/:id", wrap(async (req, res) => {
   const scope = await adminScope(req);
   if (scope.level !== "SUPER") throw forbidden();
-  res.json(await svc.updateFaculty(parseId(req.params.id), parseBody(facultyIn, req.body)));
+  res.json(await svc.updateFaculty(parseId(req.params.id), parseBody(facultyUpdate, req.body)));
 }));
 orgRouter.delete("/faculties/:id", wrap(async (req, res) => {
   const scope = await adminScope(req);
@@ -112,7 +132,7 @@ orgRouter.post("/departments", wrap(async (req, res) => {
   if (scope.level === "DEPT") throw forbidden();
   const body = parseBody(departmentIn, req.body);
   assertFacultyScope(scope, body.facultyId);
-  res.status(201).json(await svc.createDepartment(body));
+  res.status(201).json(await svc.createDepartment(body, req.user!.id));
 }));
 orgRouter.patch("/departments/:id", wrap(async (req, res) => {
   const scope = await adminScope(req);
