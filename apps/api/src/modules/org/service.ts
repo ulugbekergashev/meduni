@@ -1,5 +1,40 @@
 import { prisma } from "../../lib/prisma";
 import { conflict, duplicate, notFound } from "../../lib/errors";
+import type { AdminScope } from "../../middleware/adminScope";
+
+// ---------- Structure tree (single-page overview) ----------
+
+/** Whole university skeleton in one call, collapsed to the caller's scope:
+ *  SUPER — all faculties; FACULTY — own faculty; DEPT — own faculty with only
+ *  the own department (groups stay visible read-only). */
+export async function structureTree(scope: AdminScope) {
+  const rows = await prisma.faculty.findMany({
+    where: scope.level === "SUPER" ? {} : { id: scope.facultyId! },
+    orderBy: { id: "asc" },
+    include: {
+      departments: {
+        where: scope.level === "DEPT" ? { id: scope.departmentId! } : {},
+        orderBy: { id: "asc" },
+        include: {
+          subjects: { orderBy: { id: "asc" }, include: { _count: { select: { courses: true } } } },
+          _count: { select: { teachers: true } },
+        },
+      },
+      groups: { orderBy: { name: "asc" }, include: { _count: { select: { students: true } } } },
+    },
+  });
+  return rows.map((f) => ({
+    id: f.id,
+    name: f.name,
+    departments: f.departments.map((d) => ({
+      id: d.id,
+      name: d.name,
+      teacherCount: d._count.teachers,
+      subjects: d.subjects.map((s) => ({ id: s.id, name: s.name, description: s.description, courseCount: s._count.courses })),
+    })),
+    groups: f.groups.map((g) => ({ id: g.id, name: g.name, yearOfStudy: g.yearOfStudy, studentCount: g._count.students })),
+  }));
+}
 
 // ---------- Faculties ----------
 

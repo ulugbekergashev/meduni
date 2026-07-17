@@ -69,6 +69,13 @@ const groupUpdate = z.object({
   yearOfStudy: z.number().int().min(1).max(6),
 });
 
+// Structure tree — the whole skeleton in one call (scoped).
+
+orgRouter.get("/structure/tree", wrap(async (req, res) => {
+  const scope = await adminScope(req);
+  res.json(await svc.structureTree(scope));
+}));
+
 // Faculties — CUD is SUPERADMIN-only; lists collapse to the caller's scope.
 
 orgRouter.get("/faculties", wrap(async (req, res) => {
