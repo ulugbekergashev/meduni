@@ -684,6 +684,14 @@ Barcha modullar tugadi (1-17).
   invalidate qiladi. Eski 4 tab + StructureLayout O'CHIRILDI, `/admin/structure/*` →
   redirect; `structure.*` i18n bo'limi yangidan yozildi (add/edit/confirmDelete nested).
   Smoke: 3 admin tier daraxtni oladi; tsc+build toza.
+  ⚠️ KEYIN QAYTA ISHLANDI (o'sha kun): foydalanuvchi daraxtni "tiqilib qolgan" dedi —
+  DRILL-DOWN'ga o'tildi: hub (fakultet kartalari, jami sonlar) → /admin/structure/f/:id
+  (FacultyPage: Kafedralar ro'yxat-karta [bosilsa kafedra sahifasi] + Guruhlar ro'yxati,
+  2 ustun) → /admin/structure/d/:id (DepartmentPage: Fanlar). Umumiy qismlar
+  `structure/shared.tsx` (useStructureTree, useStructureMutation, EntityFormModal,
+  EntityDeleteDialog — 4 kind uchun bitta generik modal/dialog). Hammasi bitta
+  ["structure-tree"] query'dan slice oladi. Har sahifa keng, breadcrumb bilan;
+  o'chirish detal sahifadан — muvaffaqiyatda yuqoriga navigate.
 
 ## 9. Loyiha holati va ishga tushirish (operatsion — sessiya 0)
 

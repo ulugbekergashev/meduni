@@ -771,7 +771,11 @@
     "groupName": "Название группы",
     "groupNamePlaceholder": "например 101-A",
     "yearOfStudy": "Год обучения",
-    "descriptionOptional": "Описание (необязательно)"
+    "descriptionOptional": "Описание (необязательно)",
+    "departmentsSection": "Кафедры",
+    "groupsSection": "Группы",
+    "subjectsSection": "Предметы",
+    "notFound": "Раздел не найден."
   },
   "users": {
     "title": "Пользователи",

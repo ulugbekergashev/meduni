@@ -771,7 +771,11 @@
     "groupName": "Guruh nomi",
     "groupNamePlaceholder": "masalan 101-A",
     "yearOfStudy": "Kurs yili",
-    "descriptionOptional": "Tavsif (ixtiyoriy)"
+    "descriptionOptional": "Tavsif (ixtiyoriy)",
+    "departmentsSection": "Kafedralar",
+    "groupsSection": "Guruhlar",
+    "subjectsSection": "Fanlar",
+    "notFound": "Boʻlim topilmadi."
   },
   "users": {
     "title": "Foydalanuvchilar",
