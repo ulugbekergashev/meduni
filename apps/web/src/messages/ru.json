@@ -775,7 +775,25 @@
     "departmentsSection": "Кафедры",
     "groupsSection": "Группы",
     "subjectsSection": "Предметы",
-    "notFound": "Раздел не найден."
+    "notFound": "Раздел не найден.",
+    "adminSection": {
+      "faculty": "Декан — админ факультета (необязательно)",
+      "department": "Заведующий — админ кафедры (необязательно)"
+    },
+    "adminSectionHint": "Если заполнить — для него создастся логин, и подразделение будет закреплено за ним.",
+    "adminFullName": "ФИО",
+    "adminEmail": "Email (логин)",
+    "adminPhone": "Телефон (необязательно)",
+    "adminPassword": "Пароль",
+    "adminPasswordHint": "Оставьте пустым — создастся автоматически и будет показан.",
+    "adminNeedsBoth": "Для аккаунта нужны и ФИО, и email.",
+    "quotaSection": "AI-лимиты (в месяц)",
+    "quotaSectionHint": "0 = без лимита. Потом можно изменить на странице AI-мониторинга.",
+    "quotaTokens": "Токены",
+    "quotaImages": "Изображения",
+    "quotaCost": "Расход ($)",
+    "deanLabel": "Декан",
+    "headLabel": "Заведующий"
   },
   "users": {
     "title": "Пользователи",

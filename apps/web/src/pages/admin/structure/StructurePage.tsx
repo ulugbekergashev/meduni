@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Building2, ChevronRight, Landmark, Plus, Users } from "lucide-react";
 import { Button, Card, EmptyState, Icon, Spinner } from "@meduni/ui";
 import { useMe } from "../../../lib/auth";
+import { PasswordModal } from "../users/PasswordModal";
 import { EntityFormModal, useStructureTree } from "./shared";
 
 /** Structure hub: one spacious card per faculty — click to drill in. */
@@ -14,6 +15,7 @@ export function StructurePage() {
   const { data: me } = useMe();
   const tree = useStructureTree();
   const [adding, setAdding] = useState(false);
+  const [revealPassword, setRevealPassword] = useState<string | null>(null);
 
   const canFaculty = me?.role === "superadmin";
   const faculties = tree.data ?? [];
@@ -81,7 +83,16 @@ export function StructurePage() {
         )}
       </div>
 
-      {adding && <EntityFormModal kind="faculty" onClose={() => setAdding(false)} />}
+      {adding && (
+        <EntityFormModal
+          kind="faculty"
+          onClose={(pw) => {
+            setAdding(false);
+            if (pw) setRevealPassword(pw);
+          }}
+        />
+      )}
+      <PasswordModal password={revealPassword} onClose={() => setRevealPassword(null)} />
     </div>
   );
 }

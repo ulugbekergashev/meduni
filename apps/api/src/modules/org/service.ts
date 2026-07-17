@@ -1,6 +1,57 @@
+import argon2 from "argon2";
 import { prisma } from "../../lib/prisma";
 import { conflict, duplicate, notFound } from "../../lib/errors";
+import { generatePassword } from "../../lib/password";
 import type { AdminScope } from "../../middleware/adminScope";
+
+/** Optional admin account created together with a faculty (dekan) or department (mudir). */
+export interface UnitAdminInput {
+  fullName: string;
+  email: string;
+  phone?: string | null;
+  password?: string | null;
+}
+
+export interface UnitQuotaInput {
+  monthlyTokenLimit: number;
+  monthlyImageLimit: number;
+  monthlyCostLimit: number;
+}
+
+type Tx = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
+
+/** Create the unit's admin user inside the same transaction; returns reveal payload. */
+async function createUnitAdmin(
+  tx: Tx,
+  input: UnitAdminInput,
+  role: "FACULTY_ADMIN" | "DEPT_ADMIN",
+  unit: { facultyId?: number; adminDepartmentId?: number },
+  actorId?: number
+) {
+  const email = input.email.trim().toLowerCase();
+  const clash = await tx.user.findFirst({ where: { email } });
+  if (clash) throw conflict("DUPLICATE_EMAIL", "Bu email band", "Этот email занят");
+  const generated = input.password?.trim() ? null : generatePassword();
+  const plain = input.password?.trim() || generated!;
+  const passwordHash = await argon2.hash(plain);
+  const u = await tx.user.create({
+    data: {
+      fullName: input.fullName.trim(),
+      email,
+      phone: input.phone?.trim() || null,
+      role,
+      locale: "uz",
+      passwordHash,
+      ...unit,
+    },
+  });
+  if (actorId) {
+    await tx.auditLog.create({
+      data: { actorId, action: "CREATE_USER", entity: "User", entityId: u.id, detailsJson: { role, email } },
+    });
+  }
+  return { id: u.id, fullName: u.fullName, email: u.email, generatedPassword: generated };
+}
 
 // ---------- Structure tree (single-page overview) ----------
 
@@ -12,10 +63,12 @@ export async function structureTree(scope: AdminScope) {
     where: scope.level === "SUPER" ? {} : { id: scope.facultyId! },
     orderBy: { id: "asc" },
     include: {
+      admins: { where: { isActive: true }, select: { fullName: true, phone: true } },
       departments: {
         where: scope.level === "DEPT" ? { id: scope.departmentId! } : {},
         orderBy: { id: "asc" },
         include: {
+          admins: { where: { isActive: true }, select: { fullName: true, phone: true } },
           subjects: { orderBy: { id: "asc" }, include: { _count: { select: { courses: true } } } },
           _count: { select: { teachers: true } },
         },
@@ -26,9 +79,11 @@ export async function structureTree(scope: AdminScope) {
   return rows.map((f) => ({
     id: f.id,
     name: f.name,
+    admins: f.admins,
     departments: f.departments.map((d) => ({
       id: d.id,
       name: d.name,
+      admins: d.admins,
       teacherCount: d._count.teachers,
       subjects: d.subjects.map((s) => ({ id: s.id, name: s.name, description: s.description, courseCount: s._count.courses })),
     })),
@@ -43,11 +98,19 @@ export async function listFaculties(onlyId?: number) {
   return rows.map((f) => ({ id: f.id, name: f.name }));
 }
 
-export async function createFaculty(data: { name: string }) {
+export async function createFaculty(
+  data: { name: string; admin?: UnitAdminInput | null },
+  actorId?: number
+) {
   const clash = await prisma.faculty.findFirst({ where: { name: data.name } });
   if (clash) throw duplicate();
-  const f = await prisma.faculty.create({ data });
-  return { id: f.id, name: f.name };
+  return prisma.$transaction(async (tx) => {
+    const f = await tx.faculty.create({ data: { name: data.name } });
+    const admin = data.admin
+      ? await createUnitAdmin(tx, data.admin, "FACULTY_ADMIN", { facultyId: f.id }, actorId)
+      : null;
+    return { id: f.id, name: f.name, admin };
+  });
 }
 
 export async function updateFaculty(id: number, data: { name: string }) {
@@ -103,14 +166,37 @@ async function ensureFaculty(facultyId: number) {
   if (!f) throw notFound("Fakultet");
 }
 
-export async function createDepartment(data: { facultyId: number; name: string }) {
+export async function createDepartment(
+  data: { facultyId: number; name: string; admin?: UnitAdminInput | null; quota?: UnitQuotaInput | null },
+  actorId?: number
+) {
   await ensureFaculty(data.facultyId);
   const clash = await prisma.department.findFirst({
     where: { facultyId: data.facultyId, name: data.name },
   });
   if (clash) throw duplicate();
-  const d = await prisma.department.create({ data });
-  return { id: d.id, facultyId: d.facultyId, name: d.name };
+  return prisma.$transaction(async (tx) => {
+    const d = await tx.department.create({ data: { facultyId: data.facultyId, name: data.name } });
+    const admin = data.admin
+      ? await createUnitAdmin(tx, data.admin, "DEPT_ADMIN", { adminDepartmentId: d.id }, actorId)
+      : null;
+    if (data.quota) {
+      await tx.aiQuota.create({
+        data: {
+          departmentId: d.id,
+          monthlyTokenLimit: data.quota.monthlyTokenLimit,
+          monthlyImageLimit: data.quota.monthlyImageLimit,
+          monthlyCostLimit: data.quota.monthlyCostLimit,
+        },
+      });
+      if (actorId) {
+        await tx.auditLog.create({
+          data: { actorId, action: "UPDATE_QUOTA", entity: "Department", entityId: d.id, detailsJson: { ...data.quota } },
+        });
+      }
+    }
+    return { id: d.id, facultyId: d.facultyId, name: d.name, admin };
+  });
 }
 
 export async function updateDepartment(id: number, data: { facultyId?: number; name: string }) {
