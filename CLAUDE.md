@@ -693,6 +693,19 @@ Barcha modullar tugadi (1-17).
   ["structure-tree"] query'dan slice oladi. Har sahifa keng, breadcrumb bilan;
   o'chirish detal sahifadан — muvaffaqiyatda yuqoriga navigate.
 
+- **Tuzilma: birlik bilan birga admin hisobi + AI limit (2026-07-17).** Fakultet
+  yaratishда ixtiyoriy **dekan** (FACULTY_ADMIN hisobi: FISH/email/telefon/parol),
+  kafedra yaratishда ixtiyoriy **mudir** (DEPT_ADMIN) + **AI limitlar** (token/rasm/$,
+  0=cheksiz → AiQuota). Backend `createFaculty/createDepartment` — bitta
+  **$transaction** (email band → 409 DUPLICATE_EMAIL va birlik ham yaratilmaydi —
+  tekshirildi), parol bo'sh bo'lsa generatePassword → javobda `admin.generatedPassword`
+  (foydalanuvchi o'zi parol berganда null — reveal qilinmaydi), CREATE_USER/UPDATE_QUOTA
+  audit. `structureTree` endi `admins {fullName, phone}` ni fakultet+kafedra darajasida
+  qaytaradi → Faculty/DepartmentPage sarlavhasida "Dekan/Mudir: FISH · tel".
+  EntityFormModal'да admin (2 ustun) va kvota (3 ustun) bo'limlari, PasswordModal reuse.
+  PATCH sxemalari ajratildi (facultyUpdate — admin maydonisiz). Smoke: dekan avto-parol,
+  mudir o'z paroli bilan login 200, tree'da ikkalasi, rollback. tsc+build toza.
+
 ## 9. Loyiha holati va ishga tushirish (operatsion — sessiya 0)
 
 **Monorepo (npm workspaces):**
