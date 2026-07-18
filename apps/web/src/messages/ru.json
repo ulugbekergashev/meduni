@@ -23,7 +23,9 @@
     "settings": "Настройки",
     "logout": "Выйти",
     "students": "Студенты",
-    "staff": "Сотрудники"
+    "staff": "Сотрудники",
+    "myFaculty": "Мой факультет",
+    "myDept": "Моя кафедра"
   },
   "theme": {
     "label": "Тема оформления",
@@ -795,7 +797,9 @@
     "quotaImages": "Изображения",
     "quotaCost": "Расход ($)",
     "deanLabel": "Декан",
-    "headLabel": "Заведующий"
+    "headLabel": "Заведующий",
+    "faculty": "Факультет",
+    "department": "Кафедра"
   },
   "users": {
     "title": "Пользователи",

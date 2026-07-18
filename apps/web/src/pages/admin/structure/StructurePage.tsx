@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
@@ -26,11 +26,28 @@ export function StructurePage() {
   const canFaculty = me?.role === "superadmin";
   const faculties = tree.data ?? [];
 
+  // The hub is the SUPERADMIN's university view. Lower tiers land straight on
+  // their own unit — a faculty admin's world IS their faculty, a dept admin's
+  // world IS their kafedra; showing them the hub was wrong.
+  useEffect(() => {
+    if (!me || !tree.data || me.role === "superadmin") return;
+    if (me.role === "faculty_admin" && tree.data[0]) {
+      navigate(`/admin/staff/f/${tree.data[0].id}`, { replace: true });
+    }
+    if (me.role === "dept_admin" && tree.data[0]?.departments[0]) {
+      navigate(`/admin/staff/d/${tree.data[0].departments[0].id}`, { replace: true });
+    }
+  }, [me, tree.data, navigate]);
+
   const supers = useQuery({
     queryKey: ["staff-supers"],
     queryFn: () => api<{ items: SuperRow[] }>("/api/v1/users?role=SUPERADMIN&page=1"),
     enabled: canFaculty,
   });
+
+  if (me && me.role !== "superadmin") {
+    return <div className="flex min-h-[40vh] items-center justify-center"><Spinner size={26} /></div>;
+  }
 
   return (
     <div>

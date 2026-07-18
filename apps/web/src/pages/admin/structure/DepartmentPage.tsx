@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, BookMarked, Eye, GraduationCap, KeyRound, Pencil, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, BookMarked, Eye, GraduationCap, KeyRound, Landmark, Pencil, Plus, Trash2 } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button, Card, Icon, Spinner, Toggle, useToast } from "@meduni/ui";
 import { Avatar } from "../../../components/Avatar";
@@ -80,14 +80,20 @@ export function DepartmentPage() {
 
   return (
     <div>
-      <button onClick={() => navigate(`/admin/staff/f/${f.id}`)} className="flex items-center gap-1 text-[13.5px] font-medium text-brand-deep hover:underline">
-        <Icon icon={ArrowLeft} size={15} /> {f.name}
-      </button>
+      {/* Up to the faculty — hidden for the dept admin (this page IS their home) */}
+      {canDept && (
+        <button onClick={() => navigate(`/admin/staff/f/${f.id}`)} className="flex items-center gap-1 text-[13.5px] font-medium text-brand-deep hover:underline">
+          <Icon icon={ArrowLeft} size={15} /> {f.name}
+        </button>
+      )}
 
       {/* Header */}
       <div className="mt-3 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-h1 font-bold text-ink">{d.name}</h1>
+          <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.08em] text-amber">
+            <Icon icon={Landmark} size={13} /> {t("department")}
+          </p>
+          <h1 className="mt-0.5 text-h1 font-bold text-ink">{d.name}</h1>
           <div className="mt-1.5 flex flex-wrap gap-1.5">
             <CountChip>{t("nSubjects", { n: d.subjects.length })}</CountChip>
             <CountChip>{t("nTeachers", { n: d.teacherCount })}</CountChip>
