@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, ChevronRight, Landmark, Pencil, Phone, Plus, Trash2, UserRound, Users } from "lucide-react";
+import { ArrowLeft, ChevronRight, Landmark, Pencil, Plus, Trash2, Users } from "lucide-react";
 import { Button, Card, Icon, Spinner } from "@meduni/ui";
 import { useMe } from "../../../lib/auth";
 import { PasswordModal } from "../users/PasswordModal";
 import {
+  AdminCard,
+  AppointModal,
   CountChip,
   EntityDeleteDialog,
   EntityFormModal,
@@ -29,6 +31,7 @@ export function FacultyPage() {
 
   const [modal, setModal] = useState<ModalReq | null>(null);
   const [del, setDel] = useState<DeleteReq | null>(null);
+  const [appointing, setAppointing] = useState(false);
   const [revealPassword, setRevealPassword] = useState<string | null>(null);
 
   const role = me?.role;
@@ -42,7 +45,7 @@ export function FacultyPage() {
   if (!f) {
     return (
       <div>
-        <button onClick={() => navigate("/admin/structure")} className="flex items-center gap-1 text-[13.5px] font-medium text-brand-deep hover:underline">
+        <button onClick={() => navigate("/admin/staff")} className="flex items-center gap-1 text-[13.5px] font-medium text-brand-deep hover:underline">
           <Icon icon={ArrowLeft} size={15} /> {t("title")}
         </button>
         <Card className="mt-4"><p className="py-6 text-center text-[13.5px] text-rose">{t("notFound")}</p></Card>
@@ -52,7 +55,7 @@ export function FacultyPage() {
 
   return (
     <div>
-      <button onClick={() => navigate("/admin/structure")} className="flex items-center gap-1 text-[13.5px] font-medium text-brand-deep hover:underline">
+      <button onClick={() => navigate("/admin/staff")} className="flex items-center gap-1 text-[13.5px] font-medium text-brand-deep hover:underline">
         <Icon icon={ArrowLeft} size={15} /> {t("title")}
       </button>
 
@@ -60,19 +63,6 @@ export function FacultyPage() {
       <div className="mt-3 flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-h1 font-bold text-ink">{f.name}</h1>
-          {f.admins.length > 0 && (
-            <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[13px] text-ink-soft">
-              <span className="inline-flex items-center gap-1.5">
-                <Icon icon={UserRound} size={14} className="text-brand" />
-                <span className="font-semibold text-ink">{t("deanLabel")}:</span> {f.admins[0].fullName}
-              </span>
-              {f.admins[0].phone && (
-                <span className="inline-flex items-center gap-1 text-ink-faint">
-                  <Icon icon={Phone} size={13} /> {f.admins[0].phone}
-                </span>
-              )}
-            </p>
-          )}
           <div className="mt-1.5 flex flex-wrap gap-1.5">
             <CountChip>{t("nDepts", { n: f.departments.length })}</CountChip>
             <CountChip>{t("nGroups", { n: f.groups.length })}</CountChip>
@@ -92,7 +82,18 @@ export function FacultyPage() {
         )}
       </div>
 
-      <div className="mt-6 grid gap-4 lg:grid-cols-2">
+      {/* Dean card */}
+      <div className="mt-5">
+        <AdminCard
+          admin={f.admins[0] ?? null}
+          roleLabel={t("deanLabel")}
+          canManage={canFaculty}
+          onAppoint={() => setAppointing(true)}
+          onReveal={setRevealPassword}
+        />
+      </div>
+
+      <div className="mt-4 grid gap-4 lg:grid-cols-2">
         {/* Departments */}
         <Card className="!p-0">
           <div className="flex items-center justify-between gap-2 border-b border-line px-5 py-3.5">
@@ -109,7 +110,7 @@ export function FacultyPage() {
             {f.departments.map((d) => (
               <button
                 key={d.id}
-                onClick={() => navigate(`/admin/structure/d/${d.id}`)}
+                onClick={() => navigate(`/admin/staff/d/${d.id}`)}
                 className="flex w-full items-center gap-3 border-b border-line px-5 py-3.5 text-left transition-colors last:border-0 hover:bg-bg"
               >
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-control bg-amber-soft text-amber">
@@ -117,7 +118,8 @@ export function FacultyPage() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-[14px] font-semibold text-ink">{d.name}</p>
-                  <p className="text-[12px] text-ink-faint">
+                  <p className="truncate text-[12px] text-ink-faint">
+                    {d.admins[0] ? `${d.admins[0].fullName} · ` : ""}
                     {t("nSubjects", { n: d.subjects.length })} · {t("nTeachers", { n: d.teacherCount })}
                   </p>
                 </div>
@@ -189,6 +191,16 @@ export function FacultyPage() {
           }}
         />
       )}
+      {appointing && (
+        <AppointModal
+          role="FACULTY_ADMIN"
+          unitId={f.id}
+          onClose={(pw) => {
+            setAppointing(false);
+            if (pw) setRevealPassword(pw);
+          }}
+        />
+      )}
       <PasswordModal password={revealPassword} onClose={() => setRevealPassword(null)} />
       {del && (
         <EntityDeleteDialog
@@ -196,7 +208,7 @@ export function FacultyPage() {
           id={del.id}
           name={del.name}
           onClose={() => setDel(null)}
-          onDeleted={del.goUp ? () => navigate("/admin/structure") : undefined}
+          onDeleted={del.goUp ? () => navigate("/admin/staff") : undefined}
         />
       )}
     </div>

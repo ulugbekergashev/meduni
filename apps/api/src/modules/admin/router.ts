@@ -5,6 +5,7 @@ import { ADMIN_ROLES, adminScope } from "../../middleware/adminScope";
 import { prisma } from "../../lib/prisma";
 import * as monitoring from "./monitoring";
 import * as audit from "./audit";
+import * as students from "./students";
 import { adminStats } from "./stats";
 import { adminSearch } from "../search/service";
 
@@ -32,6 +33,28 @@ adminRouter.get("/search", wrap(async (req, res) => {
   const scope = await adminScope(req);
   const q = typeof req.query.q === "string" ? req.query.q : "";
   res.json(await adminSearch(q, { facultyId: scope.facultyId, departmentId: scope.departmentId }));
+}));
+
+// ---------- Students module (contingent; dept admins have no student scope) ----------
+
+adminRouter.get("/students", wrap(async (req, res) => {
+  const scope = await adminScope(req);
+  if (scope.level === "DEPT") throw forbidden();
+  res.json(
+    await students.listStudents(scope, {
+      facultyId: qnum(req.query.facultyId),
+      groupId: qnum(req.query.groupId),
+      active: req.query.active === "true" ? true : req.query.active === "false" ? false : undefined,
+      search: qstr(req.query.search),
+      page: qnum(req.query.page),
+    })
+  );
+}));
+
+adminRouter.get("/students/stats", wrap(async (req, res) => {
+  const scope = await adminScope(req);
+  if (scope.level === "DEPT") throw forbidden();
+  res.json(await students.studentStats(scope));
 }));
 
 adminRouter.get("/ai-usage", wrap(async (req, res) => {

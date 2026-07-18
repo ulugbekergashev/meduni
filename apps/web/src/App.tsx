@@ -8,7 +8,7 @@ import { AdminDashboard } from "./pages/admin/AdminDashboard";
 import { StructurePage } from "./pages/admin/structure/StructurePage";
 import { FacultyPage } from "./pages/admin/structure/FacultyPage";
 import { DepartmentPage } from "./pages/admin/structure/DepartmentPage";
-import { UsersPage } from "./pages/admin/users/UsersPage";
+import { StudentsPage } from "./pages/admin/students/StudentsPage";
 import { UserProfilePage } from "./pages/admin/users/UserProfilePage";
 import { CoursesPage } from "./pages/admin/courses/CoursesPage";
 import { CourseDetail } from "./pages/admin/courses/CourseDetail";
@@ -54,13 +54,15 @@ export function App() {
         }
       >
         <Route index element={<AdminDashboard />} />
-        <Route path="structure" element={<StructurePage />} />
-        <Route path="structure/f/:id" element={<FacultyPage />} />
-        <Route path="structure/d/:id" element={<DepartmentPage />} />
-        {/* Old tab URLs → the hub */}
-        <Route path="structure/*" element={<Navigate to="/admin/structure" replace />} />
-        <Route path="users" element={<UsersPage />} />
+        <Route path="students" element={<StudentsPage />} />
+        <Route path="staff" element={<StructurePage />} />
+        <Route path="staff/f/:id" element={<FacultyPage />} />
+        <Route path="staff/d/:id" element={<DepartmentPage />} />
+        {/* Legacy URLs → the new modules */}
+        <Route path="structure" element={<Navigate to="/admin/staff" replace />} />
+        <Route path="structure/*" element={<Navigate to="/admin/staff" replace />} />
         <Route path="users/:id" element={<UserProfilePage />} />
+        <Route path="users" element={<Navigate to="/admin/students" replace />} />
         <Route path="courses" element={<CoursesPage />} />
         <Route path="courses/:id" element={<CourseDetail />} />
         <Route path="tasks" element={<AdminTasksPage />} />
