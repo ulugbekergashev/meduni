@@ -63,7 +63,7 @@ export function VideoEditor({ content }: { content: ContentFull }) {
     <div>
       <button
         onClick={() => navigate(`/teach/topics/${content.topicId}`)}
-        className="text-[13.5px] font-medium text-brand-deep hover:underline"
+        className="text-[14.5px] font-medium text-brand-deep hover:underline"
       >
         {t("back")}
       </button>
@@ -103,12 +103,12 @@ export function VideoEditor({ content }: { content: ContentFull }) {
           <Card>
             <div className="flex items-center gap-3 py-6">
               <Spinner size={22} />
-              <span className="text-[13.5px] text-ink-soft">{t("building")}</span>
+              <span className="text-[14.5px] text-ink-soft">{t("building")}</span>
             </div>
           </Card>
         ) : video.buildStatus === "error" ? (
           <Card>
-            <p className="py-6 text-center text-[13.5px] text-rose">{t("buildError", { stage: video.errorStage ?? "" })}</p>
+            <p className="py-6 text-center text-[14.5px] text-rose">{t("buildError", { stage: video.errorStage ?? "" })}</p>
           </Card>
         ) : video.hasMp4 ? (
           <div className="overflow-hidden rounded-card border border-line bg-black">
@@ -131,9 +131,9 @@ export function VideoEditor({ content }: { content: ContentFull }) {
         {script.map((seg, i) => (
           <Card key={i} className="space-y-2">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-[13px] font-bold text-ink-soft">{t("segment")} {i + 1}</span>
+              <span className="text-[14px] font-bold text-ink-soft">{t("segment")} {i + 1}</span>
               {seg.visual && (
-                <span className={`inline-flex items-center gap-1 rounded-pill px-2 py-0.5 text-[11.5px] font-semibold ${visualTone[seg.visual.kind] ?? "bg-bg text-ink-soft"}`}>
+                <span className={`inline-flex items-center gap-1 rounded-pill px-2 py-0.5 text-[12.5px] font-semibold ${visualTone[seg.visual.kind] ?? "bg-bg text-ink-soft"}`}>
                   {t(`visual.${seg.visual.kind}`)}: {seg.visual.title}
                 </span>
               )}

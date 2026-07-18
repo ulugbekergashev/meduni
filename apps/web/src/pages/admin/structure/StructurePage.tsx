@@ -54,7 +54,7 @@ export function StructurePage() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-h1 font-bold text-ink">{t("title")}</h1>
-          <p className="mt-1 text-[13.5px] text-ink-soft">{t("subtitle")}</p>
+          <p className="mt-1 text-[14.5px] text-ink-soft">{t("subtitle")}</p>
         </div>
         {canFaculty && (
           <Button icon={<Icon icon={Plus} size={16} />} onClick={() => setAdding(true)}>
@@ -68,15 +68,15 @@ export function StructurePage() {
         <Card className="mt-6 !p-0">
           <div className="flex items-center gap-2 border-b border-line px-5 py-3">
             <Icon icon={ShieldCheck} size={16} className="text-brand-deep" />
-            <h2 className="text-[14px] font-bold text-ink">{ts("leadership")}</h2>
+            <h2 className="text-[15px] font-bold text-ink">{ts("leadership")}</h2>
           </div>
           <div className="flex flex-wrap gap-x-8 gap-y-2 px-5 py-3">
             {supers.data!.items.map((u) => (
               <Link key={u.id} to={`/admin/users/${u.id}`} className="group flex items-center gap-2.5">
                 <Avatar name={u.fullName} />
                 <span className="min-w-0">
-                  <span className="block truncate text-[13.5px] font-semibold text-ink group-hover:underline">{u.fullName}</span>
-                  <span className="block truncate text-[11.5px] text-ink-faint">{u.email}</span>
+                  <span className="block truncate text-[14.5px] font-semibold text-ink group-hover:underline">{u.fullName}</span>
+                  <span className="block truncate text-[12.5px] text-ink-faint">{u.email}</span>
                 </span>
               </Link>
             ))}
@@ -88,7 +88,7 @@ export function StructurePage() {
         {tree.isLoading ? (
           <div className="flex min-h-[30vh] items-center justify-center"><Spinner size={26} /></div>
         ) : tree.isError ? (
-          <Card><p className="py-6 text-center text-[13.5px] text-rose">{tc("genericError")}</p></Card>
+          <Card><p className="py-6 text-center text-[14.5px] text-rose">{tc("genericError")}</p></Card>
         ) : faculties.length === 0 ? (
           <EmptyState
             icon={<Icon icon={Building2} size={24} />}
@@ -117,13 +117,13 @@ export function StructurePage() {
                     <div className="min-w-0">
                       <h3 className="line-clamp-2 text-[16px] font-bold leading-snug text-ink">{f.name}</h3>
                       {f.admins[0] && (
-                        <p className="mt-1 flex items-center gap-1.5 truncate text-[12.5px] text-ink-soft">
+                        <p className="mt-1 flex items-center gap-1.5 truncate text-[13.5px] text-ink-soft">
                           <Icon icon={UserRound} size={13} className="shrink-0 text-brand" />
                           {f.admins[0].fullName}
                         </p>
                       )}
                     </div>
-                    <div className="mt-auto grid grid-cols-2 gap-x-4 gap-y-2 border-t border-line pt-3 text-[12.5px] text-ink-soft">
+                    <div className="mt-auto grid grid-cols-2 gap-x-4 gap-y-2 border-t border-line pt-3 text-[13.5px] text-ink-soft">
                       <span className="inline-flex items-center gap-1.5">
                         <Icon icon={Landmark} size={14} className="text-amber" /> {t("nDepts", { n: f.departments.length })}
                       </span>

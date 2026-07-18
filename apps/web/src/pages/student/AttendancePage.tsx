@@ -17,7 +17,7 @@ function StatTile({ label, value, tone }: { label: string; value: number; tone: 
   return (
     <div className="rounded-card border border-line bg-surface p-3 text-center">
       <p className={cls("text-[24px] font-bold tabular-nums leading-none", tone)}>{value}</p>
-      <p className="mt-1 text-[12px] text-ink-soft">{label}</p>
+      <p className="mt-1 text-[13px] text-ink-soft">{label}</p>
     </div>
   );
 }
@@ -53,7 +53,7 @@ export function AttendancePage() {
             <>
               {/* Overall % */}
               <div className={cls("mt-4 rounded-card border p-5", low ? "border-rose/30 bg-rose-soft" : "border-line bg-surface")}>
-                <p className="text-[12.5px] font-medium uppercase tracking-wide text-ink-soft">{t("overallPct")}</p>
+                <p className="text-[13.5px] font-medium uppercase tracking-wide text-ink-soft">{t("overallPct")}</p>
                 <p className={cls("text-[40px] font-bold leading-none tabular-nums", low ? "text-rose" : "text-brand-deep")}>
                   {pct !== null ? `${pct}%` : "—"}
                 </p>
@@ -61,7 +61,7 @@ export function AttendancePage() {
 
               {/* Low-attendance notice — informative, not scary */}
               {low && (
-                <div className="mt-3 flex items-start gap-2 rounded-card bg-amber-soft p-3.5 text-[13px] text-amber">
+                <div className="mt-3 flex items-start gap-2 rounded-card bg-amber-soft p-3.5 text-[14px] text-amber">
                   <Icon icon={AlertTriangle} size={17} className="mt-0.5 shrink-0" />
                   <p>{t("lowWarning", { pct })}</p>
                 </div>
@@ -77,15 +77,15 @@ export function AttendancePage() {
 
               {/* Filters */}
               <div className="mt-5 flex flex-wrap items-center gap-2">
-                <select value={courseId ?? ""} onChange={(e) => setCourseId(e.target.value ? Number(e.target.value) : undefined)} className="rounded-control border border-line bg-surface px-2 py-2 text-[13px] outline-none focus:border-brand">
+                <select value={courseId ?? ""} onChange={(e) => setCourseId(e.target.value ? Number(e.target.value) : undefined)} className="rounded-control border border-line bg-surface px-2 py-2 text-[14px] outline-none focus:border-brand">
                   <option value="">{t("allCourses")}</option>
                   {(coursesQ.data ?? []).map((c) => (
                     <option key={c.id} value={c.id}>{c.subjectName}</option>
                   ))}
                 </select>
-                <input type="date" value={range.from ?? ""} onChange={(e) => setRange((r) => ({ ...r, from: e.target.value || undefined }))} className="rounded-control border border-line px-2 py-2 text-[13px] outline-none focus:border-brand" />
+                <input type="date" value={range.from ?? ""} onChange={(e) => setRange((r) => ({ ...r, from: e.target.value || undefined }))} className="rounded-control border border-line px-2 py-2 text-[14px] outline-none focus:border-brand" />
                 <span className="text-ink-faint">—</span>
-                <input type="date" value={range.to ?? ""} onChange={(e) => setRange((r) => ({ ...r, to: e.target.value || undefined }))} className="rounded-control border border-line px-2 py-2 text-[13px] outline-none focus:border-brand" />
+                <input type="date" value={range.to ?? ""} onChange={(e) => setRange((r) => ({ ...r, to: e.target.value || undefined }))} className="rounded-control border border-line px-2 py-2 text-[14px] outline-none focus:border-brand" />
               </div>
 
               {/* Sessions */}
@@ -98,14 +98,14 @@ export function AttendancePage() {
                         <Icon icon={m.icon} size={17} />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-[13.5px] font-semibold text-ink">
+                        <p className="truncate text-[14.5px] font-semibold text-ink">
                           {s.title ?? s.courseName}
                         </p>
-                        <p className="truncate text-[12px] text-ink-faint">
+                        <p className="truncate text-[13px] text-ink-faint">
                           {new Date(s.date).toLocaleDateString(locale === "ru" ? "ru-RU" : "uz-UZ")} · {s.courseName}
                         </p>
                       </div>
-                      <span className={cls("shrink-0 rounded-pill px-2.5 py-0.5 text-[11.5px] font-semibold", m.chip)}>{t(`status.${s.status}`)}</span>
+                      <span className={cls("shrink-0 rounded-pill px-2.5 py-0.5 text-[12.5px] font-semibold", m.chip)}>{t(`status.${s.status}`)}</span>
                     </Card>
                   );
                 })}

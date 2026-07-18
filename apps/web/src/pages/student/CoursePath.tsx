@@ -21,7 +21,7 @@ function Chip({ icon, label, done, hint }: { icon: typeof Video; label: string; 
   return (
     <span
       className={cls(
-        "inline-flex items-center gap-1 rounded-pill px-2 py-0.5 text-[11.5px] font-medium",
+        "inline-flex items-center gap-1 rounded-pill px-2 py-0.5 text-[12.5px] font-medium",
         done ? "bg-emerald-soft text-emerald" : "bg-bg text-ink-faint"
       )}
     >
@@ -92,7 +92,7 @@ function TopicCard({ topic, last }: { topic: StudentTopic; last: boolean }) {
         >
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
-              <p className="text-[11.5px] font-bold uppercase tracking-wide text-ink-faint">
+              <p className="text-[12.5px] font-bold uppercase tracking-wide text-ink-faint">
                 {t("topic")} {topic.orderIndex}
               </p>
               <h3 className={cls("mt-0.5 text-section font-bold", topic.state === "LOCKED" ? "text-ink-soft" : "text-ink")}>{title}</h3>
@@ -109,10 +109,10 @@ function TopicCard({ topic, last }: { topic: StudentTopic; last: boolean }) {
                 <div className="h-2 w-full overflow-hidden rounded-pill bg-bg">
                   <div className="h-full rounded-pill bg-brand transition-all" style={{ width: `${Math.max(topic.pct, 2)}%` }} />
                 </div>
-                <p className="mt-1 text-[12px] text-ink-soft">{topic.pct}% {t("done")}</p>
+                <p className="mt-1 text-[13px] text-ink-soft">{topic.pct}% {t("done")}</p>
               </div>
               <Link to={`/app/topics/${topic.id}`}>
-                <button className="flex w-full items-center justify-center gap-2 rounded-control bg-brand px-4 py-2.5 text-[14.5px] font-bold text-white transition-all hover:bg-brand-deep">
+                <button className="flex w-full items-center justify-center gap-2 rounded-control bg-brand px-4 py-2.5 text-[15.5px] font-bold text-white transition-all hover:bg-brand-deep">
                   <Icon icon={PlayCircle} size={18} />
                   {t("continue")}
                 </button>
@@ -122,7 +122,7 @@ function TopicCard({ topic, last }: { topic: StudentTopic; last: boolean }) {
 
           {topic.state === "COMPLETED" && (
             <Link to={`/app/topics/${topic.id}`} className="self-start">
-              <button className="flex items-center gap-1.5 rounded-control border border-line px-3 py-1.5 text-[13px] font-semibold text-ink-soft transition-all hover:bg-bg">
+              <button className="flex items-center gap-1.5 rounded-control border border-line px-3 py-1.5 text-[14px] font-semibold text-ink-soft transition-all hover:bg-bg">
                 <Icon icon={RotateCcw} size={14} />
                 {t("review")}
               </button>
@@ -132,7 +132,7 @@ function TopicCard({ topic, last }: { topic: StudentTopic; last: boolean }) {
           {topic.state === "LOCKED" && topic.reason && (
             <button
               onClick={() => show(locale === "ru" ? topic.reason!.ru : topic.reason!.uz)}
-              className="flex items-start gap-2 rounded-control bg-amber-soft px-3 py-2 text-left text-[12.5px] font-medium text-amber"
+              className="flex items-start gap-2 rounded-control bg-amber-soft px-3 py-2 text-left text-[13.5px] font-medium text-amber"
             >
               <Icon icon={Lock} size={14} className="mt-0.5 shrink-0" />
               {locale === "ru" ? topic.reason.ru : topic.reason.uz}
@@ -155,7 +155,7 @@ export function CoursePath() {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <button onClick={() => navigate("/app")} className="mb-3 flex items-center gap-1 text-[13.5px] font-medium text-brand-deep hover:underline">
+      <button onClick={() => navigate("/app")} className="mb-3 flex items-center gap-1 text-[14.5px] font-medium text-brand-deep hover:underline">
         <Icon icon={ArrowLeft} size={15} />
         {t("back")}
       </button>
@@ -177,7 +177,7 @@ export function CoursePath() {
               {/* Course header */}
               <div className="rounded-card bg-gradient-to-br from-brand-deep to-brand p-5 text-white shadow-md">
                 <h1 className="text-h1 font-bold leading-tight">{c.subjectName}</h1>
-                <p className="mt-1 text-[13px] text-white/85">
+                <p className="mt-1 text-[14px] text-white/85">
                   {c.teacherName}
                   {c.groupName && ` · ${c.groupName}`}
                 </p>
@@ -185,7 +185,7 @@ export function CoursePath() {
                   <div className="h-2 w-full overflow-hidden rounded-pill bg-white/25">
                     <div className="h-full rounded-pill bg-white transition-all" style={{ width: `${Math.max(c.progressPct, 2)}%` }} />
                   </div>
-                  <p className="mt-1.5 text-[12.5px] text-white/85">
+                  <p className="mt-1.5 text-[13.5px] text-white/85">
                     {c.progressPct}% {t("done")} · {c.topicsCompleted}/{c.topicsTotal} {t("topics")}
                   </p>
                 </div>
@@ -194,7 +194,7 @@ export function CoursePath() {
               {allDone && (
                 <div className="mt-4 flex items-center gap-3 rounded-card bg-emerald-soft p-4 text-emerald">
                   <Icon icon={PartyPopper} size={20} />
-                  <p className="text-[14px] font-bold">{t("allDone")}</p>
+                  <p className="text-[15px] font-bold">{t("allDone")}</p>
                 </div>
               )}
 

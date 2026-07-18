@@ -91,7 +91,7 @@ export function StudentsPage() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-h1 font-bold text-ink">{t("title")}</h1>
-          <p className="mt-1 text-[13.5px] text-ink-soft">{t("subtitle")}</p>
+          <p className="mt-1 text-[14.5px] text-ink-soft">{t("subtitle")}</p>
         </div>
         <Button icon={<Icon icon={UserPlus} size={16} />} onClick={() => { setEditing(null); setFormOpen(true); }}>
           {t("add")}
@@ -188,26 +188,26 @@ export function StudentsPage() {
                     <Avatar name={u.fullName} />
                     <span className="min-w-0">
                       <span className="block truncate font-medium text-ink group-hover:underline">{u.fullName}</span>
-                      <span className="block truncate text-[12px] text-ink-faint">{u.email}</span>
+                      <span className="block truncate text-[13px] text-ink-faint">{u.email}</span>
                     </span>
                   </Link>
                 </td>
                 <td className="px-4 py-3">
                   <span className="block font-medium text-ink">{u.groupName ?? "—"}</span>
-                  {u.facultyName && <span className="block text-[11.5px] text-ink-faint">{u.facultyName}</span>}
+                  {u.facultyName && <span className="block text-[12.5px] text-ink-faint">{u.facultyName}</span>}
                 </td>
                 <td className="px-4 py-3">
                   {u.progressPct === null ? (
-                    <span className="text-[13px] text-ink-faint">—</span>
+                    <span className="text-[14px] text-ink-faint">—</span>
                   ) : (
                     <div className="flex items-center gap-2">
                       <div className="w-24"><ProgressBar value={u.progressPct} /></div>
-                      <span className="w-9 text-[12.5px] font-semibold tabular-nums text-ink">{u.progressPct}%</span>
+                      <span className="w-9 text-[13.5px] font-semibold tabular-nums text-ink">{u.progressPct}%</span>
                     </div>
                   )}
                 </td>
                 <td className="px-4 py-3">
-                  <span className={cls("text-[13px] tabular-nums", attClass(u.attendancePct))}>
+                  <span className={cls("text-[14px] tabular-nums", attClass(u.attendancePct))}>
                     {u.attendancePct === null ? "—" : `${u.attendancePct}%`}
                   </span>
                 </td>
@@ -239,11 +239,11 @@ export function StudentsPage() {
 
         {data && items.length > 0 && (
           <div className="mt-4 flex items-center justify-between gap-3">
-            <span className="text-[13px] text-ink-faint">{t("totalCount", { count: data.total })}</span>
+            <span className="text-[14px] text-ink-faint">{t("totalCount", { count: data.total })}</span>
             {totalPages > 1 && (
               <div className="flex items-center gap-3">
                 <Button variant="ghost" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>{t("prev")}</Button>
-                <span className="text-[13px] text-ink-soft tabular-nums">{page} / {totalPages}</span>
+                <span className="text-[14px] text-ink-soft tabular-nums">{page} / {totalPages}</span>
                 <Button variant="ghost" size="sm" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>{t("next")}</Button>
               </div>
             )}

@@ -8,7 +8,7 @@ import { useUpdateContent, type CaseJson, type ContentFull } from "../topics/api
 function Block({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <h3 className="mb-2 text-[13px] font-bold uppercase tracking-wide text-ink-soft">{title}</h3>
+      <h3 className="mb-2 text-[14px] font-bold uppercase tracking-wide text-ink-soft">{title}</h3>
       {children}
     </div>
   );
@@ -42,7 +42,7 @@ export function CaseEditor({ content }: { content: ContentFull }) {
     <div>
       <button
         onClick={() => navigate(`/teach/topics/${content.topicId}`)}
-        className="text-[13.5px] font-medium text-brand-deep hover:underline"
+        className="text-[14.5px] font-medium text-brand-deep hover:underline"
       >
         {t("back")}
       </button>
@@ -75,7 +75,7 @@ export function CaseEditor({ content }: { content: ContentFull }) {
         {Array.from({ length: rows }).map((_, i) => (
           <Card key={i} className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-[13px] font-bold text-ink-soft">
+              <span className="text-[14px] font-bold text-ink-soft">
                 {t("question")} {i + 1}
               </span>
               <button
@@ -88,7 +88,7 @@ export function CaseEditor({ content }: { content: ContentFull }) {
             </div>
             <Input value={draft.questions[i] ?? ""} onChange={(e) => setQA(i, "questions", e.target.value)} placeholder={t("question")} />
             <div className="rounded-control bg-emerald-soft p-2">
-              <p className="mb-1 text-[12px] font-semibold text-emerald">{t("referenceAnswer")}</p>
+              <p className="mb-1 text-[13px] font-semibold text-emerald">{t("referenceAnswer")}</p>
               <Textarea
                 value={draft.referenceAnswer[i] ?? ""}
                 onChange={(e) => setQA(i, "referenceAnswer", e.target.value)}
@@ -101,7 +101,7 @@ export function CaseEditor({ content }: { content: ContentFull }) {
 
       <button
         onClick={addRow}
-        className="mt-4 inline-flex items-center gap-1 text-[13.5px] font-medium text-brand-deep hover:underline"
+        className="mt-4 inline-flex items-center gap-1 text-[14.5px] font-medium text-brand-deep hover:underline"
       >
         <Icon icon={Plus} size={15} /> {t("addQuestion")}
       </button>

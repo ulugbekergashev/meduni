@@ -86,7 +86,7 @@ export function SidebarLayout({ brand, items, userBlock, children, headerSlot, r
                 key={item.href}
                 href={item.href}
                 className={cls(
-                  "relative flex items-center rounded-control py-3 text-[15.5px] font-medium transition-colors",
+                  "relative flex items-center rounded-control py-3 text-[16.5px] font-medium transition-colors",
                   collapsed ? "justify-center px-0" : "gap-3 px-3.5",
                   item.active
                     ? "bg-side-active text-side-active-ink"
@@ -105,7 +105,7 @@ export function SidebarLayout({ brand, items, userBlock, children, headerSlot, r
                 </span>
                 {!collapsed && <span className="flex-1 truncate">{item.label}</span>}
                 {!collapsed && item.badge !== undefined && item.badge > 0 && (
-                  <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-rose px-1.5 text-[11px] font-bold text-white">
+                  <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-rose px-1.5 text-[12px] font-bold text-white">
                     {item.badge}
                   </span>
                 )}

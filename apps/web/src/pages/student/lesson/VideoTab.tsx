@@ -74,7 +74,7 @@ export function VideoTab({ topicId, data, threshold }: { topicId: number; data: 
   if (failed || !data.hasMp4) {
     return (
       <div className="rounded-card border border-line bg-surface p-8 text-center">
-        <p className="text-[13.5px] text-ink-soft">{t("videoUnavailable")}</p>
+        <p className="text-[14.5px] text-ink-soft">{t("videoUnavailable")}</p>
       </div>
     );
   }
@@ -105,7 +105,7 @@ export function VideoTab({ topicId, data, threshold }: { topicId: number; data: 
         {data.hasSrt && (
           <button
             onClick={() => setCaptions((c) => !c)}
-            className={`inline-flex items-center gap-1.5 rounded-control border px-3 py-1.5 text-[13px] font-medium transition-colors ${
+            className={`inline-flex items-center gap-1.5 rounded-control border px-3 py-1.5 text-[14px] font-medium transition-colors ${
               captions ? "border-violet bg-violet-soft text-violet" : "border-line text-ink-soft hover:bg-bg"
             }`}
           >
@@ -115,11 +115,11 @@ export function VideoTab({ topicId, data, threshold }: { topicId: number; data: 
         )}
         <div className="ml-auto text-right">
           {done ? (
-            <span className="inline-flex items-center gap-1 text-[13px] font-semibold text-emerald">
+            <span className="inline-flex items-center gap-1 text-[14px] font-semibold text-emerald">
               <Icon icon={CheckCircle2} size={15} /> {t("videoDone")}
             </span>
           ) : (
-            <span className="text-[12.5px] text-ink-soft">
+            <span className="text-[13.5px] text-ink-soft">
               {t("videoNeed", { threshold })} <span className="font-bold text-ink">({shownPct}%)</span>
             </span>
           )}

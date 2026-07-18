@@ -82,13 +82,13 @@ export function RoleShell({
       LinkComponent={RouterLink}
       rightSlot={
         <>
-          <span className="hidden whitespace-nowrap text-[12.5px] font-medium text-ink-faint xl:block">{today}</span>
+          <span className="hidden whitespace-nowrap text-[13.5px] font-medium text-ink-faint xl:block">{today}</span>
           <LocaleSwitcher />
           <ThemeButton />
           <div className="hidden min-w-0 items-center border-l border-line pl-3 sm:flex">
             <div className="min-w-0 text-right leading-tight">
-              <p className="max-w-[150px] truncate text-[12.5px] font-semibold text-ink">{me?.full_name}</p>
-              <p className="max-w-[150px] truncate text-[11px] text-ink-faint">{me?.email}</p>
+              <p className="max-w-[150px] truncate text-[13.5px] font-semibold text-ink">{me?.full_name}</p>
+              <p className="max-w-[150px] truncate text-[12px] text-ink-faint">{me?.email}</p>
             </div>
           </div>
           <button

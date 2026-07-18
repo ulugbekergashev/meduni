@@ -47,7 +47,7 @@ export function SlidesTab({ topicId, data }: { topicId: number; data: SlidesTabD
         )}
         <ul className="mt-3 space-y-2">
           {slide.bullets.map((b, bi) => (
-            <li key={bi} className="flex gap-2 text-[14px] text-ink-soft">
+            <li key={bi} className="flex gap-2 text-[15px] text-ink-soft">
               <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-brand" />
               {b}
             </li>
@@ -64,7 +64,7 @@ export function SlidesTab({ topicId, data }: { topicId: number; data: SlidesTabD
         >
           <Icon icon={ChevronLeft} size={18} />
         </button>
-        <span className="text-[13px] font-semibold text-ink-soft">
+        <span className="text-[14px] font-semibold text-ink-soft">
           {i + 1} / {total}
         </span>
         <button
@@ -81,13 +81,13 @@ export function SlidesTab({ topicId, data }: { topicId: number; data: SlidesTabD
         <a
           href={`${API_URL}/api/v1/me/presentations/${data.presentationId}/pdf`}
           onClick={markViewed}
-          className="inline-flex items-center gap-1.5 rounded-control border border-line px-3 py-1.5 text-[13px] font-medium text-ink-soft transition-colors hover:bg-bg"
+          className="inline-flex items-center gap-1.5 rounded-control border border-line px-3 py-1.5 text-[14px] font-medium text-ink-soft transition-colors hover:bg-bg"
         >
           <Icon icon={Download} size={15} />
           {t("downloadPdf")}
         </a>
         {(marked.current || data.done) && (
-          <span className="inline-flex items-center gap-1 text-[13px] font-semibold text-emerald">
+          <span className="inline-flex items-center gap-1 text-[14px] font-semibold text-emerald">
             <Icon icon={CheckCircle2} size={15} /> {t("slidesDone")}
           </span>
         )}

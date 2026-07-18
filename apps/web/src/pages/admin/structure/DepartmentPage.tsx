@@ -68,10 +68,10 @@ export function DepartmentPage() {
   if (!f || !d) {
     return (
       <div>
-        <button onClick={() => navigate("/admin/staff")} className="flex items-center gap-1 text-[13.5px] font-medium text-brand-deep hover:underline">
+        <button onClick={() => navigate("/admin/staff")} className="flex items-center gap-1 text-[14.5px] font-medium text-brand-deep hover:underline">
           <Icon icon={ArrowLeft} size={15} /> {t("title")}
         </button>
-        <Card className="mt-4"><p className="py-6 text-center text-[13.5px] text-rose">{t("notFound")}</p></Card>
+        <Card className="mt-4"><p className="py-6 text-center text-[14.5px] text-rose">{t("notFound")}</p></Card>
       </div>
     );
   }
@@ -82,7 +82,7 @@ export function DepartmentPage() {
     <div>
       {/* Up to the faculty — hidden for the dept admin (this page IS their home) */}
       {canDept && (
-        <button onClick={() => navigate(`/admin/staff/f/${f.id}`)} className="flex items-center gap-1 text-[13.5px] font-medium text-brand-deep hover:underline">
+        <button onClick={() => navigate(`/admin/staff/f/${f.id}`)} className="flex items-center gap-1 text-[14.5px] font-medium text-brand-deep hover:underline">
           <Icon icon={ArrowLeft} size={15} /> {f.name}
         </button>
       )}
@@ -90,7 +90,7 @@ export function DepartmentPage() {
       {/* Header */}
       <div className="mt-3 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.08em] text-amber">
+          <p className="flex items-center gap-1.5 text-[12px] font-bold uppercase tracking-[0.08em] text-amber">
             <Icon icon={Landmark} size={13} /> {t("department")}
           </p>
           <h1 className="mt-0.5 text-h1 font-bold text-ink">{d.name}</h1>
@@ -139,16 +139,16 @@ export function DepartmentPage() {
             {teachers.isLoading ? (
               <div className="flex h-24 items-center justify-center"><Spinner size={20} /></div>
             ) : teacherRows.length === 0 ? (
-              <p className="px-5 py-6 text-center text-[13px] text-ink-faint">{ts("noTeachers")}</p>
+              <p className="px-5 py-6 text-center text-[14px] text-ink-faint">{ts("noTeachers")}</p>
             ) : (
               teacherRows.map((u) => (
                 <div key={u.id} className="flex items-center gap-3 border-b border-line px-5 py-3 last:border-0">
                   <Avatar name={u.fullName} />
                   <div className="min-w-0 flex-1">
-                    <Link to={`/admin/users/${u.id}`} className="block truncate text-[14px] font-semibold text-ink hover:underline">
+                    <Link to={`/admin/users/${u.id}`} className="block truncate text-[15px] font-semibold text-ink hover:underline">
                       {u.fullName}
                     </Link>
-                    <p className="truncate text-[12px] text-ink-faint">
+                    <p className="truncate text-[13px] text-ink-faint">
                       {u.position ? `${u.position} · ` : ""}{u.email}
                     </p>
                   </div>
@@ -193,8 +193,8 @@ export function DepartmentPage() {
                   <Icon icon={BookMarked} size={16} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-[14px] font-semibold text-ink">{s.name}</p>
-                  <p className="truncate text-[12px] text-ink-faint">
+                  <p className="truncate text-[15px] font-semibold text-ink">{s.name}</p>
+                  <p className="truncate text-[13px] text-ink-faint">
                     {t("nCourses", { n: s.courseCount })}
                     {s.description ? ` · ${s.description}` : ""}
                   </p>
@@ -220,7 +220,7 @@ export function DepartmentPage() {
               </div>
             ))}
             {d.subjects.length === 0 && (
-              <p className="px-5 py-6 text-center text-[13px] text-ink-faint">{t("noSubjectsInDept")}</p>
+              <p className="px-5 py-6 text-center text-[14px] text-ink-faint">{t("noSubjectsInDept")}</p>
             )}
           </div>
         </Card>

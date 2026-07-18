@@ -66,13 +66,13 @@ export function LessonPage() {
               <>
                 <button
                   onClick={() => navigate(`/app/courses/${lesson.courseId}`)}
-                  className="mb-3 flex items-center gap-1 text-[13.5px] font-medium text-brand-deep hover:underline"
+                  className="mb-3 flex items-center gap-1 text-[14.5px] font-medium text-brand-deep hover:underline"
                 >
                   <Icon icon={ArrowLeft} size={15} />
                   {t("backToPath")}
                 </button>
 
-                <p className="text-[11.5px] font-bold uppercase tracking-wide text-ink-faint">
+                <p className="text-[12.5px] font-bold uppercase tracking-wide text-ink-faint">
                   {t("topic")} {lesson.orderIndex}
                 </p>
                 <h1 className="text-h1 font-bold text-ink">{lesson.title}</h1>
@@ -82,13 +82,13 @@ export function LessonPage() {
                     <div className="flex items-center gap-2 text-emerald">
                       <Icon icon={PartyPopper} size={20} />
                       <div>
-                        <p className="text-[14.5px] font-bold">{t("topicDone")}</p>
-                        <p className="text-[12.5px]">{t("nextUnlocked")}</p>
+                        <p className="text-[15.5px] font-bold">{t("topicDone")}</p>
+                        <p className="text-[13.5px]">{t("nextUnlocked")}</p>
                       </div>
                     </div>
                     <button
                       onClick={() => navigate(`/app/courses/${lesson.courseId}`)}
-                      className="shrink-0 rounded-control bg-emerald px-3 py-2 text-[13px] font-bold text-white hover:opacity-90"
+                      className="shrink-0 rounded-control bg-emerald px-3 py-2 text-[14px] font-bold text-white hover:opacity-90"
                     >
                       {t("backToPath")}
                     </button>
@@ -105,7 +105,7 @@ export function LessonPage() {
                         key={tb.key}
                         onClick={() => setTab(tb.key)}
                         className={cls(
-                          "flex shrink-0 items-center gap-2 whitespace-nowrap rounded-[8px] px-3.5 py-2 text-[14px] font-semibold transition-all",
+                          "flex shrink-0 items-center gap-2 whitespace-nowrap rounded-[8px] px-3.5 py-2 text-[15px] font-semibold transition-all",
                           on ? c.active : "text-ink-soft hover:bg-bg hover:text-ink"
                         )}
                       >

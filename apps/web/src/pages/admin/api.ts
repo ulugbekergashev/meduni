@@ -112,6 +112,9 @@ export interface UserProfile {
   stats?: { courses: number; students: number; publishedTopics: number };
   courses?: (TeacherProfileCourse | StudentProfileCourse)[];
   attendancePct?: number | null;
+  attendance?: { present: number; absent: number; late: number; excused: number; marked: number };
+  avgQuizScore?: number | null;
+  lastActiveAt?: string | null;
 }
 export function useUserProfile(id: number) {
   return useQuery({ queryKey: ["user-profile", id], queryFn: () => api<UserProfile>(`/api/v1/users/${id}/profile`), retry: false });

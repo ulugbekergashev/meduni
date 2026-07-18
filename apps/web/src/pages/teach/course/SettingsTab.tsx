@@ -30,7 +30,7 @@ export function SettingsTab() {
 
   return (
     <div>
-      <p className="mb-4 text-[13.5px] text-ink-soft">{t("subtitle")}</p>
+      <p className="mb-4 text-[14.5px] text-ink-soft">{t("subtitle")}</p>
       <Card className="space-y-5">
         <h2 className="text-section font-bold text-ink">{t("defaultRule")}</h2>
         <UnlockRuleForm value={rule} onChange={setRule} />
@@ -38,7 +38,7 @@ export function SettingsTab() {
           <Button onClick={() => save.mutate(rule, { onSuccess: () => show(t("saved")) })} disabled={save.isPending}>
             {t("save")}
           </Button>
-          <span className="text-[12px] text-ink-faint">{t("note")}</span>
+          <span className="text-[13px] text-ink-faint">{t("note")}</span>
         </div>
       </Card>
     </div>

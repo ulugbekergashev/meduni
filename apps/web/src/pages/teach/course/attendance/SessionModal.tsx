@@ -37,20 +37,20 @@ export function SessionModal({ courseId, edit, onClose }: { courseId: number; ed
     <Modal open onClose={onClose} title={edit ? t("editSession") : t("newSession")}>
       <div className="space-y-3">
         <div>
-          <label className="mb-1 block text-[12.5px] font-semibold text-ink-soft">{t("date")} *</label>
-          <input type="date" value={date} onChange={(e) => { setDate(e.target.value); setErr(null); }} className="w-full rounded-control border border-line px-3 py-2 text-[13.5px] outline-none focus:border-brand" />
+          <label className="mb-1 block text-[13.5px] font-semibold text-ink-soft">{t("date")} *</label>
+          <input type="date" value={date} onChange={(e) => { setDate(e.target.value); setErr(null); }} className="w-full rounded-control border border-line px-3 py-2 text-[14.5px] outline-none focus:border-brand" />
         </div>
 
         <div>
-          <div className="mb-1 flex items-center gap-3 text-[12.5px] font-semibold text-ink-soft">
+          <div className="mb-1 flex items-center gap-3 text-[13.5px] font-semibold text-ink-soft">
             <span>{t("lessonTitle")}</span>
             <button onClick={() => setMode("text")} className={mode === "text" ? "text-brand-deep underline" : "text-ink-faint"}>{t("asText")}</button>
             <button onClick={() => setMode("topic")} className={mode === "topic" ? "text-brand-deep underline" : "text-ink-faint"}>{t("fromTopic")}</button>
           </div>
           {mode === "text" ? (
-            <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t("titlePlaceholder")} className="w-full rounded-control border border-line px-3 py-2 text-[13.5px] outline-none focus:border-brand" />
+            <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t("titlePlaceholder")} className="w-full rounded-control border border-line px-3 py-2 text-[14.5px] outline-none focus:border-brand" />
           ) : (
-            <select value={topicId} onChange={(e) => setTopicId(e.target.value ? Number(e.target.value) : "")} className="w-full rounded-control border border-line bg-surface px-3 py-2 text-[13.5px] outline-none focus:border-brand">
+            <select value={topicId} onChange={(e) => setTopicId(e.target.value ? Number(e.target.value) : "")} className="w-full rounded-control border border-line bg-surface px-3 py-2 text-[14.5px] outline-none focus:border-brand">
               <option value="">{t("selectTopic")}</option>
               {(topics.data ?? []).map((tp) => (
                 <option key={tp.id} value={tp.id}>{tp.title}</option>
@@ -60,11 +60,11 @@ export function SessionModal({ courseId, edit, onClose }: { courseId: number; ed
         </div>
 
         <div>
-          <label className="mb-1 block text-[12.5px] font-semibold text-ink-soft">{t("room")}</label>
-          <input value={room} onChange={(e) => setRoom(e.target.value)} placeholder="302" className="w-full rounded-control border border-line px-3 py-2 text-[13.5px] outline-none focus:border-brand" />
+          <label className="mb-1 block text-[13.5px] font-semibold text-ink-soft">{t("room")}</label>
+          <input value={room} onChange={(e) => setRoom(e.target.value)} placeholder="302" className="w-full rounded-control border border-line px-3 py-2 text-[14.5px] outline-none focus:border-brand" />
         </div>
 
-        {err && <p className="text-[12.5px] font-medium text-rose">{err}</p>}
+        {err && <p className="text-[13.5px] font-medium text-rose">{err}</p>}
 
         <div className="flex justify-end gap-2 pt-2">
           <Button variant="ghost" onClick={onClose} disabled={busy}>{t("cancel")}</Button>

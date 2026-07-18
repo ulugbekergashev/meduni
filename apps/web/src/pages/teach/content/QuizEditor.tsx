@@ -39,7 +39,7 @@ export function QuizEditor({ content }: { content: ContentFull }) {
     <div>
       <button
         onClick={() => navigate(`/teach/topics/${content.topicId}`)}
-        className="text-[13.5px] font-medium text-brand-deep hover:underline"
+        className="text-[14.5px] font-medium text-brand-deep hover:underline"
       >
         {t("back")}
       </button>
@@ -47,7 +47,7 @@ export function QuizEditor({ content }: { content: ContentFull }) {
       <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-h1 font-bold text-ink">{t("title")}</h1>
         <div className="flex items-center gap-3">
-          <label className="flex items-center gap-2 text-[13px] text-ink-soft">
+          <label className="flex items-center gap-2 text-[14px] text-ink-soft">
             {t("passThreshold")}
             <input
               type="number"
@@ -55,7 +55,7 @@ export function QuizEditor({ content }: { content: ContentFull }) {
               max={100}
               value={passThreshold}
               onChange={(e) => setPassThreshold(e.target.value)}
-              className="w-16 rounded-control border border-line px-2 py-1 text-[13px]"
+              className="w-16 rounded-control border border-line px-2 py-1 text-[14px]"
             />
           </label>
           <Button onClick={save} disabled={update.isPending}>
@@ -66,14 +66,14 @@ export function QuizEditor({ content }: { content: ContentFull }) {
 
       {questions.length === 0 ? (
         <Card className="mt-6">
-          <p className="py-6 text-center text-[13.5px] text-ink-soft">{t("empty")}</p>
+          <p className="py-6 text-center text-[14.5px] text-ink-soft">{t("empty")}</p>
         </Card>
       ) : (
         <div className="mt-6 space-y-4">
           {questions.map((q, qi) => (
             <Card key={qi} className="space-y-4">
               <div className="flex items-center justify-between gap-3">
-                <span className="text-[13px] font-bold text-ink-soft">
+                <span className="text-[14px] font-bold text-ink-soft">
                   {t("question")} {qi + 1}
                 </span>
                 <div className="flex items-center gap-2">
@@ -129,7 +129,7 @@ export function QuizEditor({ content }: { content: ContentFull }) {
                         value={q.explanations[oi] ?? ""}
                         onChange={(e) => setExplanation(qi, oi, e.target.value)}
                         placeholder={t("explanation")}
-                        className="mt-2 text-[12.5px]"
+                        className="mt-2 text-[13.5px]"
                       />
                     </div>
                   );
@@ -137,7 +137,7 @@ export function QuizEditor({ content }: { content: ContentFull }) {
               </div>
 
               {q.sourceFragment && (
-                <p className="text-[12px] text-ink-faint">
+                <p className="text-[13px] text-ink-faint">
                   {t("source")}: {q.sourceFragment}
                 </p>
               )}
@@ -148,7 +148,7 @@ export function QuizEditor({ content }: { content: ContentFull }) {
 
       <button
         onClick={() => setQuestions((qs) => [...qs, emptyQuestion()])}
-        className="mt-4 inline-flex items-center gap-1 text-[13.5px] font-medium text-brand-deep hover:underline"
+        className="mt-4 inline-flex items-center gap-1 text-[14.5px] font-medium text-brand-deep hover:underline"
       >
         <Icon icon={Plus} size={15} /> {t("addQuestion")}
       </button>

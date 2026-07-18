@@ -28,7 +28,7 @@ function QuickAction({ icon, label, tone, chip, onClick }: { icon: LucideIcon; l
       <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-control text-white ${chip}`}>
         <Icon icon={icon} size={20} />
       </div>
-      <span className="text-[14.5px] font-semibold text-ink">{label}</span>
+      <span className="text-[15.5px] font-semibold text-ink">{label}</span>
     </button>
   );
 }
@@ -37,7 +37,7 @@ function HeroStat({ value, label }: { value: string | number; label: string }) {
   return (
     <div className="min-w-[72px]">
       <p className="text-[26px] font-bold leading-none tabular-nums">{value}</p>
-      <p className="mt-1 text-[12.5px] font-medium text-white/70">{label}</p>
+      <p className="mt-1 text-[13.5px] font-medium text-white/70">{label}</p>
     </div>
   );
 }
@@ -94,7 +94,7 @@ export function TeachDashboard() {
             <h1 className="text-[26px] font-bold leading-tight tracking-tight">
               {t("hello")}, {me?.full_name?.split(" ")[0]}
             </h1>
-            <p className="mt-1 text-[13.5px] font-medium text-white/70">{today}</p>
+            <p className="mt-1 text-[14.5px] font-medium text-white/70">{today}</p>
           </div>
           {stats && (
             <div className="flex gap-8">
@@ -122,7 +122,7 @@ export function TeachDashboard() {
         ) : noTasks ? (
           <Card className="flex items-center gap-3 border-emerald/40 bg-emerald-soft">
             <Icon icon={CheckCircle2} size={22} className="text-emerald" />
-            <p className="text-[14px] font-semibold text-emerald">{t("allDone")}</p>
+            <p className="text-[15px] font-semibold text-emerald">{t("allDone")}</p>
           </Card>
         ) : (
           <div className="grid gap-2.5 sm:grid-cols-3">
@@ -146,7 +146,7 @@ export function TeachDashboard() {
           {/* Per-course progress bars */}
           {dash.data && dash.data.courses.length > 0 && (
             <Card className="mt-2.5">
-              <p className="mb-2 text-[12.5px] font-semibold text-ink-soft">{t("byCourse")}</p>
+              <p className="mb-2 text-[13.5px] font-semibold text-ink-soft">{t("byCourse")}</p>
               <div className="space-y-0.5">
                 {dash.data.courses.map((c) => (
                   <BarRow

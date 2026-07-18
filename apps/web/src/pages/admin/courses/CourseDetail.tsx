@@ -22,8 +22,8 @@ function StatItem({ icon, label, value }: { icon: React.ReactNode; label: string
         {icon}
       </div>
       <div>
-        <p className="text-[12px] text-ink-faint">{label}</p>
-        <p className="text-[15px] font-bold text-ink">{value}</p>
+        <p className="text-[13px] text-ink-faint">{label}</p>
+        <p className="text-[16px] font-bold text-ink">{value}</p>
       </div>
     </div>
   );
@@ -60,10 +60,10 @@ export function CourseDetail() {
   if (course.isError || !course.data) {
     return (
       <div>
-        <button onClick={() => navigate("/admin/courses")} className="text-[13.5px] text-brand-deep hover:underline">
+        <button onClick={() => navigate("/admin/courses")} className="text-[14.5px] text-brand-deep hover:underline">
           {t("detail.back")}
         </button>
-        <p className="mt-4 text-[13.5px] text-rose">{tc("loadError")}</p>
+        <p className="mt-4 text-[14.5px] text-rose">{tc("loadError")}</p>
       </div>
     );
   }
@@ -89,14 +89,14 @@ export function CourseDetail() {
 
   return (
     <div>
-      <button onClick={() => navigate("/admin/courses")} className="text-[13.5px] font-medium text-brand-deep hover:underline">
+      <button onClick={() => navigate("/admin/courses")} className="text-[14.5px] font-medium text-brand-deep hover:underline">
         {t("detail.back")}
       </button>
 
       <h1 className="mt-3 text-h1 font-bold text-ink">
         {c.subjectName}
       </h1>
-      <p className="mt-1 text-[13.5px] text-ink-soft">
+      <p className="mt-1 text-[14.5px] text-ink-soft">
         {c.departmentName} ·{" "}
         <button onClick={() => navigate(`/admin/users/${c.teacherId}`)} className="font-medium text-brand-deep hover:underline">
           {c.teacherName}
@@ -119,7 +119,7 @@ export function CourseDetail() {
           selected={selectedGroups}
           onToggle={toggleGroup}
         />
-        {error && <p className="mt-3 text-[13px] text-rose">{error}</p>}
+        {error && <p className="mt-3 text-[14px] text-rose">{error}</p>}
         <div className="mt-4">
           <Button disabled={!dirty || update.isPending || selectedGroups.length === 0} onClick={saveGroups}>
             {t("detail.saveGroups")}
@@ -132,7 +132,7 @@ export function CourseDetail() {
         <h2 className="mb-3 text-section font-bold text-ink">{t("detail.enrolledStudents")}</h2>
         {c.students.length === 0 ? (
           <Card>
-            <p className="py-6 text-center text-[13.5px] text-ink-soft">{t("detail.noStudents")}</p>
+            <p className="py-6 text-center text-[14.5px] text-ink-soft">{t("detail.noStudents")}</p>
           </Card>
         ) : (
           <DataTable headers={[t("students"), t("groups"), t("status")]}>
@@ -143,7 +143,7 @@ export function CourseDetail() {
                     <Avatar name={s.fullName} />
                     <div>
                       <p className="font-medium text-ink">{s.fullName}</p>
-                      <p className="text-[12px] text-ink-faint">{s.email}</p>
+                      <p className="text-[13px] text-ink-faint">{s.email}</p>
                     </div>
                   </div>
                 </td>

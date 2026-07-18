@@ -18,8 +18,8 @@ export function EmptyState({ icon, text, hint, action }: EmptyStateProps) {
         </div>
       )}
       <div>
-        <p className="max-w-sm text-[14px] font-semibold text-ink">{text}</p>
-        {hint && <p className="mx-auto mt-1 max-w-xs text-[12.5px] text-ink-soft">{hint}</p>}
+        <p className="max-w-sm text-[15px] font-semibold text-ink">{text}</p>
+        {hint && <p className="mx-auto mt-1 max-w-xs text-[13.5px] text-ink-soft">{hint}</p>}
       </div>
       {action}
     </div>

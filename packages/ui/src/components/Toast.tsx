@@ -45,7 +45,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           <div
             key={item.id}
             className={cls(
-              "pointer-events-auto flex items-center gap-2 rounded-pill bg-ink px-4 py-2.5 text-[13px] font-medium text-white shadow-lg"
+              "pointer-events-auto flex items-center gap-2 rounded-pill bg-ink px-4 py-2.5 text-[14px] font-medium text-white shadow-lg"
             )}
           >
             {item.kind === "ok" ? (

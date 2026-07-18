@@ -31,14 +31,14 @@ export function SessionsView({ courseId, groupId }: { courseId: number; groupId?
   return (
     <div>
       <div className="flex flex-wrap items-center gap-2">
-        <input type="date" value={range.from} onChange={(e) => setRange((r) => ({ ...r, from: e.target.value }))} className="rounded-control border border-line px-2 py-2 text-[13px] outline-none focus:border-brand" />
+        <input type="date" value={range.from} onChange={(e) => setRange((r) => ({ ...r, from: e.target.value }))} className="rounded-control border border-line px-2 py-2 text-[14px] outline-none focus:border-brand" />
         <span className="text-ink-faint">—</span>
-        <input type="date" value={range.to} onChange={(e) => setRange((r) => ({ ...r, to: e.target.value }))} className="rounded-control border border-line px-2 py-2 text-[13px] outline-none focus:border-brand" />
+        <input type="date" value={range.to} onChange={(e) => setRange((r) => ({ ...r, to: e.target.value }))} className="rounded-control border border-line px-2 py-2 text-[14px] outline-none focus:border-brand" />
         <div className="relative min-w-[150px] flex-1">
           <Icon icon={Search} size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-faint" />
-          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t("searchSession")} className="w-full rounded-control border border-line bg-surface py-2 pl-9 pr-3 text-[13.5px] outline-none focus:border-brand" />
+          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t("searchSession")} className="w-full rounded-control border border-line bg-surface py-2 pl-9 pr-3 text-[14.5px] outline-none focus:border-brand" />
         </div>
-        <a href={exportUrl} className="inline-flex items-center gap-1.5 rounded-control border border-line px-3 py-2 text-[13px] font-medium text-ink-soft transition-colors hover:bg-bg"><Icon icon={Download} size={15} /> Excel</a>
+        <a href={exportUrl} className="inline-flex items-center gap-1.5 rounded-control border border-line px-3 py-2 text-[14px] font-medium text-ink-soft transition-colors hover:bg-bg"><Icon icon={Download} size={15} /> Excel</a>
         <Button onClick={() => setEditing("new")}><Icon icon={CalendarPlus} size={16} /> {t("newSession")}</Button>
       </div>
 
@@ -48,9 +48,9 @@ export function SessionsView({ courseId, groupId }: { courseId: number; groupId?
         ) : (
           <AsyncSection isLoading={false} isError={q.isError} isEmpty={sessions.length === 0} emptyIcon={<Icon icon={CalendarPlus} size={22} />} emptyText={t("emptySessions")} onRetry={() => q.refetch()}>
             <div className="overflow-x-auto rounded-card border border-line">
-              <table className="w-full border-collapse text-[13.5px]">
+              <table className="w-full border-collapse text-[14.5px]">
                 <thead>
-                  <tr className="border-b border-line bg-bg text-left text-[12px] font-bold uppercase text-ink-faint">
+                  <tr className="border-b border-line bg-bg text-left text-[13px] font-bold uppercase text-ink-faint">
                     <th className="px-3 py-2.5">{t("date")}</th>
                     <th className="px-3 py-2.5">{t("lessonTitle")}</th>
                     <th className="px-3 py-2.5">{t("room")}</th>
@@ -69,7 +69,7 @@ export function SessionsView({ courseId, groupId }: { courseId: number; groupId?
                       <td className="px-3 py-2.5"><Badge tone={statusTone[s.status]}>{t(`sessionStatus.${s.status}`)}</Badge></td>
                       <td className="px-3 py-2.5">
                         <div className="flex items-center justify-end gap-1">
-                          <button onClick={() => setMarking(s.id)} className="inline-flex items-center gap-1 rounded-control bg-brand-soft px-2.5 py-1 text-[12.5px] font-semibold text-brand-deep hover:bg-brand/10">
+                          <button onClick={() => setMarking(s.id)} className="inline-flex items-center gap-1 rounded-control bg-brand-soft px-2.5 py-1 text-[13.5px] font-semibold text-brand-deep hover:bg-brand/10">
                             <Icon icon={ClipboardList} size={14} /> {t("mark")}
                           </button>
                           <button onClick={() => setEditing(s)} className="rounded-control p-1.5 text-ink-faint hover:bg-bg hover:text-ink" aria-label={t("edit")}><Icon icon={Pencil} size={15} /></button>

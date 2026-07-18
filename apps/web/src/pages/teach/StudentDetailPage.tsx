@@ -20,7 +20,7 @@ function CourseSection({ course, onReview }: { course: StudentDetailCourse; onRe
         </div>
         <div className="mt-2 flex items-center gap-2">
           <ProgressBar value={course.overallPct} className="flex-1" />
-          <span className="w-10 shrink-0 text-right text-[13px] font-bold tabular-nums text-ink-soft">{course.overallPct}%</span>
+          <span className="w-10 shrink-0 text-right text-[14px] font-bold tabular-nums text-ink-soft">{course.overallPct}%</span>
         </div>
       </div>
 
@@ -28,7 +28,7 @@ function CourseSection({ course, onReview }: { course: StudentDetailCourse; onRe
       <div>
         <div className="mb-1.5 flex items-center justify-between">
           <h3 className="text-note font-bold uppercase tracking-wide text-ink-soft">{t("attendance")}</h3>
-          <span className={cls("text-[13px] font-bold tabular-nums", a.pct !== null && a.pct < 75 ? "text-rose" : "text-brand-deep")}>{a.pct !== null ? `${a.pct}%` : "—"}</span>
+          <span className={cls("text-[14px] font-bold tabular-nums", a.pct !== null && a.pct < 75 ? "text-rose" : "text-brand-deep")}>{a.pct !== null ? `${a.pct}%` : "—"}</span>
         </div>
         <StackedBar
           segments={[
@@ -64,9 +64,9 @@ function CourseSection({ course, onReview }: { course: StudentDetailCourse; onRe
                   </div>
                   <div className="mt-2 flex items-center gap-2">
                     <ProgressBar value={tp.pct} className="flex-1" tone={tp.state === "COMPLETED" ? "emerald" : "brand"} />
-                    <span className="w-9 shrink-0 text-right text-[11.5px] font-semibold tabular-nums text-ink-faint">{tp.pct}%</span>
+                    <span className="w-9 shrink-0 text-right text-[12.5px] font-semibold tabular-nums text-ink-faint">{tp.pct}%</span>
                   </div>
-                  <div className="mt-2 flex flex-wrap items-center gap-2 text-[12px]">
+                  <div className="mt-2 flex flex-wrap items-center gap-2 text-[13px]">
                     {tp.hasQuiz && (
                       <span className={cls("inline-flex items-center gap-1 rounded-pill px-2 py-0.5 font-medium", tp.quizScore !== null ? "bg-blue-soft text-blue" : "bg-bg text-ink-faint")}>
                         <Icon icon={ClipboardList} size={12} /> {t("quiz")}: {tp.quizScore !== null ? `${tp.quizScore}%` : "—"}

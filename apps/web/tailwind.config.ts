@@ -46,11 +46,11 @@ export default {
         "card-hover": "var(--shadow-card-hover)",
       },
       fontSize: {
-        h1: ["28px", { lineHeight: "1.25", letterSpacing: "-0.02em" }],
-        stat: ["36px", { lineHeight: "1.1" }],
-        section: ["16px", { lineHeight: "1.4" }],
-        body: ["14px", { lineHeight: "1.55" }],
-        note: ["12.5px", { lineHeight: "1.45" }],
+        h1: ["30px", { lineHeight: "1.25", letterSpacing: "-0.02em" }],
+        stat: ["38px", { lineHeight: "1.1" }],
+        section: ["17px", { lineHeight: "1.4" }],
+        body: ["15px", { lineHeight: "1.55" }],
+        note: ["13.5px", { lineHeight: "1.45" }],
       },
       fontFamily: {
         sans: ["Inter", "system-ui", "sans-serif"],

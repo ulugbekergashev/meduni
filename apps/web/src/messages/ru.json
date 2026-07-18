@@ -183,7 +183,21 @@
     "attendance": "Посещаемость",
     "teacherCourses": "Ведёт курсы",
     "studentCourses": "Записан на курсы",
-    "noCourses": "Пока нет курсов."
+    "noCourses": "Пока нет курсов.",
+    "overall": "Общий",
+    "topicsDone": "тем завершено",
+    "lastActive": "Последняя активность",
+    "avgQuiz": "Средний результат тестов",
+    "att": {
+      "present": "Пришёл",
+      "late": "Опоздал",
+      "excused": "Уваж.",
+      "absent": "Пропуск"
+    },
+    "noAttendance": "Посещаемость ещё не отмечалась.",
+    "activeLabel": "Активен",
+    "resetPw": "Сбросить пароль",
+    "resetPwConfirm": "Создать новый пароль для этого пользователя?"
   },
   "studentDetail": {
     "back": "← Группы",

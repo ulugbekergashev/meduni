@@ -108,7 +108,7 @@ export function StudentFormModal({
           )}
           <Field label={t("group")}>
             {noGroups ? (
-              <p className="text-[13px] text-amber">{t("noGroupsHint")}</p>
+              <p className="text-[14px] text-amber">{t("noGroupsHint")}</p>
             ) : (
               <Select value={groupId} onChange={(e) => setGroupId(e.target.value)} required>
                 <option value="" disabled>{t("selectGroup")}</option>
@@ -122,12 +122,12 @@ export function StudentFormModal({
           {!isEdit && (
             <Field label={t("password")}>
               <Input value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••" />
-              <p className="mt-1 text-[12px] text-ink-faint">{t("passwordHint")}</p>
+              <p className="mt-1 text-[13px] text-ink-faint">{t("passwordHint")}</p>
             </Field>
           )}
         </div>
 
-        {error && <p className="text-[13px] text-rose">{error}</p>}
+        {error && <p className="text-[14px] text-rose">{error}</p>}
         <div className="flex justify-end gap-2">
           <Button type="button" variant="ghost" onClick={() => onClose()}>{tc("cancel")}</Button>
           <Button type="submit" disabled={create.isPending || update.isPending || noGroups}>

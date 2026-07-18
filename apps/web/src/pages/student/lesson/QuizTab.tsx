@@ -17,7 +17,7 @@ function Intro({ data, onStart, starting }: { data: QuizTabData; onStart: () => 
   const { t } = useTranslation(undefined, { keyPrefix: "lesson" });
   return (
     <Card className="space-y-4 text-center">
-      <div className="flex flex-wrap justify-center gap-3 text-[13.5px] text-ink-soft">
+      <div className="flex flex-wrap justify-center gap-3 text-[14.5px] text-ink-soft">
         <span>
           <span className="font-bold text-ink">{data.questionCount}</span> {t("questions")}
         </span>
@@ -26,14 +26,14 @@ function Intro({ data, onStart, starting }: { data: QuizTabData; onStart: () => 
           {t("passIs")} <span className="font-bold text-ink">{data.passThreshold}%</span>
         </span>
       </div>
-      <div className="flex items-start gap-2 rounded-control bg-amber-soft p-3 text-left text-[13px] text-amber">
+      <div className="flex items-start gap-2 rounded-control bg-amber-soft p-3 text-left text-[14px] text-amber">
         <Icon icon={AlertTriangle} size={16} className="mt-0.5 shrink-0" />
         {t("quizWarning")}
       </div>
       <button
         onClick={onStart}
         disabled={starting}
-        className="w-full rounded-control bg-blue px-4 py-3 text-[15px] font-bold text-white transition-all hover:opacity-90 disabled:opacity-60"
+        className="w-full rounded-control bg-blue px-4 py-3 text-[16px] font-bold text-white transition-all hover:opacity-90 disabled:opacity-60"
       >
         {starting ? t("starting") : t("startQuiz")}
       </button>
@@ -72,7 +72,7 @@ function Running({ attempt, topicId }: { attempt: QuizAttemptView; topicId: numb
   return (
     <div className="space-y-4">
       <div>
-        <div className="mb-1.5 flex items-center justify-between text-[13px] font-semibold text-ink-soft">
+        <div className="mb-1.5 flex items-center justify-between text-[14px] font-semibold text-ink-soft">
           <span>
             {t("question")} {qi + 1} / {total}
           </span>
@@ -86,7 +86,7 @@ function Running({ attempt, topicId }: { attempt: QuizAttemptView; topicId: numb
       </div>
 
       <Card className="space-y-4">
-        <p className="text-[15.5px] font-semibold text-ink">{q.text}</p>
+        <p className="text-[16.5px] font-semibold text-ink">{q.text}</p>
         <div className="space-y-2">
           {q.options.map((opt, oi) => {
             const selected = answers[q.id] === oi;
@@ -95,13 +95,13 @@ function Running({ attempt, topicId }: { attempt: QuizAttemptView; topicId: numb
                 key={oi}
                 onClick={() => pick(oi)}
                 className={cls(
-                  "flex w-full items-center gap-3 rounded-control border p-3 text-left text-[14.5px] transition-all",
+                  "flex w-full items-center gap-3 rounded-control border p-3 text-left text-[15.5px] transition-all",
                   selected ? "border-blue bg-blue-soft text-ink" : "border-line text-ink-soft hover:border-blue/50"
                 )}
               >
                 <span
                   className={cls(
-                    "flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-[12px] font-bold",
+                    "flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-[13px] font-bold",
                     selected ? "border-blue bg-blue text-white" : "border-line text-ink-faint"
                   )}
                 >
@@ -118,21 +118,21 @@ function Running({ attempt, topicId }: { attempt: QuizAttemptView; topicId: numb
         <button
           onClick={() => setQi((p) => Math.max(p - 1, 0))}
           disabled={qi === 0}
-          className="flex items-center gap-1 rounded-control border border-line px-3 py-2 text-[13.5px] font-medium text-ink-soft transition-colors hover:bg-bg disabled:opacity-40"
+          className="flex items-center gap-1 rounded-control border border-line px-3 py-2 text-[14.5px] font-medium text-ink-soft transition-colors hover:bg-bg disabled:opacity-40"
         >
           <Icon icon={ChevronLeft} size={16} /> {t("prev")}
         </button>
         {qi < total - 1 ? (
           <button
             onClick={() => setQi((p) => Math.min(p + 1, total - 1))}
-            className="flex items-center gap-1 rounded-control bg-ink px-4 py-2 text-[13.5px] font-semibold text-white transition-opacity hover:opacity-90"
+            className="flex items-center gap-1 rounded-control bg-ink px-4 py-2 text-[14.5px] font-semibold text-white transition-opacity hover:opacity-90"
           >
             {t("next")} <Icon icon={ChevronRight} size={16} />
           </button>
         ) : (
           <button
             onClick={() => setConfirm(true)}
-            className="rounded-control bg-blue px-4 py-2 text-[13.5px] font-bold text-white transition-opacity hover:opacity-90"
+            className="rounded-control bg-blue px-4 py-2 text-[14.5px] font-bold text-white transition-opacity hover:opacity-90"
           >
             {t("finishQuiz")}
           </button>
@@ -160,15 +160,15 @@ function Result({ attempt }: { attempt: QuizAttemptView }) {
     <div className="space-y-4">
       <Card className={cls("text-center", passed ? "border-emerald/40 bg-emerald-soft" : "border-rose/40 bg-rose-soft")}>
         <p className={cls("text-[34px] font-bold tabular-nums", passed ? "text-emerald" : "text-rose")}>{attempt.scorePct}%</p>
-        <p className={cls("text-[15px] font-bold", passed ? "text-emerald" : "text-rose")}>
+        <p className={cls("text-[16px] font-bold", passed ? "text-emerald" : "text-rose")}>
           {passed ? t("passedMsg") : t("failedMsg")}
         </p>
-        <p className="mt-1 text-[13px] text-ink-soft">
+        <p className="mt-1 text-[14px] text-ink-soft">
           {attempt.correctCount}/{attempt.total} {t("correctAnswers")}
         </p>
       </Card>
 
-      {!passed && <div className="rounded-control bg-amber-soft px-3 py-2 text-[13px] text-amber">{t("cannotRetake")}</div>}
+      {!passed && <div className="rounded-control bg-amber-soft px-3 py-2 text-[14px] text-amber">{t("cannotRetake")}</div>}
 
       <h3 className="text-section font-bold text-ink">{t("analysis")}</h3>
       <div className="space-y-3">
@@ -177,7 +177,7 @@ function Result({ attempt }: { attempt: QuizAttemptView }) {
           const wrong = studentIdx !== q.correctIndex;
           return (
             <Card key={q.id} className="space-y-3">
-              <p className="text-[14.5px] font-semibold text-ink">
+              <p className="text-[15.5px] font-semibold text-ink">
                 {i + 1}. {q.text}
               </p>
               <div className="space-y-2">
@@ -188,7 +188,7 @@ function Result({ attempt }: { attempt: QuizAttemptView }) {
                     <div
                       key={oi}
                       className={cls(
-                        "flex items-center gap-2 rounded-control border p-2.5 text-[13.5px]",
+                        "flex items-center gap-2 rounded-control border p-2.5 text-[14.5px]",
                         isCorrect && "border-emerald/40 bg-emerald-soft text-ink",
                         isStudentWrong && "border-rose/40 bg-rose-soft text-ink",
                         !isCorrect && !isStudentWrong && "border-line text-ink-soft"
@@ -202,13 +202,13 @@ function Result({ attempt }: { attempt: QuizAttemptView }) {
                         <span className="h-[15px] w-[15px] shrink-0" />
                       )}
                       {opt}
-                      {studentIdx === oi && <span className="ml-auto text-[11.5px] font-semibold text-ink-faint">{t("yourAnswer")}</span>}
+                      {studentIdx === oi && <span className="ml-auto text-[12.5px] font-semibold text-ink-faint">{t("yourAnswer")}</span>}
                     </div>
                   );
                 })}
               </div>
               {q.explanations?.[q.correctIndex ?? 0] && (
-                <div className="rounded-control bg-blue-soft px-3 py-2 text-[13px] text-blue">{q.explanations[q.correctIndex ?? 0]}</div>
+                <div className="rounded-control bg-blue-soft px-3 py-2 text-[14px] text-blue">{q.explanations[q.correctIndex ?? 0]}</div>
               )}
             </Card>
           );

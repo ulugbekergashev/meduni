@@ -31,10 +31,10 @@ export function ConfirmDialog({
 
   return (
     <Modal open={open} onClose={onClose} title={title}>
-      <p className="text-[13.5px] text-ink-soft">{message}</p>
+      <p className="text-[14.5px] text-ink-soft">{message}</p>
 
       {errorMessage && (
-        <div className="mt-3 rounded-control bg-rose-soft px-3 py-2 text-[13px] text-rose">
+        <div className="mt-3 rounded-control bg-rose-soft px-3 py-2 text-[14px] text-rose">
           {errorMessage}
         </div>
       )}

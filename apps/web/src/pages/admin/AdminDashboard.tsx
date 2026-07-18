@@ -48,7 +48,7 @@ function AttentionCard({
       </div>
       <div className="min-w-0 flex-1">
         <p className="text-[22px] font-bold leading-none tabular-nums text-ink">{value}</p>
-        <p className="mt-1 truncate text-[12.5px] text-ink-soft">{label}</p>
+        <p className="mt-1 truncate text-[13.5px] text-ink-soft">{label}</p>
       </div>
       {onClick && <Icon icon={ChevronRight} size={16} className="shrink-0 text-ink-faint" />}
     </Card>
@@ -75,7 +75,7 @@ export function AdminDashboard() {
   return (
     <div>
       <h1 className="text-h1 font-bold text-ink">{t("hello")}, {me?.full_name?.split(" ")[0]}</h1>
-      <p className="mt-0.5 text-[13px] text-ink-faint">{today}</p>
+      <p className="mt-0.5 text-[14px] text-ink-faint">{today}</p>
 
       {s && (
         <>
@@ -131,7 +131,7 @@ export function AdminDashboard() {
                   <p className="py-10 text-center text-body text-ink-faint">{t("timelineEmpty")}</p>
                 )}
               </div>
-              <div className="mt-3 flex flex-wrap gap-x-6 gap-y-1 border-t border-line pt-3 text-[12.5px] text-ink-soft">
+              <div className="mt-3 flex flex-wrap gap-x-6 gap-y-1 border-t border-line pt-3 text-[13.5px] text-ink-soft">
                 <span><b className="tabular-nums text-ink">{s.activity.activeStudentsLast7Days}</b> {t("activeStudents")}</span>
                 <span><b className="tabular-nums text-ink">{s.activity.contentLast7Days}</b> {t("contentCreated")}</span>
               </div>
@@ -144,7 +144,7 @@ export function AdminDashboard() {
             {allClear ? (
               <Card className="flex items-center gap-3 border-emerald/40 bg-emerald-soft">
                 <Icon icon={CheckCircle2} size={22} className="text-emerald" />
-                <p className="text-[14px] font-semibold text-emerald">{t("allClear")}</p>
+                <p className="text-[15px] font-semibold text-emerald">{t("allClear")}</p>
               </Card>
             ) : (
               <div className="grid gap-3 sm:grid-cols-3">
@@ -162,16 +162,16 @@ export function AdminDashboard() {
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
                     <Icon icon={Sparkles} size={18} className="text-white/90" />
-                    <p className="text-[12.5px] font-medium uppercase tracking-wide text-white/80">{t("aiThisMonth")}</p>
+                    <p className="text-[13.5px] font-medium uppercase tracking-wide text-white/80">{t("aiThisMonth")}</p>
                   </div>
-                  <span className="flex items-center gap-1 text-[12.5px] font-semibold text-white/80">
+                  <span className="flex items-center gap-1 text-[13.5px] font-semibold text-white/80">
                     {t("aiDetails")} <Icon icon={ChevronRight} size={14} />
                   </span>
                 </div>
                 <div className="mt-3 flex flex-wrap gap-x-8 gap-y-2">
-                  <div><p className="text-[26px] font-bold leading-none tabular-nums">{s.aiThisMonth.tokens.toLocaleString()}</p><p className="mt-1 text-[12px] text-white/75">{t("tokens")}</p></div>
-                  <div><p className="text-[26px] font-bold leading-none tabular-nums">{s.aiThisMonth.images}</p><p className="mt-1 text-[12px] text-white/75">{t("images")}</p></div>
-                  <div><p className="text-[26px] font-bold leading-none tabular-nums">${s.aiThisMonth.cost.toFixed(2)}</p><p className="mt-1 text-[12px] text-white/75">{t("cost")}</p></div>
+                  <div><p className="text-[26px] font-bold leading-none tabular-nums">{s.aiThisMonth.tokens.toLocaleString()}</p><p className="mt-1 text-[13px] text-white/75">{t("tokens")}</p></div>
+                  <div><p className="text-[26px] font-bold leading-none tabular-nums">{s.aiThisMonth.images}</p><p className="mt-1 text-[13px] text-white/75">{t("images")}</p></div>
+                  <div><p className="text-[26px] font-bold leading-none tabular-nums">${s.aiThisMonth.cost.toFixed(2)}</p><p className="mt-1 text-[13px] text-white/75">{t("cost")}</p></div>
                 </div>
               </div>
             </button>

@@ -31,18 +31,18 @@ function RankRow({ label, value, max, display, color = "var(--brand)" }: { label
       <span className="h-2.5 flex-1 overflow-hidden rounded-pill bg-bg">
         <span className="block h-full rounded-pill transition-all" style={{ width: `${pct}%`, background: color }} />
       </span>
-      <span className="w-20 shrink-0 text-right text-[13px] font-bold tabular-nums text-ink">{display}</span>
+      <span className="w-20 shrink-0 text-right text-[14px] font-bold tabular-nums text-ink">{display}</span>
     </div>
   );
 }
 
 function QuotaBar({ pct }: { pct: number | null }) {
-  if (pct === null) return <span className="text-[11px] text-ink-faint">—</span>;
+  if (pct === null) return <span className="text-[12px] text-ink-faint">—</span>;
   const tone = pct >= 100 ? "bg-rose" : pct >= 80 ? "bg-amber" : "bg-brand";
   return (
     <div className="flex items-center gap-2">
       <div className="h-1.5 w-14 overflow-hidden rounded-pill bg-bg"><div className={cls("h-full rounded-pill", tone)} style={{ width: `${Math.min(pct, 100)}%` }} /></div>
-      <span className={cls("w-9 text-[11.5px] font-semibold tabular-nums", pct >= 100 ? "text-rose" : pct >= 80 ? "text-amber" : "text-ink-soft")}>{pct}%</span>
+      <span className={cls("w-9 text-[12.5px] font-semibold tabular-nums", pct >= 100 ? "text-rose" : pct >= 80 ? "text-amber" : "text-ink-soft")}>{pct}%</span>
     </div>
   );
 }
@@ -61,8 +61,8 @@ function QuotaModal({ dept, onClose }: { dept: DeptRow; onClose: () => void }) {
       <div className="space-y-3">
         {[{ l: t("tokenLimit"), v: tok, s: setTok }, { l: t("imageLimit"), v: img, s: setImg }, { l: t("costLimit"), v: cost, s: setCost }].map((f) => (
           <div key={f.l}>
-            <label className="mb-1 block text-[12.5px] font-semibold text-ink-soft">{f.l}</label>
-            <input type="number" min={0} value={f.v} onChange={(e) => f.s(e.target.value)} className="w-full rounded-control border border-line bg-surface px-3.5 py-2.5 text-[14px] outline-none focus:border-brand" />
+            <label className="mb-1 block text-[13.5px] font-semibold text-ink-soft">{f.l}</label>
+            <input type="number" min={0} value={f.v} onChange={(e) => f.s(e.target.value)} className="w-full rounded-control border border-line bg-surface px-3.5 py-2.5 text-[15px] outline-none focus:border-brand" />
           </div>
         ))}
       </div>
@@ -80,7 +80,7 @@ function HeroMetric({ icon, value, label }: { icon: typeof Coins; value: string;
       <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-control bg-white/15"><Icon icon={icon} size={20} /></div>
       <div>
         <p className="text-[26px] font-bold leading-none tabular-nums">{value}</p>
-        <p className="mt-1 text-[12.5px] font-medium text-white/70">{label}</p>
+        <p className="mt-1 text-[13.5px] font-medium text-white/70">{label}</p>
       </div>
     </div>
   );
@@ -110,7 +110,7 @@ export function AiMonitoringPage() {
           value={month}
           max={new Date().toISOString().slice(0, 7)}
           onChange={(e) => setMonth(e.target.value)}
-          className="rounded-control border border-line bg-surface px-3.5 py-2.5 text-[14px] text-ink outline-none focus:border-brand"
+          className="rounded-control border border-line bg-surface px-3.5 py-2.5 text-[15px] text-ink outline-none focus:border-brand"
         />
       </div>
 
@@ -122,7 +122,7 @@ export function AiMonitoringPage() {
         <>
           {/* Hero totals */}
           <div className="mt-5 rounded-card bg-gradient-to-br from-brand-deep to-brand p-6 text-white shadow-card">
-            <div className="flex items-center gap-2"><Icon icon={Sparkles} size={16} className="text-white/90" /><p className="text-[12.5px] font-medium uppercase tracking-wide text-white/75">{t("thisMonth")}</p></div>
+            <div className="flex items-center gap-2"><Icon icon={Sparkles} size={16} className="text-white/90" /><p className="text-[13.5px] font-medium uppercase tracking-wide text-white/75">{t("thisMonth")}</p></div>
             <div className="mt-4 grid grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-4">
               <HeroMetric icon={Coins} value={u.totals.tokens.toLocaleString()} label={t("tokens")} />
               <HeroMetric icon={ImageIcon} value={String(u.totals.images)} label={t("images")} />
@@ -188,7 +188,7 @@ export function AiMonitoringPage() {
               <div className="overflow-x-auto rounded-card border border-line shadow-card">
                 <table className="w-full border-collapse text-body">
                   <thead>
-                    <tr className="border-b border-line bg-bg text-left text-[11.5px] font-bold uppercase text-ink-faint">
+                    <tr className="border-b border-line bg-bg text-left text-[12.5px] font-bold uppercase text-ink-faint">
                       <th className="px-4 py-3">{t("dept")}</th><th className="px-4 py-3">{t("cost")}</th>
                       <th className="px-4 py-3">{t("tokenQuota")}</th><th className="px-4 py-3">{t("imageQuota")}</th><th className="px-4 py-3">{t("costQuota")}</th>
                       <th className="px-4 py-3 text-right">{t("quota")}</th>

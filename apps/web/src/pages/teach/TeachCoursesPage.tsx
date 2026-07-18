@@ -15,7 +15,7 @@ export function TeachCoursesPage() {
   return (
     <div>
       <h1 className="text-h1 font-bold text-ink">{t("myCourses")}</h1>
-      <p className="mt-1 text-[13px] text-ink-soft">{t("coursesSubtitle")}</p>
+      <p className="mt-1 text-[14px] text-ink-soft">{t("coursesSubtitle")}</p>
 
       <div className="mt-6">
         <AsyncSection
