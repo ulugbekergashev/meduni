@@ -1,5 +1,5 @@
 import { useState, type ComponentType, type ReactNode } from "react";
-import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cls } from "../cls";
 import { Icon } from "./Icon";
 
@@ -52,7 +52,16 @@ export function SidebarLayout({ brand, items, userBlock, children, headerSlot, r
     });
 
   return (
-    <div className="flex min-h-screen bg-bg">
+    <div className="relative flex min-h-screen bg-bg">
+      {/* Collapse toggle riding the sidebar's edge; follows the width transition. */}
+      <button
+        onClick={toggle}
+        aria-label={collapsed ? "open sidebar" : "collapse sidebar"}
+        className="absolute top-[21px] z-40 flex h-7 w-7 -translate-x-1/2 items-center justify-center rounded-full border border-line bg-surface text-ink-soft shadow-card transition-all duration-200 hover:bg-brand-soft hover:text-brand-deep"
+        style={{ left: collapsed ? 72 : 272 }}
+      >
+        <Icon icon={collapsed ? ChevronRight : ChevronLeft} size={15} />
+      </button>
       {/* Light sidebar (2026-07 redesign): white surface, soft active chip. Colors
           come from --side-* tokens so light and dark themes each tune their own values.
           Collapsible: the header toggle shrinks it to an icon-only rail. */}
@@ -110,14 +119,7 @@ export function SidebarLayout({ brand, items, userBlock, children, headerSlot, r
       <main className="min-w-0 flex-1 overflow-y-auto">
         {/* Top bar — fixed 57px so sticky offsets below (e.g. wizard stepper) stay valid. */}
         <div className="sticky top-0 z-30 border-b border-line bg-surface px-4 sm:px-6">
-          <div className="mx-auto flex h-[57px] w-full max-w-[1280px] items-center gap-3">
-            <button
-              onClick={toggle}
-              aria-label={collapsed ? "open sidebar" : "collapse sidebar"}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-control text-ink-soft transition-colors hover:bg-bg hover:text-ink"
-            >
-              <Icon icon={collapsed ? PanelLeftOpen : PanelLeftClose} size={18} />
-            </button>
+          <div className="mx-auto flex h-[57px] w-full max-w-[1280px] items-center gap-3 pl-4">
             <div className="min-w-0 flex-1">{headerSlot}</div>
             {rightSlot && <div className="flex shrink-0 items-center gap-2">{rightSlot}</div>}
           </div>
