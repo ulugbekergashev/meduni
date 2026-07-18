@@ -1,8 +1,12 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { LogOut } from "lucide-react";
+import { LogOut, Moon, Sun } from "lucide-react";
 import { Icon, SidebarLayout, type SidebarItem } from "@meduni/ui";
 import { useLogout, useMe } from "../lib/auth";
+import { getTheme, setTheme, type Theme } from "../lib/theme";
+import { useLocale } from "../lib/useLocale";
+import { formatDate } from "../lib/date";
+import { LocaleSwitcher } from "./LocaleSwitcher";
 
 /** Adapter: SidebarLayout expects a component taking `href`; react-router's Link takes `to`. */
 function RouterLink({ href, className, children }: { href: string; className?: string; children: ReactNode }) {
@@ -10,6 +14,24 @@ function RouterLink({ href, className, children }: { href: string; className?: s
     <Link to={href} className={className}>
       {children}
     </Link>
+  );
+}
+
+/** Compact header theme switch: one button, cycles light ↔ dark. */
+function ThemeButton() {
+  const [theme, setLocal] = useState<Theme>(getTheme());
+  const next: Theme = theme === "dark" ? "light" : "dark";
+  return (
+    <button
+      onClick={() => {
+        setTheme(next);
+        setLocal(next);
+      }}
+      aria-label="theme"
+      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-control border border-line text-ink-soft transition-colors hover:bg-bg hover:text-ink"
+    >
+      <Icon icon={theme === "dark" ? Sun : Moon} size={15} />
+    </button>
   );
 }
 
@@ -38,6 +60,7 @@ export function RoleShell({
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const logout = useLogout();
+  const locale = useLocale();
 
   const sidebarItems: SidebarItem[] = items.map((item) => ({
     href: item.href,
@@ -49,26 +72,33 @@ export function RoleShell({
       : pathname === item.href || pathname.startsWith(`${item.href}/`),
   }));
 
+  const today = formatDate(locale === "ru" ? "ru" : "uz", new Date(), "long");
+
   return (
     <SidebarLayout
       brand={brand}
       items={sidebarItems}
       headerSlot={headerSlot}
       LinkComponent={RouterLink}
-      userBlock={
-        <div className="flex items-center justify-between gap-2">
-          <div className="min-w-0">
-            <p className="truncate text-[13.5px] font-semibold text-side-ink">{me?.full_name}</p>
-            <p className="truncate text-[12px] text-side-soft">{me?.email}</p>
+      rightSlot={
+        <>
+          <span className="hidden whitespace-nowrap text-[12.5px] font-medium text-ink-faint xl:block">{today}</span>
+          <LocaleSwitcher />
+          <ThemeButton />
+          <div className="hidden min-w-0 items-center border-l border-line pl-3 sm:flex">
+            <div className="min-w-0 text-right leading-tight">
+              <p className="max-w-[150px] truncate text-[12.5px] font-semibold text-ink">{me?.full_name}</p>
+              <p className="max-w-[150px] truncate text-[11px] text-ink-faint">{me?.email}</p>
+            </div>
           </div>
           <button
             onClick={() => logout.mutate(undefined, { onSuccess: () => navigate("/login", { replace: true }) })}
-            className="shrink-0 rounded-control p-2 text-side-soft transition-colors hover:bg-side-hover hover:text-side-ink"
             aria-label="logout"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-control text-ink-soft transition-colors hover:bg-rose-soft hover:text-rose"
           >
-            <Icon icon={LogOut} size={16} />
+            <Icon icon={LogOut} size={15} />
           </button>
-        </div>
+        </>
       }
     >
       {children}
