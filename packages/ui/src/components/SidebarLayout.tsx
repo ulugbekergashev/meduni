@@ -55,22 +55,30 @@ export function SidebarLayout({ brand, items, userBlock, children, headerSlot, r
     <div className="flex min-h-screen bg-bg">
       {/* Light sidebar (2026-07 redesign): white surface, soft active chip. Colors
           come from --side-* tokens so light and dark themes each tune their own values.
-          Collapsible: the header toggle shrinks it to zero width. */}
+          Collapsible: the header toggle shrinks it to an icon-only rail. */}
       <aside
         className={cls(
           "shrink-0 overflow-hidden border-r border-side-line bg-gradient-to-b from-side to-side-deep transition-[width] duration-200",
-          collapsed ? "w-0 border-r-0" : "w-[272px]"
+          collapsed ? "w-[72px]" : "w-[272px]"
         )}
       >
-        <div className="flex h-full w-[272px] flex-col">
-          <div className="px-6 pb-5 pt-7 text-[17px] font-bold tracking-tight text-side-ink">{brand}</div>
-          <nav className="flex flex-1 flex-col gap-1 px-3.5">
+        <div className={cls("flex h-full flex-col", collapsed ? "w-[72px]" : "w-[272px]")}>
+          <div
+            className={cls(
+              "pb-5 pt-7 text-[18px] font-bold tracking-tight text-side-ink",
+              collapsed ? "text-center" : "px-6"
+            )}
+          >
+            {collapsed ? (typeof brand === "string" ? brand.charAt(0) : brand) : brand}
+          </div>
+          <nav className={cls("flex flex-1 flex-col gap-1", collapsed ? "px-3" : "px-3.5")}>
             {items.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
                 className={cls(
-                  "relative flex items-center gap-3 rounded-control px-3.5 py-3 text-[14.5px] font-medium transition-colors",
+                  "relative flex items-center rounded-control py-3 text-[15.5px] font-medium transition-colors",
+                  collapsed ? "justify-center px-0" : "gap-3 px-3.5",
                   item.active
                     ? "bg-side-active text-side-active-ink"
                     : "text-side-soft hover:bg-side-hover hover:text-side-ink"
@@ -79,9 +87,15 @@ export function SidebarLayout({ brand, items, userBlock, children, headerSlot, r
                 {item.active && (
                   <span className="absolute left-0 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-pill bg-side-active-ink" />
                 )}
-                {item.icon}
-                <span className="flex-1 truncate">{item.label}</span>
-                {item.badge !== undefined && item.badge > 0 && (
+                {/* Rail mode: icon carries the item; label becomes a native tooltip. */}
+                <span className="relative shrink-0" title={collapsed ? item.label : undefined}>
+                  {item.icon}
+                  {collapsed && item.badge !== undefined && item.badge > 0 && (
+                    <span className="absolute -right-1.5 -top-1 h-2.5 w-2.5 rounded-full border-2 border-side bg-rose" />
+                  )}
+                </span>
+                {!collapsed && <span className="flex-1 truncate">{item.label}</span>}
+                {!collapsed && item.badge !== undefined && item.badge > 0 && (
                   <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-rose px-1.5 text-[11px] font-bold text-white">
                     {item.badge}
                   </span>
@@ -89,7 +103,7 @@ export function SidebarLayout({ brand, items, userBlock, children, headerSlot, r
               </Link>
             ))}
           </nav>
-          {userBlock && <div className="border-t border-side-line px-5 py-4">{userBlock}</div>}
+          {userBlock && !collapsed && <div className="border-t border-side-line px-5 py-4">{userBlock}</div>}
         </div>
       </aside>
 
