@@ -63,12 +63,12 @@ export async function structureTree(scope: AdminScope) {
     where: scope.level === "SUPER" ? {} : { id: scope.facultyId! },
     orderBy: { id: "asc" },
     include: {
-      admins: { where: { isActive: true }, select: { fullName: true, phone: true } },
+      admins: { where: { isActive: true }, select: { id: true, fullName: true, phone: true, email: true } },
       departments: {
         where: scope.level === "DEPT" ? { id: scope.departmentId! } : {},
         orderBy: { id: "asc" },
         include: {
-          admins: { where: { isActive: true }, select: { fullName: true, phone: true } },
+          admins: { where: { isActive: true }, select: { id: true, fullName: true, phone: true, email: true } },
           subjects: { orderBy: { id: "asc" }, include: { _count: { select: { courses: true } } } },
           _count: { select: { teachers: true } },
         },

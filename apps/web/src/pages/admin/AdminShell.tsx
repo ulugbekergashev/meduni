@@ -67,8 +67,11 @@ export function AdminShell() {
       headerSlot={<GlobalSearch fetch={search} />}
       items={[
         { href: "/admin", label: t("dashboard"), icon: <Icon icon={Home} />, end: true },
-        { href: "/admin/structure", label: t("structure"), icon: <Icon icon={Network} /> },
-        { href: "/admin/users", label: t("users"), icon: <Icon icon={Users} /> },
+        // Students are a faculty-level contingent; dept admins have no student scope.
+        ...(me?.role !== "dept_admin"
+          ? [{ href: "/admin/students", label: t("students"), icon: <Icon icon={Users} /> }]
+          : []),
+        { href: "/admin/staff", label: t("staff"), icon: <Icon icon={Network} /> },
         { href: "/admin/courses", label: t("courses"), icon: <Icon icon={BookOpen} /> },
         { href: "/admin/tasks", label: t("tasks"), icon: <Icon icon={ListChecks} /> },
         { href: "/admin/ai", label: t("ai"), icon: <Icon icon={Sparkles} /> },

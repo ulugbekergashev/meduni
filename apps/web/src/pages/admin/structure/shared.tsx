@@ -1,7 +1,9 @@
 import { useState, type FormEvent, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Button, Input, Modal, Select, useToast } from "@meduni/ui";
+import { KeyRound, Mail, Phone, Plus, UserRound } from "lucide-react";
+import { Button, Card, Icon, Input, Modal, Select, useToast } from "@meduni/ui";
 import { ConfirmDialog } from "../../../components/ConfirmDialog";
 import { Field } from "../../../components/Field";
 import { api, apiErrorMessage } from "../../../lib/api";
@@ -9,7 +11,7 @@ import { useLocale } from "../../../lib/useLocale";
 
 // ---- Tree payload (one scoped query feeds all three structure pages) ----
 
-export interface TreeAdmin { fullName: string; phone: string | null }
+export interface TreeAdmin { id: number; fullName: string; phone: string | null; email: string }
 export interface TreeSubject { id: number; name: string; description: string | null; courseCount: number }
 export interface TreeDept { id: number; name: string; teacherCount: number; admins: TreeAdmin[]; subjects: TreeSubject[] }
 export interface TreeGroup { id: number; name: string; yearOfStudy: number; studentCount: number }
@@ -224,6 +226,198 @@ export function EntityFormModal({
         </div>
       </form>
     </Modal>
+  );
+}
+
+// ---- Unit staff (teachers of a department) ----
+
+export interface StaffTeacher {
+  id: number;
+  fullName: string;
+  email: string;
+  phone: string | null;
+  position: string | null;
+  isActive: boolean;
+}
+
+export function useDeptTeachers(departmentId: number) {
+  return useQuery({
+    queryKey: ["staff-teachers", departmentId],
+    queryFn: () =>
+      api<{ items: StaffTeacher[] }>(`/api/v1/users?role=TEACHER&departmentId=${departmentId}&page=1`),
+  });
+}
+
+/** Appoint a role-fixed staff member (dekan / mudir / o'qituvchi) to a unit. */
+export function AppointModal({
+  role,
+  unitId,
+  onClose,
+}: {
+  role: "FACULTY_ADMIN" | "DEPT_ADMIN" | "TEACHER";
+  /** facultyId for FACULTY_ADMIN, departmentId for the rest. */
+  unitId: number;
+  onClose: (revealPassword?: string | null) => void;
+}) {
+  const { t } = useTranslation(undefined, { keyPrefix: "staff" });
+  const { t: tc } = useTranslation(undefined, { keyPrefix: "common" });
+  const locale = useLocale();
+  const { show } = useToast();
+  const qc = useQueryClient();
+
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [position, setPosition] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  const create = useMutation({
+    mutationFn: (body: Record<string, unknown>) =>
+      api<{ generatedPassword: string | null }>("/api/v1/users", { method: "POST", body: JSON.stringify(body) }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["structure-tree"] });
+      qc.invalidateQueries({ queryKey: ["staff-teachers"] });
+      qc.invalidateQueries({ queryKey: ["users"] });
+    },
+  });
+
+  const onSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    create.mutate(
+      {
+        fullName: fullName.trim(),
+        email: email.trim(),
+        phone: phone.trim() || null,
+        locale: "uz",
+        role,
+        password: password.trim() || null,
+        facultyId: role === "FACULTY_ADMIN" ? unitId : null,
+        departmentId: role !== "FACULTY_ADMIN" ? unitId : null,
+        position: role === "TEACHER" ? position.trim() || null : null,
+      },
+      {
+        onSuccess: (r) => {
+          show(tc("added"));
+          onClose(r.generatedPassword);
+        },
+        onError: (err) => setError(apiErrorMessage(err, locale) ?? tc("genericError")),
+      }
+    );
+  };
+
+  return (
+    <Modal open onClose={() => onClose()} title={t(`appoint.${role}`)}>
+      <form onSubmit={onSubmit} className="space-y-4">
+        <Field label={t("fields.fullName")}>
+          <Input value={fullName} onChange={(e) => setFullName(e.target.value)} autoFocus required />
+        </Field>
+        <Field label={t("fields.email")}>
+          <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+        </Field>
+        <Field label={t("fields.phone")}>
+          <Input value={phone} onChange={(e) => setPhone(e.target.value)} />
+        </Field>
+        {role === "TEACHER" && (
+          <Field label={t("fields.position")}>
+            <Input value={position} onChange={(e) => setPosition(e.target.value)} />
+          </Field>
+        )}
+        <Field label={t("fields.password")}>
+          <Input value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••" />
+          <p className="mt-1 text-[12px] text-ink-faint">{t("fields.passwordHint")}</p>
+        </Field>
+        {error && <p className="text-[13px] text-rose">{error}</p>}
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="ghost" onClick={() => onClose()}>{tc("cancel")}</Button>
+          <Button type="submit" disabled={create.isPending}>{tc("add")}</Button>
+        </div>
+      </form>
+    </Modal>
+  );
+}
+
+/** Dekan/mudir card at the top of a unit page: identity + reset password + profile. */
+export function AdminCard({
+  admin,
+  roleLabel,
+  canManage,
+  onAppoint,
+  onReveal,
+}: {
+  admin: TreeAdmin | null;
+  roleLabel: string;
+  canManage: boolean;
+  onAppoint: () => void;
+  onReveal: (password: string) => void;
+}) {
+  const { t } = useTranslation(undefined, { keyPrefix: "staff" });
+  const { t: tc } = useTranslation(undefined, { keyPrefix: "common" });
+  const { show } = useToast();
+  const reset = useMutation({
+    mutationFn: (id: number) => api<{ password: string }>(`/api/v1/users/${id}/reset-password`, { method: "POST" }),
+  });
+  const [confirming, setConfirming] = useState(false);
+
+  if (!admin) {
+    return (
+      <Card className="flex flex-wrap items-center gap-3 border-dashed !p-4">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-bg text-ink-faint">
+          <Icon icon={UserRound} size={18} />
+        </div>
+        <p className="min-w-0 flex-1 text-[13.5px] text-ink-soft">{t("noAdmin", { role: roleLabel })}</p>
+        {canManage && (
+          <Button size="sm" variant="soft" icon={<Icon icon={Plus} size={14} />} onClick={onAppoint}>
+            {t("appointBtn")}
+          </Button>
+        )}
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="flex flex-wrap items-center gap-4 !p-4">
+      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand-deep">
+        <Icon icon={UserRound} size={20} />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-[11px] font-bold uppercase tracking-[0.07em] text-ink-faint">{roleLabel}</p>
+        <p className="truncate text-[15px] font-bold text-ink">{admin.fullName}</p>
+        <p className="mt-0.5 flex flex-wrap gap-x-4 gap-y-0.5 text-[12.5px] text-ink-soft">
+          <span className="inline-flex items-center gap-1"><Icon icon={Mail} size={13} /> {admin.email}</span>
+          {admin.phone && <span className="inline-flex items-center gap-1"><Icon icon={Phone} size={13} /> {admin.phone}</span>}
+        </p>
+      </div>
+      {canManage && (
+        <div className="flex shrink-0 items-center gap-2">
+          <Button size="sm" variant="ghost" icon={<Icon icon={KeyRound} size={14} />} onClick={() => setConfirming(true)}>
+            {t("resetPw")}
+          </Button>
+          <Link to={`/admin/users/${admin.id}`} className="text-[13px] font-semibold text-brand-deep hover:underline">
+            {t("profile")} →
+          </Link>
+        </div>
+      )}
+      <ConfirmDialog
+        open={confirming}
+        title={t("resetPw")}
+        message={t("resetPwConfirm", { name: admin.fullName })}
+        confirmLabel={t("resetPw")}
+        confirmVariant="primary"
+        loading={reset.isPending}
+        onConfirm={() =>
+          reset.mutate(admin.id, {
+            onSuccess: (r) => {
+              setConfirming(false);
+              show(tc("updated"));
+              onReveal(r.password);
+            },
+          })
+        }
+        onClose={() => setConfirming(false)}
+      />
+    </Card>
   );
 }
 

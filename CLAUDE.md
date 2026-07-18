@@ -706,6 +706,29 @@ Barcha modullar tugadi (1-17).
   PATCH sxemalari ajratildi (facultyUpdate — admin maydonisiz). Smoke: dekan avto-parol,
   mudir o'z paroli bilan login 200, tree'da ikkalasi, rollback. tsc+build toza.
 
+- **Admin qayta tuzildi: TALABALAR va XODIMLAR modullari (2026-07-18, foydalanuvchi:
+  "hammasi bir xil, studentlarni ajrat, qolganini staff qil").** "Foydalanuvchilar"
+  moduli YO'Q QILINDI (UsersPage+UserFormModal o'chirildi; profil `/admin/users/:id`
+  QOLADI, `/admin/users` → `/admin/students` redirect).
+  (A) **Talabalar `/admin/students`** — kontingent moduli: backend
+  `modules/admin/students.ts` (`GET /admin/students` + `/stats`, admin router;
+  scope: SUPER=hamma, FACULTY=o'z fakulteti, DEPT=**403** — nav'да ham yashirin).
+  Har qator o'quv ko'rsatkichlari bilan: progressPct (COMPLETED topics/published,
+  batch groupBy), attendancePct, coursesCount. Sahifa: 3-4 stat karta (nofaol=filtr),
+  fakultetlar bo'yicha Donut (>1 bo'lsa), fakultet→guruh kaskad filtr, jadvalда
+  ProgressBar + davomat% (<75 rose), StudentFormModal (faqat talaba, kaskadli guruh).
+  (B) **Xodimlar `/admin/staff`** (eski structure route'lari → redirect) — tuzilma+xodimlar
+  birlashdi: Hub'да **Rahbariyat** (superadminlar) + fakultet kartasida dekan ismi;
+  FacultyPage'да **AdminCard** (dekan: FISH/email/tel + parol tiklash + profil; bo'lmasa
+  "+Tayinlash" → AppointModal), kafedra qatorида mudir ismi; DepartmentPage'да mudir
+  AdminCard + **O'qituvchilar bo'limi** (ro'yxat: lavozim/email, faol Toggle, parol
+  tiklash, profil; "+O'qituvchi" AppointModal — o'qituvchi endi o'z kafedrasida
+  yaratiladi) + fanlar. `structureTree.admins` += id/email. shared.tsx: AppointModal
+  (rol-fiks POST /users), AdminCard, useDeptTeachers. i18n: `students.*`, `staff.*`,
+  nav.students/staff. ⚠️ Demo fix: teacher.m11demo'да TeacherProfile yo'q edi —
+  qo'shildi (dept 18). **Smoke:** students metrikalar/stats/scope (FACULTY o'z, DEPT 403),
+  kafedra o'qituvchilari ro'yxati, tree admins email bilan; tsc+build toza.
+
 ## 9. Loyiha holati va ishga tushirish (operatsion — sessiya 0)
 
 **Monorepo (npm workspaces):**

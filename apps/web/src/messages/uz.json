@@ -21,7 +21,9 @@
     "tasks": "Vazifalar",
     "groups": "Guruhlar",
     "settings": "Sozlamalar",
-    "logout": "Chiqish"
+    "logout": "Chiqish",
+    "students": "Talabalar",
+    "staff": "Xodimlar"
   },
   "theme": {
     "label": "Mavzu (rang)",
@@ -734,8 +736,8 @@
     "nameRequired": "Nomini kiriting"
   },
   "structure": {
-    "title": "Tuzilma",
-    "subtitle": "Universitet skeleti: fakultet → kafedra → fan · guruhlar",
+    "title": "Xodimlar va tuzilma",
+    "subtitle": "Fakultet → kafedra → fan · guruhlar — va ularning xodimlari",
     "add": {
       "faculty": "Fakultet qoʻshish",
       "department": "Kafedra qoʻshish",
@@ -1152,6 +1154,83 @@
       "groups": "Guruhlar",
       "courses": "Kurslar",
       "topics": "Mavzular"
+    }
+  },
+  "students": {
+    "title": "Talabalar",
+    "subtitle": "Kontingent: guruhlar, o'quv ko'rsatkichlari, hisoblar",
+    "add": "Talaba qo'shish",
+    "stats": {
+      "total": "Jami talabalar",
+      "totalHint": "barcha guruhlarda",
+      "active": "Faol",
+      "activeHint": "kirish ochiq",
+      "inactive": "Nofaol",
+      "inactiveHint": "kirish yopilgan",
+      "groups": "Guruhlar",
+      "groupsHint": "fakultetlar bo'yicha"
+    },
+    "filter": {
+      "allFaculties": "Barcha fakultetlar",
+      "allGroups": "Barcha guruhlar",
+      "clear": "Tozalash"
+    },
+    "searchPlaceholder": "Ism yoki email bo'yicha qidirish",
+    "table": {
+      "name": "FISH",
+      "group": "Guruh",
+      "progress": "Progress",
+      "attendance": "Davomat",
+      "active": "Faol",
+      "actions": "Amallar"
+    },
+    "empty": "Hali talaba yo'q. Qo'shish tugmasidan boshlang.",
+    "emptyFiltered": "Filtrga mos talaba topilmadi.",
+    "totalCount": "Jami: {{count}} ta",
+    "prev": "Oldingi",
+    "next": "Keyingi",
+    "reset": {
+      "title": "Parolni tiklash",
+      "confirm": "Bu talaba uchun yangi parol yaratasizmi?",
+      "confirmBtn": "Yangi parol"
+    },
+    "form": {
+      "addTitle": "Talaba qo'shish",
+      "editTitle": "Talabani tahrirlash",
+      "fullName": "FISH",
+      "email": "Email",
+      "phone": "Telefon (ixtiyoriy)",
+      "language": "Til",
+      "faculty": "Fakultet",
+      "allFaculties": "Barcha fakultetlar",
+      "group": "Guruh",
+      "selectGroup": "Guruhni tanlang",
+      "noGroupsHint": "Avval guruh qo'shing (Xodimlar bo'limida).",
+      "password": "Parol",
+      "passwordHint": "Bo'sh qoldirsangiz — avtomatik yaratiladi."
+    }
+  },
+  "staff": {
+    "leadership": "Rahbariyat",
+    "teachersSection": "O'qituvchilar",
+    "noTeachers": "Bu kafedrada hali o'qituvchi yo'q.",
+    "noAdmin": "{{role}} hali tayinlanmagan.",
+    "appointBtn": "Tayinlash",
+    "appoint": {
+      "FACULTY_ADMIN": "Dekan tayinlash",
+      "DEPT_ADMIN": "Mudir tayinlash",
+      "TEACHER": "O'qituvchi qo'shish"
+    },
+    "resetPw": "Parolni tiklash",
+    "resetPwConfirm": "{{name}} uchun yangi parol yaratasizmi?",
+    "profile": "Profil",
+    "fields": {
+      "fullName": "FISH",
+      "email": "Email (login)",
+      "phone": "Telefon (ixtiyoriy)",
+      "position": "Lavozim (ixtiyoriy)",
+      "password": "Parol",
+      "passwordHint": "Bo'sh qoldirsangiz — avtomatik yaratiladi va ko'rsatiladi."
     }
   }
 }
