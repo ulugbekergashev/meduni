@@ -729,6 +729,16 @@ Barcha modullar tugadi (1-17).
   qo'shildi (dept 18). **Smoke:** students metrikalar/stats/scope (FACULTY o'z, DEPT 403),
   kafedra o'qituvchilari ro'yxati, tree admins email bilan; tsc+build toza.
 
+- **Header/topbar overhaul + yig'iladigan sidebar (2026-07-18).** SidebarLayout:
+  top-bar endi DOIMIY va balandligi qat'iy **57px** (wizard `top-[57px]` sticky
+  offsetlari shunga bog'liq — o'zgartirsang ikkalasini birga o'zgartir); chapда
+  **sidebar collapse tugmasi** (PanelLeft, holat localStorage `meduni.sidebar`,
+  width 272→0 transition), o'rtada headerSlot (qidiruv), o'ngда yangi `rightSlot`.
+  RoleShell rightSlot'ni to'ldiradi: **sana (xl+) · LocaleSwitcher (uz/ru) ·
+  ThemeButton (bitta tugma, light↔dark) · user FISH/email · Logout** — user blok
+  sidebar pastидан headerga ko'chdi (userBlock prop qoldi, ishlatilmaydi).
+  Uchala rol shell'i (admin/teach/app) avtomatik oladi. tsc+build toza.
+
 ## 9. Loyiha holati va ishga tushirish (operatsion — sessiya 0)
 
 **Monorepo (npm workspaces):**
