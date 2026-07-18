@@ -49,7 +49,7 @@ export function AsyncSection({
           <div className="flex h-12 w-12 items-center justify-center rounded-full bg-rose-soft text-rose">
             <Icon icon={AlertCircle} size={22} />
           </div>
-          <p className="text-[13.5px] text-ink-soft">{t("loadError")}</p>
+          <p className="text-[14.5px] text-ink-soft">{t("loadError")}</p>
           <Button variant="ghost" size="sm" onClick={onRetry}>
             {t("retry")}
           </Button>

@@ -17,7 +17,7 @@ export function CourseGroupsTab() {
 
   return (
     <div>
-      <p className="mb-4 text-[13px] text-ink-soft">{t("subtitle")}</p>
+      <p className="mb-4 text-[14px] text-ink-soft">{t("subtitle")}</p>
       {q.isLoading ? (
         <div className="flex min-h-[30vh] items-center justify-center"><Spinner size={24} /></div>
       ) : (
@@ -35,7 +35,7 @@ export function CourseGroupsTab() {
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <h3 className="text-[16px] font-bold text-ink">{g.name}</h3>
-                    <p className="truncate text-[12px] text-ink-faint">
+                    <p className="truncate text-[13px] text-ink-faint">
                       {t("yearN", { n: g.yearOfStudy })} · {g.facultyName}
                     </p>
                   </div>
@@ -44,7 +44,7 @@ export function CourseGroupsTab() {
                   </div>
                 </div>
                 <div className="mt-auto space-y-1.5">
-                  <div className="flex items-center justify-between text-[12.5px] text-ink-soft">
+                  <div className="flex items-center justify-between text-[13.5px] text-ink-soft">
                     <span className="inline-flex items-center gap-1.5"><Icon icon={GraduationCap} size={14} /> {t("studentsN", { n: g.studentCount })}</span>
                     <span className="font-semibold text-ink">{g.avgProgress}%</span>
                   </div>

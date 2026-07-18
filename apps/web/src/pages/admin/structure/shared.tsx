@@ -48,7 +48,7 @@ export function useStructureMutation() {
 }
 
 export function CountChip({ children }: { children: ReactNode }) {
-  return <span className="rounded-pill bg-bg px-2 py-0.5 text-[11.5px] font-medium text-ink-soft">{children}</span>;
+  return <span className="rounded-pill bg-bg px-2 py-0.5 text-[12.5px] font-medium text-ink-soft">{children}</span>;
 }
 
 // ---- Add/Edit modal (all four kinds) ----
@@ -181,8 +181,8 @@ export function EntityFormModal({
 
         {withAdmin && (
           <div className="rounded-control border border-line bg-bg/50 p-4">
-            <p className="text-[13px] font-bold text-ink">{adminSectionTitle}</p>
-            <p className="mt-0.5 text-[12px] text-ink-faint">{t("adminSectionHint")}</p>
+            <p className="text-[14px] font-bold text-ink">{adminSectionTitle}</p>
+            <p className="mt-0.5 text-[13px] text-ink-faint">{t("adminSectionHint")}</p>
             <div className="mt-3 grid gap-3 sm:grid-cols-2">
               <Field label={t("adminFullName")}>
                 <Input value={adminFullName} onChange={(e) => setAdminFullName(e.target.value)} />
@@ -195,7 +195,7 @@ export function EntityFormModal({
               </Field>
               <Field label={t("adminPassword")}>
                 <Input value={adminPassword} onChange={(e) => setAdminPassword(e.target.value)} placeholder="••••••" />
-                <p className="mt-1 text-[11.5px] text-ink-faint">{t("adminPasswordHint")}</p>
+                <p className="mt-1 text-[12.5px] text-ink-faint">{t("adminPasswordHint")}</p>
               </Field>
             </div>
           </div>
@@ -203,8 +203,8 @@ export function EntityFormModal({
 
         {withQuota && (
           <div className="rounded-control border border-line bg-bg/50 p-4">
-            <p className="text-[13px] font-bold text-ink">{t("quotaSection")}</p>
-            <p className="mt-0.5 text-[12px] text-ink-faint">{t("quotaSectionHint")}</p>
+            <p className="text-[14px] font-bold text-ink">{t("quotaSection")}</p>
+            <p className="mt-0.5 text-[13px] text-ink-faint">{t("quotaSectionHint")}</p>
             <div className="mt-3 grid grid-cols-3 gap-3">
               <Field label={t("quotaTokens")}>
                 <Input type="number" min={0} value={quotaTokens} onChange={(e) => setQuotaTokens(e.target.value)} />
@@ -219,7 +219,7 @@ export function EntityFormModal({
           </div>
         )}
 
-        {error && <p className="text-[13px] text-rose">{error}</p>}
+        {error && <p className="text-[14px] text-rose">{error}</p>}
         <div className="flex justify-end gap-2">
           <Button type="button" variant="ghost" onClick={() => onClose()}>{tc("cancel")}</Button>
           <Button type="submit" disabled={mutate.isPending}>{editing ? tc("save") : tc("add")}</Button>
@@ -326,9 +326,9 @@ export function AppointModal({
         )}
         <Field label={t("fields.password")}>
           <Input value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••" />
-          <p className="mt-1 text-[12px] text-ink-faint">{t("fields.passwordHint")}</p>
+          <p className="mt-1 text-[13px] text-ink-faint">{t("fields.passwordHint")}</p>
         </Field>
-        {error && <p className="text-[13px] text-rose">{error}</p>}
+        {error && <p className="text-[14px] text-rose">{error}</p>}
         <div className="flex justify-end gap-2">
           <Button type="button" variant="ghost" onClick={() => onClose()}>{tc("cancel")}</Button>
           <Button type="submit" disabled={create.isPending}>{tc("add")}</Button>
@@ -366,7 +366,7 @@ export function AdminCard({
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-bg text-ink-faint">
           <Icon icon={UserRound} size={18} />
         </div>
-        <p className="min-w-0 flex-1 text-[13.5px] text-ink-soft">{t("noAdmin", { role: roleLabel })}</p>
+        <p className="min-w-0 flex-1 text-[14.5px] text-ink-soft">{t("noAdmin", { role: roleLabel })}</p>
         {canManage && (
           <Button size="sm" variant="soft" icon={<Icon icon={Plus} size={14} />} onClick={onAppoint}>
             {t("appointBtn")}
@@ -382,9 +382,9 @@ export function AdminCard({
         <Icon icon={UserRound} size={20} />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-[11px] font-bold uppercase tracking-[0.07em] text-ink-faint">{roleLabel}</p>
-        <p className="truncate text-[15px] font-bold text-ink">{admin.fullName}</p>
-        <p className="mt-0.5 flex flex-wrap gap-x-4 gap-y-0.5 text-[12.5px] text-ink-soft">
+        <p className="text-[12px] font-bold uppercase tracking-[0.07em] text-ink-faint">{roleLabel}</p>
+        <p className="truncate text-[16px] font-bold text-ink">{admin.fullName}</p>
+        <p className="mt-0.5 flex flex-wrap gap-x-4 gap-y-0.5 text-[13.5px] text-ink-soft">
           <span className="inline-flex items-center gap-1"><Icon icon={Mail} size={13} /> {admin.email}</span>
           {admin.phone && <span className="inline-flex items-center gap-1"><Icon icon={Phone} size={13} /> {admin.phone}</span>}
         </p>
@@ -394,7 +394,7 @@ export function AdminCard({
           <Button size="sm" variant="ghost" icon={<Icon icon={KeyRound} size={14} />} onClick={() => setConfirming(true)}>
             {t("resetPw")}
           </Button>
-          <Link to={`/admin/users/${admin.id}`} className="text-[13px] font-semibold text-brand-deep hover:underline">
+          <Link to={`/admin/users/${admin.id}`} className="text-[14px] font-semibold text-brand-deep hover:underline">
             {t("profile")} →
           </Link>
         </div>

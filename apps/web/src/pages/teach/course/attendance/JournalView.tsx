@@ -38,7 +38,7 @@ function CellModal({ courseId, target, onClose }: { courseId: number; target: Ce
 
   return (
     <Modal open onClose={onClose} title={target.studentName} className="max-w-sm">
-      <p className="mb-3 text-[12.5px] text-ink-faint">{target.sessionLabel}</p>
+      <p className="mb-3 text-[13.5px] text-ink-faint">{target.sessionLabel}</p>
 
       <div className="grid grid-cols-2 gap-1.5">
         {STATUSES.map((s) => {
@@ -48,7 +48,7 @@ function CellModal({ courseId, target, onClose }: { courseId: number; target: Ce
             <button
               key={s}
               onClick={() => setStatus(s)}
-              className={cls("rounded-control border px-2 py-2 text-[13px] font-semibold transition-all", on ? meta.solid : `bg-surface ${meta.ring} opacity-60 hover:opacity-100`)}
+              className={cls("rounded-control border px-2 py-2 text-[14px] font-semibold transition-all", on ? meta.solid : `bg-surface ${meta.ring} opacity-60 hover:opacity-100`)}
             >
               {t(`status.${s}`)}
             </button>
@@ -57,7 +57,7 @@ function CellModal({ courseId, target, onClose }: { courseId: number; target: Ce
       </div>
 
       <div className="mt-4">
-        <label className="mb-1 block text-[12.5px] font-semibold text-ink-soft">{t("grade")}</label>
+        <label className="mb-1 block text-[13.5px] font-semibold text-ink-soft">{t("grade")}</label>
         <input
           type="number"
           min={0}
@@ -66,12 +66,12 @@ function CellModal({ courseId, target, onClose }: { courseId: number; target: Ce
           onChange={(e) => { setGrade(e.target.value); setErr(null); }}
           placeholder="0–100"
           autoFocus
-          className="w-full rounded-control border border-line px-3 py-2 text-[15px] font-bold outline-none focus:border-brand"
+          className="w-full rounded-control border border-line px-3 py-2 text-[16px] font-bold outline-none focus:border-brand"
         />
-        <p className="mt-1 text-[11.5px] text-ink-faint">{t("gradeHint")}</p>
+        <p className="mt-1 text-[12.5px] text-ink-faint">{t("gradeHint")}</p>
       </div>
 
-      {err && <p className="mt-2 text-[12.5px] font-medium text-rose">{err}</p>}
+      {err && <p className="mt-2 text-[13.5px] font-medium text-rose">{err}</p>}
 
       <div className="mt-4 flex justify-end gap-2">
         <Button variant="ghost" onClick={onClose} disabled={mark.isPending}>{t("cancel")}</Button>
@@ -93,10 +93,10 @@ export function JournalView({ courseId, groupId }: { courseId: number; groupId?:
   return (
     <div>
       <div className="flex flex-wrap items-center gap-2">
-        <input type="date" value={range.from} onChange={(e) => setRange((r) => ({ ...r, from: e.target.value }))} className="rounded-control border border-line px-2 py-2 text-[13px] outline-none focus:border-brand" />
+        <input type="date" value={range.from} onChange={(e) => setRange((r) => ({ ...r, from: e.target.value }))} className="rounded-control border border-line px-2 py-2 text-[14px] outline-none focus:border-brand" />
         <span className="text-ink-faint">—</span>
-        <input type="date" value={range.to} onChange={(e) => setRange((r) => ({ ...r, to: e.target.value }))} className="rounded-control border border-line px-2 py-2 text-[13px] outline-none focus:border-brand" />
-        <p className="min-w-[160px] flex-1 text-[12.5px] text-ink-faint">{t("hint")}</p>
+        <input type="date" value={range.to} onChange={(e) => setRange((r) => ({ ...r, to: e.target.value }))} className="rounded-control border border-line px-2 py-2 text-[14px] outline-none focus:border-brand" />
+        <p className="min-w-[160px] flex-1 text-[13.5px] text-ink-faint">{t("hint")}</p>
         <Button onClick={() => setNewSession(true)}><Icon icon={CalendarPlus} size={16} /> {t("newSession")}</Button>
       </div>
 
@@ -115,7 +115,7 @@ export function JournalView({ courseId, groupId }: { courseId: number; groupId?:
             {report && (
               <>
                 <div className="overflow-x-auto rounded-card border border-line">
-                  <table className="border-collapse text-[12.5px]">
+                  <table className="border-collapse text-[13.5px]">
                     <thead>
                       <tr>
                         <th className="sticky left-0 z-10 min-w-[150px] border-b border-r border-line bg-surface px-3 py-2 text-left font-bold text-ink-soft">{t("student")}</th>
@@ -149,7 +149,7 @@ export function JournalView({ courseId, groupId }: { courseId: number; groupId?:
                                   }
                                   title={cell ? t(`status.${cell.status}`) + (cell.grade !== null ? ` · ${cell.grade}` : "") : t("emptyCell")}
                                   className={cls(
-                                    "inline-flex h-8 w-full min-w-[46px] items-center justify-center rounded text-[12px] font-bold transition-transform hover:scale-110",
+                                    "inline-flex h-8 w-full min-w-[46px] items-center justify-center rounded text-[13px] font-bold transition-transform hover:scale-110",
                                     cell ? STATUS_META[cell.status].solid : "border border-dashed border-line bg-surface text-ink-faint/60"
                                   )}
                                 >
@@ -166,7 +166,7 @@ export function JournalView({ courseId, groupId }: { courseId: number; groupId?:
                 </div>
 
                 {/* Legend */}
-                <div className="mt-3 flex flex-wrap gap-3 text-[11.5px] text-ink-soft">
+                <div className="mt-3 flex flex-wrap gap-3 text-[12.5px] text-ink-soft">
                   {STATUSES.map((s) => (
                     <span key={s} className="flex items-center gap-1">
                       <span className={cls("h-3 w-3 rounded", STATUS_META[s].solid)} /> {t(`status.${s}`)}

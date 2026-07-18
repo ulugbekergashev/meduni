@@ -26,7 +26,7 @@ export function Login() {
         <div className="mb-6 flex items-center justify-between">
           <div>
             <h1 className="text-h1 font-bold text-ink">{t("title")}</h1>
-            <p className="text-[13.5px] text-ink-soft">{t("subtitle")}</p>
+            <p className="text-[14.5px] text-ink-soft">{t("subtitle")}</p>
           </div>
           <LocaleSwitcher />
         </div>
@@ -46,7 +46,7 @@ export function Login() {
             onChange={(e) => setPassword(e.target.value)}
             required
           />
-          {login.isError && <p className="text-[13px] text-rose">{t("error")}</p>}
+          {login.isError && <p className="text-[14px] text-rose">{t("error")}</p>}
           <Button type="submit" size="lg" disabled={login.isPending} className="mt-2 w-full">
             {t("submit")}
           </Button>

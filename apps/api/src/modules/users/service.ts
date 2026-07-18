@@ -354,18 +354,27 @@ export async function getUserProfile(id: number) {
     });
     const totalByCourse = new Map(topicTotals.map((t) => [t.courseId, t._count]));
 
-    const att = await prisma.attendance.groupBy({ by: ["status"], where: { studentId: id }, _count: true });
-    let present = 0, late = 0, marked = 0;
+    const [att, quizAgg, lastProgress] = await Promise.all([
+      prisma.attendance.groupBy({ by: ["status"], where: { studentId: id }, _count: true }),
+      prisma.quizAttempt.aggregate({ where: { studentId: id, finishedAt: { not: null } }, _avg: { scorePct: true } }),
+      prisma.progress.aggregate({ where: { studentId: id }, _max: { updatedAt: true } }),
+    ]);
+    let present = 0, absent = 0, late = 0, excused = 0, marked = 0;
     for (const a of att) {
       marked += a._count;
       if (a.status === "PRESENT") present += a._count;
+      else if (a.status === "ABSENT") absent += a._count;
       else if (a.status === "LATE") late += a._count;
+      else if (a.status === "EXCUSED") excused += a._count;
     }
 
     return {
       ...base,
       kind: "student" as const,
       attendancePct: marked === 0 ? null : Math.round(((present + late) / marked) * 100),
+      attendance: { present, absent, late, excused, marked },
+      avgQuizScore: quizAgg._avg.scorePct === null ? null : Math.round(quizAgg._avg.scorePct),
+      lastActiveAt: lastProgress._max.updatedAt,
       courses: enrollments.map((e) => {
         const total = totalByCourse.get(e.courseId) ?? 0;
         const done = completedByCourse.get(e.courseId) ?? 0;

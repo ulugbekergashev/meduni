@@ -739,6 +739,23 @@ Barcha modullar tugadi (1-17).
   sidebar pastидан headerga ko'chdi (userBlock prop qoldi, ishlatilmaydi).
   Uchala rol shell'i (admin/teach/app) avtomatik oladi. tsc+build toza.
 
+- **Shrift shkalasi +1 pog'ona (2026-07-18, foydalanuvchi: "kichkina").** Tailwind
+  tokenlar: h1 30px, stat 38, section 17, body 15, note 13.5. QO'SHIMCHA: butun
+  apps/web+packages/ui bo'ylab arbitrary `text-[Npx]` qiymatlar perl bilan bir
+  pog'ona ko'tarildi (10→11 ... 15.5→16.5; ≥16 tegilmadi). Yangi kod yozganда
+  YANGI shkala ishlatilsin (asosiy matn 15px, izoh 13.5px).
+
+- **Admin profil sahifasi v2 (2026-07-18, foydalanuvchi: "primitiv").**
+  `getUserProfile` student += `attendance {present/absent/late/excused/marked}`,
+  `avgQuizScore` (finished o'rtacha), `lastActiveAt` (max Progress.updatedAt).
+  UserProfilePage qayta yozildi: identity-karta (avatar+rol/lavozim badge+kontaktlar
+  + **amallar: Faol toggle, Parolni tiklash**→PasswordModal); talaba: ProgressRing
+  (kurslar o'rtachasi) + mavzular k/N + oxirgi faollik, **davomat StackedBar+legend**
+  (<75 rose), o'rtacha test, kurslar ro'yxati ProgressBar bilan; o'qituvchi:
+  MetricTile'lar + kurs kartalari (lavozim badge'да). Smoke: breakdown/avgQuiz real
+  ma'lumot bilan. ⚠️ **DISK TO'LA (C: 0GB)** — npm keshi tozalanди (~350MB bo'shadi),
+  foydalanuvchi joy bo'shatishi kerak; ffmpeg video generatsiya to'la diskда ishlamaydi.
+
 ## 9. Loyiha holati va ishga tushirish (operatsion — sessiya 0)
 
 **Monorepo (npm workspaces):**

@@ -53,8 +53,8 @@ export function StatCard({
         {value ?? "—"}
       </span>
       <div>
-        <p className={cls("font-semibold text-ink", compact ? "text-[12.5px]" : "text-[13.5px]")}>{label}</p>
-        {hint && <p className="text-[12px] text-ink-faint">{hint}</p>}
+        <p className={cls("font-semibold text-ink", compact ? "text-[13.5px]" : "text-[14.5px]")}>{label}</p>
+        {hint && <p className="text-[13px] text-ink-faint">{hint}</p>}
       </div>
     </Card>
   );

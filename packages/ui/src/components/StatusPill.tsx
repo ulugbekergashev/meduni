@@ -18,7 +18,7 @@ export function StatusPill({ status, locale = "uz" }: { status: Status; locale?:
   return (
     <span
       className={cls(
-        "inline-flex items-center rounded-pill px-2.5 py-1 text-[12px] font-semibold",
+        "inline-flex items-center rounded-pill px-2.5 py-1 text-[13px] font-semibold",
         statusClass[status]
       )}
     >

@@ -10,7 +10,7 @@ function Matrix({ report }: { report: AttReport }) {
   const { t } = useTranslation(undefined, { keyPrefix: "attendance" });
   return (
     <div className="overflow-x-auto rounded-card border border-line">
-      <table className="border-collapse text-[12.5px]">
+      <table className="border-collapse text-[13.5px]">
         <thead>
           <tr>
             <th className="sticky left-0 z-10 min-w-[150px] border-b border-r border-line bg-surface px-3 py-2 text-left font-bold text-ink-soft">{t("student")}</th>
@@ -30,7 +30,7 @@ function Matrix({ report }: { report: AttReport }) {
                   <td key={s.id} className="border-b border-line p-0.5 text-center">
                     {cell ? (
                       <span
-                        className={cls("inline-flex h-6 min-w-[26px] items-center justify-center rounded px-1 text-[10px] font-bold", STATUS_META[cell.status].solid)}
+                        className={cls("inline-flex h-6 min-w-[26px] items-center justify-center rounded px-1 text-[11px] font-bold", STATUS_META[cell.status].solid)}
                         title={t(`status.${cell.status}`) + (cell.grade !== null ? ` · ${cell.grade}` : "")}
                       >
                         {cell.grade !== null ? cell.grade : STATUS_META[cell.status].short}
@@ -64,17 +64,17 @@ function ListView({ report, sort }: { report: AttReport; sort: "pct" | "name" })
         const low = s.attendancePct !== null && s.attendancePct < 75;
         return (
           <Card key={s.id} className="flex flex-wrap items-center gap-3">
-            <span className="min-w-[130px] flex-1 text-[14px] font-semibold text-ink">{s.fullName}</span>
-            <div className="flex flex-wrap gap-2 text-[12.5px]">
+            <span className="min-w-[130px] flex-1 text-[15px] font-semibold text-ink">{s.fullName}</span>
+            <div className="flex flex-wrap gap-2 text-[13.5px]">
               <span className="text-emerald">{t("status.PRESENT")}: <b>{s.present}</b></span>
               <span className="text-rose">{t("status.ABSENT")}: <b>{s.absent}</b></span>
               <span className="text-amber">{t("status.LATE")}: <b>{s.late}</b></span>
               <span className="text-blue">{t("status.EXCUSED")}: <b>{s.excused}</b></span>
             </div>
-            <span className="text-[12.5px] text-ink-soft">
+            <span className="text-[13.5px] text-ink-soft">
               {t("avgGrade")}: <b className="tabular-nums text-ink">{s.avgGrade ?? "—"}</b>
             </span>
-            <span className={cls("min-w-[52px] text-right text-[15px] font-bold tabular-nums", low ? "text-rose" : "text-ink")}>
+            <span className={cls("min-w-[52px] text-right text-[16px] font-bold tabular-nums", low ? "text-rose" : "text-ink")}>
               {s.attendancePct !== null ? `${s.attendancePct}%` : "—"}
             </span>
           </Card>
@@ -98,24 +98,24 @@ export function ReportView({ courseId, groupId }: { courseId: number; groupId?: 
   return (
     <div>
       <div className="flex flex-wrap items-center gap-2">
-        <input type="date" value={range.from} onChange={(e) => setRange((r) => ({ ...r, from: e.target.value }))} className="rounded-control border border-line px-2 py-2 text-[13px] outline-none focus:border-brand" />
+        <input type="date" value={range.from} onChange={(e) => setRange((r) => ({ ...r, from: e.target.value }))} className="rounded-control border border-line px-2 py-2 text-[14px] outline-none focus:border-brand" />
         <span className="text-ink-faint">—</span>
-        <input type="date" value={range.to} onChange={(e) => setRange((r) => ({ ...r, to: e.target.value }))} className="rounded-control border border-line px-2 py-2 text-[13px] outline-none focus:border-brand" />
+        <input type="date" value={range.to} onChange={(e) => setRange((r) => ({ ...r, to: e.target.value }))} className="rounded-control border border-line px-2 py-2 text-[14px] outline-none focus:border-brand" />
         <div className="relative min-w-[150px] flex-1">
           <Icon icon={Search} size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-faint" />
-          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t("searchStudent")} className="w-full rounded-control border border-line bg-surface py-2 pl-9 pr-3 text-[13.5px] outline-none focus:border-brand" />
+          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t("searchStudent")} className="w-full rounded-control border border-line bg-surface py-2 pl-9 pr-3 text-[14.5px] outline-none focus:border-brand" />
         </div>
         {view === "list" && (
-          <select value={sort} onChange={(e) => setSort(e.target.value as "pct" | "name")} className="rounded-control border border-line bg-surface px-2 py-2 text-[13px] outline-none focus:border-brand">
+          <select value={sort} onChange={(e) => setSort(e.target.value as "pct" | "name")} className="rounded-control border border-line bg-surface px-2 py-2 text-[14px] outline-none focus:border-brand">
             <option value="pct">{t("sortPct")}</option>
             <option value="name">{t("sortName")}</option>
           </select>
         )}
         <div className="flex overflow-hidden rounded-control border border-line">
-          <button onClick={() => setView("matrix")} className={cls("flex items-center gap-1 px-3 py-2 text-[13px] font-medium", view === "matrix" ? "bg-brand-soft text-brand-deep" : "text-ink-soft hover:bg-bg")}><Icon icon={LayoutGrid} size={15} /> {t("matrix")}</button>
-          <button onClick={() => setView("list")} className={cls("flex items-center gap-1 px-3 py-2 text-[13px] font-medium", view === "list" ? "bg-brand-soft text-brand-deep" : "text-ink-soft hover:bg-bg")}><Icon icon={List} size={15} /> {t("summary")}</button>
+          <button onClick={() => setView("matrix")} className={cls("flex items-center gap-1 px-3 py-2 text-[14px] font-medium", view === "matrix" ? "bg-brand-soft text-brand-deep" : "text-ink-soft hover:bg-bg")}><Icon icon={LayoutGrid} size={15} /> {t("matrix")}</button>
+          <button onClick={() => setView("list")} className={cls("flex items-center gap-1 px-3 py-2 text-[14px] font-medium", view === "list" ? "bg-brand-soft text-brand-deep" : "text-ink-soft hover:bg-bg")}><Icon icon={List} size={15} /> {t("summary")}</button>
         </div>
-        <a href={exportUrl} className="inline-flex items-center gap-1.5 rounded-control border border-line px-3 py-2 text-[13px] font-medium text-ink-soft transition-colors hover:bg-bg"><Icon icon={Download} size={15} /> Excel</a>
+        <a href={exportUrl} className="inline-flex items-center gap-1.5 rounded-control border border-line px-3 py-2 text-[14px] font-medium text-ink-soft transition-colors hover:bg-bg"><Icon icon={Download} size={15} /> Excel</a>
       </div>
 
       <div className="mt-4">

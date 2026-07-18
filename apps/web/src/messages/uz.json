@@ -183,7 +183,21 @@
     "attendance": "Davomat",
     "teacherCourses": "Olib boradigan kurslari",
     "studentCourses": "Yozilgan kurslari",
-    "noCourses": "Hali kurs yoʻq."
+    "noCourses": "Hali kurs yoʻq.",
+    "overall": "Umumiy",
+    "topicsDone": "mavzu tugallangan",
+    "lastActive": "Oxirgi faollik",
+    "avgQuiz": "O'rtacha test natijasi",
+    "att": {
+      "present": "Keldi",
+      "late": "Kechikdi",
+      "excused": "Sababli",
+      "absent": "Kelmadi"
+    },
+    "noAttendance": "Hali yo'qlama belgilanmagan.",
+    "activeLabel": "Faol",
+    "resetPw": "Parolni tiklash",
+    "resetPwConfirm": "Bu foydalanuvchi uchun yangi parol yaratasizmi?"
   },
   "studentDetail": {
     "back": "← Guruhlar",

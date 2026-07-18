@@ -15,7 +15,7 @@ export function TeachGroupsPage() {
   return (
     <div>
       <h1 className="text-h1 font-bold text-ink">{t("title")}</h1>
-      <p className="mt-1 text-[13px] text-ink-soft">{t("subtitle")}</p>
+      <p className="mt-1 text-[14px] text-ink-soft">{t("subtitle")}</p>
 
       <div className="mt-6">
         <AsyncSection
@@ -32,7 +32,7 @@ export function TeachGroupsPage() {
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <h3 className="text-[16px] font-bold text-ink">{g.name}</h3>
-                    <p className="truncate text-[12px] text-ink-faint">
+                    <p className="truncate text-[13px] text-ink-faint">
                       {t("yearN", { n: g.yearOfStudy })} · {g.facultyName}
                     </p>
                   </div>
@@ -42,10 +42,10 @@ export function TeachGroupsPage() {
                 </div>
                 <div className="flex flex-wrap gap-1.5">
                   {g.courses.map((c) => (
-                    <span key={c.id} className="rounded-pill bg-bg px-2 py-0.5 text-[12px] text-ink-soft">{c.name}</span>
+                    <span key={c.id} className="rounded-pill bg-bg px-2 py-0.5 text-[13px] text-ink-soft">{c.name}</span>
                   ))}
                 </div>
-                <div className="mt-auto flex items-center gap-1.5 text-[13px] text-ink-soft">
+                <div className="mt-auto flex items-center gap-1.5 text-[14px] text-ink-soft">
                   <Icon icon={GraduationCap} size={15} /> {t("studentsN", { n: g.studentCount })}
                 </div>
               </Card>

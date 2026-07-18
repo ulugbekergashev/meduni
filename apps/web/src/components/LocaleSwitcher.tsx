@@ -7,7 +7,7 @@ export function LocaleSwitcher() {
   const current = i18n.language as Locale;
 
   return (
-    <div className="inline-flex rounded-pill border border-line bg-surface p-0.5 text-[12.5px] font-semibold">
+    <div className="inline-flex rounded-pill border border-line bg-surface p-0.5 text-[13.5px] font-semibold">
       {(["uz", "ru"] as const).map((l) => (
         <button
           key={l}

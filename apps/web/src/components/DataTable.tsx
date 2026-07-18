@@ -5,9 +5,9 @@ import { Card, Icon } from "@meduni/ui";
 export function DataTable({ headers, children }: { headers: string[]; children: ReactNode }) {
   return (
     <Card className="overflow-x-auto p-0">
-      <table className="w-full min-w-[520px] text-left text-[13.5px]">
+      <table className="w-full min-w-[520px] text-left text-[14.5px]">
         <thead>
-          <tr className="border-b border-line bg-bg/60 text-[11.5px] uppercase tracking-[0.06em] text-ink-faint">
+          <tr className="border-b border-line bg-bg/60 text-[12.5px] uppercase tracking-[0.06em] text-ink-faint">
             {headers.map((h) => (
               <th key={h} className="px-4 py-3 font-semibold">
                 {h}

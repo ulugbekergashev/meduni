@@ -16,7 +16,7 @@ export function TabNav({ items }: { items: TabItem[] }) {
           to={item.to}
           className={({ isActive }) =>
             cls(
-              "shrink-0 whitespace-nowrap rounded-[8px] px-4 py-2 text-[14px] font-semibold transition-all",
+              "shrink-0 whitespace-nowrap rounded-[8px] px-4 py-2 text-[15px] font-semibold transition-all",
               isActive
                 ? "bg-brand-soft text-brand-deep"
                 : "text-ink-soft hover:bg-bg hover:text-ink"

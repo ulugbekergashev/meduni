@@ -26,7 +26,7 @@ function CourseCard({ course }: { course: CourseSummary }) {
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h3 className="truncate text-section font-bold text-ink">{course.subjectName}</h3>
-          <p className="truncate text-[12.5px] text-ink-faint">{course.teacherName}</p>
+          <p className="truncate text-[13.5px] text-ink-faint">{course.teacherName}</p>
         </div>
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand-deep">
           <Icon icon={BookOpen} size={18} />
@@ -35,7 +35,7 @@ function CourseCard({ course }: { course: CourseSummary }) {
 
       <div className="space-y-1.5">
         <ProgressBar pct={course.progressPct} />
-        <div className="flex items-center justify-between text-[12px] text-ink-soft">
+        <div className="flex items-center justify-between text-[13px] text-ink-soft">
           <span>{course.progressPct}%</span>
           <span>
             {course.topicsCompleted}/{course.topicsTotal} {t("topics")}
@@ -44,7 +44,7 @@ function CourseCard({ course }: { course: CourseSummary }) {
       </div>
 
       {next && (
-        <p className="truncate text-[12.5px] text-ink-soft">
+        <p className="truncate text-[13.5px] text-ink-soft">
           <span className="text-ink-faint">{t("nextTopic")}: </span>
           {next}
         </p>
@@ -61,7 +61,7 @@ function SummaryTile({ icon, value, label, tone }: { icon: typeof Layers; value:
       </div>
       <div className="min-w-0">
         <p className="text-[18px] font-bold leading-none tabular-nums text-ink">{value}</p>
-        <p className="mt-0.5 truncate text-[11.5px] text-ink-soft">{label}</p>
+        <p className="mt-0.5 truncate text-[12.5px] text-ink-soft">{label}</p>
       </div>
     </div>
   );
@@ -128,15 +128,15 @@ export function StudentDashboard() {
             {/* Resume — the primary action, most prominent block */}
             {d.resume && (
               <div className="mt-5 rounded-card bg-gradient-to-br from-brand-deep to-brand p-5 text-white shadow-md">
-                <p className="text-[12.5px] font-medium uppercase tracking-wide text-white/70">{t("continueLabel")}</p>
-                <p className="mt-1 text-[13px] text-white/85">{d.resume.subjectName}</p>
+                <p className="text-[13.5px] font-medium uppercase tracking-wide text-white/70">{t("continueLabel")}</p>
+                <p className="mt-1 text-[14px] text-white/85">{d.resume.subjectName}</p>
                 <h2 className="mt-0.5 text-[20px] font-bold leading-tight">{d.resume.topic}</h2>
                 <div className="mt-3">
                   <ProgressBar pct={d.resume.pct} tone="white" />
-                  <p className="mt-1.5 text-[12px] text-white/80">{d.resume.pct}% {t("done")}</p>
+                  <p className="mt-1.5 text-[13px] text-white/80">{d.resume.pct}% {t("done")}</p>
                 </div>
                 <Link to={`/app/topics/${d.resume.topicId}`} className="mt-4 block">
-                  <button className="flex w-full items-center justify-center gap-2 rounded-control bg-white px-4 py-3 text-[15px] font-bold text-brand-deep transition-all hover:bg-white/90">
+                  <button className="flex w-full items-center justify-center gap-2 rounded-control bg-white px-4 py-3 text-[16px] font-bold text-brand-deep transition-all hover:bg-white/90">
                     <Icon icon={PlayCircle} size={19} />
                     {t("continue")}
                   </button>
@@ -156,8 +156,8 @@ export function StudentDashboard() {
                           <Icon icon={ClipboardCheck} size={17} />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-[13.5px] font-semibold text-ink">{t("caseGraded")}</p>
-                          <p className="truncate text-[12px] text-ink-soft">{n.topic}</p>
+                          <p className="truncate text-[14.5px] font-semibold text-ink">{t("caseGraded")}</p>
+                          <p className="truncate text-[13px] text-ink-soft">{n.topic}</p>
                         </div>
                         {n.score !== null && <span className="text-[16px] font-bold text-emerald">{n.score}</span>}
                       </Card>
@@ -181,7 +181,7 @@ export function StudentDashboard() {
       </AsyncSection>
 
       {d && d.courses.length === 0 && (
-        <p className="mt-3 text-center text-[13px] text-ink-faint">{t("adminWillAdd")}</p>
+        <p className="mt-3 text-center text-[14px] text-ink-faint">{t("adminWillAdd")}</p>
       )}
 
       {/* Empty-but-loaded fallback handled by AsyncSection; explicit hint below */}

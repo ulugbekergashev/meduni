@@ -14,8 +14,8 @@ function Row({ icon, label, value }: { icon: typeof Mail; label: string; value: 
   return (
     <div className="flex items-center gap-3 py-2">
       <Icon icon={icon} size={16} className="shrink-0 text-ink-faint" />
-      <span className="w-24 shrink-0 text-[12.5px] text-ink-faint">{label}</span>
-      <span className="truncate text-[13.5px] font-medium text-ink">{value}</span>
+      <span className="w-24 shrink-0 text-[13.5px] text-ink-faint">{label}</span>
+      <span className="truncate text-[14.5px] font-medium text-ink">{value}</span>
     </div>
   );
 }
@@ -27,7 +27,7 @@ function SummaryTile({ icon, label, value, tone }: { icon: typeof BookOpen; labe
         <Icon icon={icon} size={16} />
       </div>
       <span className="text-[19px] font-bold tabular-nums text-ink">{value}</span>
-      <span className="text-[11.5px] text-ink-soft">{label}</span>
+      <span className="text-[12.5px] text-ink-soft">{label}</span>
     </div>
   );
 }
@@ -84,7 +84,7 @@ export function ProfilePage() {
       <h1 className="text-h1 font-bold text-ink">{t("title")}</h1>
 
       {q.isError || !p ? (
-        <Card><p className="py-6 text-center text-[13.5px] text-rose">{t("loadError")}</p></Card>
+        <Card><p className="py-6 text-center text-[14.5px] text-rose">{t("loadError")}</p></Card>
       ) : (
         <>
           {/* Personal info (read-only) */}
@@ -93,7 +93,7 @@ export function ProfilePage() {
               <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-brand-soft text-[18px] font-bold text-brand-deep">{initials}</div>
               <div className="min-w-0">
                 <p className="truncate text-[16px] font-bold text-ink">{p.fullName}</p>
-                {p.groupName && <p className="text-[12.5px] text-ink-soft">{p.groupName}</p>}
+                {p.groupName && <p className="text-[13.5px] text-ink-soft">{p.groupName}</p>}
               </div>
             </div>
             <div className="mt-3 border-t border-line pt-2">
@@ -101,7 +101,7 @@ export function ProfilePage() {
               <Row icon={Mail} label={t("email")} value={p.email} />
               {p.phone && <Row icon={Phone} label={t("phone")} value={p.phone} />}
             </div>
-            <p className="mt-2 text-[11.5px] text-ink-faint">{t("adminNote")}</p>
+            <p className="mt-2 text-[12.5px] text-ink-faint">{t("adminNote")}</p>
           </Card>
 
           {/* Study summary */}
@@ -120,10 +120,10 @@ export function ProfilePage() {
 
             {/* Language */}
             <div>
-              <p className="mb-1.5 text-[12.5px] font-semibold text-ink-soft">{t("language")}</p>
+              <p className="mb-1.5 text-[13.5px] font-semibold text-ink-soft">{t("language")}</p>
               <div className="flex overflow-hidden rounded-control border border-line">
                 {(["uz", "ru"] as const).map((l) => (
-                  <button key={l} onClick={() => pickLocale(l)} disabled={setLocale.isPending} className={cls("flex-1 px-3 py-2 text-[13.5px] font-semibold transition-colors", locale === l ? "bg-brand-soft text-brand-deep" : "text-ink-soft hover:bg-bg")}>
+                  <button key={l} onClick={() => pickLocale(l)} disabled={setLocale.isPending} className={cls("flex-1 px-3 py-2 text-[14.5px] font-semibold transition-colors", locale === l ? "bg-brand-soft text-brand-deep" : "text-ink-soft hover:bg-bg")}>
                     {l === "uz" ? "O‘zbek (lotin)" : "Русский"}
                   </button>
                 ))}
@@ -135,11 +135,11 @@ export function ProfilePage() {
 
             {/* Password */}
             <div className="space-y-2">
-              <p className="text-[12.5px] font-semibold text-ink-soft">{t("changePassword")}</p>
-              <input type="password" value={oldPassword} onChange={(e) => { setOld(e.target.value); setPwErr(null); }} placeholder={t("oldPassword")} className="w-full rounded-control border border-line px-3 py-2 text-[13.5px] outline-none focus:border-brand" />
-              <input type="password" value={newPassword} onChange={(e) => { setNew(e.target.value); setPwErr(null); }} placeholder={t("newPassword")} className="w-full rounded-control border border-line px-3 py-2 text-[13.5px] outline-none focus:border-brand" />
-              <input type="password" value={confirm} onChange={(e) => { setConfirm(e.target.value); setPwErr(null); }} placeholder={t("confirmPassword")} className="w-full rounded-control border border-line px-3 py-2 text-[13.5px] outline-none focus:border-brand" />
-              {pwErr && <p className="text-[12.5px] font-medium text-rose">{pwErr}</p>}
+              <p className="text-[13.5px] font-semibold text-ink-soft">{t("changePassword")}</p>
+              <input type="password" value={oldPassword} onChange={(e) => { setOld(e.target.value); setPwErr(null); }} placeholder={t("oldPassword")} className="w-full rounded-control border border-line px-3 py-2 text-[14.5px] outline-none focus:border-brand" />
+              <input type="password" value={newPassword} onChange={(e) => { setNew(e.target.value); setPwErr(null); }} placeholder={t("newPassword")} className="w-full rounded-control border border-line px-3 py-2 text-[14.5px] outline-none focus:border-brand" />
+              <input type="password" value={confirm} onChange={(e) => { setConfirm(e.target.value); setPwErr(null); }} placeholder={t("confirmPassword")} className="w-full rounded-control border border-line px-3 py-2 text-[14.5px] outline-none focus:border-brand" />
+              {pwErr && <p className="text-[13.5px] font-medium text-rose">{pwErr}</p>}
               <Button onClick={submitPw} disabled={changePw.isPending || !oldPassword || !newPassword || !confirm}>{t("save")}</Button>
             </div>
           </Card>

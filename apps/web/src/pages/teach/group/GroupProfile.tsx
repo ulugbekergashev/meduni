@@ -50,10 +50,10 @@ function StudentRow({ s, onClick, tRel }: { s: GroupStudent; onClick: () => void
   const lowAtt = s.attendancePct !== null && s.attendancePct < 75;
   return (
     <button onClick={onClick} className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-bg">
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-soft text-[12px] font-bold text-brand-deep">{initials}</div>
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-soft text-[13px] font-bold text-brand-deep">{initials}</div>
       <div className="min-w-0 flex-[2]">
         <div className="flex items-center gap-2">
-          <p className="truncate text-[14px] font-medium text-ink">{s.fullName}</p>
+          <p className="truncate text-[15px] font-medium text-ink">{s.fullName}</p>
           {s.behind && <Badge tone="rose">{t("behind")}</Badge>}
         </div>
         <p className="mt-0.5 truncate text-note text-ink-faint">{tRel(s.lastActiveAt)}</p>
@@ -61,16 +61,16 @@ function StudentRow({ s, onClick, tRel }: { s: GroupStudent; onClick: () => void
       <div className="hidden min-w-0 flex-1 sm:block">
         <div className="flex items-center gap-2">
           <ProgressBar value={s.overallPct} className="flex-1" />
-          <span className="w-9 shrink-0 text-right text-[12px] font-semibold tabular-nums text-ink-soft">{s.overallPct}%</span>
+          <span className="w-9 shrink-0 text-right text-[13px] font-semibold tabular-nums text-ink-soft">{s.overallPct}%</span>
         </div>
       </div>
       <div className="hidden w-14 shrink-0 text-right sm:block">
-        <span className="text-[12px] text-ink-faint">{t("quiz")}</span>
-        <p className="text-[13px] font-bold tabular-nums text-ink">{s.avgQuizScore === null ? "—" : `${s.avgQuizScore}%`}</p>
+        <span className="text-[13px] text-ink-faint">{t("quiz")}</span>
+        <p className="text-[14px] font-bold tabular-nums text-ink">{s.avgQuizScore === null ? "—" : `${s.avgQuizScore}%`}</p>
       </div>
       <div className="w-14 shrink-0 text-right">
-        <span className="text-[12px] text-ink-faint">{t("att")}</span>
-        <p className={cls("text-[13px] font-bold tabular-nums", lowAtt ? "text-rose" : "text-ink")}>{s.attendancePct === null ? "—" : `${s.attendancePct}%`}</p>
+        <span className="text-[13px] text-ink-faint">{t("att")}</span>
+        <p className={cls("text-[14px] font-bold tabular-nums", lowAtt ? "text-rose" : "text-ink")}>{s.attendancePct === null ? "—" : `${s.attendancePct}%`}</p>
       </div>
       <Icon icon={ChevronRight} size={16} className="shrink-0 text-ink-faint" />
     </button>
@@ -114,7 +114,7 @@ function CoursePicker({ group, courseId, onPick }: { group: TeachGroup; courseId
           key={c.id}
           onClick={() => onPick(c.id)}
           className={cls(
-            "rounded-pill px-3 py-1.5 text-[13px] font-semibold transition-colors",
+            "rounded-pill px-3 py-1.5 text-[14px] font-semibold transition-colors",
             c.id === courseId ? "bg-brand text-white" : "bg-surface text-ink-soft border border-line hover:bg-bg"
           )}
         >
@@ -145,7 +145,7 @@ export function GroupProfile() {
 
   return (
     <div>
-      <button onClick={() => navigate("/teach/groups")} className="mb-3 flex items-center gap-1 text-[13.5px] font-medium text-brand-deep hover:underline">
+      <button onClick={() => navigate("/teach/groups")} className="mb-3 flex items-center gap-1 text-[14.5px] font-medium text-brand-deep hover:underline">
         <Icon icon={ArrowLeft} size={15} /> {t("back")}
       </button>
 
@@ -162,7 +162,7 @@ export function GroupProfile() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <h1 className="text-h1 font-bold text-ink">{group.name}</h1>
-                  <p className="flex flex-wrap items-center gap-x-2 text-[13px] text-ink-soft">
+                  <p className="flex flex-wrap items-center gap-x-2 text-[14px] text-ink-soft">
                     <span>{t("yearN", { n: group.yearOfStudy })}</span>
                     <span>·</span>
                     <span>{group.facultyName}</span>
@@ -172,7 +172,7 @@ export function GroupProfile() {
                 </div>
                 <div className="flex flex-wrap gap-1.5">
                   {group.courses.map((c) => (
-                    <button key={c.id} onClick={() => navigate(`/teach/courses/${c.id}`)} className="rounded-pill bg-brand-soft px-2.5 py-1 text-[12.5px] font-semibold text-brand-deep transition-colors hover:bg-brand/10">
+                    <button key={c.id} onClick={() => navigate(`/teach/courses/${c.id}`)} className="rounded-pill bg-brand-soft px-2.5 py-1 text-[13.5px] font-semibold text-brand-deep transition-colors hover:bg-brand/10">
                       {c.name}
                     </button>
                   ))}
@@ -189,7 +189,7 @@ export function GroupProfile() {
                     key={x.key}
                     onClick={() => setTab(x.key)}
                     className={cls(
-                      "flex shrink-0 items-center gap-2 whitespace-nowrap rounded-[8px] px-4 py-2 text-[14px] font-semibold transition-all",
+                      "flex shrink-0 items-center gap-2 whitespace-nowrap rounded-[8px] px-4 py-2 text-[15px] font-semibold transition-all",
                       tab === x.key ? "bg-brand-soft text-brand-deep" : "text-ink-soft hover:bg-bg hover:text-ink"
                     )}
                   >
@@ -202,7 +202,7 @@ export function GroupProfile() {
               <div className="mt-5">
                 {tab === "students" && <StudentsTab group={group} />}
                 {tab !== "students" && activeCourseId === null && (
-                  <Card><p className="py-8 text-center text-[13.5px] text-ink-soft">{t("noCourses")}</p></Card>
+                  <Card><p className="py-8 text-center text-[14.5px] text-ink-soft">{t("noCourses")}</p></Card>
                 )}
                 {tab !== "students" && activeCourseId !== null && (
                   <>

@@ -179,7 +179,7 @@ export function TopicConstructor() {
                 >
                   <span
                     className={cls(
-                      "flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[12px] font-bold",
+                      "flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[13px] font-bold",
                       st === "done" && "bg-emerald text-white",
                       st === "current" && (isActive ? "bg-brand text-white" : "border border-brand text-brand"),
                       st === "locked" && "bg-bg text-ink-faint"

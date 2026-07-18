@@ -9,11 +9,11 @@ function Block({ icon, title, text }: { icon: typeof User; title: string; text: 
   if (!text) return null;
   return (
     <div>
-      <h4 className="mb-1 flex items-center gap-1.5 text-[12px] font-bold uppercase tracking-wide text-ink-soft">
+      <h4 className="mb-1 flex items-center gap-1.5 text-[13px] font-bold uppercase tracking-wide text-ink-soft">
         <Icon icon={icon} size={14} />
         {title}
       </h4>
-      <p className="whitespace-pre-line text-[13.5px] text-ink">{text}</p>
+      <p className="whitespace-pre-line text-[14.5px] text-ink">{text}</p>
     </div>
   );
 }
@@ -47,16 +47,16 @@ export function CaseTab({ topicId, data }: { topicId: number; data: CaseTabData 
       {/* Answer / review */}
       {data.questions.map((q, i) => (
         <Card key={i} className="space-y-3">
-          <p className="text-[14px] font-semibold text-ink">
+          <p className="text-[15px] font-semibold text-ink">
             {i + 1}. {q}
           </p>
 
           {attempt ? (
             <>
-              <div className="rounded-control border border-line bg-bg p-3 text-[13.5px] text-ink">{attempt.answers[i]}</div>
+              <div className="rounded-control border border-line bg-bg p-3 text-[14.5px] text-ink">{attempt.answers[i]}</div>
               <div className="rounded-control bg-emerald-soft p-3">
-                <p className="mb-1 text-[12px] font-bold text-emerald">{t("referenceAnswer")}</p>
-                <p className="text-[13.5px] text-ink">{attempt.referenceAnswer[i]}</p>
+                <p className="mb-1 text-[13px] font-bold text-emerald">{t("referenceAnswer")}</p>
+                <p className="text-[14.5px] text-ink">{attempt.referenceAnswer[i]}</p>
               </div>
             </>
           ) : (
@@ -76,20 +76,20 @@ export function CaseTab({ topicId, data }: { topicId: number; data: CaseTabData 
           <Card className="space-y-2 border-emerald/40 bg-emerald-soft">
             <div className="flex items-center gap-2 text-emerald">
               <Icon icon={ClipboardCheck} size={18} />
-              <p className="text-[15px] font-bold">
+              <p className="text-[16px] font-bold">
                 {t("grade")}: {attempt.score}
               </p>
             </div>
-            {attempt.teacherFeedback && <p className="text-[13.5px] text-ink">{attempt.teacherFeedback}</p>}
+            {attempt.teacherFeedback && <p className="text-[14.5px] text-ink">{attempt.teacherFeedback}</p>}
           </Card>
         ) : (
-          <div className="rounded-control bg-amber-soft px-3 py-2.5 text-[13px] font-medium text-amber">{t("underReview")}</div>
+          <div className="rounded-control bg-amber-soft px-3 py-2.5 text-[14px] font-medium text-amber">{t("underReview")}</div>
         )
       ) : (
         <button
           onClick={() => setConfirm(true)}
           disabled={!allFilled || submit.isPending}
-          className="w-full rounded-control bg-rose px-4 py-3 text-[15px] font-bold text-white transition-all hover:opacity-90 disabled:opacity-50"
+          className="w-full rounded-control bg-rose px-4 py-3 text-[16px] font-bold text-white transition-all hover:opacity-90 disabled:opacity-50"
         >
           {t("submitCase")}
         </button>

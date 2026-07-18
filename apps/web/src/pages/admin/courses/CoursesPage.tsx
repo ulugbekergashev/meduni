@@ -100,7 +100,7 @@ export function CoursesPage() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-h1 font-bold text-ink">{t("title")}</h1>
-          <p className="mt-1 text-[13.5px] text-ink-soft">{t("subtitle")}</p>
+          <p className="mt-1 text-[14.5px] text-ink-soft">{t("subtitle")}</p>
         </div>
         {ready ? (
           <Button
@@ -113,7 +113,7 @@ export function CoursesPage() {
             {t("create")}
           </Button>
         ) : (
-          <div className="space-y-0.5 text-right text-[12.5px]">
+          <div className="space-y-0.5 text-right text-[13.5px]">
             {subjectOptions.length === 0 && <p className="text-amber">{t("noSubjects")}</p>}
             {teacherOptions.length === 0 && <p className="text-amber">{t("noTeachers")}</p>}
             {groupOptions.length === 0 && <p className="text-amber">{t("noGroups")}</p>}
@@ -174,7 +174,7 @@ export function CoursesPage() {
               onToggle={toggleGroup}
             />
           </Field>
-          {formError && <p className="text-[13px] text-rose">{formError}</p>}
+          {formError && <p className="text-[14px] text-rose">{formError}</p>}
           <div className="flex justify-end gap-2">
             <Button type="button" variant="ghost" onClick={() => setAddOpen(false)}>
               {tc("cancel")}

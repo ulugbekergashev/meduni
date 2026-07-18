@@ -13,20 +13,20 @@ export function CourseCard({ course, avgProgress }: { course: TeachCourse; avgPr
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <h3 className="line-clamp-2 text-[16px] font-bold leading-snug text-ink">{course.subjectName}</h3>
-          <p className="mt-0.5 text-[12px] text-ink-faint">{course.academicYear}</p>
+          <p className="mt-0.5 text-[13px] text-ink-faint">{course.academicYear}</p>
         </div>
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand-deep">
           <Icon icon={BookOpen} size={18} />
         </div>
       </div>
-      <div className="flex flex-wrap gap-1.5 text-[12px]">
+      <div className="flex flex-wrap gap-1.5 text-[13px]">
         <span className="rounded-pill bg-brand-soft px-2 py-0.5 font-semibold text-brand-deep">{t("semesterN", { n: course.semester })}</span>
         {course.groups.map((g) => (
           <span key={g.id} className="rounded-pill bg-bg px-2 py-0.5 text-ink-soft">{g.name}</span>
         ))}
       </div>
       <div className="mt-auto space-y-1.5 pt-1">
-        <div className="flex items-center justify-between text-[12.5px] text-ink-soft">
+        <div className="flex items-center justify-between text-[13.5px] text-ink-soft">
           <span className="inline-flex items-center gap-1.5"><Icon icon={Users} size={14} /> {t("studentsN", { n: course.studentCount })}</span>
           <span className="font-semibold text-ink">{avgProgress}%</span>
         </div>

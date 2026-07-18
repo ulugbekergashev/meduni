@@ -22,7 +22,7 @@ export function ContentEditor() {
   if (content.isError || !content.data) {
     return (
       <Card className="mt-4">
-        <p className="py-6 text-center text-[13.5px] text-rose">{t("loadError")}</p>
+        <p className="py-6 text-center text-[14.5px] text-rose">{t("loadError")}</p>
       </Card>
     );
   }

@@ -52,7 +52,7 @@ export function ProgressRing({
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <span className="text-[26px] font-bold leading-none tabular-nums text-ink">{Math.round(v)}%</span>
-        {label && <span className="mt-1 max-w-[80%] truncate text-[11.5px] font-medium text-ink-faint">{label}</span>}
+        {label && <span className="mt-1 max-w-[80%] truncate text-[12.5px] font-medium text-ink-faint">{label}</span>}
       </div>
     </div>
   );
@@ -113,7 +113,7 @@ export function Donut({
           <span className="text-[24px] font-bold leading-none tabular-nums text-ink">{centerValue}</span>
         )}
         {centerLabel && (
-          <span className="mt-1 max-w-[75%] truncate text-[11.5px] font-medium text-ink-faint">{centerLabel}</span>
+          <span className="mt-1 max-w-[75%] truncate text-[12.5px] font-medium text-ink-faint">{centerLabel}</span>
         )}
       </div>
     </div>
@@ -123,7 +123,7 @@ export function Donut({
 /** Legend row for Donut/StackedBar: colored square + label + tabular value. */
 export function LegendRow({ tone, label, value }: { tone: ToneKey; label: string; value?: ReactNode }) {
   return (
-    <div className="flex items-center gap-2.5 text-[13px]">
+    <div className="flex items-center gap-2.5 text-[14px]">
       <span className="h-2.5 w-2.5 shrink-0 rounded-[3px]" style={{ background: toneVar[tone] }} />
       <span className="min-w-0 flex-1 truncate text-ink-soft">{label}</span>
       {value !== undefined && <span className="shrink-0 font-semibold tabular-nums text-ink">{value}</span>}
@@ -160,11 +160,11 @@ export function BarRow({
       disabled={!onClick}
       className={`flex w-full items-center gap-4 rounded-control px-2 py-2 text-left transition-colors ${onClick ? "hover:bg-bg" : "cursor-default"}`}
     >
-      <span className="w-44 shrink-0 truncate text-[14px] font-medium text-ink">{label}</span>
+      <span className="w-44 shrink-0 truncate text-[15px] font-medium text-ink">{label}</span>
       <span className="h-3 flex-1 overflow-hidden rounded-pill bg-bg">
         <span className="block h-full rounded-pill transition-all" style={{ width: `${Math.max(v, 2)}%`, background: toneVar[tone] }} />
       </span>
-      <span className="w-12 shrink-0 text-right text-[13.5px] font-bold tabular-nums text-ink">{Math.round(v)}%</span>
+      <span className="w-12 shrink-0 text-right text-[14.5px] font-bold tabular-nums text-ink">{Math.round(v)}%</span>
     </button>
   );
 }

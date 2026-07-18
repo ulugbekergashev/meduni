@@ -70,7 +70,7 @@ export function PresentationEditor({ content }: { content: ContentFull }) {
     <div>
       <button
         onClick={() => navigate(`/teach/topics/${content.topicId}`)}
-        className="text-[13.5px] font-medium text-brand-deep hover:underline"
+        className="text-[14.5px] font-medium text-brand-deep hover:underline"
       >
         {t("back")}
       </button>
@@ -108,7 +108,7 @@ export function PresentationEditor({ content }: { content: ContentFull }) {
           <Card key={slide.id} className="grid gap-4 md:grid-cols-[1fr_18rem]">
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="flex items-center gap-2 text-[13px] font-bold text-ink-soft">
+                <span className="flex items-center gap-2 text-[14px] font-bold text-ink-soft">
                   {si + 1}
                   <Badge tone="violet">{slide.layout}</Badge>
                 </span>
@@ -139,7 +139,7 @@ export function PresentationEditor({ content }: { content: ContentFull }) {
                 ))}
                 <button
                   onClick={() => patch(si, { bullets: [...slide.bullets, ""] })}
-                  className="inline-flex items-center gap-1 text-[13px] font-medium text-brand-deep hover:underline"
+                  className="inline-flex items-center gap-1 text-[14px] font-medium text-brand-deep hover:underline"
                 >
                   <Icon icon={Plus} size={14} /> {t("addBullet")}
                 </button>
@@ -149,13 +149,13 @@ export function PresentationEditor({ content }: { content: ContentFull }) {
                 value={slide.speakerNotes}
                 onChange={(e) => patch(si, { speakerNotes: e.target.value })}
                 placeholder={t("speakerNotes")}
-                className="text-[12.5px]"
+                className="text-[13.5px]"
               />
             </div>
 
             <div>
               {slide.imageSlots.length === 0 ? (
-                <div className="flex aspect-video items-center justify-center rounded-control bg-bg text-[12px] text-ink-faint">
+                <div className="flex aspect-video items-center justify-center rounded-control bg-bg text-[13px] text-ink-faint">
                   {t("noImage")}
                 </div>
               ) : (
