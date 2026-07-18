@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, ChevronRight, Landmark, Pencil, Plus, Trash2, Users } from "lucide-react";
+import { ArrowLeft, Building2, ChevronRight, Landmark, Pencil, Plus, Trash2, Users } from "lucide-react";
 import { Button, Card, Icon, Spinner } from "@meduni/ui";
 import { useMe } from "../../../lib/auth";
 import { PasswordModal } from "../users/PasswordModal";
@@ -55,14 +55,20 @@ export function FacultyPage() {
 
   return (
     <div>
-      <button onClick={() => navigate("/admin/staff")} className="flex items-center gap-1 text-[13.5px] font-medium text-brand-deep hover:underline">
-        <Icon icon={ArrowLeft} size={15} /> {t("title")}
-      </button>
+      {/* Back to the university hub — only meaningful for the superadmin */}
+      {canFaculty && (
+        <button onClick={() => navigate("/admin/staff")} className="flex items-center gap-1 text-[13.5px] font-medium text-brand-deep hover:underline">
+          <Icon icon={ArrowLeft} size={15} /> {t("title")}
+        </button>
+      )}
 
       {/* Header */}
       <div className="mt-3 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-h1 font-bold text-ink">{f.name}</h1>
+          <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.08em] text-brand">
+            <Icon icon={Building2} size={13} /> {t("faculty")}
+          </p>
+          <h1 className="mt-0.5 text-h1 font-bold text-ink">{f.name}</h1>
           <div className="mt-1.5 flex flex-wrap gap-1.5">
             <CountChip>{t("nDepts", { n: f.departments.length })}</CountChip>
             <CountChip>{t("nGroups", { n: f.groups.length })}</CountChip>

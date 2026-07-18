@@ -71,7 +71,12 @@ export function AdminShell() {
         ...(me?.role !== "dept_admin"
           ? [{ href: "/admin/students", label: t("students"), icon: <Icon icon={Users} /> }]
           : []),
-        { href: "/admin/staff", label: t("staff"), icon: <Icon icon={Network} /> },
+        // The staff module is each tier's own world — name it accordingly.
+        {
+          href: "/admin/staff",
+          label: me?.role === "faculty_admin" ? t("myFaculty") : me?.role === "dept_admin" ? t("myDept") : t("staff"),
+          icon: <Icon icon={Network} />,
+        },
         { href: "/admin/courses", label: t("courses"), icon: <Icon icon={BookOpen} /> },
         { href: "/admin/tasks", label: t("tasks"), icon: <Icon icon={ListChecks} /> },
         { href: "/admin/ai", label: t("ai"), icon: <Icon icon={Sparkles} /> },

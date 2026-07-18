@@ -23,7 +23,9 @@
     "settings": "Sozlamalar",
     "logout": "Chiqish",
     "students": "Talabalar",
-    "staff": "Xodimlar"
+    "staff": "Xodimlar",
+    "myFaculty": "Fakultetim",
+    "myDept": "Kafedram"
   },
   "theme": {
     "label": "Mavzu (rang)",
@@ -795,7 +797,9 @@
     "quotaImages": "Rasmlar",
     "quotaCost": "Xarajat ($)",
     "deanLabel": "Dekan",
-    "headLabel": "Mudir"
+    "headLabel": "Mudir",
+    "faculty": "Fakultet",
+    "department": "Kafedra"
   },
   "users": {
     "title": "Foydalanuvchilar",
