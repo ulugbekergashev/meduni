@@ -169,9 +169,9 @@ export async function getCourseProgress(courseId: number, teacherId: number) {
 
 /** Teacher force-opens a topic for one student (overrides the sequential lock). */
 export async function manualUnlock(courseId: number, teacherId: number, studentId: number, topicId: number) {
-  await ownCourse(courseId, teacherId);
-  const topic = await prisma.topic.findUnique({ where: { id: topicId }, select: { courseId: true } });
-  if (!topic || topic.courseId !== courseId) throw notFound("Mavzu");
+  const course = await ownCourse(courseId, teacherId);
+  const topic = await prisma.topic.findUnique({ where: { id: topicId }, select: { subjectId: true } });
+  if (!topic || topic.subjectId !== course.subjectId) throw notFound("Mavzu");
   const enrolled = await prisma.enrollment.findUnique({ where: { studentId_courseId: { studentId, courseId } } });
   if (!enrolled) throw notFound("Talaba");
 
@@ -326,14 +326,14 @@ export async function getTeacherDashboard(teacherId: number) {
   const inCourses = { in: courseIds };
 
   const [casesToReview, contentToApprove, upcoming, distinctStudents, courseGroups, publishedTopics, totalTopics, publishedContent, casesReviewed, attMarks] = await Promise.all([
-    prisma.caseAttempt.count({ where: { reviewedAt: null, clinicalCase: { contentItem: { topic: { course: { teacherId } } } } } }),
-    prisma.contentItem.count({ where: { status: { in: ["DRAFT", "REVIEW"] }, topic: { course: { teacherId } } } }),
+    prisma.caseAttempt.count({ where: { reviewedAt: null, clinicalCase: { contentItem: { topic: { subject: { courses: { some: { teacherId } } } } } } } }),
+    prisma.contentItem.count({ where: { status: { in: ["DRAFT", "REVIEW"] }, topic: { subject: { courses: { some: { teacherId } } } } } }),
     prisma.lessonSession.findMany({ where: { course: { teacherId }, date: { gte: startOfToday } }, orderBy: { date: "asc" }, take: 5, include: { course: { include: { subject: true, courseGroups: true } }, topic: true } }),
     prisma.enrollment.findMany({ where: { courseId: inCourses, status: "ACTIVE" }, distinct: ["studentId"], select: { studentId: true } }),
     prisma.courseGroup.findMany({ where: { courseId: inCourses }, include: { group: true } }),
-    prisma.topic.count({ where: { courseId: inCourses, contentItems: { some: { status: "PUBLISHED" } } } }),
-    prisma.topic.count({ where: { courseId: inCourses } }),
-    prisma.contentItem.count({ where: { status: "PUBLISHED", topic: { courseId: inCourses } } }),
+    prisma.topic.count({ where: { subject: { courses: { some: { id: inCourses } } }, contentItems: { some: { status: "PUBLISHED" } } } }),
+    prisma.topic.count({ where: { subject: { courses: { some: { id: inCourses } } } } }),
+    prisma.contentItem.count({ where: { status: "PUBLISHED", topic: { subject: { courses: { some: { id: inCourses } } } } } }),
     prisma.caseAttempt.count({ where: { reviewedById: teacherId } }),
     prisma.attendance.groupBy({ by: ["status"], where: { session: { courseId: inCourses } }, _count: true }),
   ]);

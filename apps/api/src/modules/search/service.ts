@@ -123,11 +123,11 @@ export async function studentSearch(studentId: number, q: string) {
     }),
     prisma.topic.findMany({
       where: {
-        course: { enrollments: enrolled },
+        subject: { courses: { some: { enrollments: enrolled } } },
         contentItems: { some: { status: "PUBLISHED" } }, // students only see published topics
         title: contains(needle),
       },
-      select: { id: true, title: true, course: { select: { subject: { select: { name: true } } } } },
+      select: { id: true, title: true, subject: { select: { name: true } } },
       orderBy: { id: "asc" },
       take: LIMIT,
     }),
@@ -138,7 +138,7 @@ export async function studentSearch(studentId: number, q: string) {
     topics: topics.map((t) => ({
       id: t.id,
       title: t.title,
-      courseName: t.course.subject.name,
+      courseName: t.subject.name,
     })),
   };
 }

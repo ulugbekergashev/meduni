@@ -194,7 +194,7 @@ export async function listCourseStudents(id: number) {
 export async function getCourseDetail(id: number) {
   const out = await getCourseOut(id);
   const students = await listCourseStudents(id);
-  const topicCount = await prisma.topic.count({ where: { courseId: id } });
+  const topicCount = await prisma.topic.count({ where: { subject: { courses: { some: { id } } } } });
   return { ...out, students, topicCount };
 }
 
@@ -364,13 +364,13 @@ function emptyMeta(): SyllabusMeta {
 export async function getSyllabus(courseId: number, teacherId: number) {
   const course = await prisma.course.findUnique({
     where: { id: courseId },
-    include: { subject: true, topics: { orderBy: { orderIndex: "asc" } } },
+    include: { subject: { include: { topics: { orderBy: { orderIndex: "asc" } } } } },
   });
   if (!course) throw notFound("Kurs");
   if (course.teacherId !== teacherId) throw new ApiError(403, "forbidden", "Bu sizning kursingiz emas", "Это не ваш курс");
 
   const meta = { ...emptyMeta(), ...((course.syllabusJson as Partial<SyllabusMeta> | null) ?? {}) };
-  const topics = course.topics.map((t) => ({
+  const topics = course.subject.topics.map((t) => ({
     id: t.id,
     title: t.title,
     orderIndex: t.orderIndex,
@@ -393,7 +393,10 @@ export async function saveSyllabus(
   teacherId: number,
   body: { description?: string; objectives?: string[]; literature?: string[]; topics?: { id: number; hours?: number; note?: string }[] }
 ) {
-  const course = await prisma.course.findUnique({ where: { id: courseId }, include: { topics: { select: { id: true } } } });
+  const course = await prisma.course.findUnique({
+    where: { id: courseId },
+    include: { subject: { include: { topics: { select: { id: true } } } } },
+  });
   if (!course) throw notFound("Kurs");
   if (course.teacherId !== teacherId) throw new ApiError(403, "forbidden", "Bu sizning kursingiz emas", "Это не ваш курс");
 
@@ -403,7 +406,7 @@ export async function saveSyllabus(
     literature: (body.literature ?? []).map((s) => s.trim()).filter(Boolean),
   };
 
-  const ownTopicIds = new Set(course.topics.map((t) => t.id));
+  const ownTopicIds = new Set(course.subject.topics.map((t) => t.id));
   await prisma.$transaction([
     prisma.course.update({ where: { id: courseId }, data: { syllabusJson: meta as object } }),
     ...(body.topics ?? [])

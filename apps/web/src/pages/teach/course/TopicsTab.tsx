@@ -104,6 +104,11 @@ export function TopicsTab() {
 
   return (
     <div className="space-y-6">
+      {/* Faza 3: mavzular fanga tegishli — shu fandagi barcha kurslarda umumiy */}
+      <p className="rounded-control border border-line bg-brand-soft/50 px-4 py-2.5 text-note text-ink-soft">
+        {t("subjectShared")}
+      </p>
+
       {/* Add form */}
       <Card>
         <h2 className="mb-4 text-section font-bold text-ink">{t("addForm")}</h2>

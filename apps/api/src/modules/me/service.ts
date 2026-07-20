@@ -9,15 +9,18 @@ const topicInclude = {
   contentItems: { where: { status: "PUBLISHED" }, include: { quiz: true, clinicalCase: true } },
 } satisfies Prisma.TopicInclude;
 
+// Faza 3: mavzular FANGA tegishli — kurs o'z fanining mavzularini ko'rsatadi.
 const courseInclude = {
-  subject: true,
+  subject: { include: { topics: { orderBy: { orderIndex: "asc" }, include: topicInclude } } },
   teacher: true,
   courseGroups: { include: { group: true } },
-  topics: { orderBy: { orderIndex: "asc" }, include: topicInclude },
 } satisfies Prisma.CourseInclude;
 
-export type CourseWithTopics = Prisma.CourseGetPayload<{ include: typeof courseInclude }>;
-type TopicWithContent = CourseWithTopics["topics"][number];
+type CourseRow = Prisma.CourseGetPayload<{ include: typeof courseInclude }>;
+type TopicWithContent = CourseRow["subject"]["topics"][number];
+// Downstream kod (progress matritsa, tasks, lesson) `course.topics` bilan ishlaydi —
+// loadCourse fan mavzularini shu maydonga normalizatsiya qiladi.
+export type CourseWithTopics = CourseRow & { topics: TopicWithContent[] };
 
 // Facts + extras: slides-viewed (shown on the card, doesn't gate) and a teacher
 // manual-override flag that force-completes the topic (unlocks the next one).
@@ -197,8 +200,7 @@ export async function loadCourse(courseId: number): Promise<CourseWithTopics> {
   if (!course) throw notFound("Kurs");
   // Only topics with at least one PUBLISHED content item are visible to students;
   // topics still being built (no published content) don't appear on the path at all.
-  course.topics = course.topics.filter((t) => t.contentItems.length > 0);
-  return course;
+  return { ...course, topics: course.subject.topics.filter((t) => t.contentItems.length > 0) };
 }
 
 /** GET /me/courses — enrolled courses with a progress summary each. */
@@ -305,18 +307,25 @@ export function forbiddenLocked(reason?: Reason): ApiError {
   );
 }
 
+/** Faza 3: mavzu fanga tegishli — talabaning shu fandan ACTIVE yozilgan kursini topamiz. */
+export async function enrolledCourseIdForTopic(studentId: number, topicId: number): Promise<number | null> {
+  const topic = await prisma.topic.findUnique({ where: { id: topicId }, select: { subjectId: true } });
+  if (!topic) throw notFound("Mavzu");
+  const enrollment = await prisma.enrollment.findFirst({
+    where: { studentId, status: "ACTIVE", course: { subjectId: topic.subjectId } },
+    orderBy: { courseId: "asc" },
+    select: { courseId: true },
+  });
+  return enrollment?.courseId ?? null;
+}
+
 /** Recomputes a single topic's state for the student, enforcing enrollment,
  *  published-visibility and the sequential lock. Throws 403/404 as appropriate. */
 export async function assertTopicOpen(studentId: number, topicId: number): Promise<TopicOut> {
-  const topic = await prisma.topic.findUnique({ where: { id: topicId }, select: { courseId: true } });
-  if (!topic) throw notFound("Mavzu");
+  const courseId = await enrolledCourseIdForTopic(studentId, topicId);
+  if (courseId === null) throw forbiddenNotEnrolled();
 
-  const enrolled = await prisma.enrollment.findUnique({
-    where: { studentId_courseId: { studentId, courseId: topic.courseId } },
-  });
-  if (!enrolled || enrolled.status !== "ACTIVE") throw forbiddenNotEnrolled();
-
-  const course = await loadCourse(topic.courseId);
+  const course = await loadCourse(courseId);
   const facts = await studentFactsMap(studentId, course);
   const computed = computeTopics(course, facts);
   const state = computed.find((t) => t.id === topicId);
@@ -328,9 +337,9 @@ export async function assertTopicOpen(studentId: number, topicId: number): Promi
 /** Recompute + return a single topic's fresh state (no lock enforcement) — used
  *  after a student action to report whether the topic just completed. */
 export async function recomputeTopic(studentId: number, topicId: number): Promise<TopicOut | null> {
-  const topic = await prisma.topic.findUnique({ where: { id: topicId }, select: { courseId: true } });
-  if (!topic) return null;
-  const course = await loadCourse(topic.courseId);
+  const courseId = await enrolledCourseIdForTopic(studentId, topicId);
+  if (courseId === null) return null;
+  const course = await loadCourse(courseId);
   const facts = await studentFactsMap(studentId, course);
   return computeTopics(course, facts).find((t) => t.id === topicId) ?? null;
 }

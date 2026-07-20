@@ -20,7 +20,7 @@ export interface AutoTask {
 
 export async function computeTeacherAutoTasks(teacherId: number): Promise<AutoTask[]> {
   const topics = await prisma.topic.findMany({
-    where: { course: { teacherId } },
+    where: { subject: { courses: { some: { teacherId } } } },
     select: {
       id: true,
       materials: { select: { parseStatus: true } },
@@ -47,7 +47,7 @@ export async function computeTeacherAutoTasks(teacherId: number): Promise<AutoTa
   }
 
   const [casesToReview, pastSessions, courses] = await Promise.all([
-    prisma.caseAttempt.count({ where: { reviewedAt: null, clinicalCase: { contentItem: { topic: { course: { teacherId } } } } } }),
+    prisma.caseAttempt.count({ where: { reviewedAt: null, clinicalCase: { contentItem: { topic: { subject: { courses: { some: { teacherId } } } } } } } }),
     prisma.lessonSession.findMany({
       where: { course: { teacherId }, date: { lt: new Date() } },
       select: { id: true, _count: { select: { attendance: true } }, course: { select: { courseGroups: { select: { groupId: true }, take: 1 } } } },

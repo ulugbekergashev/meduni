@@ -11,34 +11,64 @@ import { digestSystemPrompt, digestUserContent } from "../../ai/prompts/digest";
 
 const MAX_MATERIAL_CHARS = 100_000;
 
-// ---------- Ownership ----------
+// ---------- Ownership (Faza 3: kafedra-markazlashgan) ----------
+// Mavzu FANGA tegishli. Tahrir huquqi: o'qituvchi fan kafedrasining a'zosi
+// YOKI shu fandan kurs olib boradi. Shu ikki holatdan biri yetarli.
 
 function forbidden(): ApiError {
-  return new ApiError(403, "forbidden", "Bu sizning kursingiz emas", "Это не ваш курс");
+  return new ApiError(403, "forbidden", "Bu fan sizga tegishli emas", "Этот предмет вам не принадлежит");
 }
 
-async function assertCourseOwner(courseId: number, teacherId: number) {
+export function subjectTeacherFilter(teacherId: number) {
+  return {
+    OR: [
+      { department: { teachers: { some: { userId: teacherId } } } },
+      { courses: { some: { teacherId } } },
+    ],
+  };
+}
+
+export async function assertSubjectTeacher(subjectId: number, teacherId: number) {
+  const subject = await prisma.subject.findFirst({
+    where: { id: subjectId, ...subjectTeacherFilter(teacherId) },
+  });
+  if (!subject) throw forbidden();
+  return subject;
+}
+
+async function courseForTeacher(courseId: number, teacherId: number) {
   const course = await prisma.course.findUnique({ where: { id: courseId } });
   if (!course) throw notFound("Kurs");
-  if (course.teacherId !== teacherId) throw forbidden();
+  // Kurs orqali kirilganda ham huquq fan darajasida tekshiriladi.
+  await assertSubjectTeacher(course.subjectId, teacherId);
   return course;
 }
 
-async function topicForTeacher(topicId: number, teacherId: number) {
-  const topic = await prisma.topic.findUnique({ where: { id: topicId }, include: { course: true } });
+export async function topicForTeacher(topicId: number, teacherId: number) {
+  const topic = await prisma.topic.findUnique({ where: { id: topicId } });
   if (!topic) throw notFound("Mavzu");
-  if (topic.course.teacherId !== teacherId) throw forbidden();
+  await assertSubjectTeacher(topic.subjectId, teacherId);
   return topic;
 }
 
 async function materialForTeacher(materialId: number, teacherId: number) {
   const material = await prisma.sourceMaterial.findUnique({
     where: { id: materialId },
-    include: { topic: { include: { course: true } } },
+    include: { topic: true },
   });
   if (!material) throw notFound("Material");
-  if (material.topic.course.teacherId !== teacherId) throw forbidden();
+  await assertSubjectTeacher(material.topic.subjectId, teacherId);
   return material;
+}
+
+/** Back-nav uchun: o'qituvchining shu fandagi (birinchi) kursi. */
+async function teacherCourseIdForSubject(subjectId: number, teacherId: number): Promise<number | null> {
+  const course = await prisma.course.findFirst({
+    where: { subjectId, teacherId },
+    orderBy: { id: "asc" },
+    select: { id: true },
+  });
+  return course?.id ?? null;
 }
 
 // ---------- Topic serialization ----------
@@ -48,11 +78,14 @@ function toTopicOut(
     _count?: { materials: number };
     digest?: { approvedByTeacher: boolean } | null;
     contentItems?: { kind: string; status: string }[];
-  }
+  },
+  courseId: number | null = null
 ) {
   return {
     id: t.id,
-    courseId: t.courseId,
+    subjectId: t.subjectId,
+    // Frontend back-nav uchun: shu o'qituvchining fandagi kursi (kontekstga bog'liq).
+    courseId,
     title: t.title,
     orderIndex: t.orderIndex,
     status: t.status.toLowerCase(),
@@ -66,9 +99,9 @@ function toTopicOut(
 // ---------- Topics CRUD ----------
 
 export async function listTopics(courseId: number, teacherId: number) {
-  await assertCourseOwner(courseId, teacherId);
+  const course = await courseForTeacher(courseId, teacherId);
   const rows = await prisma.topic.findMany({
-    where: { courseId },
+    where: { subjectId: course.subjectId },
     orderBy: { orderIndex: "asc" },
     include: {
       _count: { select: { materials: true } },
@@ -76,20 +109,20 @@ export async function listTopics(courseId: number, teacherId: number) {
       contentItems: { select: { kind: true, status: true } },
     },
   });
-  return rows.map(toTopicOut);
+  return rows.map((t) => toTopicOut(t, courseId));
 }
 
 export async function createTopic(input: { courseId: number; title: string }, teacherId: number) {
-  await assertCourseOwner(input.courseId, teacherId);
+  const course = await courseForTeacher(input.courseId, teacherId);
   const last = await prisma.topic.findFirst({
-    where: { courseId: input.courseId },
+    where: { subjectId: course.subjectId },
     orderBy: { orderIndex: "desc" },
   });
   const orderIndex = (last?.orderIndex ?? -1) + 1;
   const t = await prisma.topic.create({
-    data: { courseId: input.courseId, title: input.title.trim(), orderIndex },
+    data: { subjectId: course.subjectId, title: input.title.trim(), orderIndex },
   });
-  return toTopicOut(t);
+  return toTopicOut(t, input.courseId);
 }
 
 export async function updateTopic(
@@ -128,15 +161,14 @@ export async function deleteTopic(id: number, teacherId: number) {
 
 export async function reorderTopics(orderedIds: number[], teacherId: number) {
   if (orderedIds.length === 0) return;
-  // All must belong to the same course owned by this teacher.
+  // All must belong to the same subject the teacher can edit.
   const topics = await prisma.topic.findMany({
     where: { id: { in: orderedIds } },
-    include: { course: true },
   });
   if (topics.length !== orderedIds.length) throw notFound("Mavzu");
-  const courseIds = new Set(topics.map((t) => t.courseId));
-  if (courseIds.size !== 1) throw badRequest("Bitta kurs mavzulari boʻlishi kerak", "Темы должны быть из одного курса");
-  if (topics.some((t) => t.course.teacherId !== teacherId)) throw forbidden();
+  const subjectIds = new Set(topics.map((t) => t.subjectId));
+  if (subjectIds.size !== 1) throw badRequest("Bitta fan mavzulari boʻlishi kerak", "Темы должны быть из одного предмета");
+  await assertSubjectTeacher(topics[0].subjectId, teacherId);
 
   await prisma.$transaction(
     orderedIds.map((id, index) => prisma.topic.update({ where: { id }, data: { orderIndex: index } }))
@@ -151,8 +183,9 @@ export async function getTopicDetail(id: number, teacherId: number) {
   });
   const digest = await prisma.topicDigest.findUnique({ where: { topicId: id } });
   const content = await prisma.contentItem.findMany({ where: { topicId: id }, include: { approvedBy: true } });
+  const backCourseId = await teacherCourseIdForSubject(topic.subjectId, teacherId);
   return {
-    ...toTopicOut(topic),
+    ...toTopicOut(topic, backCourseId),
     materials: materials.map(toMaterialOut),
     // Lock gate for section 2 (Konspekt): needs a parsed material.
     digestUnlocked: materials.some((m) => m.parseStatus === "DONE"),

@@ -10,6 +10,13 @@ function courseScope(scope?: AdminScope): Prisma.CourseWhereInput {
   return { subject: { departmentId: scope.departmentId! } };
 }
 
+/** Faza 3: topic endi fanga tegishli — scope filtri subject orqali. */
+function subjectScope(scope?: AdminScope): Prisma.SubjectWhereInput {
+  if (!scope || scope.level === "SUPER") return {};
+  if (scope.level === "FACULTY") return { department: { facultyId: scope.facultyId! } };
+  return { departmentId: scope.departmentId! };
+}
+
 export async function adminStats(scope?: AdminScope) {
   const monthStart = new Date();
   monthStart.setDate(1);
@@ -18,7 +25,8 @@ export async function adminStats(scope?: AdminScope) {
 
   const scoped = scope && scope.level !== "SUPER";
   const course = courseScope(scope);
-  const topicWhere = scoped ? { course } : {};
+  const subj = subjectScope(scope);
+  const topicWhere = scoped ? { subject: subj } : {};
   const aiDeptWhere: Prisma.AiUsageWhereInput = !scoped
     ? {}
     : scope!.level === "FACULTY"
@@ -50,20 +58,20 @@ export async function adminStats(scope?: AdminScope) {
     prisma.user.count({ where: teacherWhere }),
     prisma.course.count({ where: course }),
     prisma.topic.count({ where: { ...topicWhere, contentItems: { some: { status: "PUBLISHED" } } } }),
-    prisma.contentItem.count({ where: { status: "PUBLISHED", ...(scoped ? { topic: { course } } : {}) } }),
-    prisma.caseAttempt.count({ where: { reviewedAt: null, ...(scoped ? { clinicalCase: { contentItem: { topic: { course } } } } : {}) } }),
-    prisma.contentItem.count({ where: { status: { in: ["DRAFT", "REVIEW"] }, ...(scoped ? { topic: { course } } : {}) } }),
+    prisma.contentItem.count({ where: { status: "PUBLISHED", ...(scoped ? { topic: { subject: subj } } : {}) } }),
+    prisma.caseAttempt.count({ where: { reviewedAt: null, ...(scoped ? { clinicalCase: { contentItem: { topic: { subject: subj } } } } : {}) } }),
+    prisma.contentItem.count({ where: { status: { in: ["DRAFT", "REVIEW"] }, ...(scoped ? { topic: { subject: subj } } : {}) } }),
     departmentsOverQuota(scope),
     prisma.aiUsage.aggregate({ where: { createdAt: { gte: monthStart }, ...aiDeptWhere }, _sum: { totalTokens: true, images: true, costUsd: true } }),
-    prisma.contentItem.count({ where: { status: "PUBLISHED", approvedAt: { gte: weekAgo }, ...(scoped ? { topic: { course } } : {}) } }),
-    prisma.progress.findMany({ where: { updatedAt: { gte: weekAgo }, ...(scoped ? { topic: { course } } : {}) }, select: { studentId: true }, distinct: ["studentId"] }),
+    prisma.contentItem.count({ where: { status: "PUBLISHED", approvedAt: { gte: weekAgo }, ...(scoped ? { topic: { subject: subj } } : {}) } }),
+    prisma.progress.findMany({ where: { updatedAt: { gte: weekAgo }, ...(scoped ? { topic: { subject: subj } } : {}) }, select: { studentId: true }, distinct: ["studentId"] }),
     // 14-day activity series inputs (small at pilot scale; aggregated in JS by day).
     prisma.progress.findMany({
-      where: { updatedAt: { gte: twoWeeksAgo }, ...(scoped ? { topic: { course } } : {}) },
+      where: { updatedAt: { gte: twoWeeksAgo }, ...(scoped ? { topic: { subject: subj } } : {}) },
       select: { studentId: true, updatedAt: true },
     }),
     prisma.contentItem.findMany({
-      where: { status: "PUBLISHED", approvedAt: { gte: twoWeeksAgo }, ...(scoped ? { topic: { course } } : {}) },
+      where: { status: "PUBLISHED", approvedAt: { gte: twoWeeksAgo }, ...(scoped ? { topic: { subject: subj } } : {}) },
       select: { approvedAt: true },
     }),
   ]);

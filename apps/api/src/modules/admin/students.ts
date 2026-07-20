@@ -49,7 +49,7 @@ export async function listStudents(
     ? await Promise.all([
         prisma.enrollment.findMany({
           where: { studentId: { in: ids }, status: "ACTIVE" },
-          select: { studentId: true, courseId: true },
+          select: { studentId: true, courseId: true, course: { select: { subjectId: true } } },
         }),
         prisma.progress.groupBy({
           by: ["studentId"],
@@ -64,21 +64,24 @@ export async function listStudents(
       ])
     : [[], [], []];
 
-  // Published-topic totals per course → per student.
-  const courseIds = [...new Set(enrollments.map((e) => e.courseId))];
-  const topicTotals = courseIds.length
+  // Published-topic totals per subject → per student (Faza 3: topic fanga tegishli).
+  const subjectIds = [...new Set(enrollments.map((e) => e.course.subjectId))];
+  const topicTotals = subjectIds.length
     ? await prisma.topic.groupBy({
-        by: ["courseId"],
-        where: { courseId: { in: courseIds }, contentItems: { some: { status: "PUBLISHED" } } },
+        by: ["subjectId"],
+        where: { subjectId: { in: subjectIds }, contentItems: { some: { status: "PUBLISHED" } } },
         _count: true,
       })
     : [];
-  const topicsByCourse = new Map(topicTotals.map((t) => [t.courseId, t._count]));
+  const topicsBySubject = new Map(topicTotals.map((t) => [t.subjectId, t._count]));
 
   const coursesByStudent = new Map<number, number[]>();
+  const subjectsByStudent = new Map<number, number[]>();
   for (const e of enrollments) {
     if (!coursesByStudent.has(e.studentId)) coursesByStudent.set(e.studentId, []);
     coursesByStudent.get(e.studentId)!.push(e.courseId);
+    if (!subjectsByStudent.has(e.studentId)) subjectsByStudent.set(e.studentId, []);
+    subjectsByStudent.get(e.studentId)!.push(e.course.subjectId);
   }
   const completedByStudent = new Map(completed.map((c) => [c.studentId, c._count]));
 
@@ -94,7 +97,8 @@ export async function listStudents(
   return {
     items: rows.map((u) => {
       const courses = coursesByStudent.get(u.id) ?? [];
-      const totalTopics = courses.reduce((s, cid) => s + (topicsByCourse.get(cid) ?? 0), 0);
+      const subjects = subjectsByStudent.get(u.id) ?? [];
+      const totalTopics = subjects.reduce((s, sid) => s + (topicsBySubject.get(sid) ?? 0), 0);
       const done = completedByStudent.get(u.id) ?? 0;
       const att = attByStudent.get(u.id);
       return {
