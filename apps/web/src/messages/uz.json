@@ -27,7 +27,9 @@
     "myFaculty": "Fakultetim",
     "myDept": "Kafedram",
     "subjects": "Fanlarim",
-    "openProfile": "Profilni ochish"
+    "openProfile": "Profilni ochish",
+    "myCourses": "Kurslarim",
+    "grades": "Baholarim"
   },
   "theme": {
     "label": "Mavzu (rang)",
@@ -60,7 +62,13 @@
     "teacherAssignedSection": "Oʻqituvchi topshiriqlari",
     "markDone": "Bajardim",
     "dueShort": "Muddat",
-    "fromTeacher": "Oʻqituvchidan"
+    "fromTeacher": "Oʻqituvchidan",
+    "studySection": "Oʻquv vazifalari",
+    "doneSection": "Bajarilganlar",
+    "open": "Ochish",
+    "overdue": "muddati oʻtdi",
+    "priorityHigh": "Muhim",
+    "attendanceLowHint": "Davomatingiz {{pct}}% — davomat sahifasini koʻring"
   },
   "teachAssign": {
     "newBtn": "Yangi topshiriq",
@@ -373,7 +381,12 @@
       "ABSENT": "Kelmadi",
       "LATE": "Kechikdi",
       "EXCUSED": "Sababli"
-    }
+    },
+    "trend": "Oylik trend",
+    "byCourse": "Kurslar boʻyicha",
+    "upcoming": "Kelgusi darslar",
+    "markedN": "{{n}} dars",
+    "lessonsN": "{{n}} dars"
   },
   "profile": {
     "title": "Profil",
@@ -1028,7 +1041,9 @@
       "quiz_failed": "Test oʻtilmadi",
       "case_submitted": "Keys javobi yuborildi",
       "case_graded": "Keys baholandi"
-    }
+    },
+    "currentCourses": "Joriy semestr kurslari",
+    "seeAllCourses": "Barchasi"
   },
   "review": {
     "back": "← Bosh sahifa",
@@ -1336,5 +1351,33 @@
     "allYears": "Barcha oʻquv yillari",
     "allSemesters": "Barcha semestrlar",
     "archive": "arxiv"
+  },
+  "studentCourses": {
+    "title": "Kurslarim",
+    "subtitle": "Barcha kurslaringiz — semestrlar boʻyicha",
+    "searchPlaceholder": "Fan yoki oʻqituvchi boʻyicha qidirish",
+    "totalN": "Jami: {{n}}",
+    "empty": "Sizda hali kurs yoʻq",
+    "emptyHint": "Admin sizni kursga yozgach shu yerda koʻrinadi.",
+    "noMatch": "Mos kurs topilmadi",
+    "topics": "mavzu",
+    "nextTopic": "Keyingi mavzu",
+    "continue": "Davom ettirish",
+    "allDone": "Kurs tugallandi 🎉",
+    "noOpenTopic": "Ochiq mavzu yoʻq"
+  },
+  "grades": {
+    "title": "Baholarim",
+    "subtitle": "Test natijalari va keys baholari",
+    "avgQuiz": "Oʻrtacha test natijasi",
+    "avgQuizShort": "Oʻrtacha",
+    "quizzesPassed": "Oʻtilgan testlar",
+    "casesGraded": "Baholangan keyslar",
+    "attemptsN": "{{n}}-urinish",
+    "passed": "oʻtdi",
+    "notPassed": "oʻtmadi",
+    "underReview": "Tekshiruvda",
+    "empty": "Hali baho yoʻq",
+    "emptyHint": "Test ishlaganingizdan yoki keys topshirganingizdan keyin shu yerda koʻrinadi."
   }
 }

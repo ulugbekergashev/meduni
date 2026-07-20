@@ -42,8 +42,49 @@ export async function getMyAttendance(studentId: number, opts: { courseId?: numb
     else if (r.status === "EXCUSED") excused++;
   }
 
+  // Kurslar kesimi va oylik trend — o'sha qatorlardan JS'da yig'iladi.
+  type Bucket = { present: number; absent: number; late: number; excused: number };
+  const empty = (): Bucket => ({ present: 0, absent: 0, late: 0, excused: 0 });
+  const add = (b: Bucket, s: Status) => {
+    if (s === "PRESENT") b.present++;
+    else if (s === "ABSENT") b.absent++;
+    else if (s === "LATE") b.late++;
+    else b.excused++;
+  };
+  const marked = (b: Bucket) => b.present + b.absent + b.late + b.excused;
+
+  const courseMap = new Map<number, { name: string; b: Bucket }>();
+  const monthMap = new Map<string, Bucket>();
+  for (const r of rows) {
+    const cid = r.session.courseId;
+    if (!courseMap.has(cid)) courseMap.set(cid, { name: r.session.course.subject.name, b: empty() });
+    add(courseMap.get(cid)!.b, r.status as Status);
+
+    const d = r.session.date;
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    if (!monthMap.has(key)) monthMap.set(key, empty());
+    add(monthMap.get(key)!, r.status as Status);
+  }
+
   return {
     stats: { present, absent, late, excused, pct: attendancePct(present, absent, late, excused) },
+    byCourse: [...courseMap.entries()]
+      .map(([courseId, { name, b }]) => ({
+        courseId,
+        courseName: name,
+        ...b,
+        marked: marked(b),
+        pct: attendancePct(b.present, b.absent, b.late, b.excused),
+      }))
+      .sort((a, b) => (a.pct ?? 101) - (b.pct ?? 101)), // eng past birinchi — diqqat kerak
+    byMonth: [...monthMap.entries()]
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .slice(-6)
+      .map(([month, b]) => ({
+        month,
+        marked: marked(b),
+        pct: attendancePct(b.present, b.absent, b.late, b.excused) ?? 0,
+      })),
     sessions: rows.map((r) => ({
       id: r.session.id,
       date: r.session.date,
@@ -51,6 +92,107 @@ export async function getMyAttendance(studentId: number, opts: { courseId?: numb
       title: r.session.title ?? r.session.topic?.title ?? null,
       status: r.status as Status,
     })),
+  };
+}
+
+/** GET /me/grades — barcha baholar: test natijalari + keys baholari, kurslar kesimida. */
+export async function getMyGrades(studentId: number) {
+  const enrollments = await prisma.enrollment.findMany({
+    where: { studentId, status: "ACTIVE" },
+    select: { course: { select: { id: true, subjectId: true, semester: true, academicYear: true, subject: { select: { name: true } } } } },
+    orderBy: [{ course: { academicYear: "desc" } }, { course: { semester: "desc" } }],
+  });
+  if (enrollments.length === 0) return { courses: [], summary: { avgQuiz: null, quizzesPassed: 0, casesGraded: 0 } };
+
+  const subjectIds = [...new Set(enrollments.map((e) => e.course.subjectId))];
+
+  // Barcha urinishlar bitta so'rovda (mavzu → fan bog'lanishi bilan).
+  const [quizAttempts, caseAttempts] = await Promise.all([
+    prisma.quizAttempt.findMany({
+      where: { studentId, finishedAt: { not: null }, quiz: { contentItem: { topic: { subjectId: { in: subjectIds } } } } },
+      orderBy: { finishedAt: "asc" },
+      select: {
+        scorePct: true, passed: true, attemptNo: true, finishedAt: true,
+        quiz: { select: { passThreshold: true, contentItem: { select: { topicId: true, topic: { select: { title: true, subjectId: true, orderIndex: true } } } } } },
+      },
+    }),
+    prisma.caseAttempt.findMany({
+      where: { studentId, clinicalCase: { contentItem: { topic: { subjectId: { in: subjectIds } } } } },
+      orderBy: { submittedAt: "asc" },
+      select: {
+        score: true, teacherFeedback: true, submittedAt: true, reviewedAt: true,
+        reviewedBy: { select: { fullName: true } },
+        clinicalCase: { select: { contentItem: { select: { topicId: true, topic: { select: { title: true, subjectId: true, orderIndex: true } } } } } },
+      },
+    }),
+  ]);
+
+  const courses = enrollments.map((e) => {
+    const sid = e.course.subjectId;
+
+    // Test: mavzu bo'yicha eng yaxshi natija + urinishlar soni.
+    const quizByTopic = new Map<number, { topicId: number; topicTitle: string; orderIndex: number; bestScore: number; attempts: number; passed: boolean; lastAt: Date | null }>();
+    for (const a of quizAttempts) {
+      const ci = a.quiz.contentItem;
+      if (ci.topic.subjectId !== sid) continue;
+      const cur = quizByTopic.get(ci.topicId);
+      if (!cur) {
+        quizByTopic.set(ci.topicId, {
+          topicId: ci.topicId, topicTitle: ci.topic.title, orderIndex: ci.topic.orderIndex,
+          bestScore: a.scorePct, attempts: 1, passed: a.passed, lastAt: a.finishedAt,
+        });
+      } else {
+        cur.attempts++;
+        cur.bestScore = Math.max(cur.bestScore, a.scorePct);
+        cur.passed = cur.passed || a.passed;
+        cur.lastAt = a.finishedAt;
+      }
+    }
+
+    const cases = caseAttempts
+      .filter((a) => a.clinicalCase.contentItem.topic.subjectId === sid)
+      .map((a) => {
+        const ci = a.clinicalCase.contentItem;
+        return {
+          topicId: ci.topicId,
+          topicTitle: ci.topic.title,
+          orderIndex: ci.topic.orderIndex,
+          score: a.score,
+          feedback: a.teacherFeedback,
+          reviewedByName: a.reviewedBy?.fullName ?? null,
+          reviewedAt: a.reviewedAt,
+          submittedAt: a.submittedAt,
+          reviewed: a.reviewedAt !== null,
+        };
+      })
+      .sort((x, y) => x.orderIndex - y.orderIndex);
+
+    const quizzes = [...quizByTopic.values()].sort((x, y) => x.orderIndex - y.orderIndex);
+    const scores = quizzes.map((q) => q.bestScore);
+
+    return {
+      courseId: e.course.id,
+      subjectName: e.course.subject.name,
+      semester: e.course.semester,
+      academicYear: e.course.academicYear,
+      avgQuiz: scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : null,
+      quizzes,
+      cases,
+    };
+  });
+
+  // Umumiy xulosa (barcha kurslar bo'yicha).
+  const allQuiz = courses.flatMap((c) => c.quizzes);
+  const allCases = courses.flatMap((c) => c.cases);
+  return {
+    courses,
+    summary: {
+      avgQuiz: allQuiz.length ? Math.round(allQuiz.reduce((a, q) => a + q.bestScore, 0) / allQuiz.length) : null,
+      quizzesPassed: allQuiz.filter((q) => q.passed).length,
+      quizzesTotal: allQuiz.length,
+      casesGraded: allCases.filter((c) => c.reviewed).length,
+      casesTotal: allCases.length,
+    },
   };
 }
 

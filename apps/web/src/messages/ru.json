@@ -27,7 +27,9 @@
     "myFaculty": "Мой факультет",
     "myDept": "Моя кафедра",
     "subjects": "Мои предметы",
-    "openProfile": "Открыть профиль"
+    "openProfile": "Открыть профиль",
+    "myCourses": "Мои курсы",
+    "grades": "Мои оценки"
   },
   "theme": {
     "label": "Тема оформления",
@@ -60,7 +62,13 @@
     "teacherAssignedSection": "Задачи от преподавателя",
     "markDone": "Выполнено",
     "dueShort": "Срок",
-    "fromTeacher": "От преподавателя"
+    "fromTeacher": "От преподавателя",
+    "studySection": "Учебные задачи",
+    "doneSection": "Выполненные",
+    "open": "Открыть",
+    "overdue": "просрочено",
+    "priorityHigh": "Важно",
+    "attendanceLowHint": "Ваша посещаемость {{pct}}% — откройте страницу посещаемости"
   },
   "teachAssign": {
     "newBtn": "Новая задача",
@@ -373,7 +381,12 @@
       "ABSENT": "Не пришёл",
       "LATE": "Опоздал",
       "EXCUSED": "Уваж. причина"
-    }
+    },
+    "trend": "Помесячный тренд",
+    "byCourse": "По курсам",
+    "upcoming": "Ближайшие занятия",
+    "markedN": "{{n}} занятий",
+    "lessonsN": "{{n}} занятий"
   },
   "profile": {
     "title": "Профиль",
@@ -1024,7 +1037,9 @@
       "quiz_failed": "Тест не пройден",
       "case_submitted": "Ответ по кейсу отправлен",
       "case_graded": "Кейс оценён"
-    }
+    },
+    "currentCourses": "Курсы текущего семестра",
+    "seeAllCourses": "Все курсы"
   },
   "review": {
     "back": "← Главная",
@@ -1332,5 +1347,33 @@
     "allYears": "Все учебные годы",
     "allSemesters": "Все семестры",
     "archive": "архив"
+  },
+  "studentCourses": {
+    "title": "Мои курсы",
+    "subtitle": "Все ваши курсы — по семестрам",
+    "searchPlaceholder": "Поиск по предмету или преподавателю",
+    "totalN": "Всего: {{n}}",
+    "empty": "У вас пока нет курсов",
+    "emptyHint": "Курсы появятся после записи администратором.",
+    "noMatch": "Курсы не найдены",
+    "topics": "тем",
+    "nextTopic": "Следующая тема",
+    "continue": "Продолжить",
+    "allDone": "Курс завершён 🎉",
+    "noOpenTopic": "Нет открытых тем"
+  },
+  "grades": {
+    "title": "Мои оценки",
+    "subtitle": "Результаты тестов и оценки за кейсы",
+    "avgQuiz": "Средний результат тестов",
+    "avgQuizShort": "Средний",
+    "quizzesPassed": "Сданные тесты",
+    "casesGraded": "Оценённые кейсы",
+    "attemptsN": "{{n}}-я попытка",
+    "passed": "сдан",
+    "notPassed": "не сдан",
+    "underReview": "На проверке",
+    "empty": "Пока нет оценок",
+    "emptyHint": "Появятся после прохождения теста или сдачи кейса."
   }
 }

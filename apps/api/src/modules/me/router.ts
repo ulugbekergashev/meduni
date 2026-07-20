@@ -33,7 +33,12 @@ function parseBody<T extends ZodTypeAny>(schema: T, body: unknown): z.infer<T> {
 meRouter.get("/dashboard", wrap(async (req, res) => res.json(await svc.getDashboard(req.user!.id))));
 meRouter.get("/search", wrap(async (req, res) => res.json(await studentSearch(req.user!.id, typeof req.query.q === "string" ? req.query.q : ""))));
 meRouter.get("/tasks", wrap(async (req, res) => {
-  const [auto, assigned] = await Promise.all([computeStudentAutoTasks(req.user!.id), listAssigned(req.user!.id)]);
+  // ?includeDone=1 — vazifalar sahifasidagi "Bajarilganlar" bo'limi uchun.
+  const includeDone = req.query.includeDone === "1" || req.query.includeDone === "true";
+  const [auto, assigned] = await Promise.all([
+    computeStudentAutoTasks(req.user!.id),
+    listAssigned(req.user!.id, includeDone),
+  ]);
   res.json({ auto, assigned });
 }));
 meRouter.get("/courses", wrap(async (req, res) => res.json(await svc.listMyCourses(req.user!.id))));
@@ -56,6 +61,7 @@ meRouter.get(
 
 meRouter.get("/profile", wrap(async (req, res) => res.json(await profile.getMyProfile(req.user!.id))));
 meRouter.get("/schedule", wrap(async (req, res) => res.json(await profile.getMySchedule(req.user!.id))));
+meRouter.get("/grades", wrap(async (req, res) => res.json(await profile.getMyGrades(req.user!.id))));
 meRouter.get("/activity", wrap(async (req, res) => res.json(await profile.getMyActivity(req.user!.id))));
 meRouter.get("/rank", wrap(async (req, res) => res.json(await profile.getMyRank(req.user!.id))));
 meRouter.put("/locale", wrap(async (req, res) => res.json(await profile.setLocale(req.user!.id, req.body?.locale))));

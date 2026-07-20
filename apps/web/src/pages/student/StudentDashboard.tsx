@@ -19,7 +19,6 @@ import {
 } from "lucide-react";
 import { Card, EmptyState, Icon, ProgressRing, cls } from "@meduni/ui";
 import { AsyncSection } from "../../components/AsyncSection";
-import { PeriodSection, groupByPeriod } from "../../components/PeriodGroups";
 import { useLocale } from "../../lib/useLocale";
 import { formatDate } from "../../lib/date";
 import {
@@ -179,6 +178,11 @@ export function StudentDashboard() {
       : 0;
 
   const hasToday = !!d?.resume || auto.length > 0 || assigned.length > 0 || schedule.length > 0;
+  // Bosh sahifada faqat JORIY davr kurslari (to'liq ro'yxat — "Kurslarim" moduli).
+  const newest = d?.courses[0];
+  const currentCourses = (d?.courses ?? []).filter(
+    (c) => newest && c.academicYear === newest.academicYear && c.semester === newest.semester
+  );
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -369,26 +373,22 @@ export function StudentDashboard() {
               </div>
             )}
 
-            {/* My courses — davrlar bo'yicha: joriy semestr ochiq, eskilari arxiv */}
-            <div className="mt-8">
-              <h2 className="text-section font-bold text-ink">{t("myCourses")}</h2>
-              <div className="mt-3">
-                {groupByPeriod(d.courses).map((g, i) => (
-                  <PeriodSection
-                    key={g.year}
-                    group={g}
-                    defaultOpen={i === 0}
-                    renderRows={(rows) => (
-                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                        {rows.map((c) => (
-                          <CourseCard key={c.id} course={c} />
-                        ))}
-                      </div>
-                    )}
-                  />
-                ))}
+            {/* Joriy davr kurslari — to'liq ro'yxat "Kurslarim" modulida */}
+            {currentCourses.length > 0 && (
+              <div className="mt-8">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <h2 className="text-section font-bold text-ink">{t("currentCourses")}</h2>
+                  <Link to="/app/courses" className="text-body font-semibold text-brand-deep hover:underline">
+                    {t("seeAllCourses")} →
+                  </Link>
+                </div>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  {currentCourses.slice(0, 4).map((c) => (
+                    <CourseCard key={c.id} course={c} />
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
           </>
         )}
       </AsyncSection>

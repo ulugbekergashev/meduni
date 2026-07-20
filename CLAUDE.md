@@ -855,6 +855,32 @@ Barcha modullar tugadi (1-17).
   6 kurs / 3 davr (s2,s2,s2,s1,s8,s7 tartib), resume kontentli kursdan, lesson subjectName+
   nextTopic; tsc+build toza. Demo: student@meduni.uz 5 yangi davr-kursga yozildi.
 
+- **Modul 22 — Talaba tomoni PRO (2026-07-20, foydalanuvchi: "bunaqa primitivlikni bozor
+  kechirmaydi").** Reja: `.claude/plans/ethereal-tinkering-river.md`. Shikoyat: Vazifalar
+  sahifasida mavhum kartalar ("1 Ishlanmagan testlar" — QAYSI?), Davomat sahifasi deyarli
+  bo'sh, "Kurslarim" alohida modul emas edi.
+  **(A) Nav 6 modul:** Bosh sahifa · **Kurslarim** (`/app/courses`) · Vazifalar ·
+  **Baholarim** (`/app/grades`) · Davomat · Profil.
+  **(B) Kurslarim** (`StudentCoursesPage`): qidiruv (fan/o'qituvchi) + `PeriodFilter` +
+  "Jami: N" + yil→semestr guruhlash (`PeriodGroups` reuse); kartada davr/guruh chiplari,
+  progress, keyingi mavzu + "Davom ettirish". Dashboard yengillashdi — faqat **joriy davr**
+  kurslari (maks 4) + "Barchasi →".
+  **(C) Vazifalar** — `computeStudentAutoTasks` endi `items[]` qaytaradi
+  ({topicId,topicTitle,courseName,link,value}) → UI'da mavhum karta o'rniga **konkret
+  qatorlar** ("Yurak anatomiyasi · Kardiologiya →"), o'qituvchi topshiriqlarida
+  muhimlik/muddat/"Ochish" + `listAssigned(includeDone)` bilan **"Bajarilganlar" tarixi**
+  (yig'iladigan).
+  **(D) Davomat PRO** — `getMyAttendance` += `byCourse[]` (eng past birinchi) va
+  `byMonth[]` (6 oy); UI: hero (katta % + StackedBar + LegendRow) + **MiniBars oylik trend**
+  + **kurslar kesimi BarRow** (<75 rose) + **kelgusi darslar** + sessiyalar **oy sarlavhalari**
+  bilan (uz oy nomlari qo'lda — ICU buzuq).
+  **(E) Baholarim — yangi modul:** `GET /me/grades` (`me/profile.ts::getMyGrades`) — kurslar
+  kesimida testlar (eng yaxshi ball, urinishlar, o'tdi/o'tmadi) va keyslar (ball, **o'qituvchi
+  izohi**, kim/qachon tekshirgani, "tekshiruvda"); UI: 3 stat + kurs bloklari + izoh ochiladi.
+  **Tekshirildi:** 11/11 smoke (2 talaba: kursi ko'p / bahosi bor) — items konkret, includeDone,
+  byCourse/byMonth, grades avg=100% · 2/2 test · keys 8 ball "Aziz Karimov" izohi bilan;
+  tsc+build toza.
+
 ## 9. Loyiha holati va ishga tushirish (operatsion — sessiya 0)
 
 **Monorepo (npm workspaces):**

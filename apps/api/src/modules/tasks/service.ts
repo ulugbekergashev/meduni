@@ -9,11 +9,23 @@ import { computeTopics, enrolledCourseIds, loadCourse, studentFactsMap } from ".
 // The frontend maps `type` → icon + label; `link` is where the teacher/student acts.
 export type TaskTone = "rose" | "amber" | "blue" | "brand" | "violet" | "emerald";
 
+/** Vazifaning aniq predmeti — "1 ta test" emas, QAYSI test, qaysi fandan. */
+export interface AutoTaskItem {
+  topicId: number;
+  topicTitle: string;
+  courseName: string;
+  link: string;
+  /** Ball/foiz (baholangan keys, past davomat) — bo'lsa. */
+  value?: number | null;
+}
+
 export interface AutoTask {
   type: string;
   count: number;
   tone: TaskTone;
   link: string;
+  /** Talaba tomonida konkret qatorlar; o'qituvchi tomonida hozircha bo'sh. */
+  items?: AutoTaskItem[];
 }
 
 // ---------- Teacher ----------
@@ -90,10 +102,10 @@ export async function computeTeacherAutoTasks(teacherId: number): Promise<AutoTa
 export async function computeStudentAutoTasks(studentId: number): Promise<AutoTask[]> {
   const ids = await enrolledCourseIds(studentId);
 
-  let studyTopic: number | null = null; // resume or next-available
-  let studyCount = 0;
-  let quizCount = 0, quizTopic: number | null = null;
-  let caseCount = 0, caseTopic: number | null = null;
+  // Har tur uchun ANIQ ro'yxat yig'amiz (mavhum "1 ta test" emas).
+  const study: AutoTaskItem[] = [];
+  const quiz: AutoTaskItem[] = [];
+  const cases: AutoTaskItem[] = [];
 
   for (const id of ids) {
     const course = await loadCourse(id).catch(() => null);
@@ -101,24 +113,37 @@ export async function computeStudentAutoTasks(studentId: number): Promise<AutoTa
     const pm = await studentFactsMap(studentId, course);
     const topics = computeTopics(course, pm);
     const current = topics.find((t) => t.state === "IN_PROGRESS") ?? topics.find((t) => t.state === "AVAILABLE");
-    if (current) {
-      studyCount++;
-      if (studyTopic === null) studyTopic = current.id;
-      if (current.elements.quiz.exists && current.elements.quiz.score === null) { quizCount++; if (quizTopic === null) quizTopic = current.id; }
-      if (current.elements.case.exists && !current.elements.case.submitted) { caseCount++; if (caseTopic === null) caseTopic = current.id; }
+    if (!current) continue;
+    const courseName = course.subject.name;
+    const base = { topicId: current.id, topicTitle: current.title, courseName };
+    study.push({ ...base, link: `/app/topics/${current.id}` });
+    if (current.elements.quiz.exists && current.elements.quiz.score === null) {
+      quiz.push({ ...base, link: `/app/topics/${current.id}?tab=quiz` });
+    }
+    if (current.elements.case.exists && !current.elements.case.submitted) {
+      cases.push({ ...base, link: `/app/topics/${current.id}?tab=case` });
     }
   }
 
-  // Case graded (feedback ready) + low attendance.
-  const [graded, marks] = await Promise.all([
-    prisma.caseAttempt.findFirst({
+  // Baholangan keyslar (izoh keldi) + past davomat.
+  const [gradedRows, marks] = await Promise.all([
+    prisma.caseAttempt.findMany({
       where: { studentId, reviewedAt: { not: null } },
       orderBy: { reviewedAt: "desc" },
-      select: { clinicalCase: { select: { contentItem: { select: { topicId: true } } } } },
+      take: 5,
+      select: {
+        score: true,
+        clinicalCase: {
+          select: {
+            contentItem: {
+              select: { topicId: true, topic: { select: { title: true, subject: { select: { name: true } } } } },
+            },
+          },
+        },
+      },
     }),
     prisma.attendance.groupBy({ by: ["status"], where: { studentId }, _count: true }),
   ]);
-  const gradedCount = await prisma.caseAttempt.count({ where: { studentId, reviewedAt: { not: null } } });
 
   let present = 0, late = 0, marked = 0;
   for (const m of marks) {
@@ -128,12 +153,28 @@ export async function computeStudentAutoTasks(studentId: number): Promise<AutoTa
   }
   const attendancePct = marked === 0 ? 100 : Math.round(((present + late) / marked) * 100);
 
+  const graded: AutoTaskItem[] = gradedRows.map((g) => {
+    const ci = g.clinicalCase.contentItem;
+    return {
+      topicId: ci.topicId,
+      topicTitle: ci.topic.title,
+      courseName: ci.topic.subject.name,
+      link: `/app/topics/${ci.topicId}?tab=case`,
+      value: g.score,
+    };
+  });
+
   const tasks: AutoTask[] = [];
-  if (studyCount && studyTopic) tasks.push({ type: "study", count: studyCount, tone: "brand", link: `/app/topics/${studyTopic}` });
-  if (quizCount && quizTopic) tasks.push({ type: "quiz_todo", count: quizCount, tone: "blue", link: `/app/topics/${quizTopic}?tab=quiz` });
-  if (caseCount && caseTopic) tasks.push({ type: "case_todo", count: caseCount, tone: "rose", link: `/app/topics/${caseTopic}?tab=case` });
-  if (gradedCount && graded) tasks.push({ type: "case_graded", count: gradedCount, tone: "emerald", link: `/app/topics/${graded.clinicalCase.contentItem.topicId}?tab=case` });
-  if (marked > 0 && attendancePct < 75) tasks.push({ type: "attendance_low", count: attendancePct, tone: "amber", link: "/app/attendance" });
+  const push = (type: string, tone: TaskTone, items: AutoTaskItem[]) => {
+    if (items.length > 0) tasks.push({ type, count: items.length, tone, link: items[0].link, items });
+  };
+  push("study", "brand", study);
+  push("quiz_todo", "blue", quiz);
+  push("case_todo", "rose", cases);
+  push("case_graded", "emerald", graded);
+  if (marked > 0 && attendancePct < 75) {
+    tasks.push({ type: "attendance_low", count: attendancePct, tone: "amber", link: "/app/attendance", items: [] });
+  }
   return tasks;
 }
 
@@ -148,6 +189,8 @@ export interface AssignedTaskDto {
   createdByName: string;
   createdAt: string;
   linkUrl: string | null;
+  status: "OPEN" | "DONE" | "DISMISSED";
+  doneAt: string | null;
 }
 
 export interface CreatedTaskGroup {
@@ -162,12 +205,13 @@ export interface CreatedTaskGroup {
   taskIds: number[];
 }
 
-/** OPEN tasks assigned to me (the "inbox"). */
-export async function listAssigned(userId: number): Promise<AssignedTaskDto[]> {
+/** Tasks assigned to me. Default — faqat OPEN ("inbox"); `includeDone` bilan
+ *  bajarilganlar ham qaytadi (vazifalar sahifasidagi "Bajarilganlar" bo'limi). */
+export async function listAssigned(userId: number, includeDone = false): Promise<AssignedTaskDto[]> {
   const rows = await prisma.task.findMany({
-    where: { assignedToId: userId, status: "OPEN" },
+    where: { assignedToId: userId, ...(includeDone ? {} : { status: "OPEN" }) },
     include: { createdBy: { select: { fullName: true } } },
-    orderBy: [{ dueDate: "asc" }, { createdAt: "desc" }],
+    orderBy: [{ status: "asc" }, { dueDate: "asc" }, { createdAt: "desc" }],
   });
   return rows.map((t) => ({
     id: t.id,
@@ -178,6 +222,8 @@ export async function listAssigned(userId: number): Promise<AssignedTaskDto[]> {
     createdByName: t.createdBy.fullName,
     createdAt: t.createdAt.toISOString(),
     linkUrl: t.linkUrl,
+    status: t.status,
+    doneAt: t.completedAt?.toISOString() ?? null,
   }));
 }
 
