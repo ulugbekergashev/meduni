@@ -819,6 +819,28 @@ Barcha modullar tugadi (1-17).
   tartibi, keys studentId, vazifa o'qituvchi→talaba yetib bordi, jadval/faollik/rank,
   rank javobida ism yo'qligi); tsc+build ikkala tomonda toza. Demo: talaba 3 kelgusi dars.
 
+- **Modul 21B — kurslar ko'lami: davrlar bo'yicha guruhlash (2026-07-20, foydalanuvchi:
+  "bir semestrda 2-3-4 kurs boʻladi, semestrlar ham koʻp").** Ro'yxatlar 1-2 kursga
+  mo'ljallangan yassi grid edi — o'nlab kurs bo'lganda devorga aylanardi. **Backend:**
+  `courseOrder` (academicYear ↓, semester ↓, id ↑) — `listCourses` va `listTeacherCourses`
+  ikkalasida (yangi davr doim tepada); `listCoursePeriods` + `GET /api/v1/courses/periods`
+  (filtr dropdownlari, scope ichida); admin `GET /courses` filtrlari: `academicYear`,
+  `semester`, `subjectId`, `teacherId`, `search` (fan/o'qituvchi/guruh nomi, insensitive);
+  `listTeacherSubjects` har fanga `courseCount` + `latest{academicYear,semester}`,
+  `getTeacherSubject` += `courses[]` (davr/o'qituvchi/talaba soni/isMine).
+  **Frontend:** umumiy `components/PeriodGroups.tsx` — `groupByPeriod` (yil→semestr),
+  `PeriodSection` (yig'iladigan yil bo'limi, faqat eng yangisi ochiq, boshqalari "arxiv"),
+  `PeriodFilter` (yil+semestr select), `usePeriodOptions`. `/teach/courses` — qidiruv
+  (fan/guruh) + davr filtri + "Jami: N" + yil bo'limlari ichida semestr sarlavhalari;
+  `/admin/courses` — server-filtrli qidiruv (300ms debounce) + yil/semestr/fan select +
+  jadval ichida davr ajratuvchi qatorlar (`Fragment key`); `/teach/subjects` — qidiruv +
+  kafedra bo'limlari (>1 bo'lsa) + kartada "oxirgi davr · N kurs"; fan sahifasida
+  **"Qaysi kurslarda o'qitiladi"** ro'yxati (davr, o'qituvchi, talaba soni, "Mening kursim").
+  i18n: yangi `period.*` bo'limi + `subjects/courses/teach` kalitlari.
+  **Tekshirildi:** demo 20 kurs / 5 davr / 4 fan bilan — tartib to'g'ri (2026/2027 s2 birinchi),
+  guruhlash 8+8+4, admin filtr (2025/2026 s8 → 4 kurs) va qidiruv ("nefro" → 5) ishlaydi;
+  tsc+build toza.
+
 ## 9. Loyiha holati va ishga tushirish (operatsion — sessiya 0)
 
 **Monorepo (npm workspaces):**

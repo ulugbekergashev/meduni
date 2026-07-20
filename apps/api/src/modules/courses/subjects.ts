@@ -84,22 +84,28 @@ export async function listTeacherSubjects(teacherId: number) {
     orderBy: { name: "asc" },
   })) as unknown as SubjectRow[];
 
-  // Back-nav / kurs konteksti: o'qituvchining shu fandagi kursi (bo'lsa).
-  const myCourses = await prisma.course.findMany({
-    where: { teacherId, subjectId: { in: subjects.map((s) => s.id) } },
-    select: { id: true, subjectId: true },
-    orderBy: { id: "asc" },
+  // Kurs konteksti: fan qaysi davrlarda o'qitiladi + o'qituvchining o'z kursi.
+  // (Bitta fandan har semestrda bir necha kurs bo'ladi — shuning uchun jamlanma.)
+  const courses = await prisma.course.findMany({
+    where: { subjectId: { in: subjects.map((s) => s.id) } },
+    select: { id: true, subjectId: true, teacherId: true, academicYear: true, semester: true },
+    orderBy: [{ academicYear: "desc" }, { semester: "desc" }, { id: "asc" }],
   });
-  const myCourseBySubject = new Map<number, number>();
-  for (const c of myCourses) {
-    if (!myCourseBySubject.has(c.subjectId)) myCourseBySubject.set(c.subjectId, c.id);
+  const ctx = new Map<number, { myCourseId: number | null; courseCount: number; latest: { academicYear: string; semester: number } | null }>();
+  for (const s of subjects) ctx.set(s.id, { myCourseId: null, courseCount: 0, latest: null });
+  for (const c of courses) {
+    const x = ctx.get(c.subjectId);
+    if (!x) continue;
+    x.courseCount++;
+    if (!x.latest) x.latest = { academicYear: c.academicYear, semester: c.semester };
+    if (c.teacherId === teacherId && x.myCourseId === null) x.myCourseId = c.id;
   }
 
   return subjects.map((s) => ({
     id: s.id,
     name: s.name,
     departmentName: s.department.name,
-    myCourseId: myCourseBySubject.get(s.id) ?? null,
+    ...ctx.get(s.id)!,
     ...summarize(s),
   }));
 }
@@ -115,16 +121,27 @@ export async function getTeacherSubject(subjectId: number, teacherId: number) {
     if (!exists) throw notFound("Fan");
     throw forbidden();
   }
-  const myCourse = await prisma.course.findFirst({
-    where: { teacherId, subjectId },
-    select: { id: true },
-    orderBy: { id: "asc" },
+  const courses = await prisma.course.findMany({
+    where: { subjectId },
+    select: { id: true, teacherId: true, academicYear: true, semester: true, teacher: { select: { fullName: true } }, _count: { select: { enrollments: { where: { status: "ACTIVE" } } } } },
+    orderBy: [{ academicYear: "desc" }, { semester: "desc" }, { id: "asc" }],
   });
   return {
     id: subject.id,
     name: subject.name,
     departmentName: subject.department.name,
-    myCourseId: myCourse?.id ?? null,
+    myCourseId: courses.find((c) => c.teacherId === teacherId)?.id ?? null,
+    courseCount: courses.length,
+    latest: courses[0] ? { academicYear: courses[0].academicYear, semester: courses[0].semester } : null,
+    // Fan qaysi kurslarda (davr/o'qituvchi/talaba soni) ishlatilayotgani — fan sahifasi uchun.
+    courses: courses.map((c) => ({
+      id: c.id,
+      academicYear: c.academicYear,
+      semester: c.semester,
+      teacherName: c.teacher.fullName,
+      isMine: c.teacherId === teacherId,
+      studentCount: c._count.enrollments,
+    })),
     ...summarize(subject),
   };
 }

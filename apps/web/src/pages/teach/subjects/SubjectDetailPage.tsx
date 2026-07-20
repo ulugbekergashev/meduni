@@ -1,7 +1,7 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, BookMarked, ExternalLink, Users2 } from "lucide-react";
-import { Card, Icon, Spinner, StackedBar } from "@meduni/ui";
+import { ArrowLeft, BookMarked, ExternalLink, GraduationCap, Users2 } from "lucide-react";
+import { Badge, Card, Icon, Spinner, StackedBar } from "@meduni/ui";
 import { TopicListSection } from "../topics/TopicListSection";
 import { useSubject } from "../topics/api";
 
@@ -89,6 +89,37 @@ export function SubjectDetailPage() {
             ]}
           />
         </div>
+      )}
+
+      {/* Fan qaysi kurslarda o'qitiladi — bir fandan har semestrda bir nechta kurs bo'ladi */}
+      {s.courses.length > 0 && (
+        <Card className="mt-4 p-0">
+          <div className="flex items-center gap-2 border-b border-line px-4 py-2.5">
+            <Icon icon={GraduationCap} size={15} className="text-ink-faint" />
+            <p className="text-note font-bold uppercase tracking-wide text-ink-soft">{t("usedIn")}</p>
+            <span className="rounded-pill bg-bg px-2 py-0.5 text-note font-semibold text-ink-soft">{s.courses.length}</span>
+          </div>
+          <div className="max-h-64 divide-y divide-line overflow-y-auto">
+            {s.courses.map((c) => (
+              <div key={c.id} className="flex items-center gap-3 px-4 py-2.5">
+                <span className="w-40 shrink-0 text-body font-medium text-ink">
+                  {c.academicYear} · {t("semesterN", { n: c.semester })}
+                </span>
+                <span className="min-w-0 flex-1 truncate text-body text-ink-soft">{c.teacherName}</span>
+                {c.isMine && <Badge tone="brand">{t("mine")}</Badge>}
+                <span className="shrink-0 text-note text-ink-faint">{t("studentsN", { n: c.studentCount })}</span>
+                {c.isMine && (
+                  <button
+                    onClick={() => navigate(`/teach/courses/${c.id}`)}
+                    className="shrink-0 text-note font-semibold text-brand-deep hover:underline"
+                  >
+                    {t("openCourse")} →
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        </Card>
       )}
 
       <div className="mt-6">

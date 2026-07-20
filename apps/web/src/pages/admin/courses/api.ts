@@ -45,8 +45,31 @@ interface TeacherLite {
   fullName: string;
 }
 
-export function useCourses() {
-  return useQuery({ queryKey: ["courses"], queryFn: () => api<CourseRow[]>("/api/v1/courses") });
+export interface CourseFilters {
+  academicYear?: string;
+  semester?: string;
+  subjectId?: string;
+  teacherId?: string;
+  search?: string;
+}
+
+/** Kurslar ko'p (har semestrda bir nechta × ko'p semestr) — filtrlash serverda. */
+export function useCourses(filters: CourseFilters = {}) {
+  const p = new URLSearchParams();
+  for (const [k, v] of Object.entries(filters)) if (v) p.set(k, v);
+  const qs = p.toString();
+  return useQuery({
+    queryKey: ["courses", qs],
+    queryFn: () => api<CourseRow[]>(`/api/v1/courses${qs ? `?${qs}` : ""}`),
+  });
+}
+
+/** Filtr dropdownlari uchun mavjud davrlar. */
+export function useCoursePeriods() {
+  return useQuery({
+    queryKey: ["course-periods"],
+    queryFn: () => api<{ years: string[]; semesters: number[] }>("/api/v1/courses/periods"),
+  });
 }
 
 export function useCourse(id: number) {
