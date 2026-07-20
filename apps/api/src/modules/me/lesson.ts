@@ -3,7 +3,18 @@ import { ApiError, badRequest, notFound } from "../../lib/errors";
 import { readFileBuffer } from "../../lib/storage";
 import { buildPdf } from "../content/presentation";
 import type { CaseJson, Slide } from "../../ai/types";
-import { assertTopicOpen, enrolledCourseIdForTopic, recomputeTopic, syncTopicProgress, type TopicOut } from "./service";
+import {
+  assertTopicOpen,
+  computeTopics,
+  enrolledCourseIdForTopic,
+  forbiddenLocked,
+  forbiddenNotEnrolled,
+  loadCourse,
+  recomputeTopic,
+  studentFactsMap,
+  syncTopicProgress,
+  type TopicOut,
+} from "./service";
 
 const persistAndReport = syncTopicProgress;
 
@@ -16,7 +27,18 @@ function questionOptions(optionsJson: unknown): string[] {
 // ---------- GET /me/topics/:id — the full lesson payload ----------
 
 export async function getTopicLesson(studentId: number, topicId: number) {
-  const state = await assertTopicOpen(studentId, topicId); // enforces enrolled + published + unlocked
+  // Enrolled + published + unlocked tekshiruvi — bitta hisob-kitobda: shu yerda
+  // "keyingi mavzu" ham chiqadi (dars tugagach to'g'ridan o'tish uchun).
+  const enrolledCourseId = await enrolledCourseIdForTopic(studentId, topicId);
+  if (enrolledCourseId === null) throw forbiddenNotEnrolled();
+  const enrolledCourse = await loadCourse(enrolledCourseId);
+  const facts = await studentFactsMap(studentId, enrolledCourse);
+  const computed = computeTopics(enrolledCourse, facts);
+  const idx = computed.findIndex((t) => t.id === topicId);
+  if (idx === -1) throw notFound("Mavzu"); // not published -> invisible to students
+  const state = computed[idx];
+  if (state.state === "LOCKED") throw forbiddenLocked(state.reason ?? undefined);
+  const nextTopic = computed[idx + 1] ?? null;
 
   const topic = await prisma.topic.findUnique({
     where: { id: topicId },
@@ -28,10 +50,6 @@ export async function getTopicLesson(studentId: number, topicId: number) {
     },
   });
   if (!topic) throw notFound("Mavzu");
-
-  // Faza 3: mavzu fanga tegishli — default unlock-qoida talabaning shu fandagi kursidan olinadi.
-  const enrolledCourseId = (await enrolledCourseIdForTopic(studentId, topicId))!;
-  const enrolledCourse = await prisma.course.findUnique({ where: { id: enrolledCourseId } });
 
   const rule = state; // TopicOut carries elements; thresholds come from the course rule below
   const progress = await prisma.progress.findUnique({ where: { studentId_topicId: { studentId, topicId } } });
@@ -111,6 +129,9 @@ export async function getTopicLesson(studentId: number, topicId: number) {
     orderIndex: topic.orderIndex,
     title: topic.title,
     courseId: enrolledCourseId,
+    subjectName: enrolledCourse.subject.name,
+    // Tugagach to'g'ridan keyingisiga o'tish uchun (LOCKED bo'lsa tugma chiqmaydi).
+    nextTopic: nextTopic ? { id: nextTopic.id, title: nextTopic.title, state: nextTopic.state } : null,
     state: state.state,
     completed: state.state === "COMPLETED",
     thresholds: { video: videoThreshold, quizPass: quizItem?.quiz?.passThreshold ?? 70 },

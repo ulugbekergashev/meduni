@@ -30,6 +30,9 @@ export interface CourseSummary {
   subjectName: string;
   teacherName: string;
   groupName: string | null;
+  /** Davr — kurslar semestrlar bo'ylab guruhlash uchun. */
+  semester: number;
+  academicYear: string;
   topicsTotal: number;
   topicsCompleted: number;
   progressPct: number;
@@ -191,6 +194,9 @@ export interface Lesson {
   orderIndex: number;
   title: string;
   courseId: number;
+  subjectName: string;
+  /** Keyingi mavzu — tugagach to'g'ridan o'tish uchun (oxirgisi bo'lsa null). */
+  nextTopic: { id: number; title: string; state: TopicState } | null;
   state: TopicState;
   completed: boolean;
   thresholds: { video: number; quizPass: number };

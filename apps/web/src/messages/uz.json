@@ -1207,7 +1207,8 @@
     "submitCase": "Javobni topshirish",
     "submitCaseTitle": "Javobni topshirasizmi?",
     "submitCaseConfirm": "Topshirgach etalon javob koʻrsatiladi va oʻzgartirib boʻlmaydi.",
-    "submitted": "Topshirildi"
+    "submitted": "Topshirildi",
+    "nextTopicBtn": "Keyingi mavzu"
   },
   "search": {
     "placeholder": "Qidirish… (talaba, guruh, kurs)",

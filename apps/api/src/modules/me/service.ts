@@ -178,6 +178,9 @@ function courseSummary(course: CourseWithTopics, topics: TopicOut[]) {
     subjectName: course.subject.name,
     teacherName: course.teacher.fullName,
     groupName: course.courseGroups[0]?.group.name ?? null,
+    // Davr — talabada kurslar semestrlar bo'ylab ko'payadi, guruhlash uchun.
+    semester: course.semester,
+    academicYear: course.academicYear,
     topicsTotal: total,
     topicsCompleted: completed,
     progressPct: total === 0 ? 0 : Math.round((completed / total) * 100),
@@ -187,10 +190,12 @@ function courseSummary(course: CourseWithTopics, topics: TopicOut[]) {
 }
 
 export async function enrolledCourseIds(studentId: number): Promise<number[]> {
+  // Yangi davr birinchi — dashboard "davom ettirish" ham eng avval joriy
+  // semestr kurslaridan tanlanadi.
   const rows = await prisma.enrollment.findMany({
     where: { studentId, status: "ACTIVE" },
     select: { courseId: true },
-    orderBy: { courseId: "asc" },
+    orderBy: [{ course: { academicYear: "desc" } }, { course: { semester: "desc" } }, { courseId: "asc" }],
   });
   return rows.map((r) => r.courseId);
 }
@@ -231,6 +236,8 @@ export async function getMyCourse(studentId: number, courseId: number) {
     subjectName: course.subject.name,
     teacherName: course.teacher.fullName,
     groupName: course.courseGroups[0]?.group.name ?? null,
+    semester: course.semester,
+    academicYear: course.academicYear,
     topicsTotal: topics.length,
     topicsCompleted: topics.filter((t) => t.state === "COMPLETED").length,
     progressPct: topics.length === 0 ? 0 : Math.round((topics.filter((t) => t.state === "COMPLETED").length / topics.length) * 100),
