@@ -38,6 +38,7 @@ import { StudentDashboard } from "./pages/student/StudentDashboard";
 import { StudentTasksPage } from "./pages/student/StudentTasksPage";
 import { StudentCoursesPage } from "./pages/student/StudentCoursesPage";
 import { GradesPage } from "./pages/student/GradesPage";
+import { SchedulePage } from "./pages/student/SchedulePage";
 import { CoursePath } from "./pages/student/CoursePath";
 import { LessonPage } from "./pages/student/lesson/LessonPage";
 import { AttendancePage } from "./pages/student/AttendancePage";
@@ -119,6 +120,7 @@ export function App() {
         <Route index element={<StudentDashboard />} />
         <Route path="tasks" element={<StudentTasksPage />} />
         <Route path="grades" element={<GradesPage />} />
+        <Route path="schedule" element={<SchedulePage />} />
         <Route path="courses" element={<StudentCoursesPage />} />
         <Route path="courses/:id" element={<CoursePath />} />
         <Route path="topics/:id" element={<LessonPage />} />

@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import { Outlet } from "react-router-dom";
-import { Award, BookOpen, CalendarCheck, FileText, Home, ListChecks, User } from "lucide-react";
+import { Award, BookOpen, CalendarCheck, CalendarDays, FileText, Home, ListChecks, User } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Icon } from "@meduni/ui";
 import { RoleShell } from "../../components/RoleShell";
@@ -58,6 +58,7 @@ export function StudentShell() {
         { href: "/app", label: t("dashboard"), icon: <Icon icon={Home} />, end: true },
         { href: "/app/courses", label: t("myCourses"), icon: <Icon icon={BookOpen} />, end: true },
         { href: "/app/tasks", label: t("tasks"), icon: <Icon icon={ListChecks} />, badge: openTasks },
+        { href: "/app/schedule", label: t("schedule"), icon: <Icon icon={CalendarDays} /> },
         { href: "/app/grades", label: t("grades"), icon: <Icon icon={Award} /> },
         { href: "/app/attendance", label: t("attendance"), icon: <Icon icon={CalendarCheck} /> },
         { href: "/app/profile", label: t("profile"), icon: <Icon icon={User} /> },

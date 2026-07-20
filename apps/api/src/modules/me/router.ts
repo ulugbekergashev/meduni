@@ -60,7 +60,17 @@ meRouter.get(
 );
 
 meRouter.get("/profile", wrap(async (req, res) => res.json(await profile.getMyProfile(req.user!.id))));
-meRouter.get("/schedule", wrap(async (req, res) => res.json(await profile.getMySchedule(req.user!.id))));
+meRouter.get(
+  "/schedule",
+  wrap(async (req, res) =>
+    res.json(
+      await profile.getMySchedule(req.user!.id, {
+        from: typeof req.query.from === "string" ? req.query.from : undefined,
+        to: typeof req.query.to === "string" ? req.query.to : undefined,
+      })
+    )
+  )
+);
 meRouter.get("/grades", wrap(async (req, res) => res.json(await profile.getMyGrades(req.user!.id))));
 meRouter.get("/activity", wrap(async (req, res) => res.json(await profile.getMyActivity(req.user!.id))));
 meRouter.get("/rank", wrap(async (req, res) => res.json(await profile.getMyRank(req.user!.id))));

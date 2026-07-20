@@ -238,12 +238,14 @@ export async function getMyProfile(studentId: number) {
   };
 }
 
-/** Kelgusi 7 kunlik dars jadvali — talabaning ACTIVE kurslari sessiyalari. */
-export async function getMySchedule(studentId: number) {
-  const from = new Date();
+/** Dars jadvali — talabaning ACTIVE kurslari sessiyalari.
+ *  Diapazon berilmasa: bugundan +7 kun (dashboard "Bugun" bloki).
+ *  Jadval moduli hafta oralig'ini beradi — o'tgan darslar O'Z yo'qlama
+ *  holati bilan qaytadi (keldi/kelmadi/... yoki hali belgilanmagan). */
+export async function getMySchedule(studentId: number, opts: { from?: string; to?: string } = {}) {
+  const from = opts.from ? new Date(opts.from) : new Date();
   from.setHours(0, 0, 0, 0);
-  const to = new Date(from);
-  to.setDate(to.getDate() + 7);
+  const to = opts.to ? new Date(opts.to) : new Date(from.getTime() + 7 * 86_400_000);
   to.setHours(23, 59, 59, 999);
 
   const sessions = await prisma.lessonSession.findMany({
@@ -253,8 +255,19 @@ export async function getMySchedule(studentId: number) {
     },
     include: { course: { include: { subject: true } }, topic: { select: { title: true } } },
     orderBy: { date: "asc" },
-    take: 10,
+    take: 60,
   });
+
+  // O'z yo'qlama belgilarim (faqat shu sessiyalar bo'yicha).
+  const myMarks = sessions.length
+    ? await prisma.attendance.findMany({
+        where: { studentId, sessionId: { in: sessions.map((s) => s.id) } },
+        select: { sessionId: true, status: true },
+      })
+    : [];
+  const markBySession = new Map(myMarks.map((m) => [m.sessionId, m.status as Status]));
+
+  const now = new Date();
   return sessions.map((s) => ({
     id: s.id,
     date: s.date,
@@ -262,6 +275,9 @@ export async function getMySchedule(studentId: number) {
     courseId: s.courseId,
     courseName: s.course.subject.name,
     title: s.title ?? s.topic?.title ?? null,
+    isPast: s.date < now,
+    /** O'tgan dars uchun mening holatim; belgilanmagan bo'lsa null. */
+    myStatus: markBySession.get(s.id) ?? null,
   }));
 }
 
