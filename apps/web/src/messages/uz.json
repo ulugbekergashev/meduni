@@ -69,7 +69,16 @@
     "open": "Ochish",
     "overdue": "muddati oʻtdi",
     "priorityHigh": "Muhim",
-    "attendanceLowHint": "Davomatingiz {{pct}}% — davomat sahifasini koʻring"
+    "attendanceLowHint": "Davomatingiz {{pct}}% — davomat sahifasini koʻring",
+    "statOpen": "Ochiq vazifalar",
+    "statFromTeacher": "Oʻqituvchidan",
+    "statOverdue": "Muddati oʻtgan",
+    "statDone": "Bajarilgan",
+    "doneCountN": "{{n}} ta bajarilgan",
+    "noDoneYet": "Hali bajarilgan topshiriq yoʻq",
+    "noMatchFilter": "Bu filtrda vazifa yoʻq",
+    "upcomingLessons": "Kelgusi darslar",
+    "noLessonsShort": "Dars yoʻq"
   },
   "teachAssign": {
     "newBtn": "Yangi topshiriq",
@@ -1375,7 +1384,12 @@
     "nextTopic": "Keyingi mavzu",
     "continue": "Davom ettirish",
     "allDone": "Kurs tugallandi 🎉",
-    "noOpenTopic": "Ochiq mavzu yoʻq"
+    "noOpenTopic": "Ochiq mavzu yoʻq",
+    "avgProgress": "Oʻrtacha progress",
+    "statAll": "Jami kurs",
+    "statCurrent": "Joriy semestr",
+    "statTopics": "Mavzular",
+    "statDone": "Tugallangan"
   },
   "grades": {
     "title": "Baholarim",
@@ -1397,7 +1411,9 @@
       "all": "Hammasi",
       "quiz": "Testlar",
       "case": "Keyslar"
-    }
+    },
+    "statPending": "Tekshiruvda",
+    "recentGrades": "Oxirgi baholar"
   },
   "schedule": {
     "title": "Dars jadvali",
@@ -1410,6 +1426,10 @@
     "noLessons": "Dars yoʻq",
     "unmarked": "Belgilanmagan",
     "upcomingBadge": "Boʻladi",
-    "emptyWeek": "Bu haftada dars yo‘q"
+    "emptyWeek": "Bu haftada dars yo‘q",
+    "statLessons": "Bu hafta darslar",
+    "statAttended": "Keldingiz",
+    "statMissed": "Qoldirdingiz",
+    "statNextNone": "Keyingi dars yoʻq"
   }
 }

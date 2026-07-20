@@ -933,6 +933,25 @@ Barcha modullar tugadi (1-17).
   **Davomat:** hero ustunlari qayta o'lchandi (260px + qolgani trend/jadval).
   tsc+build toza.
 
+- **Modul 22E — bir xil zichlik barcha talaba modullarida (2026-07-20, foydalanuvchi:
+  "bosh sahifa zo'r, qolganini ham shunday complex qil").** Dashboard naqshi umumiy
+  komponentga chiqarildi: **`components/HeroStats.tsx`** — `HeroCard` (sarlavha+subtitle+
+  `left` sloti [ring/hafta navigatsiyasi] + 4 tile grid), `HeroTile` (bosiladigan, `selected`
+  bilan filtr holati), `RailCard` (o'ng ustun bloki). Dashboard'dagi mahalliy nusxalar
+  o'chirildi — endi hamma sahifa shu uchtasini ishlatadi.
+  **Vazifalar:** hero 4 tile (ochiq / o'qituvchidan / **muddati o'tgan** rose / bajarilgan) —
+  bosilsa ro'yxat filtrlanadi; o'ng ustunda kelgusi darslar + bajarilganlar tarixi (yig'iladigan,
+  sanasi bilan); muddati o'tgan topshiriq kartasi rose chegara oladi.
+  **Jadval:** hero ichida hafta navigatsiyasi + 4 tile (bu hafta darslar / keldingiz /
+  qoldirdingiz / keyingi dars vaqti+fani).
+  **Kurslarim:** hero — o'rtacha progress ringi + 4 tile (jami kurs / joriy semestr [bosilsa
+  davr filtri qo'yiladi] / mavzular k/N / tugallangan).
+  **Baholarim:** hero — o'rtacha test ringi + 4 tile (o'rtacha / o'tilgan / baholangan keys /
+  **tekshiruvda**), tile'lar filtr; ostida `1fr+320px`: chapda kurs bloklari, o'ngda
+  "Oxirgi baholar" (test+keys aralash, sana bo'yicha) va "Tekshiruvda" ro'yxati.
+  i18n: `tasks.stat*`, `schedule.stat*`, `studentCourses.stat*`, `grades.statPending/recentGrades`.
+  tsc+build toza.
+
 ## 9. Loyiha holati va ishga tushirish (operatsion — sessiya 0)
 
 **Monorepo (npm workspaces):**

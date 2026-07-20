@@ -69,7 +69,16 @@
     "open": "Открыть",
     "overdue": "просрочено",
     "priorityHigh": "Важно",
-    "attendanceLowHint": "Ваша посещаемость {{pct}}% — откройте страницу посещаемости"
+    "attendanceLowHint": "Ваша посещаемость {{pct}}% — откройте страницу посещаемости",
+    "statOpen": "Открытые задачи",
+    "statFromTeacher": "От преподавателя",
+    "statOverdue": "Просрочено",
+    "statDone": "Выполнено",
+    "doneCountN": "Выполнено: {{n}}",
+    "noDoneYet": "Пока нет выполненных задач",
+    "noMatchFilter": "По этому фильтру задач нет",
+    "upcomingLessons": "Ближайшие занятия",
+    "noLessonsShort": "Занятий нет"
   },
   "teachAssign": {
     "newBtn": "Новая задача",
@@ -1371,7 +1380,12 @@
     "nextTopic": "Следующая тема",
     "continue": "Продолжить",
     "allDone": "Курс завершён 🎉",
-    "noOpenTopic": "Нет открытых тем"
+    "noOpenTopic": "Нет открытых тем",
+    "avgProgress": "Средний прогресс",
+    "statAll": "Всего курсов",
+    "statCurrent": "Текущий семестр",
+    "statTopics": "Темы",
+    "statDone": "Завершено"
   },
   "grades": {
     "title": "Мои оценки",
@@ -1393,7 +1407,9 @@
       "all": "Все",
       "quiz": "Тесты",
       "case": "Кейсы"
-    }
+    },
+    "statPending": "На проверке",
+    "recentGrades": "Последние оценки"
   },
   "schedule": {
     "title": "Расписание занятий",
@@ -1406,6 +1422,10 @@
     "noLessons": "Занятий нет",
     "unmarked": "Не отмечено",
     "upcomingBadge": "Будет",
-    "emptyWeek": "На этой неделе занятий нет"
+    "emptyWeek": "На этой неделе занятий нет",
+    "statLessons": "Занятий на неделе",
+    "statAttended": "Посетили",
+    "statMissed": "Пропустили",
+    "statNextNone": "Занятий больше нет"
   }
 }

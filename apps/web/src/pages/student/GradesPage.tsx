@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Award, ChevronDown, ClipboardList, MessageSquareQuote, Stethoscope, Target, TrendingUp } from "lucide-react";
-import { Badge, Card, Icon, ProgressBar, cls } from "@meduni/ui";
+import { Award, ChevronDown, ClipboardList, Clock, MessageSquareQuote, Stethoscope, Target, TrendingUp } from "lucide-react";
+import { Badge, Card, Icon, ProgressBar, ProgressRing, cls } from "@meduni/ui";
+import { HeroCard, HeroTile, RailCard } from "../../components/HeroStats";
 import { AsyncSection } from "../../components/AsyncSection";
 import { formatDate } from "../../lib/date";
 import { useLocale } from "../../lib/useLocale";
@@ -13,39 +14,6 @@ function scoreTone(pct: number) {
   if (pct >= 70) return "text-blue";
   if (pct >= 60) return "text-amber";
   return "text-rose";
-}
-
-/** Bosiladigan ko'rsatkich — ro'yxatni shu turga filtrlaydi. */
-function StatCard({
-  icon,
-  value,
-  label,
-  tone,
-  onClick,
-  selected = false,
-}: {
-  icon: typeof Award;
-  value: string;
-  label: string;
-  tone: string;
-  onClick?: () => void;
-  selected?: boolean;
-}) {
-  return (
-    <Card
-      interactive={!!onClick}
-      onClick={onClick}
-      className={cls("flex items-center gap-3", selected && "border-brand ring-1 ring-brand/30")}
-    >
-      <div className={cls("flex h-11 w-11 shrink-0 items-center justify-center rounded-control", tone)}>
-        <Icon icon={icon} size={19} />
-      </div>
-      <div className="min-w-0">
-        <p className="text-[26px] font-bold leading-none tabular-nums text-ink">{value}</p>
-        <p className="mt-1 truncate text-note text-ink-soft">{label}</p>
-      </div>
-    </Card>
-  );
 }
 
 function QuizRow({ q, onOpen }: { q: GradeQuiz; onOpen: () => void }) {
@@ -191,6 +159,7 @@ type Filter = "all" | "quiz" | "case";
 
 export function GradesPage() {
   const { t } = useTranslation(undefined, { keyPrefix: "grades" });
+  const navigateTo = useNavigate();
   const q = useMyGrades();
   const data = q.data;
   const [filter, setFilter] = useState<Filter>("all");
@@ -200,40 +169,84 @@ export function GradesPage() {
   const s = data?.summary;
   const toggle = (f: Filter) => setFilter((cur) => (cur === f ? "all" : f));
   const withGradesAny = (data?.courses ?? []).some((c) => c.quizzes.length > 0 || c.cases.length > 0);
+  const allCases = (data?.courses ?? []).flatMap((c) => c.cases.map((k) => ({ ...k, subjectName: c.subjectName })));
+  const pendingCases = allCases.filter((k) => !k.reviewed);
+  // O'ng ustun: oxirgi baholangan ishlar (sana bo'yicha)
+  const recent = [
+    ...(data?.courses ?? []).flatMap((c) =>
+      c.quizzes.map((qz) => ({
+        key: `q${qz.topicId}`,
+        title: qz.topicTitle,
+        subject: c.subjectName,
+        score: `${qz.bestScore}%`,
+        at: qz.lastAt,
+        topicId: qz.topicId,
+        tab: "quiz",
+      }))
+    ),
+    ...allCases
+      .filter((k) => k.reviewed)
+      .map((k) => ({
+        key: `c${k.topicId}`,
+        title: k.topicTitle,
+        subject: k.subjectName,
+        score: String(k.score ?? "—"),
+        at: k.reviewedAt,
+        topicId: k.topicId,
+        tab: "case",
+      })),
+  ]
+    .filter((r) => r.at)
+    .sort((a, b) => new Date(b.at!).getTime() - new Date(a.at!).getTime())
+    .slice(0, 6);
 
   return (
     <div>
-      <h1 className="text-h1 font-bold text-ink">{t("title")}</h1>
-      <p className="mt-1 text-body text-ink-soft">{t("subtitle")}</p>
-
-      {s && withGrades.length > 0 && (
-        <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          <StatCard
-            icon={TrendingUp}
-            value={s.avgQuiz !== null ? `${s.avgQuiz}%` : "—"}
-            label={t("avgQuiz")}
-            tone="bg-blue-soft text-blue"
-            onClick={() => toggle("quiz")}
-            selected={filter === "quiz"}
-          />
-          <StatCard
-            icon={Target}
-            value={`${s.quizzesPassed}/${s.quizzesTotal}`}
-            label={t("quizzesPassed")}
-            tone="bg-emerald-soft text-emerald"
-            onClick={() => toggle("quiz")}
-            selected={filter === "quiz"}
-          />
-          <StatCard
-            icon={Award}
-            value={`${s.casesGraded}/${s.casesTotal}`}
-            label={t("casesGraded")}
-            tone="bg-rose-soft text-rose"
-            onClick={() => toggle("case")}
-            selected={filter === "case"}
-          />
-        </div>
-      )}
+      <HeroCard
+        title={t("title")}
+        subtitle={t("subtitle")}
+        left={
+          s && s.avgQuiz !== null ? (
+            <div className="flex items-center gap-3">
+              <ProgressRing value={s.avgQuiz} size={64} stroke={8} tone="blue" />
+              <span className="text-note text-ink-soft">{t("avgQuiz")}</span>
+            </div>
+          ) : undefined
+        }
+      >
+        <HeroTile
+          icon={TrendingUp}
+          value={s?.avgQuiz !== null && s?.avgQuiz !== undefined ? `${s.avgQuiz}%` : "—"}
+          label={t("avgQuiz")}
+          tone="bg-blue-soft text-blue"
+          onClick={() => toggle("quiz")}
+          selected={filter === "quiz"}
+        />
+        <HeroTile
+          icon={Target}
+          value={`${s?.quizzesPassed ?? 0}/${s?.quizzesTotal ?? 0}`}
+          label={t("quizzesPassed")}
+          tone="bg-emerald-soft text-emerald"
+          onClick={() => toggle("quiz")}
+          selected={filter === "quiz"}
+        />
+        <HeroTile
+          icon={Award}
+          value={`${s?.casesGraded ?? 0}/${s?.casesTotal ?? 0}`}
+          label={t("casesGraded")}
+          tone="bg-rose-soft text-rose"
+          onClick={() => toggle("case")}
+          selected={filter === "case"}
+        />
+        <HeroTile
+          icon={Clock}
+          value={String(pendingCases.length)}
+          label={t("statPending")}
+          tone={pendingCases.length > 0 ? "bg-amber-soft text-amber" : "bg-bg text-ink-faint"}
+          onClick={() => toggle("case")}
+          selected={filter === "case"}
+        />
+      </HeroCard>
 
       {/* Tur filtri — segmented */}
       {withGradesAny && (
@@ -253,22 +266,65 @@ export function GradesPage() {
         </div>
       )}
 
-      <div className="mt-4">
-        <AsyncSection
-          isLoading={q.isLoading}
-          isError={q.isError}
-          isEmpty={withGrades.length === 0}
-          emptyIcon={<Icon icon={Award} size={22} />}
-          emptyText={t("empty")}
-          emptyHint={t("emptyHint")}
-          onRetry={() => q.refetch()}
-        >
-          <div className="grid gap-x-5 xl:grid-cols-2">
+      <div className="mt-4 grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="min-w-0">
+          <AsyncSection
+            isLoading={q.isLoading}
+            isError={q.isError}
+            isEmpty={withGrades.length === 0}
+            emptyIcon={<Icon icon={Award} size={22} />}
+            emptyText={t("empty")}
+            emptyHint={t("emptyHint")}
+            onRetry={() => q.refetch()}
+          >
             {withGrades.map((c) => (
               <CourseBlock key={c.courseId} c={c} filter={filter} />
             ))}
-          </div>
-        </AsyncSection>
+          </AsyncSection>
+        </div>
+
+        <aside className="min-w-0 space-y-5">
+          {recent.length > 0 && (
+            <RailCard title={t("recentGrades")} icon={Award}>
+              <div className="divide-y divide-line">
+                {recent.map((r) => (
+                  <button
+                    key={r.key}
+                    onClick={() => navigateTo(`/app/topics/${r.topicId}?tab=${r.tab}`)}
+                    className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left transition-colors hover:bg-bg"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-note font-semibold text-ink">{r.title}</p>
+                      <p className="truncate text-[12.5px] text-ink-faint">{r.subject}</p>
+                    </div>
+                    <span className="shrink-0 text-body font-bold tabular-nums text-ink-soft">{r.score}</span>
+                  </button>
+                ))}
+              </div>
+            </RailCard>
+          )}
+
+          {pendingCases.length > 0 && (
+            <RailCard title={t("statPending")} icon={Clock}>
+              <div className="divide-y divide-line">
+                {pendingCases.map((k) => (
+                  <button
+                    key={`p${k.topicId}`}
+                    onClick={() => navigateTo(`/app/topics/${k.topicId}?tab=case`)}
+                    className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left transition-colors hover:bg-bg"
+                  >
+                    <Icon icon={Stethoscope} size={14} className="shrink-0 text-amber" />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-note font-semibold text-ink">{k.topicTitle}</p>
+                      <p className="truncate text-[12.5px] text-ink-faint">{k.subjectName}</p>
+                    </div>
+                    <Badge tone="amber">{t("underReview")}</Badge>
+                  </button>
+                ))}
+              </div>
+            </RailCard>
+          )}
+        </aside>
       </div>
     </div>
   );

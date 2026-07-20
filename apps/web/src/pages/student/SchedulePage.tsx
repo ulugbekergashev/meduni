@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Check, ChevronLeft, ChevronRight, Clock, DoorOpen, Minus, X } from "lucide-react";
+import { CalendarDays, Check, ChevronLeft, ChevronRight, Clock, DoorOpen, Minus, X } from "lucide-react";
 import { Card, Icon, Spinner, cls } from "@meduni/ui";
+import { HeroCard, HeroTile } from "../../components/HeroStats";
 import { formatDate } from "../../lib/date";
 import { useLocale } from "../../lib/useLocale";
 import { useMySchedule, type AttStatus, type ScheduleItem } from "./api";
@@ -100,38 +101,69 @@ export function SchedulePage() {
 
   const fmt = (d: Date) => formatDate(locale === "ru" ? "ru" : "uz", d, "short");
 
+  // Hafta xulosasi — hero ko'rsatkichlari
+  const attended = sessions.filter((s) => s.myStatus === "PRESENT" || s.myStatus === "LATE").length;
+  const missedCount = sessions.filter((s) => s.myStatus === "ABSENT").length;
+  const upcoming = sessions.filter((s) => !s.isPast);
+  const nextLesson = upcoming[0];
+
   return (
     <div>
-      <h1 className="text-h1 font-bold text-ink">{t("title")}</h1>
-      <p className="mt-1 text-body text-ink-soft">{t("subtitle")}</p>
-
-      {/* Hafta navigatsiyasi */}
-      <div className="mt-5 flex flex-wrap items-center gap-2">
-        <button
-          onClick={() => shift(-1)}
-          aria-label={t("prevWeek")}
-          className="flex h-9 w-9 items-center justify-center rounded-control border border-line text-ink-soft transition-colors hover:bg-bg"
-        >
-          <Icon icon={ChevronLeft} size={16} />
-        </button>
-        <span className="min-w-[190px] text-center text-body font-bold text-ink">
-          {fmt(weekStart)} — {fmt(weekEnd)}
-        </span>
-        <button
-          onClick={() => shift(1)}
-          aria-label={t("nextWeek")}
-          className="flex h-9 w-9 items-center justify-center rounded-control border border-line text-ink-soft transition-colors hover:bg-bg"
-        >
-          <Icon icon={ChevronRight} size={16} />
-        </button>
-        <button
-          onClick={() => setWeekStart(mondayOf(new Date()))}
-          className="rounded-control border border-line px-3 py-1.5 text-body font-semibold text-ink-soft transition-colors hover:bg-bg"
-        >
-          {t("today")}
-        </button>
-        <span className="ml-auto text-note font-semibold text-ink-soft">{t("lessonsN", { n: sessions.length })}</span>
-      </div>
+      <HeroCard
+        title={t("title")}
+        subtitle={t("subtitle")}
+        left={
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={() => shift(-1)}
+              aria-label={t("prevWeek")}
+              className="flex h-9 w-9 items-center justify-center rounded-control border border-line text-ink-soft transition-colors hover:bg-bg"
+            >
+              <Icon icon={ChevronLeft} size={16} />
+            </button>
+            <span className="min-w-[180px] text-center text-body font-bold text-ink">
+              {fmt(weekStart)} — {fmt(weekEnd)}
+            </span>
+            <button
+              onClick={() => shift(1)}
+              aria-label={t("nextWeek")}
+              className="flex h-9 w-9 items-center justify-center rounded-control border border-line text-ink-soft transition-colors hover:bg-bg"
+            >
+              <Icon icon={ChevronRight} size={16} />
+            </button>
+            <button
+              onClick={() => setWeekStart(mondayOf(new Date()))}
+              className="rounded-control border border-line px-3 py-1.5 text-body font-semibold text-ink-soft transition-colors hover:bg-bg"
+            >
+              {t("today")}
+            </button>
+          </div>
+        }
+      >
+        <HeroTile
+          icon={CalendarDays}
+          value={String(sessions.length)}
+          label={t("statLessons")}
+          tone="bg-brand-soft text-brand-deep"
+        />
+        <HeroTile icon={Check} value={String(attended)} label={t("statAttended")} tone="bg-emerald-soft text-emerald" />
+        <HeroTile
+          icon={X}
+          value={String(missedCount)}
+          label={t("statMissed")}
+          tone={missedCount > 0 ? "bg-rose-soft text-rose" : "bg-bg text-ink-faint"}
+        />
+        <HeroTile
+          icon={Clock}
+          value={
+            nextLesson
+              ? `${String(new Date(nextLesson.date).getHours()).padStart(2, "0")}:${String(new Date(nextLesson.date).getMinutes()).padStart(2, "0")}`
+              : "—"
+          }
+          label={nextLesson ? nextLesson.courseName : t("statNextNone")}
+          tone="bg-blue-soft text-blue"
+        />
+      </HeroCard>
 
       {q.isLoading ? (
         <div className="mt-10 flex justify-center">

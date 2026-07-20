@@ -1,8 +1,9 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { BookOpen, CheckCircle2, PlayCircle, Search, UserRound, Users } from "lucide-react";
-import { Card, Icon, ProgressBar, cls } from "@meduni/ui";
+import { BookOpen, CheckCircle2, Layers, PlayCircle, Search, UserRound, Users } from "lucide-react";
+import { Card, Icon, ProgressBar, ProgressRing, cls } from "@meduni/ui";
+import { HeroCard, HeroTile } from "../../components/HeroStats";
 import { AsyncSection } from "../../components/AsyncSection";
 import { PeriodFilter, PeriodSection, groupByPeriod, usePeriodOptions } from "../../components/PeriodGroups";
 import { useMyCourses, type CourseSummary } from "./api";
@@ -113,10 +114,40 @@ export function StudentCoursesPage() {
   const groups = useMemo(() => groupByPeriod(filtered), [filtered]);
   const filtering = !!search.trim() || !!year || !!semester;
 
+  const avgProgress = courses.length
+    ? Math.round(courses.reduce((a, c) => a + c.progressPct, 0) / courses.length)
+    : 0;
+  const doneCourses = courses.filter((c) => c.topicsTotal > 0 && c.topicsCompleted === c.topicsTotal).length;
+  const newest = courses[0];
+  const currentCount = courses.filter(
+    (c) => newest && c.academicYear === newest.academicYear && c.semester === newest.semester
+  ).length;
+  const topicsDone = courses.reduce((a, c) => a + c.topicsCompleted, 0);
+  const topicsTotal = courses.reduce((a, c) => a + c.topicsTotal, 0);
+
   return (
     <div>
-      <h1 className="text-h1 font-bold text-ink">{t("title")}</h1>
-      <p className="mt-1 text-body text-ink-soft">{t("subtitle")}</p>
+      <HeroCard
+        title={t("title")}
+        subtitle={t("subtitle")}
+        left={
+          <div className="flex items-center gap-3">
+            <ProgressRing value={avgProgress} size={64} stroke={8} />
+            <span className="text-note text-ink-soft">{t("avgProgress")}</span>
+          </div>
+        }
+      >
+        <HeroTile icon={BookOpen} value={String(courses.length)} label={t("statAll")} tone="bg-brand-soft text-brand-deep" />
+        <HeroTile
+          icon={PlayCircle}
+          value={String(currentCount)}
+          label={t("statCurrent")}
+          tone="bg-blue-soft text-blue"
+          onClick={newest ? () => { setYear(newest.academicYear); setSemester(String(newest.semester)); } : undefined}
+        />
+        <HeroTile icon={Layers} value={`${topicsDone}/${topicsTotal}`} label={t("statTopics")} tone="bg-violet-soft text-violet" />
+        <HeroTile icon={CheckCircle2} value={String(doneCourses)} label={t("statDone")} tone="bg-emerald-soft text-emerald" />
+      </HeroCard>
 
       <div className="mt-5 flex flex-wrap items-center gap-2">
         <div className="relative min-w-[200px] flex-1">

@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { Card, EmptyState, Icon, ProgressBar, ProgressRing, cls } from "@meduni/ui";
 import { AsyncSection } from "../../components/AsyncSection";
+import { HeroCard, HeroTile, RailCard } from "../../components/HeroStats";
 import { useLocale } from "../../lib/useLocale";
 import { formatDate } from "../../lib/date";
 import {
@@ -50,40 +51,6 @@ const AUTO_META: Record<string, { icon: LucideIcon; labelKey: string; tone: stri
   case_graded: { icon: CheckCircle2, labelKey: "caseGraded", tone: "bg-emerald-soft text-emerald" },
   attendance_low: { icon: CalendarCheck2, labelKey: "attendanceLow", tone: "bg-amber-soft text-amber" },
 };
-
-/** Xulosa ko'rsatkichi — bosilsa tegishli modulga olib boradi. */
-function SummaryTile({
-  icon,
-  value,
-  label,
-  tone,
-  onClick,
-}: {
-  icon: LucideIcon;
-  value: string;
-  label: string;
-  tone: string;
-  onClick?: () => void;
-}) {
-  const Wrapper = onClick ? "button" : "div";
-  return (
-    <Wrapper
-      onClick={onClick}
-      className={cls(
-        "flex items-center gap-2.5 rounded-control p-2 text-left transition-colors",
-        onClick && "hover:bg-bg"
-      )}
-    >
-      <div className={cls("flex h-9 w-9 shrink-0 items-center justify-center rounded-full", tone)}>
-        <Icon icon={icon} size={16} />
-      </div>
-      <div className="min-w-0">
-        <p className="text-[19px] font-bold leading-none tabular-nums text-ink">{value}</p>
-        <p className="mt-0.5 truncate text-[12.5px] text-ink-soft">{label}</p>
-      </div>
-    </Wrapper>
-  );
-}
 
 /** Harakat qatori — vazifa, topshiriq yoki dars. */
 function ActionRow({
@@ -154,34 +121,6 @@ function CourseCard({ course }: { course: CourseSummary }) {
   );
 }
 
-/** O'ng ustun bloki — sarlavha + ixcham ro'yxat. */
-function RailCard({
-  title,
-  icon,
-  action,
-  children,
-}: {
-  title: string;
-  icon: LucideIcon;
-  action?: { label: string; onClick: () => void };
-  children: React.ReactNode;
-}) {
-  return (
-    <Card className="p-0">
-      <div className="flex items-center gap-2 border-b border-line px-4 py-2.5">
-        <Icon icon={icon} size={15} className="text-ink-faint" />
-        <p className="flex-1 text-note font-bold uppercase tracking-wide text-ink-soft">{title}</p>
-        {action && (
-          <button onClick={action.onClick} className="text-note font-semibold text-brand-deep hover:underline">
-            {action.label}
-          </button>
-        )}
-      </div>
-      {children}
-    </Card>
-  );
-}
-
 export function StudentDashboard() {
   const { t } = useTranslation(undefined, { keyPrefix: "student" });
   const { t: tt } = useTranslation(undefined, { keyPrefix: "tasks" });
@@ -228,29 +167,27 @@ export function StudentDashboard() {
         {d && (
           <>
             {/* Hero — salom + xulosa, butun kenglik */}
-            <Card className="flex flex-wrap items-center gap-x-8 gap-y-4 !p-5">
-              <div className="min-w-0 flex-1">
-                <h1 className="truncate text-h1 font-bold text-ink">
-                  {t("hello")}, {d.fullName.split(" ")[0]}
-                </h1>
-                <p className="mt-0.5 text-note text-ink-faint">{today}</p>
-              </div>
-              <button
-                onClick={() => navigate("/app/courses")}
-                title={t("overall")}
-                className="shrink-0 rounded-full transition-transform hover:scale-105"
-              >
-                <ProgressRing value={overallPct} size={82} stroke={9} label={t("overall")} />
-              </button>
-              <div className="grid min-w-0 flex-[2] grid-cols-2 gap-1 sm:grid-cols-4">
-                <SummaryTile
+            <HeroCard
+              title={`${t("hello")}, ${d.fullName.split(" ")[0]}`}
+              subtitle={today}
+              left={
+                <button
+                  onClick={() => navigate("/app/courses")}
+                  title={t("overall")}
+                  className="rounded-full transition-transform hover:scale-105"
+                >
+                  <ProgressRing value={overallPct} size={72} stroke={8} label={t("overall")} />
+                </button>
+              }
+            >
+                <HeroTile
                   icon={Layers}
                   value={`${d.courses.reduce((s, c) => s + c.topicsCompleted, 0)}/${d.courses.reduce((s, c) => s + c.topicsTotal, 0)}`}
                   label={t("summaryTopics")}
                   tone="bg-emerald-soft text-emerald"
                   onClick={() => navigate("/app/courses")}
                 />
-                <SummaryTile
+                <HeroTile
                   icon={CalendarCheck2}
                   value={p?.attendancePct !== null && p?.attendancePct !== undefined ? `${p.attendancePct}%` : "—"}
                   label={t("summaryAttendance")}
@@ -261,22 +198,21 @@ export function StudentDashboard() {
                   }
                   onClick={() => navigate("/app/attendance")}
                 />
-                <SummaryTile
+                <HeroTile
                   icon={BookOpen}
                   value={String(d.courses.length)}
                   label={t("summaryCourses")}
                   tone="bg-brand-soft text-brand-deep"
                   onClick={() => navigate("/app/courses")}
                 />
-                <SummaryTile
+                <HeroTile
                   icon={Trophy}
                   value={rank?.rank ? `${rank.rank}/${rank.total}` : "—"}
                   label={t("summaryRank")}
                   tone="bg-amber-soft text-amber"
                   onClick={() => navigate("/app/grades")}
                 />
-              </div>
-            </Card>
+            </HeroCard>
 
             {/* Asosiy maydon: chapda ish, o'ngda kontekst */}
             <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
