@@ -389,7 +389,11 @@
     "markedN": "{{n}} dars",
     "lessonsN": "{{n}} dars",
     "missedSection": "Qoldirilgan darslar",
-    "missedN": "{{n}} ta"
+    "missedN": "{{n}} ta",
+    "colSubject": "Fan",
+    "colTotal": "Jami",
+    "colMissed": "Qoldirdi",
+    "colPct": "Davomat"
   },
   "profile": {
     "title": "Profil",
@@ -1393,6 +1397,7 @@
     "lessonsN": "{{n}} dars",
     "noLessons": "Dars yoʻq",
     "unmarked": "Belgilanmagan",
-    "upcomingBadge": "Boʻladi"
+    "upcomingBadge": "Boʻladi",
+    "emptyWeek": "Bu haftada dars yo‘q"
   }
 }
