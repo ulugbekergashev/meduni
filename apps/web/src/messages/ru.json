@@ -399,27 +399,18 @@
     "errMismatch": "Пароли не совпадают",
     "errOldWrong": "Старый пароль неверный",
     "activeBadge": "Активен",
-    "rank": "Место в группе",
-    "rankHint": "По завершённым темам",
-    "rankValue": "В группе {{rank}}/{{total}}",
-    "attendanceHint": "Доля посещённых занятий",
-    "completedHint": "Завершённые темы",
-    "coursesHint": "Активные курсы",
-    "noActivity": "Пока нет активности",
     "noCourses": "Курсов нет",
-    "tabs": {
-      "overview": "Обзор",
-      "courses": "Курсы",
-      "attendance": "Посещаемость"
-    },
-    "activity": {
-      "topic_completed": "Тема завершена",
-      "topic_activity": "Работа над темой",
-      "quiz_passed": "Тест сдан",
-      "quiz_failed": "Тест не пройден",
-      "case_submitted": "Ответ по кейсу отправлен",
-      "case_graded": "Кейс оценён"
-    }
+    "subtitle": "Ваши личные и учебные данные",
+    "studentBadge": "Студент",
+    "inactiveBadge": "Неактивен",
+    "academicInfo": "Учебные данные",
+    "contactInfo": "Контактные данные",
+    "faculty": "Факультет",
+    "yearOfStudy": "Курс",
+    "yearN": "{{n}}-й курс",
+    "currentPeriod": "Текущий период",
+    "activeCourses": "Активные курсы",
+    "idLabel": "ID студента"
   },
   "dashboard": {
     "adminTitle": "Панель администратора",
@@ -1023,7 +1014,17 @@
     "elCase": "Кейс",
     "lessonSoonTitle": "Страница урока скоро",
     "lessonSoonBody": "Страница урока с видео, презентацией, тестом и кейсом откроется в следующем модуле.",
-    "todayTitle": "Сегодня"
+    "todayTitle": "Сегодня",
+    "summaryRank": "Место в группе",
+    "recentActivity": "Последняя активность",
+    "activity": {
+      "topic_completed": "Тема завершена",
+      "topic_activity": "Работа над темой",
+      "quiz_passed": "Тест сдан",
+      "quiz_failed": "Тест не пройден",
+      "case_submitted": "Ответ по кейсу отправлен",
+      "case_graded": "Кейс оценён"
+    }
   },
   "review": {
     "back": "← Главная",

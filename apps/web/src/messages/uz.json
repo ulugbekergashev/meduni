@@ -399,27 +399,18 @@
     "errMismatch": "Parollar mos kelmadi",
     "errOldWrong": "Eski parol xato",
     "activeBadge": "Faol",
-    "rank": "Guruhdagi oʻrin",
-    "rankHint": "Tugallangan mavzular boʻyicha",
-    "rankValue": "Guruhda {{rank}}/{{total}}",
-    "attendanceHint": "Kelgan darslar ulushi",
-    "completedHint": "Tugallangan mavzular",
-    "coursesHint": "Faol kurslar",
-    "noActivity": "Hali faollik yoʻq",
     "noCourses": "Kurslar yoʻq",
-    "tabs": {
-      "overview": "Umumiy",
-      "courses": "Kurslar",
-      "attendance": "Davomat"
-    },
-    "activity": {
-      "topic_completed": "Mavzu tugallandi",
-      "topic_activity": "Mavzu ustida ishladingiz",
-      "quiz_passed": "Test topshirildi",
-      "quiz_failed": "Test oʻtilmadi",
-      "case_submitted": "Keys javobi yuborildi",
-      "case_graded": "Keys baholandi"
-    }
+    "subtitle": "Shaxsiy va oʻquv maʼlumotlaringiz",
+    "studentBadge": "Talaba",
+    "inactiveBadge": "Nofaol",
+    "academicInfo": "Oʻquv maʼlumotlari",
+    "contactInfo": "Aloqa maʼlumotlari",
+    "faculty": "Fakultet",
+    "yearOfStudy": "Kurs",
+    "yearN": "{{n}}-kurs",
+    "currentPeriod": "Joriy davr",
+    "activeCourses": "Faol kurslar",
+    "idLabel": "Talaba ID"
   },
   "dashboard": {
     "adminTitle": "Admin paneli",
@@ -1027,7 +1018,17 @@
     "elCase": "Keys",
     "lessonSoonTitle": "Dars sahifasi tez orada",
     "lessonSoonBody": "Video, prezentatsiya, test va keysni oʻz ichiga olgan dars sahifasi keyingi modulda ochiladi.",
-    "todayTitle": "Bugun"
+    "todayTitle": "Bugun",
+    "summaryRank": "Guruhdagi oʻrin",
+    "recentActivity": "Soʻnggi faollik",
+    "activity": {
+      "topic_completed": "Mavzu tugallandi",
+      "topic_activity": "Mavzu ustida ishladingiz",
+      "quiz_passed": "Test topshirildi",
+      "quiz_failed": "Test oʻtilmadi",
+      "case_submitted": "Keys javobi yuborildi",
+      "case_graded": "Keys baholandi"
+    }
   },
   "review": {
     "back": "← Bosh sahifa",

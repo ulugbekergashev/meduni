@@ -332,11 +332,19 @@ export interface MyAttendance {
 }
 
 export interface MyProfile {
+  /** Ma'lumotnoma — kim, qayerda o'qiydi. */
+  id: number;
   fullName: string;
   email: string;
   phone: string | null;
-  groupName: string | null;
+  isActive: boolean;
   locale: "uz" | "ru";
+  groupName: string | null;
+  facultyName: string | null;
+  yearOfStudy: number | null;
+  academicYear: string | null;
+  semester: number | null;
+  /** Ko'rsatkichlar — bosh sahifa/davomat modullarida ishlatiladi. */
   coursesCount: number;
   completedTopics: number;
   attendancePct: number | null;
