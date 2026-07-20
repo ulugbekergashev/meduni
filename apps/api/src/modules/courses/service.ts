@@ -28,9 +28,30 @@ function toCourseOut(c: CourseWithRelations) {
   };
 }
 
+// Kurslar ko'p bo'ladi (har semestrda bir nechta, semestrlar yillar davomida) —
+// hamma joyda YANGI davr birinchi turadi: o'quv yili ↓, semestr ↓.
+const courseOrder: Prisma.CourseOrderByWithRelationInput[] = [
+  { academicYear: "desc" },
+  { semester: "desc" },
+  { id: "asc" },
+];
+
 export async function listCourses(where?: Prisma.CourseWhereInput) {
-  const rows = await prisma.course.findMany({ where, orderBy: { id: "asc" }, include: courseInclude });
+  const rows = await prisma.course.findMany({ where, orderBy: courseOrder, include: courseInclude });
   return rows.map(toCourseOut);
+}
+
+/** Filtrlar uchun mavjud davrlar (o'quv yili / semestr) — ro'yxatga bog'liq. */
+export async function listCoursePeriods(where?: Prisma.CourseWhereInput) {
+  const rows = await prisma.course.findMany({
+    where,
+    select: { academicYear: true, semester: true },
+    distinct: ["academicYear", "semester"],
+    orderBy: courseOrder,
+  });
+  const years = [...new Set(rows.map((r) => r.academicYear))];
+  const semesters = [...new Set(rows.map((r) => r.semester))].sort((a, b) => a - b);
+  return { years, semesters };
 }
 
 async function getCourseOut(id: number) {
@@ -203,7 +224,7 @@ export async function getCourseDetail(id: number) {
 export async function listTeacherCourses(teacherId: number) {
   const rows = await prisma.course.findMany({
     where: { teacherId },
-    orderBy: { id: "asc" },
+    orderBy: courseOrder, // yangi o'quv yili/semestr birinchi
     include: courseInclude,
   });
   return rows.map(toCourseOut);

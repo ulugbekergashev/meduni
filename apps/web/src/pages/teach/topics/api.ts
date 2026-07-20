@@ -233,6 +233,10 @@ export interface SubjectRow {
   name: string;
   departmentName: string;
   myCourseId: number | null;
+  /** Fan bo'yicha ochilgan kurslar soni (barcha semestrlar). */
+  courseCount: number;
+  /** Eng oxirgi davr (o'quv yili + semestr), kurs bo'lmasa null. */
+  latest: { academicYear: string; semester: number } | null;
   topicsTotal: number;
   published: number;
   inProgress: number;
@@ -240,12 +244,23 @@ export interface SubjectRow {
   attention: { materialMissing: number; digestPending: number; publishPending: number; factcheckFlagged: number };
 }
 
+export interface SubjectDetail extends SubjectRow {
+  courses: {
+    id: number;
+    academicYear: string;
+    semester: number;
+    teacherName: string;
+    isMine: boolean;
+    studentCount: number;
+  }[];
+}
+
 export function useMySubjects() {
   return useQuery({ queryKey: ["teach-subjects"], queryFn: () => api<SubjectRow[]>("/api/v1/teach/subjects") });
 }
 
 export function useSubject(id: number) {
-  return useQuery({ queryKey: ["teach-subject", id], queryFn: () => api<SubjectRow>(`/api/v1/teach/subjects/${id}`) });
+  return useQuery({ queryKey: ["teach-subject", id], queryFn: () => api<SubjectDetail>(`/api/v1/teach/subjects/${id}`) });
 }
 
 // ---- Topic detail (constructor) ----

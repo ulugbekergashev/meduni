@@ -1,7 +1,7 @@
-import { useState, type FormEvent } from "react";
+import { Fragment, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { GraduationCap, Plus, Trash2 } from "lucide-react";
+import { GraduationCap, Plus, Search, Trash2 } from "lucide-react";
 import { Badge, Button, ChipSelect, Icon, Input, Modal, Select, useToast } from "@meduni/ui";
 import { AsyncSection } from "../../../components/AsyncSection";
 import { ConfirmDialog } from "../../../components/ConfirmDialog";
@@ -11,7 +11,9 @@ import { apiErrorMessage } from "../../../lib/api";
 import { useList } from "../../../lib/crud";
 import { useLocale } from "../../../lib/useLocale";
 import type { Subject } from "../structure/types";
-import { useCourses, useCreateCourse, useDeleteCourse, useTeachers, type CourseRow } from "./api";
+import { PeriodFilter } from "../../../components/PeriodGroups";
+import { useDebounced } from "../../../lib/useDebounced";
+import { useCoursePeriods, useCourses, useCreateCourse, useDeleteCourse, useTeachers, type CourseRow } from "./api";
 
 interface GroupLite {
   id: number;
@@ -27,7 +29,14 @@ export function CoursesPage() {
   const { show } = useToast();
   const navigate = useNavigate();
 
-  const list = useCourses();
+  const [search, setSearch] = useState("");
+  const [year, setYear] = useState("");
+  const [semesterFilter, setSemesterFilter] = useState("");
+  const [subjectFilter, setSubjectFilter] = useState("");
+  const debouncedSearch = useDebounced(search, 300);
+
+  const list = useCourses({ academicYear: year, semester: semesterFilter, subjectId: subjectFilter, search: debouncedSearch });
+  const periods = useCoursePeriods();
   const subjects = useList<Subject>("subjects");
   const groups = useList<GroupLite>("groups");
   const teachers = useTeachers();
@@ -186,14 +195,48 @@ export function CoursesPage() {
         </form>
       </Modal>
 
+      {/* Filtrlar — kurslar semestrlar bo'ylab ko'payadi, kerakligini tez topish uchun */}
+      <div className="mt-6 flex flex-wrap items-center gap-2">
+        <div className="relative min-w-[200px] flex-1">
+          <Icon icon={Search} size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-faint" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={t("searchPlaceholder")}
+            className="w-full rounded-control border border-line bg-surface py-2 pl-9 pr-3 text-[14.5px] outline-none focus:border-brand"
+          />
+        </div>
+        <PeriodFilter
+          years={periods.data?.years ?? []}
+          semesters={periods.data?.semesters ?? []}
+          year={year}
+          semester={semesterFilter}
+          onYear={setYear}
+          onSemester={setSemesterFilter}
+        />
+        <select
+          value={subjectFilter}
+          onChange={(e) => setSubjectFilter(e.target.value)}
+          className="rounded-control border border-line bg-surface px-2.5 py-2 text-[14.5px] text-ink outline-none focus:border-brand"
+        >
+          <option value="">{t("allSubjects")}</option>
+          {subjectOptions.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.name}
+            </option>
+          ))}
+        </select>
+        <span className="text-note font-semibold text-ink-soft">{t("totalN", { n: rows.length })}</span>
+      </div>
+
       {/* Table */}
-      <div className="mt-6">
+      <div className="mt-4">
         <AsyncSection
           isLoading={list.isLoading}
           isError={list.isError}
           isEmpty={rows.length === 0}
           emptyIcon={<Icon icon={GraduationCap} size={22} />}
-          emptyText={t("empty")}
+          emptyText={list.data && list.data.length === 0 && (debouncedSearch || year || semesterFilter || subjectFilter) ? t("noMatch") : t("empty")}
           onRetry={() => list.refetch()}
         >
           <DataTable
@@ -207,8 +250,19 @@ export function CoursesPage() {
               t("actions"),
             ]}
           >
-            {rows.map((c) => (
-              <tr key={c.id} className="border-b border-line last:border-0">
+            {rows.map((c, i) => {
+              const prev = rows[i - 1];
+              const newPeriod = !prev || prev.academicYear !== c.academicYear || prev.semester !== c.semester;
+              return (
+              <Fragment key={c.id}>
+              {newPeriod && (
+                <tr className="bg-bg">
+                  <td colSpan={7} className="px-4 py-1.5 text-note font-bold uppercase tracking-wide text-ink-soft">
+                    {c.academicYear} · {t("semesterN", { n: c.semester })}
+                  </td>
+                </tr>
+              )}
+              <tr className="border-b border-line last:border-0">
                 <td className="px-4 py-3">
                   <button
                     onClick={() => navigate(`/admin/courses/${c.id}`)}
@@ -247,7 +301,9 @@ export function CoursesPage() {
                   </div>
                 </td>
               </tr>
-            ))}
+              </Fragment>
+              );
+            })}
           </DataTable>
         </AsyncSection>
       </div>

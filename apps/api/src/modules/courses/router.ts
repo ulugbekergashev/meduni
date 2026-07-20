@@ -3,7 +3,7 @@ import { z, type ZodTypeAny } from "zod";
 import { badRequest, notFound } from "../../lib/errors";
 import { requireRoles } from "../../middleware/rbac";
 import { ADMIN_ROLES, adminScope, assertDeptScope, type AdminScope } from "../../middleware/adminScope";
-import { prisma } from "../../lib/prisma";
+import { prisma, type Prisma } from "../../lib/prisma";
 import * as svc from "./service";
 
 export const coursesRouter = Router();
@@ -64,15 +64,42 @@ const updateSchema = z.object({
   groupIds: z.array(z.number().int().positive()).optional(),
 });
 
-coursesRouter.get("/", wrap(async (req, res) => {
+/** Admin ko'rinishi uchun scope filtri (fakultet/kafedra qamrovi). */
+async function scopeWhere(req: Parameters<typeof adminScope>[0]) {
   const scope = await adminScope(req);
-  const where =
-    scope.level === "SUPER"
-      ? undefined
-      : scope.level === "FACULTY"
-        ? { subject: { department: { facultyId: scope.facultyId! } } }
-        : { subject: { departmentId: scope.departmentId! } };
-  res.json(await svc.listCourses(where));
+  if (scope.level === "SUPER") return {};
+  if (scope.level === "FACULTY") return { subject: { department: { facultyId: scope.facultyId! } } };
+  return { subject: { departmentId: scope.departmentId! } };
+}
+
+coursesRouter.get("/", wrap(async (req, res) => {
+  const base = await scopeWhere(req);
+  // Kurslar ko'p bo'lgani uchun davr/fan/o'qituvchi/qidiruv filtrlari.
+  const and: Prisma.CourseWhereInput[] = [base];
+  const year = typeof req.query.academicYear === "string" ? req.query.academicYear.trim() : "";
+  const semester = Number(req.query.semester);
+  const subjectId = Number(req.query.subjectId);
+  const teacherId = Number(req.query.teacherId);
+  const search = typeof req.query.search === "string" ? req.query.search.trim() : "";
+  if (year) and.push({ academicYear: year });
+  if (Number.isInteger(semester) && semester > 0) and.push({ semester });
+  if (Number.isInteger(subjectId) && subjectId > 0) and.push({ subjectId });
+  if (Number.isInteger(teacherId) && teacherId > 0) and.push({ teacherId });
+  if (search) {
+    and.push({
+      OR: [
+        { subject: { name: { contains: search, mode: "insensitive" } } },
+        { teacher: { fullName: { contains: search, mode: "insensitive" } } },
+        { courseGroups: { some: { group: { name: { contains: search, mode: "insensitive" } } } } },
+      ],
+    });
+  }
+  res.json(await svc.listCourses({ AND: and }));
+}));
+
+/** Filtr dropdownlari uchun mavjud o'quv yili/semestrlar (scope ichida). */
+coursesRouter.get("/periods", wrap(async (req, res) => {
+  res.json(await svc.listCoursePeriods(await scopeWhere(req)));
 }));
 
 coursesRouter.get("/:id", wrap(async (req, res) => {

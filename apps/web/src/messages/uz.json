@@ -484,7 +484,11 @@
     "rankTop": "Eng yaxshi natijalar",
     "rankBehind": "Orqada qolganlar",
     "rankEmpty": "Maʼlumot yoʻq",
-    "rankNoBehind": "Orqada qolgan yoʻq"
+    "rankNoBehind": "Orqada qolgan yoʻq",
+    "searchCourse": "Fan yoki guruh boʻyicha qidirish",
+    "totalN": "Jami: {{n}}",
+    "noMatch": "Mos kurs topilmadi",
+    "noMatchHint": "Filtrlarni oʻzgartiring yoki qidiruvni tozalang."
   },
   "topics": {
     "subjectShared": "Mavzular fanga tegishli — bu fandan ochilgan barcha kurslar (guruhlar) bir xil mavzularni ko‘radi.",
@@ -986,7 +990,12 @@
       "noStudents": "Hali talaba yozilmagan.",
       "statusActive": "Faol",
       "statusDropped": "Chiqarilgan"
-    }
+    },
+    "searchPlaceholder": "Fan, oʻqituvchi yoki guruh boʻyicha qidirish",
+    "totalN": "Jami: {{n}}",
+    "noMatch": "Mos kurs topilmadi",
+    "allSubjects": "Barcha fanlar",
+    "semesterN": "{{n}}-semestr"
   },
   "student": {
     "hello": "Salom",
@@ -1307,6 +1316,22 @@
     "allReady": "Hammasi tayyor",
     "backToList": "Fanlarim",
     "myCourse": "Mening kursim",
-    "loadError": "Fanni yuklab boʻlmadi"
+    "loadError": "Fanni yuklab boʻlmadi",
+    "searchPlaceholder": "Fan yoki kafedra boʻyicha qidirish",
+    "totalN": "Jami: {{n}}",
+    "noMatch": "Mos fan topilmadi",
+    "semesterN": "{{n}}-semestr",
+    "courseCountN": "{{n}} kurs",
+    "usedIn": "Qaysi kurslarda oʻqitiladi",
+    "mine": "Mening kursim",
+    "studentsN": "{{n}} talaba",
+    "openCourse": "Kursni ochish"
+  },
+  "period": {
+    "year": "{{year}} oʻquv yili",
+    "semester": "{{n}}-semestr",
+    "allYears": "Barcha oʻquv yillari",
+    "allSemesters": "Barcha semestrlar",
+    "archive": "arxiv"
   }
 }
