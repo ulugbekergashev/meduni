@@ -1,7 +1,7 @@
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { AlertTriangle, CalendarCheck, CalendarDays, Check, Clock, Minus, X } from "lucide-react";
-import { BarRow, Card, Icon, LegendRow, MiniBars, Spinner, StackedBar, cls } from "@meduni/ui";
+import { AlertTriangle, BookOpen, CalendarCheck, CalendarDays, Check, ChevronDown, Clock, Minus, X } from "lucide-react";
+import { Card, Icon, LegendRow, MiniBars, Spinner, StackedBar, cls } from "@meduni/ui";
 import { AsyncSection } from "../../components/AsyncSection";
 import { formatDate } from "../../lib/date";
 import { useLocale } from "../../lib/useLocale";
@@ -31,6 +31,7 @@ export function AttendanceSection() {
   const locale = useLocale();
   const [courseId, setCourseId] = useState<number | undefined>(undefined);
   const [range, setRange] = useState<{ from?: string; to?: string }>({});
+  const [expanded, setExpanded] = useState<number | null>(null);
 
   const coursesQ = useMyCourses();
   const scheduleQ = useMySchedule();
@@ -48,7 +49,7 @@ export function AttendanceSection() {
       if (!m.has(s.courseName)) m.set(s.courseName, []);
       m.get(s.courseName)!.push(s);
     }
-    return [...m.entries()].sort((a, b) => b[1].length - a[1].length);
+    return m;
   }, [data]);
 
   // Sessiyalarni oylarga guruhlash (ro'yxat uzayganda o'qilishi uchun).
@@ -118,21 +119,6 @@ export function AttendanceSection() {
               </>
             )}
 
-            {data && data.byCourse.length > 0 && (
-              <div className="mt-5">
-                <p className="mb-2 text-note font-bold uppercase tracking-wide text-ink-soft">{t("byCourse")}</p>
-                <div className="space-y-0.5">
-                  {data.byCourse.map((c) => (
-                    <BarRow
-                      key={c.courseId}
-                      label={c.courseName}
-                      value={c.pct ?? 0}
-                      tone={c.pct !== null && c.pct < 75 ? "rose" : "brand"}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         </Card>
       )}
@@ -145,34 +131,85 @@ export function AttendanceSection() {
         </div>
       )}
 
-      {/* QOLDIRILGAN DARSLAR — fan kesimida, aniq sanalari bilan */}
-      {missedByCourse.length > 0 && (
-        <Card className="border-rose/30 p-0">
+      {/* FANLAR BO'YICHA — jami/keldi/kechikdi/sababli/QOLDIRDI + davomat % */}
+      {data && data.byCourse.length > 0 && (
+        <Card className="overflow-x-auto p-0">
           <div className="flex items-center gap-2 border-b border-line px-4 py-2.5">
-            <Icon icon={X} size={15} className="text-rose" />
-            <p className="text-note font-bold uppercase tracking-wide text-rose">{t("missedSection")}</p>
-            <span className="rounded-pill bg-rose-soft px-2 py-0.5 text-note font-bold text-rose">
-              {st?.absent ?? 0}
-            </span>
+            <Icon icon={BookOpen} size={15} className="text-ink-faint" />
+            <p className="text-note font-bold uppercase tracking-wide text-ink-soft">{t("byCourse")}</p>
           </div>
-          <div className="divide-y divide-line">
-            {missedByCourse.map(([course, rows]) => (
-              <div key={course} className="px-4 py-3">
-                <div className="flex items-center justify-between gap-3">
-                  <p className="min-w-0 truncate text-body font-semibold text-ink">{course}</p>
-                  <span className="shrink-0 text-note font-bold text-rose">{t("missedN", { n: rows.length })}</span>
-                </div>
-                <div className="mt-1.5 flex flex-wrap gap-1.5">
-                  {rows.map((s) => (
-                    <span key={s.id} className="rounded-pill bg-rose-soft px-2 py-0.5 text-[12.5px] font-medium text-rose" title={s.title ?? undefined}>
-                      {formatDate(locale === "ru" ? "ru" : "uz", s.date, "short")}
-                      {s.title ? ` · ${s.title}` : ""}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
+          <table className="w-full min-w-[560px] border-collapse">
+            <thead>
+              <tr className="bg-bg text-[12.5px] font-bold uppercase tracking-wide text-ink-faint">
+                <th className="px-4 py-2 text-left">{t("colSubject")}</th>
+                <th className="px-2 py-2 text-center">{t("colTotal")}</th>
+                <th className="px-2 py-2 text-center">{t("present")}</th>
+                <th className="px-2 py-2 text-center">{t("late")}</th>
+                <th className="px-2 py-2 text-center">{t("excused")}</th>
+                <th className="px-2 py-2 text-center text-rose">{t("colMissed")}</th>
+                <th className="px-4 py-2 text-right">{t("colPct")}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.byCourse.map((c) => {
+                const missed = missedByCourse.get(c.courseName) ?? [];
+                const open = expanded === c.courseId;
+                const lowRow = c.pct !== null && c.pct < 75;
+                return (
+                  <Fragment key={c.courseId}>
+                    <tr
+                      onClick={() => missed.length > 0 && setExpanded(open ? null : c.courseId)}
+                      className={cls(
+                        "border-t border-line text-[14.5px]",
+                        missed.length > 0 && "cursor-pointer hover:bg-bg"
+                      )}
+                    >
+                      <td className="px-4 py-2.5">
+                        <span className="flex items-center gap-1.5 font-semibold text-ink">
+                          {missed.length > 0 && (
+                            <Icon
+                              icon={ChevronDown}
+                              size={14}
+                              className={cls("text-ink-faint transition-transform", !open && "-rotate-90")}
+                            />
+                          )}
+                          {c.courseName}
+                        </span>
+                      </td>
+                      <td className="px-2 py-2.5 text-center tabular-nums text-ink-soft">{c.marked}</td>
+                      <td className="px-2 py-2.5 text-center font-semibold tabular-nums text-emerald">{c.present}</td>
+                      <td className="px-2 py-2.5 text-center font-semibold tabular-nums text-amber">{c.late}</td>
+                      <td className="px-2 py-2.5 text-center font-semibold tabular-nums text-blue">{c.excused}</td>
+                      <td className="px-2 py-2.5 text-center text-[16px] font-bold tabular-nums text-rose">{c.absent}</td>
+                      <td className={cls("px-4 py-2.5 text-right text-[16px] font-bold tabular-nums", lowRow ? "text-rose" : "text-ink")}>
+                        {c.pct !== null ? `${c.pct}%` : "—"}
+                      </td>
+                    </tr>
+                    {open && missed.length > 0 && (
+                      <tr className="border-t border-line bg-rose-soft/30">
+                        <td colSpan={7} className="px-4 py-2.5">
+                          <p className="mb-1.5 text-note font-bold uppercase tracking-wide text-rose">
+                            {t("missedSection")}
+                          </p>
+                          <div className="space-y-1">
+                            {missed.map((m) => (
+                              <div key={m.id} className="flex items-center gap-2 text-note">
+                                <Icon icon={X} size={12} className="shrink-0 text-rose" />
+                                <span className="shrink-0 font-semibold tabular-nums text-ink">
+                                  {formatDate(locale === "ru" ? "ru" : "uz", m.date, "short")}
+                                </span>
+                                <span className="min-w-0 truncate text-ink-soft">{m.title ?? c.courseName}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
+                );
+              })}
+            </tbody>
+          </table>
         </Card>
       )}
 

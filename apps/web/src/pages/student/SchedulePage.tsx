@@ -1,82 +1,64 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { CalendarDays, Check, ChevronLeft, ChevronRight, Clock, DoorOpen, Minus, X } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Clock, DoorOpen, Minus, X } from "lucide-react";
 import { Card, Icon, Spinner, cls } from "@meduni/ui";
 import { formatDate } from "../../lib/date";
 import { useLocale } from "../../lib/useLocale";
 import { useMySchedule, type AttStatus, type ScheduleItem } from "./api";
 
-const WEEKDAYS_UZ = ["Dushanba", "Seshanba", "Chorshanba", "Payshanba", "Juma", "Shanba", "Yakshanba"];
-const WEEKDAYS_RU = ["Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье"];
+const WEEKDAYS_UZ = ["Dush", "Sesh", "Chor", "Pay", "Juma", "Shan", "Yak"];
+const WEEKDAYS_RU = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
 
-const STATUS_META: Record<AttStatus, { icon: typeof Check; chip: string; key: string }> = {
-  PRESENT: { icon: Check, chip: "bg-emerald-soft text-emerald", key: "PRESENT" },
-  ABSENT: { icon: X, chip: "bg-rose-soft text-rose", key: "ABSENT" },
-  LATE: { icon: Clock, chip: "bg-amber-soft text-amber", key: "LATE" },
-  EXCUSED: { icon: Minus, chip: "bg-blue-soft text-blue", key: "EXCUSED" },
+/** Katak ohangi: o'tgan dars — yo'qlama holati, kelgusi — brand. */
+const STATUS_CELL: Record<AttStatus, { border: string; chip: string; icon: typeof Check }> = {
+  PRESENT: { border: "border-l-emerald bg-emerald-soft/40", chip: "bg-emerald-soft text-emerald", icon: Check },
+  ABSENT: { border: "border-l-rose bg-rose-soft/40", chip: "bg-rose-soft text-rose", icon: X },
+  LATE: { border: "border-l-amber bg-amber-soft/40", chip: "bg-amber-soft text-amber", icon: Clock },
+  EXCUSED: { border: "border-l-blue bg-blue-soft/40", chip: "bg-blue-soft text-blue", icon: Minus },
 };
 
-/** Dushanba boshlanadigan hafta boshi. */
 function mondayOf(d: Date) {
   const x = new Date(d);
   x.setHours(0, 0, 0, 0);
-  const day = (x.getDay() + 6) % 7; // Mon=0
-  x.setDate(x.getDate() - day);
+  x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); // Mon = 0
   return x;
 }
-const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+const dayKey = (d: Date) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+const hhmm = (d: Date) => `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 
-function timeOf(dateIso: string) {
-  const d = new Date(dateIso);
-  if (d.getHours() === 0 && d.getMinutes() === 0) return null;
-  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
-}
-
-function SessionRow({ s }: { s: ScheduleItem }) {
-  const { t } = useTranslation(undefined, { keyPrefix: "schedule" });
-  const { t: ta } = useTranslation(undefined, { keyPrefix: "attendanceMe" });
-  const time = timeOf(s.date);
-  const meta = s.myStatus ? STATUS_META[s.myStatus] : null;
-
+/** Jadval katagi — bitta dars. */
+function LessonCell({ s }: { s: ScheduleItem }) {
+  const meta = s.myStatus ? STATUS_CELL[s.myStatus] : null;
   return (
-    <div className="flex items-center gap-3 px-4 py-3">
-      <div className="w-14 shrink-0 text-center">
-        {time ? (
-          <span className="text-[15px] font-bold tabular-nums text-ink">{time}</span>
-        ) : (
-          <Icon icon={CalendarDays} size={16} className="mx-auto text-ink-faint" />
+    <div
+      className={cls(
+        "h-full rounded-control border-l-[3px] p-2 text-left",
+        meta ? meta.border : s.isPast ? "border-l-line bg-bg" : "border-l-brand bg-brand-soft/40"
+      )}
+    >
+      <p className="line-clamp-2 text-[13.5px] font-semibold leading-snug text-ink">{s.title ?? s.courseName}</p>
+      <p className="mt-0.5 truncate text-[12px] text-ink-soft">{s.courseName}</p>
+      <div className="mt-1 flex flex-wrap items-center gap-1">
+        {s.room && (
+          <span className="inline-flex items-center gap-0.5 text-[12px] text-ink-faint">
+            <Icon icon={DoorOpen} size={11} /> {s.room}
+          </span>
+        )}
+        {meta && (
+          <span className={cls("inline-flex items-center rounded-pill px-1.5 py-0.5", meta.chip)}>
+            <Icon icon={meta.icon} size={10} />
+          </span>
         )}
       </div>
-      <div className="min-w-0 flex-1 border-l-2 border-brand-soft pl-3">
-        <p className="truncate text-body font-semibold text-ink">{s.title ?? s.courseName}</p>
-        <p className="flex flex-wrap items-center gap-x-2.5 truncate text-note text-ink-faint">
-          <span>{s.courseName}</span>
-          {s.room && (
-            <span className="inline-flex items-center gap-1">
-              <Icon icon={DoorOpen} size={12} /> {s.room}
-            </span>
-          )}
-        </p>
-      </div>
-      {s.isPast ? (
-        meta ? (
-          <span className={cls("inline-flex shrink-0 items-center gap-1 rounded-pill px-2.5 py-0.5 text-[12.5px] font-semibold", meta.chip)}>
-            <Icon icon={meta.icon} size={12} />
-            {ta(`status.${meta.key}`)}
-          </span>
-        ) : (
-          <span className="shrink-0 rounded-pill bg-bg px-2.5 py-0.5 text-[12.5px] font-medium text-ink-faint">{t("unmarked")}</span>
-        )
-      ) : (
-        <span className="shrink-0 rounded-pill bg-brand-soft px-2.5 py-0.5 text-[12.5px] font-semibold text-brand-deep">{t("upcomingBadge")}</span>
-      )}
     </div>
   );
 }
 
-/** Dars jadvali — hafta ko'rinishi, o'tgan darslar o'z yo'qlama holati bilan. */
+/** Dars jadvali — haqiqiy to'r: vaqt qatorlari × kun ustunlari. */
 export function SchedulePage() {
   const { t } = useTranslation(undefined, { keyPrefix: "schedule" });
+  const { t: ta } = useTranslation(undefined, { keyPrefix: "attendanceMe" });
   const locale = useLocale();
   const [weekStart, setWeekStart] = useState(() => mondayOf(new Date()));
 
@@ -86,25 +68,28 @@ export function SchedulePage() {
     return e;
   }, [weekStart]);
 
-  const q = useMySchedule({ from: iso(weekStart), to: iso(weekEnd) });
+  const q = useMySchedule({ from: dayKey(weekStart), to: dayKey(weekEnd) });
   const sessions = q.data ?? [];
 
   const days = useMemo(() => {
     const names = locale === "ru" ? WEEKDAYS_RU : WEEKDAYS_UZ;
-    const todayKey = iso(new Date());
+    const todayKey = dayKey(new Date());
     return Array.from({ length: 7 }, (_, i) => {
       const d = new Date(weekStart);
       d.setDate(d.getDate() + i);
-      const key = iso(d);
-      return {
-        key,
-        name: names[i],
-        date: d,
-        isToday: key === todayKey,
-        rows: sessions.filter((s) => iso(new Date(s.date)) === key),
-      };
+      return { key: dayKey(d), short: names[i], num: d.getDate(), date: d, isToday: dayKey(d) === todayKey };
     });
-  }, [weekStart, sessions, locale]);
+  }, [weekStart, locale]);
+
+  // Vaqt qatorlari — faqat haqiqatda dars bor soatlar (bo'sh qatorlar chizilmaydi).
+  const slots = useMemo(() => {
+    const set = new Set<string>();
+    for (const s of sessions) set.add(hhmm(new Date(s.date)));
+    return [...set].sort();
+  }, [sessions]);
+
+  const at = (slot: string, day: string) =>
+    sessions.filter((s) => hhmm(new Date(s.date)) === slot && dayKey(new Date(s.date)) === day);
 
   const shift = (dir: -1 | 1) =>
     setWeekStart((w) => {
@@ -114,10 +99,9 @@ export function SchedulePage() {
     });
 
   const fmt = (d: Date) => formatDate(locale === "ru" ? "ru" : "uz", d, "short");
-  const totalLessons = sessions.length;
 
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className="mx-auto max-w-5xl">
       <h1 className="text-h1 font-bold text-ink">{t("title")}</h1>
       <p className="mt-1 text-body text-ink-soft">{t("subtitle")}</p>
 
@@ -146,41 +130,87 @@ export function SchedulePage() {
         >
           {t("today")}
         </button>
-        <span className="ml-auto text-note font-semibold text-ink-soft">{t("lessonsN", { n: totalLessons })}</span>
+        <span className="ml-auto text-note font-semibold text-ink-soft">{t("lessonsN", { n: sessions.length })}</span>
       </div>
 
       {q.isLoading ? (
         <div className="mt-10 flex justify-center">
           <Spinner size={26} />
         </div>
+      ) : slots.length === 0 ? (
+        <Card className="mt-5">
+          <p className="py-10 text-center text-body text-ink-faint">{t("emptyWeek")}</p>
+        </Card>
       ) : (
-        <div className="mt-5 space-y-4">
-          {days.map((day) => (
-            <section key={day.key}>
-              <div className="mb-2 flex items-center gap-2">
-                <h2 className={cls("text-body font-bold", day.isToday ? "text-brand-deep" : "text-ink")}>
-                  {day.name}
-                </h2>
-                <span className="text-note text-ink-faint">{fmt(day.date)}</span>
-                {day.isToday && (
-                  <span className="rounded-pill bg-brand-soft px-2 py-0.5 text-[12px] font-bold text-brand-deep">
-                    {t("todayBadge")}
-                  </span>
-                )}
+        <Card className="mt-5 overflow-x-auto p-0">
+          {/* Jadval to'ri: vaqt ustuni + 7 kun */}
+          <div className="min-w-[820px]">
+            {/* Sarlavha qatori */}
+            <div className="grid grid-cols-[64px_repeat(7,minmax(0,1fr))] border-b border-line bg-bg">
+              <div />
+              {days.map((d) => (
+                <div
+                  key={d.key}
+                  className={cls(
+                    "border-l border-line px-2 py-2 text-center",
+                    d.isToday && "bg-brand-soft"
+                  )}
+                >
+                  <p className={cls("text-[12.5px] font-bold uppercase", d.isToday ? "text-brand-deep" : "text-ink-soft")}>
+                    {d.short}
+                  </p>
+                  <p className={cls("text-[15px] font-bold tabular-nums", d.isToday ? "text-brand-deep" : "text-ink")}>
+                    {d.num}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            {/* Vaqt qatorlari */}
+            {slots.map((slot) => (
+              <div key={slot} className="grid grid-cols-[64px_repeat(7,minmax(0,1fr))] border-b border-line last:border-0">
+                <div className="flex items-start justify-center px-1 py-2">
+                  <span className="text-[13px] font-bold tabular-nums text-ink-soft">{slot}</span>
+                </div>
+                {days.map((d) => {
+                  const rows = at(slot, d.key);
+                  return (
+                    <div
+                      key={d.key}
+                      className={cls("min-h-[72px] border-l border-line p-1.5", d.isToday && "bg-brand-soft/30")}
+                    >
+                      <div className="space-y-1.5">
+                        {rows.map((s) => (
+                          <LessonCell key={s.id} s={s} />
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-              {day.rows.length === 0 ? (
-                <p className="rounded-control border border-dashed border-line px-4 py-2.5 text-note text-ink-faint">
-                  {t("noLessons")}
-                </p>
-              ) : (
-                <Card className="divide-y divide-line p-0">
-                  {day.rows.map((s) => (
-                    <SessionRow key={s.id} s={s} />
-                  ))}
-                </Card>
-              )}
-            </section>
-          ))}
+            ))}
+          </div>
+        </Card>
+      )}
+
+      {/* Izoh (legenda) */}
+      {slots.length > 0 && (
+        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-note text-ink-soft">
+          <span className="inline-flex items-center gap-1.5">
+            <span className="h-3 w-3 rounded-[3px] border-l-[3px] border-l-brand bg-brand-soft" /> {t("upcomingBadge")}
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <span className="h-3 w-3 rounded-[3px] border-l-[3px] border-l-emerald bg-emerald-soft" /> {ta("status.PRESENT")}
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <span className="h-3 w-3 rounded-[3px] border-l-[3px] border-l-amber bg-amber-soft" /> {ta("status.LATE")}
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <span className="h-3 w-3 rounded-[3px] border-l-[3px] border-l-rose bg-rose-soft" /> {ta("status.ABSENT")}
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <span className="h-3 w-3 rounded-[3px] border-l-[3px] border-l-line bg-bg" /> {t("unmarked")}
+          </span>
         </div>
       )}
     </div>

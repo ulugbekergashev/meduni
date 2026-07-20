@@ -389,7 +389,11 @@
     "markedN": "{{n}} занятий",
     "lessonsN": "{{n}} занятий",
     "missedSection": "Пропущенные занятия",
-    "missedN": "{{n}} шт."
+    "missedN": "{{n}} шт.",
+    "colSubject": "Предмет",
+    "colTotal": "Всего",
+    "colMissed": "Пропуски",
+    "colPct": "Посещ."
   },
   "profile": {
     "title": "Профиль",
@@ -1389,6 +1393,7 @@
     "lessonsN": "{{n}} занятий",
     "noLessons": "Занятий нет",
     "unmarked": "Не отмечено",
-    "upcomingBadge": "Будет"
+    "upcomingBadge": "Будет",
+    "emptyWeek": "На этой неделе занятий нет"
   }
 }

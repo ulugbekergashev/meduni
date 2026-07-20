@@ -891,7 +891,16 @@ Barcha modullar tugadi (1-17).
   jami son + **fan kesimida** ("Kardiologiya — 2 ta") har biri sana·mavzu chiplari bilan
   (sessions'dan client-side ABSENT guruhlash). Demo: student@meduni 12-iyul "Amaliy
   mashg'ulot"da ABSENT (davomat 100%→67% — past-davomat ogohlantirishi ham jonlandi).
-  Smoke 4/4 (haftalik jadval, isPast/myStatus, absent hisobi); tsc+build toza.
+  ⚠️ **Qayta ishlandi (foydalanuvchi: "yoqmadi")** — ikkalasi ham almashtirildi:
+  (a) Jadval endi **haqiqiy to'r**: vaqt qatorlari × 7 kun ustuni (sarlavhada kun+sana,
+  bugun brand fon), katakda dars kartasi (mavzu/fan/xona + chap chekka rangi holat bo'yicha:
+  brand=bo'ladi, emerald/amber/rose/blue=yo'qlama, kulrang=belgilanmagan), vaqt qatorlari
+  FAQAT haqiqatda dars bor soatlardan quriladi (bo'sh qator chizilmaydi), gorizontal skroll +
+  pastda legenda. Kunlar ro'yxati va "Dars yo'q" placeholderlari olib tashlandi.
+  (b) Davomatdagi qizil chip-bloki + BarRow'lar o'rniga **fanlar bo'yicha jadval**:
+  Fan | Jami | Keldi | Kechikdi | Sababli | **Qoldirdi** | Davomat% (<75 rose); qatorni bosish
+  — qoldirilgan darslar sana+mavzu bilan ochiladi (Fragment key). Demo: haftaga 7 real
+  vaqtli dars (09:00/11:00/14:00, 4 fan) qo'shildi — to'r ma'noli ko'rinadi.
 
 ## 9. Loyiha holati va ishga tushirish (operatsion — sessiya 0)
 
