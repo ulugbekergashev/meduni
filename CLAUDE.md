@@ -841,6 +841,20 @@ Barcha modullar tugadi (1-17).
   guruhlash 8+8+4, admin filtr (2025/2026 s8 → 4 kurs) va qidiruv ("nefro" → 5) ishlaydi;
   tsc+build toza.
 
+- **Modul 21C — talaba tomoni ko'lami (2026-07-20, foydalanuvchi: "studentga ko'rinadigan
+  qismini ham professional qil").** **Backend:** `courseSummary`/`getMyCourse` +=
+  `semester`+`academicYear`; `enrolledCourseIds` endi davr bo'yicha desc (dashboard
+  "davom ettirish" eng avval joriy semestrdan tanlanadi); `getTopicLesson` qayta qurildi —
+  assertTopicOpen o'rniga bitta computeTopics o'tishi (enrolled+published+locked tekshiruvi
+  saqlangan) va javobga `subjectName` + `nextTopic{id,title,state}` qo'shildi.
+  **Frontend:** StudentDashboard kurslari `PeriodGroups` bilan yil→semestr guruhlangan
+  (joriy yil ochiq, eskilari "arxiv" yig'ilgan); CoursePath shapkasida davr badge'lari
+  (yil/semestr/guruh) + "Davom ettirish" tugmasi (birinchi ochiq mavzuga); LessonPage
+  breadcrumb endi fan nomi, tugallanganda **"Keyingi mavzu →"** tugmasi (LOCKED bo'lsa
+  yo'lga qaytadi). i18n `lesson.nextTopicBtn`. **Tekshirildi:** 8/8 smoke — demo talaba
+  6 kurs / 3 davr (s2,s2,s2,s1,s8,s7 tartib), resume kontentli kursdan, lesson subjectName+
+  nextTopic; tsc+build toza. Demo: student@meduni.uz 5 yangi davr-kursga yozildi.
+
 ## 9. Loyiha holati va ishga tushirish (operatsion — sessiya 0)
 
 **Monorepo (npm workspaces):**

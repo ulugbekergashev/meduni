@@ -1,6 +1,6 @@
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, Check, ClipboardList, FileText, PartyPopper, Stethoscope, Video } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, ClipboardList, FileText, PartyPopper, Stethoscope, Video } from "lucide-react";
 import { Icon, Spinner, cls } from "@meduni/ui";
 import { AsyncSection } from "../../../components/AsyncSection";
 import { useLesson, type Lesson } from "../api";
@@ -69,7 +69,7 @@ export function LessonPage() {
                   className="mb-3 flex items-center gap-1 text-[14.5px] font-medium text-brand-deep hover:underline"
                 >
                   <Icon icon={ArrowLeft} size={15} />
-                  {t("backToPath")}
+                  {lesson.subjectName}
                 </button>
 
                 <p className="text-[12.5px] font-bold uppercase tracking-wide text-ink-faint">
@@ -83,15 +83,28 @@ export function LessonPage() {
                       <Icon icon={PartyPopper} size={20} />
                       <div>
                         <p className="text-[15.5px] font-bold">{t("topicDone")}</p>
-                        <p className="text-[13.5px]">{t("nextUnlocked")}</p>
+                        {/* Keyingi mavzu ochiq bo'lsa — to'g'ridan unga; yo'q bo'lsa yo'lga */}
+                        <p className="text-[13.5px]">
+                          {lesson.nextTopic && lesson.nextTopic.state !== "LOCKED" ? lesson.nextTopic.title : t("nextUnlocked")}
+                        </p>
                       </div>
                     </div>
-                    <button
-                      onClick={() => navigate(`/app/courses/${lesson.courseId}`)}
-                      className="shrink-0 rounded-control bg-emerald px-3 py-2 text-[14px] font-bold text-white hover:opacity-90"
-                    >
-                      {t("backToPath")}
-                    </button>
+                    {lesson.nextTopic && lesson.nextTopic.state !== "LOCKED" ? (
+                      <button
+                        onClick={() => navigate(`/app/topics/${lesson.nextTopic!.id}`)}
+                        className="flex shrink-0 items-center gap-1.5 rounded-control bg-emerald px-3 py-2 text-[14px] font-bold text-white hover:opacity-90"
+                      >
+                        {t("nextTopicBtn")}
+                        <Icon icon={ArrowRight} size={15} />
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => navigate(`/app/courses/${lesson.courseId}`)}
+                        className="shrink-0 rounded-control bg-emerald px-3 py-2 text-[14px] font-bold text-white hover:opacity-90"
+                      >
+                        {t("backToPath")}
+                      </button>
+                    )}
                   </div>
                 )}
 

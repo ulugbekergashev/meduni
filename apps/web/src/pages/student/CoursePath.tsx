@@ -177,6 +177,7 @@ export function CoursePath() {
   const { id } = useParams();
   const courseId = Number(id);
   const { t } = useTranslation(undefined, { keyPrefix: "student" });
+  const { t: tp2 } = useTranslation(undefined, { keyPrefix: "period" });
   const navigate = useNavigate();
   const q = useMyCourse(courseId);
   const c = q.data;
@@ -201,22 +202,36 @@ export function CoursePath() {
           emptyText={t("noTopics")}
           onRetry={() => q.refetch()}
         >
-          {c && (
+          {c && (() => {
+            const current = c.topics.find((tp) => tp.state === "IN_PROGRESS") ?? c.topics.find((tp) => tp.state === "AVAILABLE");
+            return (
             <>
-              {/* Course header */}
+              {/* Course header — davr + progress + davom ettirish */}
               <div className="rounded-card bg-gradient-to-br from-brand-deep to-brand p-5 text-white shadow-md">
-                <h1 className="text-h1 font-bold leading-tight">{c.subjectName}</h1>
-                <p className="mt-1 text-[14px] text-white/85">
-                  {c.teacherName}
-                  {c.groupName && ` · ${c.groupName}`}
-                </p>
+                <div className="flex flex-wrap items-center gap-1.5 text-[12.5px] font-semibold">
+                  <span className="rounded-pill bg-white/15 px-2 py-0.5">{c.academicYear}</span>
+                  <span className="rounded-pill bg-white/15 px-2 py-0.5">{tp2("semester", { n: c.semester })}</span>
+                  {c.groupName && <span className="rounded-pill bg-white/15 px-2 py-0.5">{c.groupName}</span>}
+                </div>
+                <h1 className="mt-2 text-h1 font-bold leading-tight">{c.subjectName}</h1>
+                <p className="mt-0.5 text-[14px] text-white/85">{c.teacherName}</p>
                 <div className="mt-4">
                   <div className="h-2 w-full overflow-hidden rounded-pill bg-white/25">
                     <div className="h-full rounded-pill bg-white transition-all" style={{ width: `${Math.max(c.progressPct, 2)}%` }} />
                   </div>
-                  <p className="mt-1.5 text-[13.5px] text-white/85">
-                    {c.progressPct}% {t("done")} · {c.topicsCompleted}/{c.topicsTotal} {t("topics")}
-                  </p>
+                  <div className="mt-1.5 flex items-center justify-between gap-3">
+                    <p className="text-[13.5px] text-white/85">
+                      {c.progressPct}% {t("done")} · {c.topicsCompleted}/{c.topicsTotal} {t("topics")}
+                    </p>
+                    {current && (
+                      <Link to={`/app/topics/${current.id}`}>
+                        <button className="flex items-center gap-1.5 rounded-control bg-white px-3 py-1.5 text-[14px] font-bold text-brand-deep transition-all hover:bg-white/90">
+                          <Icon icon={PlayCircle} size={15} />
+                          {t("continue")}
+                        </button>
+                      </Link>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -234,7 +249,8 @@ export function CoursePath() {
                 ))}
               </ol>
             </>
-          )}
+            );
+          })()}
         </AsyncSection>
       )}
     </div>
