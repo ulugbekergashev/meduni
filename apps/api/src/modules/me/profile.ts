@@ -130,22 +130,31 @@ export async function getMyGrades(studentId: number) {
   const courses = enrollments.map((e) => {
     const sid = e.course.subjectId;
 
-    // Test: mavzu bo'yicha eng yaxshi natija + urinishlar soni.
-    const quizByTopic = new Map<number, { topicId: number; topicTitle: string; orderIndex: number; bestScore: number; attempts: number; passed: boolean; lastAt: Date | null }>();
+    // Test: mavzu bo'yicha eng yaxshi natija + urinishlar TARIXI (qator ochilganda).
+    type QuizAgg = {
+      topicId: number; topicTitle: string; orderIndex: number;
+      bestScore: number; attempts: number; passed: boolean; lastAt: Date | null;
+      passThreshold: number;
+      history: { attemptNo: number; scorePct: number; passed: boolean; finishedAt: Date | null }[];
+    };
+    const quizByTopic = new Map<number, QuizAgg>();
     for (const a of quizAttempts) {
       const ci = a.quiz.contentItem;
       if (ci.topic.subjectId !== sid) continue;
+      const entry = { attemptNo: a.attemptNo, scorePct: a.scorePct, passed: a.passed, finishedAt: a.finishedAt };
       const cur = quizByTopic.get(ci.topicId);
       if (!cur) {
         quizByTopic.set(ci.topicId, {
           topicId: ci.topicId, topicTitle: ci.topic.title, orderIndex: ci.topic.orderIndex,
           bestScore: a.scorePct, attempts: 1, passed: a.passed, lastAt: a.finishedAt,
+          passThreshold: a.quiz.passThreshold, history: [entry],
         });
       } else {
         cur.attempts++;
         cur.bestScore = Math.max(cur.bestScore, a.scorePct);
         cur.passed = cur.passed || a.passed;
         cur.lastAt = a.finishedAt;
+        cur.history.push(entry);
       }
     }
 

@@ -393,7 +393,9 @@
     "colSubject": "Fan",
     "colTotal": "Jami",
     "colMissed": "Qoldirdi",
-    "colPct": "Davomat"
+    "colPct": "Davomat",
+    "clearFilter": "Filtrni tozalash",
+    "courseJournal": "Barcha darslar"
   },
   "profile": {
     "title": "Profil",
@@ -1385,7 +1387,15 @@
     "notPassed": "oʻtmadi",
     "underReview": "Tekshiruvda",
     "empty": "Hali baho yoʻq",
-    "emptyHint": "Test ishlaganingizdan yoki keys topshirganingizdan keyin shu yerda koʻrinadi."
+    "emptyHint": "Test ishlaganingizdan yoki keys topshirganingizdan keyin shu yerda koʻrinadi.",
+    "passThreshold": "oʻtish balli {{n}}%",
+    "historyTitle": "Urinishlar tarixi",
+    "openTopic": "Mavzuni ochish",
+    "filter": {
+      "all": "Hammasi",
+      "quiz": "Testlar",
+      "case": "Keyslar"
+    }
   },
   "schedule": {
     "title": "Dars jadvali",

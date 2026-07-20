@@ -91,9 +91,30 @@ function CourseCard({ course }: { course: CourseSummary }) {
   );
 }
 
-function SummaryTile({ icon, value, label, tone }: { icon: LucideIcon; value: string; label: string; tone: string }) {
+/** Xulosa ko'rsatkichi — bosilsa tegishli modulga olib boradi. */
+function SummaryTile({
+  icon,
+  value,
+  label,
+  tone,
+  onClick,
+}: {
+  icon: LucideIcon;
+  value: string;
+  label: string;
+  tone: string;
+  onClick?: () => void;
+}) {
+  const Wrapper = onClick ? "button" : "div";
   return (
-    <div className="flex items-center gap-2.5">
+    <Wrapper
+      onClick={onClick}
+      title={onClick ? label : undefined}
+      className={cls(
+        "flex items-center gap-2.5 rounded-control p-1.5 text-left transition-colors",
+        onClick && "hover:bg-bg"
+      )}
+    >
       <div className={cls("flex h-9 w-9 shrink-0 items-center justify-center rounded-full", tone)}>
         <Icon icon={icon} size={16} />
       </div>
@@ -101,7 +122,7 @@ function SummaryTile({ icon, value, label, tone }: { icon: LucideIcon; value: st
         <p className="text-[18px] font-bold leading-none tabular-nums text-ink">{value}</p>
         <p className="mt-0.5 truncate text-[12.5px] text-ink-soft">{label}</p>
       </div>
-    </div>
+    </Wrapper>
   );
 }
 
@@ -203,13 +224,20 @@ export function StudentDashboard() {
             {/* Overall summary: ring + tiles */}
             {d.courses.length > 0 && (
               <Card className="mt-5 flex flex-wrap items-center gap-x-7 gap-y-4 !p-5">
-                <ProgressRing value={overallPct} size={96} stroke={10} label={t("overall")} />
+                <button
+                  onClick={() => navigate("/app/courses")}
+                  title={t("overall")}
+                  className="shrink-0 rounded-full transition-transform hover:scale-105"
+                >
+                  <ProgressRing value={overallPct} size={96} stroke={10} label={t("overall")} />
+                </button>
                 <div className="grid min-w-0 flex-1 grid-cols-2 gap-3 sm:grid-cols-4">
                   <SummaryTile
                     icon={Layers}
                     value={`${d.courses.reduce((s, c) => s + c.topicsCompleted, 0)}/${d.courses.reduce((s, c) => s + c.topicsTotal, 0)}`}
                     label={t("summaryTopics")}
                     tone="bg-emerald-soft text-emerald"
+                    onClick={() => navigate("/app/courses")}
                   />
                   <SummaryTile
                     icon={CalendarCheck2}
@@ -220,12 +248,14 @@ export function StudentDashboard() {
                         ? "bg-rose-soft text-rose"
                         : "bg-blue-soft text-blue"
                     }
+                    onClick={() => navigate("/app/attendance")}
                   />
                   <SummaryTile
                     icon={BookOpen}
                     value={String(d.courses.length)}
                     label={t("summaryCourses")}
                     tone="bg-brand-soft text-brand-deep"
+                    onClick={() => navigate("/app/courses")}
                   />
                   {/* Guruhdagi o'rin — faqat o'zining, boshqalar ro'yxati yo'q */}
                   <SummaryTile
@@ -233,6 +263,7 @@ export function StudentDashboard() {
                     value={rank?.rank ? `${rank.rank}/${rank.total}` : "—"}
                     label={t("summaryRank")}
                     tone="bg-amber-soft text-amber"
+                    onClick={() => navigate("/app/grades")}
                   />
                 </div>
               </Card>

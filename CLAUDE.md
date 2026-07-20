@@ -902,6 +902,22 @@ Barcha modullar tugadi (1-17).
   — qoldirilgan darslar sana+mavzu bilan ochiladi (Fragment key). Demo: haftaga 7 real
   vaqtli dars (09:00/11:00/14:00, 4 fan) qo'shildi — to'r ma'noli ko'rinadi.
 
+- **Modul 22C — interaktivlik (2026-07-20, foydalanuvchi: "prezentatsiyaga o'xshab qolgan,
+  qani interaction?").** Sahifalar raqam ko'rsatardi, lekin hech narsa javob bermasdi.
+  Qo'shildi: (a) **packages/ui** — `LegendRow` += `onClick`/`selected` (filtr tugmasiga
+  aylanadi), `MiniBars` — kam nuqtada kengroq ustun + qiymat/yorliq matnlari (bitta oylik
+  ustun "buzuq grafik" bo'lib ko'rinmasin), hover opacity. (b) **Dashboard** — xulosa
+  halqasi va 4 tile bosiladigan drill-down (mavzular/kurslar→Kurslarim, davomat→Davomat,
+  o'rin→Baholarim), hover fon. (c) **Baholarim** — 3 ko'rsatkich kartasi **filtr tugmasi**
+  (bosilsa faqat testlar/keyslar qoladi, faol karta brand ring bilan) + segmented
+  "Hammasi/Testlar/Keyslar" + test qatori **ochiladi**: urinishlar tarixi (har urinish
+  ProgressBar + ball + sana, o'tish balli), pastda "Mavzuni ochish →". (d) **Davomat** —
+  legenda qatorlari **bosiladigan status filtri** (ro'yxat shu holat bo'yicha filtrlanadi,
+  "Filtrni tozalash"), fan jadvali qatori **har doim ochiladi**: qoldirilganlar + o'sha fan
+  bo'yicha **to'liq dars jurnali** (sana, mavzu, holat chipi). Backend: `getMyGrades`
+  quizzes[] += `passThreshold` va `history[]` (attemptNo/ball/o'tdi/sana).
+  tsc+build toza.
+
 ## 9. Loyiha holati va ishga tushirish (operatsion — sessiya 0)
 
 **Monorepo (npm workspaces):**

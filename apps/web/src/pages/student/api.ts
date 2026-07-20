@@ -401,6 +401,9 @@ export interface GradeQuiz {
   attempts: number;
   passed: boolean;
   lastAt: string | null;
+  passThreshold: number;
+  /** Urinishlar tarixi — qator ochilganda ko'rsatiladi. */
+  history: { attemptNo: number; scorePct: number; passed: boolean; finishedAt: string | null }[];
 }
 
 export interface GradeCase {

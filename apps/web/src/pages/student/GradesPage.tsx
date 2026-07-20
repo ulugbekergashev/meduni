@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Award, ClipboardList, MessageSquareQuote, Stethoscope, Target, TrendingUp } from "lucide-react";
-import { Badge, Card, Icon, cls } from "@meduni/ui";
+import { Award, ChevronDown, ClipboardList, MessageSquareQuote, Stethoscope, Target, TrendingUp } from "lucide-react";
+import { Badge, Card, Icon, ProgressBar, cls } from "@meduni/ui";
 import { AsyncSection } from "../../components/AsyncSection";
 import { formatDate } from "../../lib/date";
 import { useLocale } from "../../lib/useLocale";
@@ -15,9 +15,28 @@ function scoreTone(pct: number) {
   return "text-rose";
 }
 
-function StatCard({ icon, value, label, tone }: { icon: typeof Award; value: string; label: string; tone: string }) {
+/** Bosiladigan ko'rsatkich — ro'yxatni shu turga filtrlaydi. */
+function StatCard({
+  icon,
+  value,
+  label,
+  tone,
+  onClick,
+  selected = false,
+}: {
+  icon: typeof Award;
+  value: string;
+  label: string;
+  tone: string;
+  onClick?: () => void;
+  selected?: boolean;
+}) {
   return (
-    <Card className="flex items-center gap-3">
+    <Card
+      interactive={!!onClick}
+      onClick={onClick}
+      className={cls("flex items-center gap-3", selected && "border-brand ring-1 ring-brand/30")}
+    >
       <div className={cls("flex h-11 w-11 shrink-0 items-center justify-center rounded-control", tone)}>
         <Icon icon={icon} size={19} />
       </div>
@@ -31,19 +50,62 @@ function StatCard({ icon, value, label, tone }: { icon: typeof Award; value: str
 
 function QuizRow({ q, onOpen }: { q: GradeQuiz; onOpen: () => void }) {
   const { t } = useTranslation(undefined, { keyPrefix: "grades" });
+  const locale = useLocale();
+  const [open, setOpen] = useState(false);
+
   return (
-    <button onClick={onOpen} className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-bg">
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-soft text-blue">
-        <Icon icon={ClipboardList} size={16} />
+    <div>
+      <div
+        onClick={() => setOpen((o) => !o)}
+        className="flex w-full cursor-pointer items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-bg"
+      >
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-soft text-blue">
+          <Icon icon={ClipboardList} size={16} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-body font-semibold text-ink">{q.topicTitle}</p>
+          <p className="flex items-center gap-1.5 text-note text-ink-faint">
+            {t("attemptsN", { n: q.attempts })} · {q.passed ? t("passed") : t("notPassed")}
+            <span className="text-ink-faint">· {t("passThreshold", { n: q.passThreshold })}</span>
+          </p>
+        </div>
+        <span className={cls("shrink-0 text-[19px] font-bold tabular-nums", scoreTone(q.bestScore))}>{q.bestScore}%</span>
+        <Icon
+          icon={ChevronDown}
+          size={16}
+          className={cls("shrink-0 text-ink-faint transition-transform", !open && "-rotate-90")}
+        />
       </div>
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-body font-semibold text-ink">{q.topicTitle}</p>
-        <p className="text-note text-ink-faint">
-          {t("attemptsN", { n: q.attempts })} · {q.passed ? t("passed") : t("notPassed")}
-        </p>
-      </div>
-      <span className={cls("shrink-0 text-[19px] font-bold tabular-nums", scoreTone(q.bestScore))}>{q.bestScore}%</span>
-    </button>
+
+      {/* Urinishlar tarixi + mavzuga o'tish */}
+      {open && (
+        <div className="border-t border-line bg-bg/60 px-4 py-3">
+          <p className="mb-2 text-note font-bold uppercase tracking-wide text-ink-faint">{t("historyTitle")}</p>
+          <div className="space-y-1.5">
+            {q.history.map((h) => (
+              <div key={h.attemptNo} className="flex items-center gap-3 text-note">
+                <span className="w-20 shrink-0 font-semibold text-ink">{t("attemptsN", { n: h.attemptNo })}</span>
+                <span className="flex-1">
+                  <ProgressBar value={h.scorePct} tone={h.passed ? "emerald" : "rose"} />
+                </span>
+                <span className={cls("w-12 shrink-0 text-right font-bold tabular-nums", scoreTone(h.scorePct))}>
+                  {h.scorePct}%
+                </span>
+                <span className="w-20 shrink-0 text-right text-ink-faint">
+                  {h.finishedAt ? formatDate(locale === "ru" ? "ru" : "uz", h.finishedAt, "short") : "—"}
+                </span>
+              </div>
+            ))}
+          </div>
+          <button
+            onClick={onOpen}
+            className="mt-2.5 text-note font-semibold text-brand-deep hover:underline"
+          >
+            {t("openTopic")} →
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -87,12 +149,14 @@ function CaseRow({ c, onOpen }: { c: GradeCase; onOpen: () => void }) {
   );
 }
 
-function CourseBlock({ c }: { c: GradesCourse }) {
+function CourseBlock({ c, filter }: { c: GradesCourse; filter: Filter }) {
   const { t } = useTranslation(undefined, { keyPrefix: "grades" });
   const { t: tp } = useTranslation(undefined, { keyPrefix: "period" });
   const navigate = useNavigate();
 
-  if (c.quizzes.length === 0 && c.cases.length === 0) return null;
+  const quizzes = filter === "case" ? [] : c.quizzes;
+  const cases = filter === "quiz" ? [] : c.cases;
+  if (quizzes.length === 0 && cases.length === 0) return null;
 
   return (
     <section className="mt-5 first:mt-0">
@@ -111,10 +175,10 @@ function CourseBlock({ c }: { c: GradesCourse }) {
       </div>
 
       <Card className="divide-y divide-line p-0">
-        {c.quizzes.map((q) => (
+        {quizzes.map((q) => (
           <QuizRow key={`q${q.topicId}`} q={q} onOpen={() => navigate(`/app/topics/${q.topicId}?tab=quiz`)} />
         ))}
-        {c.cases.map((k) => (
+        {cases.map((k) => (
           <CaseRow key={`c${k.topicId}`} c={k} onOpen={() => navigate(`/app/topics/${k.topicId}?tab=case`)} />
         ))}
       </Card>
@@ -123,12 +187,19 @@ function CourseBlock({ c }: { c: GradesCourse }) {
 }
 
 /** "Baholarim" — barcha test natijalari va keys baholari, kurslar kesimida. */
+type Filter = "all" | "quiz" | "case";
+
 export function GradesPage() {
   const { t } = useTranslation(undefined, { keyPrefix: "grades" });
   const q = useMyGrades();
   const data = q.data;
-  const withGrades = (data?.courses ?? []).filter((c) => c.quizzes.length > 0 || c.cases.length > 0);
+  const [filter, setFilter] = useState<Filter>("all");
+  const withGrades = (data?.courses ?? []).filter((c) =>
+    filter === "quiz" ? c.quizzes.length > 0 : filter === "case" ? c.cases.length > 0 : c.quizzes.length > 0 || c.cases.length > 0
+  );
   const s = data?.summary;
+  const toggle = (f: Filter) => setFilter((cur) => (cur === f ? "all" : f));
+  const withGradesAny = (data?.courses ?? []).some((c) => c.quizzes.length > 0 || c.cases.length > 0);
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -142,23 +213,47 @@ export function GradesPage() {
             value={s.avgQuiz !== null ? `${s.avgQuiz}%` : "—"}
             label={t("avgQuiz")}
             tone="bg-blue-soft text-blue"
+            onClick={() => toggle("quiz")}
+            selected={filter === "quiz"}
           />
           <StatCard
             icon={Target}
             value={`${s.quizzesPassed}/${s.quizzesTotal}`}
             label={t("quizzesPassed")}
             tone="bg-emerald-soft text-emerald"
+            onClick={() => toggle("quiz")}
+            selected={filter === "quiz"}
           />
           <StatCard
             icon={Award}
             value={`${s.casesGraded}/${s.casesTotal}`}
             label={t("casesGraded")}
             tone="bg-rose-soft text-rose"
+            onClick={() => toggle("case")}
+            selected={filter === "case"}
           />
         </div>
       )}
 
-      <div className="mt-6">
+      {/* Tur filtri — segmented */}
+      {withGradesAny && (
+        <div className="mt-5 inline-flex gap-1 rounded-control border border-line bg-surface p-1 shadow-card">
+          {(["all", "quiz", "case"] as Filter[]).map((f) => (
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              className={cls(
+                "rounded-[8px] px-3.5 py-1.5 text-body font-semibold transition-all",
+                filter === f ? "bg-brand-soft text-brand-deep" : "text-ink-soft hover:bg-bg hover:text-ink"
+              )}
+            >
+              {t(`filter.${f}`)}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <div className="mt-4">
         <AsyncSection
           isLoading={q.isLoading}
           isError={q.isError}
@@ -169,7 +264,7 @@ export function GradesPage() {
           onRetry={() => q.refetch()}
         >
           {withGrades.map((c) => (
-            <CourseBlock key={c.courseId} c={c} />
+            <CourseBlock key={c.courseId} c={c} filter={filter} />
           ))}
         </AsyncSection>
       </div>
