@@ -80,6 +80,8 @@ export interface AutoTask {
   count: number;
   tone: TaskTone;
   link: string;
+  /** Konkret mavzular — "1 ta test" emas, qaysi test. */
+  items?: AutoTaskItem[];
 }
 export interface AssignedTask {
   id: number;
@@ -90,21 +92,35 @@ export interface AssignedTask {
   createdByName: string;
   createdAt: string;
   linkUrl: string | null;
+  status: "OPEN" | "DONE" | "DISMISSED";
+  doneAt: string | null;
+}
+
+/** Vazifaning aniq predmeti — qaysi mavzu, qaysi fandan. */
+export interface AutoTaskItem {
+  topicId: number;
+  topicTitle: string;
+  courseName: string;
+  link: string;
+  value?: number | null;
 }
 export interface TasksInbox {
   auto: AutoTask[];
   assigned: AssignedTask[];
 }
 
-export function useMyTasks() {
-  return useQuery({ queryKey: ["me-tasks"], queryFn: () => api<TasksInbox>("/api/v1/me/tasks") });
+export function useMyTasks(includeDone = false) {
+  return useQuery({
+    queryKey: ["me-tasks", includeDone],
+    queryFn: () => api<TasksInbox>(`/api/v1/me/tasks${includeDone ? "?includeDone=1" : ""}`),
+  });
 }
 
 export function useSetMyTaskDone() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: number) => api(`/api/v1/tasks/${id}`, { method: "PATCH", body: JSON.stringify({ done: true }) }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["me-tasks"] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["me-tasks"] }), // prefiks — ikkala variant
   });
 }
 
@@ -322,6 +338,19 @@ export type AttStatus = "PRESENT" | "ABSENT" | "LATE" | "EXCUSED";
 
 export interface MyAttendance {
   stats: { present: number; absent: number; late: number; excused: number; pct: number | null };
+  /** Kurslar kesimi — eng past davomat birinchi. */
+  byCourse: {
+    courseId: number;
+    courseName: string;
+    present: number;
+    absent: number;
+    late: number;
+    excused: number;
+    marked: number;
+    pct: number | null;
+  }[];
+  /** Oxirgi 6 oy trendi. */
+  byMonth: { month: string; marked: number; pct: number }[];
   sessions: {
     id: number;
     date: string;
@@ -360,6 +389,55 @@ export function useMyAttendance(courseId: number | undefined, range: { from?: st
 
 export function useMyProfile() {
   return useQuery({ queryKey: ["me-profile"], queryFn: () => api<MyProfile>("/api/v1/me/profile") });
+}
+
+// ---- Baholarim (Modul 22) ----
+
+export interface GradeQuiz {
+  topicId: number;
+  topicTitle: string;
+  orderIndex: number;
+  bestScore: number;
+  attempts: number;
+  passed: boolean;
+  lastAt: string | null;
+}
+
+export interface GradeCase {
+  topicId: number;
+  topicTitle: string;
+  orderIndex: number;
+  score: number | null;
+  feedback: string | null;
+  reviewedByName: string | null;
+  reviewedAt: string | null;
+  submittedAt: string;
+  reviewed: boolean;
+}
+
+export interface GradesCourse {
+  courseId: number;
+  subjectName: string;
+  semester: number;
+  academicYear: string;
+  avgQuiz: number | null;
+  quizzes: GradeQuiz[];
+  cases: GradeCase[];
+}
+
+export interface MyGrades {
+  courses: GradesCourse[];
+  summary: {
+    avgQuiz: number | null;
+    quizzesPassed: number;
+    quizzesTotal: number;
+    casesGraded: number;
+    casesTotal: number;
+  };
+}
+
+export function useMyGrades() {
+  return useQuery({ queryKey: ["me-grades"], queryFn: () => api<MyGrades>("/api/v1/me/grades") });
 }
 
 // ---- Jadval / faollik / o'rin (Modul 21) ----
