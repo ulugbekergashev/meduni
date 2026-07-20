@@ -26,7 +26,8 @@
     "staff": "Xodimlar",
     "myFaculty": "Fakultetim",
     "myDept": "Kafedram",
-    "subjects": "Fanlarim"
+    "subjects": "Fanlarim",
+    "openProfile": "Profilni ochish"
   },
   "theme": {
     "label": "Mavzu (rang)",

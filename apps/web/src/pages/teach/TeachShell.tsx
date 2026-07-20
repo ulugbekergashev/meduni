@@ -54,6 +54,7 @@ export function TeachShell() {
     <RoleShell
       brand="MedUni AI · Oʻqituvchi"
       headerSlot={<GlobalSearch fetch={search} />}
+      profileHref="/teach/settings"
       items={[
         { href: "/teach", label: t("dashboard"), icon: <Icon icon={Home} />, end: true },
         { href: "/teach/tasks", label: t("myTasks"), icon: <Icon icon={ListChecks} />, badge: openTasks },
