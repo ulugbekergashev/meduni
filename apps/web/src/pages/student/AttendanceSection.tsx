@@ -40,6 +40,17 @@ export function AttendanceSection() {
   const low = pct !== null && pct !== undefined && pct < 75;
   const schedule = scheduleQ.data ?? [];
 
+  // Qoldirilgan darslar — fan kesimida (kelmagan sessiyalar).
+  const missedByCourse = useMemo(() => {
+    const m = new Map<string, NonNullable<typeof data>["sessions"]>();
+    for (const s of data?.sessions ?? []) {
+      if (s.status !== "ABSENT") continue;
+      if (!m.has(s.courseName)) m.set(s.courseName, []);
+      m.get(s.courseName)!.push(s);
+    }
+    return [...m.entries()].sort((a, b) => b[1].length - a[1].length);
+  }, [data]);
+
   // Sessiyalarni oylarga guruhlash (ro'yxat uzayganda o'qilishi uchun).
   const byMonth = useMemo(() => {
     type Row = NonNullable<typeof data>["sessions"][number];
@@ -132,6 +143,37 @@ export function AttendanceSection() {
           <Icon icon={AlertTriangle} size={17} className="mt-0.5 shrink-0" />
           <p>{t("lowWarning", { pct })}</p>
         </div>
+      )}
+
+      {/* QOLDIRILGAN DARSLAR — fan kesimida, aniq sanalari bilan */}
+      {missedByCourse.length > 0 && (
+        <Card className="border-rose/30 p-0">
+          <div className="flex items-center gap-2 border-b border-line px-4 py-2.5">
+            <Icon icon={X} size={15} className="text-rose" />
+            <p className="text-note font-bold uppercase tracking-wide text-rose">{t("missedSection")}</p>
+            <span className="rounded-pill bg-rose-soft px-2 py-0.5 text-note font-bold text-rose">
+              {st?.absent ?? 0}
+            </span>
+          </div>
+          <div className="divide-y divide-line">
+            {missedByCourse.map(([course, rows]) => (
+              <div key={course} className="px-4 py-3">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="min-w-0 truncate text-body font-semibold text-ink">{course}</p>
+                  <span className="shrink-0 text-note font-bold text-rose">{t("missedN", { n: rows.length })}</span>
+                </div>
+                <div className="mt-1.5 flex flex-wrap gap-1.5">
+                  {rows.map((s) => (
+                    <span key={s.id} className="rounded-pill bg-rose-soft px-2 py-0.5 text-[12.5px] font-medium text-rose" title={s.title ?? undefined}>
+                      {formatDate(locale === "ru" ? "ru" : "uz", s.date, "short")}
+                      {s.title ? ` · ${s.title}` : ""}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
       )}
 
       {/* Kelgusi darslar */}

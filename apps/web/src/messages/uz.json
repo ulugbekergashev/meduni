@@ -29,7 +29,8 @@
     "subjects": "Fanlarim",
     "openProfile": "Profilni ochish",
     "myCourses": "Kurslarim",
-    "grades": "Baholarim"
+    "grades": "Baholarim",
+    "schedule": "Jadval"
   },
   "theme": {
     "label": "Mavzu (rang)",
@@ -386,7 +387,9 @@
     "byCourse": "Kurslar boʻyicha",
     "upcoming": "Kelgusi darslar",
     "markedN": "{{n}} dars",
-    "lessonsN": "{{n}} dars"
+    "lessonsN": "{{n}} dars",
+    "missedSection": "Qoldirilgan darslar",
+    "missedN": "{{n}} ta"
   },
   "profile": {
     "title": "Profil",
@@ -1379,5 +1382,17 @@
     "underReview": "Tekshiruvda",
     "empty": "Hali baho yoʻq",
     "emptyHint": "Test ishlaganingizdan yoki keys topshirganingizdan keyin shu yerda koʻrinadi."
+  },
+  "schedule": {
+    "title": "Dars jadvali",
+    "subtitle": "Haftalik darslar — oʻtganlari yoʻqlama holati bilan",
+    "prevWeek": "Oldingi hafta",
+    "nextWeek": "Keyingi hafta",
+    "today": "Bugun",
+    "todayBadge": "Bugun",
+    "lessonsN": "{{n}} dars",
+    "noLessons": "Dars yoʻq",
+    "unmarked": "Belgilanmagan",
+    "upcomingBadge": "Boʻladi"
   }
 }

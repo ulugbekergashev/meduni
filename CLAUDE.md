@@ -881,6 +881,18 @@ Barcha modullar tugadi (1-17).
   byCourse/byMonth, grades avg=100% · 2/2 test · keys 8 ball "Aziz Karimov" izohi bilan;
   tsc+build toza.
 
+- **Modul 22B — Jadval moduli + qoldirilgan darslar (2026-07-20).** (1) **Dars jadvali**
+  `/app/schedule` (nav 7-modul, CalendarDays): hafta ko'rinishi (dushanba boshlanadi,
+  ‹ hafta › + "Bugun"), har kun bo'limi (bugun brand belgisi), dars qatori: vaqt · mavzu/fan ·
+  xona · holat — **o'tgan dars o'z yo'qlama holati bilan** (keldi/kelmadi/kechikdi/sababli
+  yoki "Belgilanmagan"), kelgusi — "Bo'ladi". Backend: `getMySchedule(from,to)` diapazon +
+  `myStatus`/`isPast` (o'z Attendance yozuvlari join), diapazon berilmasa eski xatti-harakat
+  (dashboard 7 kun). (2) **Qoldirilgan darslar** — Davomat sahifasida rose-karta bo'lim:
+  jami son + **fan kesimida** ("Kardiologiya — 2 ta") har biri sana·mavzu chiplari bilan
+  (sessions'dan client-side ABSENT guruhlash). Demo: student@meduni 12-iyul "Amaliy
+  mashg'ulot"da ABSENT (davomat 100%→67% — past-davomat ogohlantirishi ham jonlandi).
+  Smoke 4/4 (haftalik jadval, isPast/myStatus, absent hisobi); tsc+build toza.
+
 ## 9. Loyiha holati va ishga tushirish (operatsion — sessiya 0)
 
 **Monorepo (npm workspaces):**

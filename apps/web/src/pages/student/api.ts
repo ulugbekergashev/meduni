@@ -449,6 +449,9 @@ export interface ScheduleItem {
   courseId: number;
   courseName: string;
   title: string | null;
+  isPast: boolean;
+  /** O'tgan dars uchun mening yo'qlama holatim (belgilanmagan — null). */
+  myStatus: AttStatus | null;
 }
 
 export type ActivityType =
@@ -467,8 +470,12 @@ export interface ActivityItem {
   score: number | null;
 }
 
-export function useMySchedule() {
-  return useQuery({ queryKey: ["me-schedule"], queryFn: () => api<ScheduleItem[]>("/api/v1/me/schedule") });
+export function useMySchedule(range?: { from: string; to: string }) {
+  const qs = range ? `?from=${range.from}&to=${range.to}` : "";
+  return useQuery({
+    queryKey: ["me-schedule", range?.from ?? "next7", range?.to ?? ""],
+    queryFn: () => api<ScheduleItem[]>(`/api/v1/me/schedule${qs}`),
+  });
 }
 
 export function useMyActivity() {
