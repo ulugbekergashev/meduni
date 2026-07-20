@@ -348,6 +348,49 @@ export function useMyProfile() {
   return useQuery({ queryKey: ["me-profile"], queryFn: () => api<MyProfile>("/api/v1/me/profile") });
 }
 
+// ---- Jadval / faollik / o'rin (Modul 21) ----
+
+export interface ScheduleItem {
+  id: number;
+  date: string;
+  room: string | null;
+  courseId: number;
+  courseName: string;
+  title: string | null;
+}
+
+export type ActivityType =
+  | "topic_completed"
+  | "topic_activity"
+  | "quiz_passed"
+  | "quiz_failed"
+  | "case_submitted"
+  | "case_graded";
+
+export interface ActivityItem {
+  type: ActivityType;
+  at: string;
+  topicId: number;
+  topic: string;
+  score: number | null;
+}
+
+export function useMySchedule() {
+  return useQuery({ queryKey: ["me-schedule"], queryFn: () => api<ScheduleItem[]>("/api/v1/me/schedule") });
+}
+
+export function useMyActivity() {
+  return useQuery({ queryKey: ["me-activity"], queryFn: () => api<ActivityItem[]>("/api/v1/me/activity") });
+}
+
+/** O'z o'rni guruhda — boshqa talabalar ro'yxati qaytmaydi. */
+export function useMyRank() {
+  return useQuery({
+    queryKey: ["me-rank"],
+    queryFn: () => api<{ rank: number | null; total: number }>("/api/v1/me/rank"),
+  });
+}
+
 export function useSetLocale() {
   return useMutation({
     mutationFn: (locale: "uz" | "ru") => api<{ ok: boolean; locale: string }>("/api/v1/me/locale", { method: "PUT", body: JSON.stringify({ locale }) }),

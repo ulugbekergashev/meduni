@@ -1,9 +1,32 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ArrowRight, BookOpen, CalendarCheck2, ClipboardCheck, GraduationCap, Layers, PlayCircle } from "lucide-react";
+import {
+  ArrowRight,
+  BookOpen,
+  CalendarCheck2,
+  CalendarDays,
+  CheckCircle2,
+  ClipboardCheck,
+  ClipboardList,
+  GraduationCap,
+  Layers,
+  PlayCircle,
+  Sparkles,
+  Stethoscope,
+  type LucideIcon,
+} from "lucide-react";
 import { Card, EmptyState, Icon, ProgressRing, cls } from "@meduni/ui";
 import { AsyncSection } from "../../components/AsyncSection";
-import { useMyDashboard, useMyProfile, type CourseSummary } from "./api";
+import { useLocale } from "../../lib/useLocale";
+import { formatDate } from "../../lib/date";
+import {
+  useMyDashboard,
+  useMyProfile,
+  useMySchedule,
+  useMyTasks,
+  useSetMyTaskDone,
+  type CourseSummary,
+} from "./api";
 
 function ProgressBar({ pct, tone = "brand" }: { pct: number; tone?: "brand" | "white" }) {
   return (
@@ -53,7 +76,7 @@ function CourseCard({ course }: { course: CourseSummary }) {
   );
 }
 
-function SummaryTile({ icon, value, label, tone }: { icon: typeof Layers; value: string; label: string; tone: string }) {
+function SummaryTile({ icon, value, label, tone }: { icon: LucideIcon; value: string; label: string; tone: string }) {
   return (
     <div className="flex items-center gap-2.5">
       <div className={cls("flex h-9 w-9 shrink-0 items-center justify-center rounded-full", tone)}>
@@ -67,16 +90,75 @@ function SummaryTile({ icon, value, label, tone }: { icon: typeof Layers; value:
   );
 }
 
+/** "Bugun" ro'yxatining bitta qatori — vazifa, topshiriq yoki dars. */
+function ActionRow({
+  icon,
+  tone,
+  title,
+  sub,
+  right,
+  onClick,
+}: {
+  icon: LucideIcon;
+  tone: string;
+  title: string;
+  sub?: string;
+  right?: string;
+  onClick?: () => void;
+}) {
+  const Wrapper = onClick ? "button" : "div";
+  return (
+    <Wrapper
+      onClick={onClick}
+      className={cls(
+        "flex w-full items-center gap-3 rounded-card border border-line bg-surface px-4 py-3 text-left shadow-card transition-all",
+        onClick && "hover:-translate-y-0.5 hover:shadow-card-hover"
+      )}
+    >
+      <div className={cls("flex h-9 w-9 shrink-0 items-center justify-center rounded-full", tone)}>
+        <Icon icon={icon} size={17} />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-[15px] font-semibold text-ink">{title}</p>
+        {sub && <p className="truncate text-[13px] text-ink-faint">{sub}</p>}
+      </div>
+      {right && <span className="shrink-0 text-[13px] font-semibold text-ink-soft">{right}</span>}
+      {onClick && <Icon icon={ArrowRight} size={15} className="shrink-0 text-ink-faint" />}
+    </Wrapper>
+  );
+}
+
+const AUTO_META: Record<string, { icon: LucideIcon; labelKey: string; tone: string }> = {
+  study: { icon: PlayCircle, labelKey: "study", tone: "bg-brand-soft text-brand-deep" },
+  quiz_todo: { icon: ClipboardList, labelKey: "quizTodo", tone: "bg-blue-soft text-blue" },
+  case_todo: { icon: Stethoscope, labelKey: "caseTodo", tone: "bg-rose-soft text-rose" },
+  case_graded: { icon: CheckCircle2, labelKey: "caseGraded", tone: "bg-emerald-soft text-emerald" },
+  attendance_low: { icon: CalendarCheck2, labelKey: "attendanceLow", tone: "bg-amber-soft text-amber" },
+};
+
 export function StudentDashboard() {
   const { t } = useTranslation(undefined, { keyPrefix: "student" });
+  const { t: tt } = useTranslation(undefined, { keyPrefix: "tasks" });
+  const locale = useLocale();
+  const navigate = useNavigate();
+
   const q = useMyDashboard();
   const profile = useMyProfile();
+  const tasksQ = useMyTasks();
+  const scheduleQ = useMySchedule();
+  const done = useSetMyTaskDone();
+
   const d = q.data;
   const p = profile.data;
+  const auto = tasksQ.data?.auto ?? [];
+  const assigned = tasksQ.data?.assigned ?? []; // backend faqat OPEN qaytaradi
+  const schedule = scheduleQ.data ?? [];
   const overallPct =
     d && d.courses.length > 0
       ? Math.round(d.courses.reduce((sum, c) => sum + c.progressPct, 0) / d.courses.length)
       : 0;
+
+  const hasToday = !!d?.resume || auto.length > 0 || assigned.length > 0 || schedule.length > 0;
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -125,24 +207,84 @@ export function StudentDashboard() {
               </Card>
             )}
 
-            {/* Resume — the primary action, most prominent block */}
-            {d.resume && (
-              <div className="mt-5 rounded-card bg-gradient-to-br from-brand-deep to-brand p-5 text-white shadow-md">
-                <p className="text-[13.5px] font-medium uppercase tracking-wide text-white/70">{t("continueLabel")}</p>
-                <p className="mt-1 text-[14px] text-white/85">{d.resume.subjectName}</p>
-                <h2 className="mt-0.5 text-[20px] font-bold leading-tight">{d.resume.topic}</h2>
-                <div className="mt-3">
-                  <ProgressBar pct={d.resume.pct} tone="white" />
-                  <p className="mt-1.5 text-[13px] text-white/80">{d.resume.pct}% {t("done")}</p>
+            {/* BUGUN — harakat markazi: davom ettirish + vazifalar + jadval */}
+            <section className="mt-7">
+              <h2 className="mb-3 text-section font-bold text-ink">{t("todayTitle")}</h2>
+
+              {d.resume && (
+                <div className="rounded-card bg-gradient-to-br from-brand-deep to-brand p-5 text-white shadow-md">
+                  <p className="text-[13.5px] font-medium uppercase tracking-wide text-white/70">{t("continueLabel")}</p>
+                  <p className="mt-1 text-[14px] text-white/85">{d.resume.subjectName}</p>
+                  <h3 className="mt-0.5 text-[20px] font-bold leading-tight">{d.resume.topic}</h3>
+                  <div className="mt-3">
+                    <ProgressBar pct={d.resume.pct} tone="white" />
+                    <p className="mt-1.5 text-[13px] text-white/80">
+                      {d.resume.pct}% {t("done")}
+                    </p>
+                  </div>
+                  <Link to={`/app/topics/${d.resume.topicId}`} className="mt-4 block">
+                    <button className="flex w-full items-center justify-center gap-2 rounded-control bg-white px-4 py-3 text-[16px] font-bold text-brand-deep transition-all hover:bg-white/90">
+                      <Icon icon={PlayCircle} size={19} />
+                      {t("continue")}
+                    </button>
+                  </Link>
                 </div>
-                <Link to={`/app/topics/${d.resume.topicId}`} className="mt-4 block">
-                  <button className="flex w-full items-center justify-center gap-2 rounded-control bg-white px-4 py-3 text-[16px] font-bold text-brand-deep transition-all hover:bg-white/90">
-                    <Icon icon={PlayCircle} size={19} />
-                    {t("continue")}
-                  </button>
-                </Link>
+              )}
+
+              <div className="mt-3 space-y-2">
+                {/* O'qituvchi topshiriqlari — birinchi navbatda */}
+                {assigned.map((a) => (
+                  <ActionRow
+                    key={`as${a.id}`}
+                    icon={ClipboardCheck}
+                    tone="bg-violet-soft text-violet"
+                    title={a.title}
+                    sub={
+                      a.dueDate
+                        ? `${tt("dueShort")}: ${formatDate(locale === "ru" ? "ru" : "uz", a.dueDate, "short")}`
+                        : tt("fromTeacher")
+                    }
+                    right={done.isPending && done.variables === a.id ? "…" : tt("markDone")}
+                    onClick={() => done.mutate(a.id)}
+                  />
+                ))}
+
+                {/* Avto o'quv vazifalari — to'g'ridan kerakli tabga */}
+                {auto.map((task) => {
+                  const meta = AUTO_META[task.type];
+                  if (!meta) return null;
+                  return (
+                    <ActionRow
+                      key={task.type}
+                      icon={meta.icon}
+                      tone={meta.tone}
+                      title={tt(meta.labelKey)}
+                      sub={task.type === "attendance_low" ? `${task.count}%` : `${task.count}`}
+                      onClick={() => navigate(task.link)}
+                    />
+                  );
+                })}
+
+                {/* Kelgusi darslar */}
+                {schedule.slice(0, 3).map((s) => (
+                  <ActionRow
+                    key={`sc${s.id}`}
+                    icon={CalendarDays}
+                    tone="bg-bg text-ink-soft"
+                    title={s.title ?? s.courseName}
+                    sub={[s.courseName, s.room].filter(Boolean).join(" · ")}
+                    right={formatDate(locale === "ru" ? "ru" : "uz", s.date, "short")}
+                  />
+                ))}
+
+                {!hasToday && !tasksQ.isLoading && (
+                  <Card className="flex items-center gap-3 border-emerald/40 bg-emerald-soft">
+                    <Icon icon={Sparkles} size={22} className="text-emerald" />
+                    <p className="text-body font-semibold text-emerald">{tt("studentAllDone")}</p>
+                  </Card>
+                )}
               </div>
-            )}
+            </section>
 
             {/* Notifications */}
             {d.notifications.length > 0 && (
@@ -184,7 +326,6 @@ export function StudentDashboard() {
         <p className="mt-3 text-center text-[14px] text-ink-faint">{t("adminWillAdd")}</p>
       )}
 
-      {/* Empty-but-loaded fallback handled by AsyncSection; explicit hint below */}
       {!d && !q.isLoading && !q.isError && (
         <EmptyState icon={<Icon icon={ArrowRight} size={22} />} text={t("noCourses")} />
       )}

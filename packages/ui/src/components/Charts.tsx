@@ -204,9 +204,12 @@ export function MiniBars({
 }
 
 /** Horizontal stacked bar of colored segments (e.g. attendance breakdown).
- *  Segments are separated by a 2px surface gap so adjacent fills stay readable. */
-export function StackedBar({ segments }: { segments: { value: number; tone: ToneKey }[] }) {
-  const total = segments.reduce((a, s) => a + s.value, 0) || 1;
+ *  Segments are separated by a 2px surface gap so adjacent fills stay readable.
+ *  Pass `total` when the segments cover only part of the whole — the remainder
+ *  stays as the neutral track (e.g. topics with no content yet). */
+export function StackedBar({ segments, total: totalProp }: { segments: { value: number; tone: ToneKey }[]; total?: number }) {
+  const sum = segments.reduce((a, s) => a + s.value, 0);
+  const total = Math.max(totalProp ?? sum, sum) || 1;
   return (
     <div className="flex h-3 w-full gap-[2px] overflow-hidden rounded-pill bg-bg">
       {segments.map((s, i) =>

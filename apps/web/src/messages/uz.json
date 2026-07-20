@@ -25,7 +25,8 @@
     "students": "Talabalar",
     "staff": "Xodimlar",
     "myFaculty": "Fakultetim",
-    "myDept": "Kafedram"
+    "myDept": "Kafedram",
+    "subjects": "Fanlarim"
   },
   "theme": {
     "label": "Mavzu (rang)",
@@ -56,7 +57,9 @@
     "attendanceLow": "Davomat past",
     "assignedSection": "Kafedra topshiriqlari",
     "teacherAssignedSection": "Oʻqituvchi topshiriqlari",
-    "markDone": "Bajarildi"
+    "markDone": "Bajardim",
+    "dueShort": "Muddat",
+    "fromTeacher": "Oʻqituvchidan"
   },
   "teachAssign": {
     "newBtn": "Yangi topshiriq",
@@ -76,7 +79,8 @@
     "error": "Xatolik yuz berdi",
     "mySection": "Men bergan topshiriqlar",
     "deleteTitle": "Topshiriqni oʻchirish",
-    "deleteMsg": "Ishonchingiz komilmi? Bu barcha talabalardan oʻchiradi."
+    "deleteMsg": "Ishonchingiz komilmi? Bu barcha talabalardan oʻchiradi.",
+    "forStudent": "Talaba"
   },
   "adminTasks": {
     "title": "Topshiriqlar",
@@ -158,7 +162,10 @@
     "att": "Davomat",
     "neverActive": "Faollik yo‘q",
     "activeToday": "Bugun faol",
-    "activeYesterday": "Kecha faol"
+    "activeYesterday": "Kecha faol",
+    "rankHint": "Guruhdagi oʻrin",
+    "assignToStudent": "Vazifa berish",
+    "assignToGroup": "Guruhga vazifa"
   },
   "courseGroups": {
     "subtitle": "Bu kurs qaysi guruhlarda oʻtiladi. Guruhni bosing — profili (talabalar, jurnal, davomat).",
@@ -223,7 +230,8 @@
       "LOCKED": "Yopiq"
     },
     "topicsDone": "mavzu",
-    "gradeNow": "Baholash"
+    "gradeNow": "Baholash",
+    "assignTask": "Vazifa berish"
   },
   "journal": {
     "hint": "Katakni bosing — yoʻqlama va baho qoʻying.",
@@ -388,7 +396,29 @@
     "pwChanged": "Parol oʻzgartirildi",
     "errShort": "Kamida 6 belgi",
     "errMismatch": "Parollar mos kelmadi",
-    "errOldWrong": "Eski parol xato"
+    "errOldWrong": "Eski parol xato",
+    "activeBadge": "Faol",
+    "rank": "Guruhdagi oʻrin",
+    "rankHint": "Tugallangan mavzular boʻyicha",
+    "rankValue": "Guruhda {{rank}}/{{total}}",
+    "attendanceHint": "Kelgan darslar ulushi",
+    "completedHint": "Tugallangan mavzular",
+    "coursesHint": "Faol kurslar",
+    "noActivity": "Hali faollik yoʻq",
+    "noCourses": "Kurslar yoʻq",
+    "tabs": {
+      "overview": "Umumiy",
+      "courses": "Kurslar",
+      "attendance": "Davomat"
+    },
+    "activity": {
+      "topic_completed": "Mavzu tugallandi",
+      "topic_activity": "Mavzu ustida ishladingiz",
+      "quiz_passed": "Test topshirildi",
+      "quiz_failed": "Test oʻtilmadi",
+      "case_submitted": "Keys javobi yuborildi",
+      "case_graded": "Keys baholandi"
+    }
   },
   "dashboard": {
     "adminTitle": "Admin paneli",
@@ -450,7 +480,11 @@
     "qaGroups": "Guruhlarim",
     "analytics": "Analitika",
     "byCourse": "Kurslar bo‘yicha progress",
-    "statStudentsN": "{{n}} talaba"
+    "statStudentsN": "{{n}} talaba",
+    "rankTop": "Eng yaxshi natijalar",
+    "rankBehind": "Orqada qolganlar",
+    "rankEmpty": "Maʼlumot yoʻq",
+    "rankNoBehind": "Orqada qolgan yoʻq"
   },
   "topics": {
     "subjectShared": "Mavzular fanga tegishli — bu fandan ochilgan barcha kurslar (guruhlar) bir xil mavzularni ko‘radi.",
@@ -982,7 +1016,8 @@
     "elQuiz": "Test",
     "elCase": "Keys",
     "lessonSoonTitle": "Dars sahifasi tez orada",
-    "lessonSoonBody": "Video, prezentatsiya, test va keysni oʻz ichiga olgan dars sahifasi keyingi modulda ochiladi."
+    "lessonSoonBody": "Video, prezentatsiya, test va keysni oʻz ichiga olgan dars sahifasi keyingi modulda ochiladi.",
+    "todayTitle": "Bugun"
   },
   "review": {
     "back": "← Bosh sahifa",
@@ -1021,7 +1056,9 @@
     "backToQueue": "Navbatga qaytish",
     "loadError": "Javob yuklanmadi",
     "emptyQueue": "Tekshirishni kutayotgan keys yoʻq. Hammasi bajarilgan!",
-    "selectPrompt": "Tekshirish uchun chapdan javob tanlang"
+    "selectPrompt": "Tekshirish uchun chapdan javob tanlang",
+    "assignTask": "Vazifa berish",
+    "assignPrefill": "Mavzuni takrorlang: {{topic}}"
   },
   "attendance": {
     "tabSessions": "Darslar",
@@ -1113,7 +1150,8 @@
       "IN_PROGRESS": "Jarayonda",
       "AVAILABLE": "Ochiq",
       "LOCKED": "Yopiq"
-    }
+    },
+    "assignTask": "Vazifa berish"
   },
   "lesson": {
     "backToPath": "Mavzu yoʻliga qaytish",
@@ -1251,5 +1289,24 @@
       "password": "Parol",
       "passwordHint": "Bo'sh qoldirsangiz — avtomatik yaratiladi va ko'rsatiladi."
     }
+  },
+  "subjects": {
+    "title": "Fanlarim",
+    "subtitle": "Kafedra fanlari — kontent shu yerda yaratiladi va barcha kurslarda ishlatiladi.",
+    "empty": "Sizga biriktirilgan fan yoʻq",
+    "emptyHint": "Kafedra yoki kurs biriktirilgach, fanlar shu yerda koʻrinadi.",
+    "open": "Ochish",
+    "noTopics": "Hali mavzu qoʻshilmagan",
+    "publishedTopics": "chop etilgan",
+    "inProgressTopics": "jarayonda",
+    "topicsTotal": "Mavzular",
+    "needMaterial": "material kerak",
+    "needDigest": "konspekt kutmoqda",
+    "needPublish": "chop etilmagan",
+    "needFactcheck": "faktcheck belgisi",
+    "allReady": "Hammasi tayyor",
+    "backToList": "Fanlarim",
+    "myCourse": "Mening kursim",
+    "loadError": "Fanni yuklab boʻlmadi"
   }
 }

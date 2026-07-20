@@ -280,6 +280,13 @@ export async function getTeacherGroup(groupId: number, teacherId: number) {
     };
   });
 
+  // Reyting: umumiy progress bo'yicha, teng bo'lsa o'rtacha test balli.
+  const rankOrder = [...studentsOut].sort(
+    (a, b) => b.overallPct - a.overallPct || (b.avgQuizScore ?? -1) - (a.avgQuizScore ?? -1)
+  );
+  const rankOf = new Map(rankOrder.map((s, i) => [s.id, i + 1]));
+  const studentsRanked = studentsOut.map((s) => ({ ...s, rank: rankOf.get(s.id)! }));
+
   const avgProgress = studentsOut.length ? Math.round(studentsOut.reduce((a, s) => a + s.overallPct, 0) / studentsOut.length) : 0;
   const attVals = studentsOut.map((s) => s.attendancePct).filter((x): x is number => x !== null);
   const avgAttendance = attVals.length ? Math.round(attVals.reduce((a, b) => a + b, 0) / attVals.length) : null;
@@ -291,7 +298,7 @@ export async function getTeacherGroup(groupId: number, teacherId: number) {
     yearOfStudy: group.yearOfStudy,
     facultyName: group.faculty.name,
     courses: cgs.map((cg) => ({ id: cg.course.id, name: cg.course.subject.name })),
-    students: studentsOut,
+    students: studentsRanked,
     studentCount: students.length,
     avgProgress,
     avgAttendance,

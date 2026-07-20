@@ -7,7 +7,7 @@ import { useTopics } from "../../topics/api";
 export function SessionModal({ courseId, edit, onClose }: { courseId: number; edit: SessionRow | null; onClose: () => void }) {
   const { t } = useTranslation(undefined, { keyPrefix: "attendance" });
   const { show } = useToast();
-  const topics = useTopics(courseId);
+  const topics = useTopics({ courseId });
   const create = useCreateSession(courseId);
   const update = useUpdateSession(courseId);
 

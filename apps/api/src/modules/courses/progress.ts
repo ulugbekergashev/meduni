@@ -306,10 +306,19 @@ export async function getTeacherDashboard(teacherId: number) {
 
   let studentsBehind = 0;
   const courseCards = [];
+  // Reyting uchun talabalar bir marta yig'iladi (buddy matritsa baribir quriladi).
+  const byStudent = new Map<number, { id: number; fullName: string; pcts: number[]; behind: boolean; lastActiveAt: string | null }>();
   for (const c of courses) {
     const loaded = await loadCourse(c.id);
     const { students, avgProgress } = await buildMatrix(loaded);
     studentsBehind += students.filter((s) => s.behind).length;
+    for (const s of students) {
+      const cur = byStudent.get(s.id) ?? { id: s.id, fullName: s.fullName, pcts: [], behind: false, lastActiveAt: null };
+      cur.pcts.push(s.overallPct);
+      cur.behind = cur.behind || s.behind;
+      if (s.lastActiveAt && (!cur.lastActiveAt || s.lastActiveAt > cur.lastActiveAt)) cur.lastActiveAt = s.lastActiveAt;
+      byStudent.set(s.id, cur);
+    }
     courseCards.push({
       id: loaded.id,
       subjectName: loaded.subject.name,
@@ -367,6 +376,22 @@ export async function getTeacherDashboard(teacherId: number) {
       avgAttendance,
       groupList: [...groupMap.entries()].map(([id, name]) => ({ id, name })),
     },
+    // Reyting bloki: eng yuqori 3 va orqada qolgan 3 talaba.
+    ranking: (() => {
+      const rows = [...byStudent.values()].map((s) => ({
+        id: s.id,
+        fullName: s.fullName,
+        overallPct: s.pcts.length ? Math.round(s.pcts.reduce((a, b) => a + b, 0) / s.pcts.length) : 0,
+        behind: s.behind,
+        lastActiveAt: s.lastActiveAt,
+      }));
+      const top = [...rows].sort((a, b) => b.overallPct - a.overallPct).slice(0, 3);
+      const behind = [...rows]
+        .filter((r) => r.behind)
+        .sort((a, b) => a.overallPct - b.overallPct)
+        .slice(0, 3);
+      return { top, behind };
+    })(),
     upcomingSessions: upcoming.map((s) => ({
       id: s.id,
       courseId: s.courseId,

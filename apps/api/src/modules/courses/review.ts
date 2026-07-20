@@ -117,6 +117,7 @@ export async function getCaseAttemptForReview(teacherId: number, attemptId: numb
   const caseJson = a.clinicalCase.caseJson as unknown as CaseJson;
   return {
     id: a.id,
+    studentId: a.studentId,
     studentName: a.student.fullName,
     courseId: courseOf.get(a.id)!,
     subjectName: a.clinicalCase.contentItem.topic.subject.name,

@@ -79,6 +79,129 @@ export async function getMyProfile(studentId: number) {
   };
 }
 
+/** Kelgusi 7 kunlik dars jadvali — talabaning ACTIVE kurslari sessiyalari. */
+export async function getMySchedule(studentId: number) {
+  const from = new Date();
+  from.setHours(0, 0, 0, 0);
+  const to = new Date(from);
+  to.setDate(to.getDate() + 7);
+  to.setHours(23, 59, 59, 999);
+
+  const sessions = await prisma.lessonSession.findMany({
+    where: {
+      date: { gte: from, lte: to },
+      course: { enrollments: { some: { studentId, status: "ACTIVE" } } },
+    },
+    include: { course: { include: { subject: true } }, topic: { select: { title: true } } },
+    orderBy: { date: "asc" },
+    take: 10,
+  });
+  return sessions.map((s) => ({
+    id: s.id,
+    date: s.date,
+    room: s.room,
+    courseId: s.courseId,
+    courseName: s.course.subject.name,
+    title: s.title ?? s.topic?.title ?? null,
+  }));
+}
+
+export type ActivityEvent = {
+  type: "topic_completed" | "topic_activity" | "quiz_passed" | "quiz_failed" | "case_submitted" | "case_graded";
+  at: Date;
+  topicId: number;
+  topic: string;
+  /** Ball (test %, keys bahosi) — bo'lsa. */
+  score: number | null;
+};
+
+/** Profil "Umumiy" tabi lentasi: progress/test/keys hodisalari birlashtiriladi. */
+export async function getMyActivity(studentId: number): Promise<ActivityEvent[]> {
+  const [progressRows, quizRows, caseRows] = await Promise.all([
+    prisma.progress.findMany({
+      where: { studentId },
+      orderBy: { updatedAt: "desc" },
+      take: 15,
+      include: { topic: { select: { title: true } } },
+    }),
+    prisma.quizAttempt.findMany({
+      where: { studentId, finishedAt: { not: null } },
+      orderBy: { finishedAt: "desc" },
+      take: 15,
+      include: { quiz: { select: { contentItem: { select: { topicId: true, topic: { select: { title: true } } } } } } },
+    }),
+    prisma.caseAttempt.findMany({
+      where: { studentId },
+      orderBy: { submittedAt: "desc" },
+      take: 15,
+      include: { clinicalCase: { select: { contentItem: { select: { topicId: true, topic: { select: { title: true } } } } } } },
+    }),
+  ]);
+
+  const events: ActivityEvent[] = [];
+  for (const p of progressRows) {
+    if (p.state === "COMPLETED" && p.completedAt) {
+      events.push({ type: "topic_completed", at: p.completedAt, topicId: p.topicId, topic: p.topic.title, score: null });
+    } else if (p.videoWatchedPct > 0 || p.slidesViewed || p.state === "IN_PROGRESS") {
+      // Haqiqiy harakat bo'lsa lentaga tushadi (holati hali AVAILABLE bo'lsa ham).
+      events.push({ type: "topic_activity", at: p.updatedAt, topicId: p.topicId, topic: p.topic.title, score: null });
+    }
+  }
+  for (const q of quizRows) {
+    events.push({
+      type: q.passed ? "quiz_passed" : "quiz_failed",
+      at: q.finishedAt!,
+      topicId: q.quiz.contentItem.topicId,
+      topic: q.quiz.contentItem.topic.title,
+      score: q.scorePct,
+    });
+  }
+  for (const c of caseRows) {
+    events.push({
+      type: "case_submitted",
+      at: c.submittedAt,
+      topicId: c.clinicalCase.contentItem.topicId,
+      topic: c.clinicalCase.contentItem.topic.title,
+      score: null,
+    });
+    if (c.reviewedAt) {
+      events.push({
+        type: "case_graded",
+        at: c.reviewedAt,
+        topicId: c.clinicalCase.contentItem.topicId,
+        topic: c.clinicalCase.contentItem.topic.title,
+        score: c.score,
+      });
+    }
+  }
+
+  events.sort((a, b) => b.at.getTime() - a.at.getTime());
+  return events.slice(0, 15);
+}
+
+/** O'z o'rni guruhda (tugallangan mavzular soni bo'yicha). Boshqa talabalar
+ *  ismi/ro'yxati QAYTMAYDI — ochiq leaderboard atayin yo'q. */
+export async function getMyRank(studentId: number) {
+  const me = await prisma.user.findUnique({ where: { id: studentId }, select: { groupId: true } });
+  if (!me?.groupId) return { rank: null, total: 0 };
+
+  const peers = await prisma.user.findMany({
+    where: { groupId: me.groupId, role: "STUDENT", isActive: true },
+    select: { id: true },
+  });
+  const completed = await prisma.progress.groupBy({
+    by: ["studentId"],
+    where: { studentId: { in: peers.map((p) => p.id) }, state: "COMPLETED" },
+    _count: true,
+  });
+  const doneBy = new Map(completed.map((c) => [c.studentId, c._count]));
+  const ranked = peers
+    .map((p) => ({ id: p.id, done: doneBy.get(p.id) ?? 0 }))
+    .sort((a, b) => b.done - a.done);
+  const idx = ranked.findIndex((r) => r.id === studentId);
+  return { rank: idx === -1 ? null : idx + 1, total: ranked.length };
+}
+
 export async function setLocale(studentId: number, locale: unknown) {
   if (locale !== "uz" && locale !== "ru") throw badRequest("Til notoʻgʻri", "Неверный язык");
   await prisma.user.update({ where: { id: studentId }, data: { locale } });

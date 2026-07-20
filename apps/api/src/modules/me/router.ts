@@ -55,6 +55,9 @@ meRouter.get(
 );
 
 meRouter.get("/profile", wrap(async (req, res) => res.json(await profile.getMyProfile(req.user!.id))));
+meRouter.get("/schedule", wrap(async (req, res) => res.json(await profile.getMySchedule(req.user!.id))));
+meRouter.get("/activity", wrap(async (req, res) => res.json(await profile.getMyActivity(req.user!.id))));
+meRouter.get("/rank", wrap(async (req, res) => res.json(await profile.getMyRank(req.user!.id))));
 meRouter.put("/locale", wrap(async (req, res) => res.json(await profile.setLocale(req.user!.id, req.body?.locale))));
 meRouter.post("/change-password", wrap(async (req, res) => res.json(await profile.changePassword(req.user!.id, req.body?.oldPassword, req.body?.newPassword))));
 

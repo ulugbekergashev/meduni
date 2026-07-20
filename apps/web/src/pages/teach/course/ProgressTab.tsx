@@ -1,9 +1,10 @@
 import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { AlertTriangle, Download, GraduationCap, LayoutGrid, List, Search, TrendingUp, Unlock, Users } from "lucide-react";
+import { AlertTriangle, Download, GraduationCap, LayoutGrid, List, ListPlus, Search, TrendingUp, Unlock, Users } from "lucide-react";
 import { Badge, Button, Card, Icon, Modal, Spinner, StatCard, cls, useToast } from "@meduni/ui";
 import { AsyncSection } from "../../../components/AsyncSection";
+import { QuickTaskModal } from "../../../components/QuickTaskModal";
 import {
   API_URL,
   useCourseProgress,
@@ -48,7 +49,7 @@ function cellSummary(c: ProgressCell, t: (k: string) => string): string {
   return parts.join(" · ") || "—";
 }
 
-function StudentModal({ student, topics, courseId, onClose }: { student: ProgressStudent; topics: ProgressTopic[]; courseId: number; onClose: () => void }) {
+function StudentModal({ student, topics, courseId, onClose, onAssign }: { student: ProgressStudent; topics: ProgressTopic[]; courseId: number; onClose: () => void; onAssign: () => void }) {
   const { t } = useTranslation(undefined, { keyPrefix: "progress" });
   const { show } = useToast();
   const navigate = useNavigate();
@@ -61,9 +62,14 @@ function StudentModal({ student, topics, courseId, onClose }: { student: Progres
         <span className="text-ink-soft">{t("overall")}: <span className="font-bold text-ink">{student.overallPct}%</span></span>
         <span className="text-ink-soft">{t("avgTest")}: <span className="font-bold text-ink">{student.avgQuizScore ?? "—"}%</span></span>
         <LastActive iso={student.lastActiveAt} />
-        <button onClick={() => navigate(`/teach/students/${student.id}`)} className="ml-auto font-semibold text-brand-deep hover:underline">
-          {t("openProfile")} →
-        </button>
+        <div className="ml-auto flex items-center gap-3">
+          <button onClick={onAssign} className="inline-flex items-center gap-1 font-semibold text-brand-deep hover:underline">
+            <Icon icon={ListPlus} size={14} /> {t("assignTask")}
+          </button>
+          <button onClick={() => navigate(`/teach/students/${student.id}`)} className="font-semibold text-brand-deep hover:underline">
+            {t("openProfile")} →
+          </button>
+        </div>
       </div>
 
       <div className="max-h-[55vh] space-y-2 overflow-y-auto">
@@ -216,6 +222,7 @@ export function ProgressTab() {
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<"progress" | "name">("progress");
   const [picked, setPicked] = useState<ProgressStudent | null>(null);
+  const [assignTo, setAssignTo] = useState<{ id: number; name: string } | null>(null);
 
   const students = useMemo(() => {
     if (!data) return [];
@@ -306,7 +313,21 @@ export function ProgressTab() {
         </AsyncSection>
       )}
 
-      {picked && data && <StudentModal student={data.students.find((s) => s.id === picked.id) ?? picked} topics={data.topics} courseId={courseId} onClose={() => setPicked(null)} />}
+      {picked && data && (
+        <StudentModal
+          student={data.students.find((s) => s.id === picked.id) ?? picked}
+          topics={data.topics}
+          courseId={courseId}
+          onClose={() => setPicked(null)}
+          onAssign={() => setAssignTo({ id: picked.id, name: picked.fullName })}
+        />
+      )}
+
+      <QuickTaskModal
+        open={assignTo !== null}
+        onClose={() => setAssignTo(null)}
+        prefill={assignTo ? { studentId: assignTo.id, studentName: assignTo.name } : undefined}
+      />
     </div>
   );
 }

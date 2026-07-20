@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, Check, ClipboardList, Mail, Stethoscope, Users } from "lucide-react";
-import { Badge, Card, Icon, ProgressBar, ProgressRing, Spinner, StackedBar, cls, type BadgeTone } from "@meduni/ui";
+import { ArrowLeft, Check, ClipboardList, ListPlus, Mail, Stethoscope, Users } from "lucide-react";
+import { Badge, Button, Card, Icon, ProgressBar, ProgressRing, Spinner, StackedBar, cls, type BadgeTone } from "@meduni/ui";
 import { AsyncSection } from "../../components/AsyncSection";
+import { QuickTaskModal } from "../../components/QuickTaskModal";
 import { useStudentDetail, type CellState, type StudentDetail, type StudentDetailCourse } from "./api";
 
 const stateTone: Record<CellState, BadgeTone> = { COMPLETED: "emerald", IN_PROGRESS: "amber", AVAILABLE: "blue", LOCKED: "slate" };
@@ -94,7 +96,7 @@ function CourseSection({ course, onReview }: { course: StudentDetailCourse; onRe
   );
 }
 
-function Hero({ d, onGroup }: { d: StudentDetail; onGroup: () => void }) {
+function Hero({ d, onGroup, onAssign }: { d: StudentDetail; onGroup: () => void; onAssign: () => void }) {
   const { t } = useTranslation(undefined, { keyPrefix: "studentDetail" });
   const initials = d.student.fullName.split(" ").filter(Boolean).slice(0, 2).map((s) => s[0]?.toUpperCase()).join("");
   const overall = d.courses.length ? Math.round(d.courses.reduce((a, c) => a + c.overallPct, 0) / d.courses.length) : 0;
@@ -126,6 +128,9 @@ function Hero({ d, onGroup }: { d: StudentDetail; onGroup: () => void }) {
           <p className={cls("text-[26px] font-bold leading-none tabular-nums", attPct !== null && attPct < 75 ? "text-rose" : "text-blue")}>{attPct !== null ? `${attPct}%` : "—"}</p>
           <p className="mt-1 text-note text-ink-faint">{t("attendance")}</p>
         </div>
+        <Button variant="soft" size="sm" icon={<Icon icon={ListPlus} size={15} />} onClick={onAssign}>
+          {t("assignTask")}
+        </Button>
       </div>
     </Card>
   );
@@ -138,6 +143,7 @@ export function StudentDetailPage() {
   const navigate = useNavigate();
   const q = useStudentDetail(studentId);
   const d = q.data;
+  const [assign, setAssign] = useState(false);
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -151,7 +157,11 @@ export function StudentDetailPage() {
         <AsyncSection isLoading={false} isError={q.isError} isEmpty={false} emptyText="" onRetry={() => q.refetch()}>
           {d && (
             <>
-              <Hero d={d} onGroup={() => d.student.groupId && navigate(`/teach/groups/${d.student.groupId}`)} />
+              <Hero
+                d={d}
+                onGroup={() => d.student.groupId && navigate(`/teach/groups/${d.student.groupId}`)}
+                onAssign={() => setAssign(true)}
+              />
               <div className="mt-4 space-y-4">
                 {d.courses.map((c) => (
                   <CourseSection key={c.courseId} course={c} onReview={() => navigate("/teach/cases/review")} />
@@ -160,6 +170,14 @@ export function StudentDetailPage() {
             </>
           )}
         </AsyncSection>
+      )}
+
+      {d && (
+        <QuickTaskModal
+          open={assign}
+          onClose={() => setAssign(false)}
+          prefill={{ studentId: d.student.id, studentName: d.student.fullName }}
+        />
       )}
     </div>
   );

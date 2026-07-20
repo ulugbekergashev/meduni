@@ -17,32 +17,61 @@ import { AsyncSection } from "../../components/AsyncSection";
 import { useLocale } from "../../lib/useLocale";
 import { useMyCourse, type StudentTopic, type TopicElements } from "./api";
 
-function Chip({ icon, label, done, hint }: { icon: typeof Video; label: string; done: boolean; hint?: string }) {
-  return (
-    <span
-      className={cls(
-        "inline-flex items-center gap-1 rounded-pill px-2 py-0.5 text-[12.5px] font-medium",
-        done ? "bg-emerald-soft text-emerald" : "bg-bg text-ink-faint"
-      )}
-    >
+/** Element chipi — bosilsa mavzuning o'sha tabiga to'g'ridan o'tadi. */
+function Chip({
+  icon,
+  label,
+  done,
+  hint,
+  onClick,
+}: {
+  icon: typeof Video;
+  label: string;
+  done: boolean;
+  hint?: string;
+  onClick?: () => void;
+}) {
+  const cn = cls(
+    "inline-flex items-center gap-1 rounded-pill px-2 py-0.5 text-[12.5px] font-medium transition-colors",
+    done ? "bg-emerald-soft text-emerald" : "bg-bg text-ink-faint",
+    onClick && (done ? "hover:bg-emerald hover:text-white" : "hover:bg-brand-soft hover:text-brand-deep")
+  );
+  const inner = (
+    <>
       <Icon icon={done ? CheckCircle2 : icon} size={13} />
       {label}
       {hint && <span className="font-bold">{hint}</span>}
-    </span>
+    </>
+  );
+  if (!onClick) return <span className={cn}>{inner}</span>;
+  return (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation(); // karta bosilishini ushlab qolmasin
+        onClick();
+      }}
+      className={cn}
+    >
+      {inner}
+    </button>
   );
 }
 
 function ElementChips({ topic }: { topic: StudentTopic }) {
   const { t } = useTranslation(undefined, { keyPrefix: "student" });
+  const navigate = useNavigate();
   const e: TopicElements = topic.elements;
   const complete = topic.state === "COMPLETED";
+  // Qulflanmagan mavzuda chip bosilsa — o'sha tabga to'g'ridan-to'g'ri.
+  const go = topic.state === "LOCKED" ? undefined : (tab: string) => () => navigate(`/app/topics/${topic.id}?tab=${tab}`);
   const chips = [];
   if (e.video.exists)
-    chips.push(<Chip key="v" icon={Video} label={t("elVideo")} done={complete || e.video.watchedPct >= 80} hint={!complete && e.video.watchedPct > 0 && e.video.watchedPct < 80 ? `${e.video.watchedPct}%` : undefined} />);
-  if (e.slides.exists) chips.push(<Chip key="s" icon={FileText} label={t("elSlides")} done={complete || e.slides.viewed} />);
+    chips.push(<Chip key="v" icon={Video} label={t("elVideo")} done={complete || e.video.watchedPct >= 80} hint={!complete && e.video.watchedPct > 0 && e.video.watchedPct < 80 ? `${e.video.watchedPct}%` : undefined} onClick={go?.("video")} />);
+  if (e.slides.exists) chips.push(<Chip key="s" icon={FileText} label={t("elSlides")} done={complete || e.slides.viewed} onClick={go?.("slides")} />);
   if (e.quiz.exists)
-    chips.push(<Chip key="q" icon={ClipboardList} label={t("elQuiz")} done={complete || e.quiz.score !== null} hint={e.quiz.score !== null ? `${e.quiz.score}%` : undefined} />);
-  if (e.case.exists) chips.push(<Chip key="c" icon={Stethoscope} label={t("elCase")} done={complete || e.case.reviewed} />);
+    chips.push(<Chip key="q" icon={ClipboardList} label={t("elQuiz")} done={complete || e.quiz.score !== null} hint={e.quiz.score !== null ? `${e.quiz.score}%` : undefined} onClick={go?.("quiz")} />);
+  if (e.case.exists) chips.push(<Chip key="c" icon={Stethoscope} label={t("elCase")} done={complete || e.case.reviewed} onClick={go?.("case")} />);
   if (chips.length === 0) return null;
   return <div className="flex flex-wrap gap-1.5">{chips}</div>;
 }

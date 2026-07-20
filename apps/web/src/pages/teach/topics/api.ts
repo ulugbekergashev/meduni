@@ -178,38 +178,74 @@ export interface ContentFull {
 }
 
 // ---- Topics ----
+// Faza 3: mavzular fanga tegishli, lekin kurs sahifasidan ham ochiladi — shuning
+// uchun ro'yxat ikki "qamrov"da so'raladi: kurs (fanini aniqlaydi) yoki to'g'ridan fan.
 
-export function useTopics(courseId: number) {
+export type TopicScope = { courseId: number } | { subjectId: number };
+
+const scopeKey = (s: TopicScope) =>
+  "courseId" in s ? (["topics", "course", s.courseId] as const) : (["topics", "subject", s.subjectId] as const);
+const scopeQs = (s: TopicScope) => ("courseId" in s ? `courseId=${s.courseId}` : `subjectId=${s.subjectId}`);
+
+export function useTopics(scope: TopicScope) {
   return useQuery({
-    queryKey: ["topics", courseId],
-    queryFn: () => api<TopicRow[]>(`/api/v1/topics?courseId=${courseId}`),
+    queryKey: scopeKey(scope),
+    queryFn: () => api<TopicRow[]>(`/api/v1/topics?${scopeQs(scope)}`),
   });
 }
 
-export function useCreateTopic(courseId: number) {
+/** Bir fan mavzulari bir necha qamrovda keshlanadi — hammasini yangilaymiz. */
+function useInvalidateTopics() {
   const qc = useQueryClient();
+  return () => qc.invalidateQueries({ queryKey: ["topics"] });
+}
+
+export function useCreateTopic(scope: TopicScope) {
+  const invalidate = useInvalidateTopics();
   return useMutation({
     mutationFn: (body: { title?: string }) =>
-      api<TopicRow>("/api/v1/topics", { method: "POST", body: JSON.stringify({ courseId, ...body }) }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["topics", courseId] }),
+      api<TopicRow>("/api/v1/topics", { method: "POST", body: JSON.stringify({ ...scope, ...body }) }),
+    onSuccess: invalidate,
   });
 }
 
-export function useDeleteTopic(courseId: number) {
-  const qc = useQueryClient();
+export function useDeleteTopic() {
+  const invalidate = useInvalidateTopics();
   return useMutation({
     mutationFn: (id: number) => api(`/api/v1/topics/${id}`, { method: "DELETE" }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["topics", courseId] }),
+    onSuccess: invalidate,
   });
 }
 
-export function useReorderTopics(courseId: number) {
-  const qc = useQueryClient();
+export function useReorderTopics() {
+  const invalidate = useInvalidateTopics();
   return useMutation({
     mutationFn: (orderedIds: number[]) =>
       api("/api/v1/topics/reorder", { method: "PATCH", body: JSON.stringify({ orderedIds }) }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["topics", courseId] }),
+    onSuccess: invalidate,
   });
+}
+
+// ---- Subjects (Fanlarim) ----
+
+export interface SubjectRow {
+  id: number;
+  name: string;
+  departmentName: string;
+  myCourseId: number | null;
+  topicsTotal: number;
+  published: number;
+  inProgress: number;
+  empty: number;
+  attention: { materialMissing: number; digestPending: number; publishPending: number; factcheckFlagged: number };
+}
+
+export function useMySubjects() {
+  return useQuery({ queryKey: ["teach-subjects"], queryFn: () => api<SubjectRow[]>("/api/v1/teach/subjects") });
+}
+
+export function useSubject(id: number) {
+  return useQuery({ queryKey: ["teach-subject", id], queryFn: () => api<SubjectRow>(`/api/v1/teach/subjects/${id}`) });
 }
 
 // ---- Topic detail (constructor) ----

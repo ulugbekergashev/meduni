@@ -9,6 +9,7 @@ interface AsyncSectionProps {
   isEmpty: boolean;
   emptyIcon?: ReactNode;
   emptyText: string;
+  emptyHint?: string;
   onRetry: () => void;
   children: ReactNode;
 }
@@ -35,6 +36,7 @@ export function AsyncSection({
   isEmpty,
   emptyIcon,
   emptyText,
+  emptyHint,
   onRetry,
   children,
 }: AsyncSectionProps) {
@@ -58,7 +60,7 @@ export function AsyncSection({
     );
   }
 
-  if (isEmpty) return <EmptyState icon={emptyIcon} text={emptyText} />;
+  if (isEmpty) return <EmptyState icon={emptyIcon} text={emptyText} hint={emptyHint} />;
 
   return <>{children}</>;
 }

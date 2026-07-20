@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, CheckCircle2, ChevronDown, ClipboardCheck, Clock, FlaskConical, HeartPulse, Search, Stethoscope, User } from "lucide-react";
+import { ArrowLeft, CheckCircle2, ChevronDown, ClipboardCheck, Clock, FlaskConical, HeartPulse, ListPlus, Search, Stethoscope, User } from "lucide-react";
 import { Badge, Button, Card, Icon, Spinner, cls, useToast } from "@meduni/ui";
 import { AsyncSection } from "../../components/AsyncSection";
+import { QuickTaskModal } from "../../components/QuickTaskModal";
 import {
   useCaseReviewDetail,
   useReviewCase,
@@ -89,6 +90,7 @@ function ReviewPanel({ id, onSavedNext, onClose }: { id: number; onSavedNext: ()
   const [score, setScore] = useState("");
   const [feedback, setFeedback] = useState("");
   const [err, setErr] = useState<string | null>(null);
+  const [assign, setAssign] = useState(false);
   const templates = t("templates", { returnObjects: true }) as string[];
 
   useEffect(() => {
@@ -202,9 +204,23 @@ function ReviewPanel({ id, onSavedNext, onClose }: { id: number; onSavedNext: ()
           <Button variant="soft" onClick={() => save(false)} disabled={review.isPending}>
             {t("saveOnly")}
           </Button>
+          {/* Baholash oqimidan chiqmasdan vazifa berish (masalan "mavzuni takrorlang") */}
+          <Button variant="ghost" icon={<Icon icon={ListPlus} size={16} />} onClick={() => setAssign(true)}>
+            {t("assignTask")}
+          </Button>
           <Button variant="ghost" onClick={onSavedNext}>{t("skip")}</Button>
         </div>
       </Card>
+
+      <QuickTaskModal
+        open={assign}
+        onClose={() => setAssign(false)}
+        prefill={{
+          studentId: detail.studentId,
+          studentName: detail.studentName,
+          title: t("assignPrefill", { topic: detail.topic }),
+        }}
+      />
     </div>
   );
 }
