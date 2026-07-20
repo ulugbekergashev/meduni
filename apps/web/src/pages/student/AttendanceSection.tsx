@@ -81,7 +81,7 @@ export function AttendanceSection() {
     <div className="space-y-4">
       {/* Hero: umumiy % + taqsimot + oylik trend */}
       {st && (
-        <Card className="grid gap-6 lg:grid-cols-[minmax(0,320px)_minmax(0,1fr)]">
+        <Card className="grid gap-x-8 gap-y-6 lg:grid-cols-[minmax(0,260px)_minmax(0,1fr)]">
           <div>
             <p className="text-note font-bold uppercase tracking-wide text-ink-soft">{t("overallPct")}</p>
             <p className={cls("mt-1 text-[44px] font-bold leading-none tabular-nums", low ? "text-rose" : "text-brand-deep")}>

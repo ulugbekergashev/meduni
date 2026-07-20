@@ -202,12 +202,12 @@ export function GradesPage() {
   const withGradesAny = (data?.courses ?? []).some((c) => c.quizzes.length > 0 || c.cases.length > 0);
 
   return (
-    <div className="mx-auto max-w-3xl">
+    <div>
       <h1 className="text-h1 font-bold text-ink">{t("title")}</h1>
       <p className="mt-1 text-body text-ink-soft">{t("subtitle")}</p>
 
       {s && withGrades.length > 0 && (
-        <div className="mt-5 grid gap-3 sm:grid-cols-3">
+        <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           <StatCard
             icon={TrendingUp}
             value={s.avgQuiz !== null ? `${s.avgQuiz}%` : "—"}
@@ -263,9 +263,11 @@ export function GradesPage() {
           emptyHint={t("emptyHint")}
           onRetry={() => q.refetch()}
         >
-          {withGrades.map((c) => (
-            <CourseBlock key={c.courseId} c={c} filter={filter} />
-          ))}
+          <div className="grid gap-x-5 xl:grid-cols-2">
+            {withGrades.map((c) => (
+              <CourseBlock key={c.courseId} c={c} filter={filter} />
+            ))}
+          </div>
         </AsyncSection>
       </div>
     </div>

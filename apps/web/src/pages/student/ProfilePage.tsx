@@ -108,7 +108,7 @@ export function ProfilePage() {
     (p?.fullName ?? "").split(" ").filter(Boolean).slice(0, 2).map((s) => s[0]?.toUpperCase()).join("") || "?";
 
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className="mx-auto max-w-5xl">
       <h1 className="text-h1 font-bold text-ink">{t("title")}</h1>
       <p className="mt-1 text-body text-ink-soft">{t("subtitle")}</p>
 

@@ -1048,7 +1048,9 @@
       "case_graded": "Кейс оценён"
     },
     "currentCourses": "Курсы текущего семестра",
-    "seeAllCourses": "Все курсы"
+    "seeAllCourses": "Все курсы",
+    "upcomingLessons": "Ближайшие занятия",
+    "noLessons": "Занятий нет"
   },
   "review": {
     "back": "← Главная",

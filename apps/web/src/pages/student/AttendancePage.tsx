@@ -5,7 +5,7 @@ import { AttendanceSection } from "./AttendanceSection";
 export function AttendancePage() {
   const { t } = useTranslation(undefined, { keyPrefix: "attendanceMe" });
   return (
-    <div className="mx-auto max-w-2xl">
+    <div>
       <h1 className="mb-4 text-h1 font-bold text-ink">{t("title")}</h1>
       <AttendanceSection />
     </div>
