@@ -115,7 +115,10 @@ Button (primary/deep/ghost/soft/danger, sm/md/lg, ikonka, hoverда brand→bran
 - Rollar: **SUPERADMIN → FACULTY_ADMIN → DEPT_ADMIN → TEACHER → STUDENT** (Modul 20 Faza 2;
   ilgari faqat 3 rol edi, `ADMIN` enum'da deprecated qoldi, seed'da SUPERADMIN'ga ko'chiriladi).
   Admin-scope User.facultyId (fakultet-admin) / User.adminDepartmentId (kafedra-admin);
-  teacher scope o'sha TeacherProfile.departmentId. **XP, badge, leaderboard, streak, QR — YO'Q.**
+  teacher scope o'sha TeacherProfile.departmentId. **XP, badge, streak, QR — YO'Q.**
+  **Reyting (Modul 21'da yumshatildi):** o'qituvchi guruhda tartib raqamini ko'radi;
+  talaba FAQAT o'z o'rnini ko'radi ("guruhda 4/22", `/me/rank` boshqa talabalar
+  ismini qaytarmaydi) — ochiq leaderboard (ismlar ro'yxati) baribir YO'Q.
 - **Hech narsa avtomatik publish bo'lmaydi.** Ikki qulf: (1) o'qituvchi konspektni tasdiqlaydi, keyingina generatsiya; (2) o'qituvchi kontentни tasdiqlaydi, keyingina talaba ko'radi.
 - **AI faqat yuklangan materialdan** (RAG). O'zidan fakt/doza/protokol qo'shmaydi. Faktcheck bu buzilmaganini tekshiradi.
 - Yo'qlama — sodda (o'qituvchi qo'lda belgilaydi: keldi/kelmadi/kechikdi/sababli). QR YO'Q.
@@ -782,6 +785,39 @@ Barcha modullar tugadi (1-17).
   tomonда toza. **Natija:** bitta fan kontenti bir marta yaratiladi — fandagi barcha
   kurslar (guruhlar) bir xil mavzularni ko'radi; parallel kurslarning eski mavzulari
   bitta ro'yxatga birlashgan (dev bazада T1 dublikatlar ko'rinishi mumkin — demo data).
+
+- **Modul 21 — Professional UX overhaul (2026-07-20, foydalanuvchi: "primitiv, tugmalar
+  bosiladi lekin ma'lumot qolib ketayapti").** Reja: `.claude/plans/ethereal-tinkering-river.md`.
+  **(A) Backend** (yangi Prisma migratsiya YO'Q — hammasi mavjud jadvallardan):
+  `modules/courses/subjects.ts` — `GET /teach/subjects[/:id]` (`subjectTeacherFilter` reuse:
+  kafedra a'zosi YOKI fandan kurs olib boruvchi; har fan uchun published/inProgress/empty +
+  `attention{materialMissing,digestPending,publishPending,factcheckFlagged}` + `myCourseId`);
+  `GET /api/v1/topics?subjectId=` + `POST /topics {subjectId}` (`listTopicsBySubject`);
+  `me/profile.ts` += `getMySchedule` (7 kunlik LessonSession), `getMyActivity` (progress+
+  quiz+case hodisalari JS'da birlashtirilib sanaga saralanadi; ⚠️ **haqiqiy harakat**
+  [videoWatchedPct>0 yoki slidesViewed] AVAILABLE holatda ham lentaga tushadi),
+  `getMyRank` (guruhdagi o'rin — **boshqa talabalar ismi qaytmaydi**);
+  `getTeacherGroup` students += `rank`; `getTeacherDashboard` += `ranking{top,behind}`
+  (buildMatrix natijasidan, qo'shimcha so'rovsiz); review detail += `studentId`.
+  **(B) O'qituvchi:** yangi **`/teach/subjects`** ("Fanlarim" nav) — fan kartalari
+  StackedBar + "diqqat kerak" chiplari; **`/teach/subjects/:id`** — fan shapkasi +
+  mavzular. `TopicsTab`dagi ro'yxat umumiy **`TopicListSection`**ga ajratildi (scope =
+  `{courseId}` yoki `{subjectId}`; topic hooklari `TopicScope` qabul qiladi, invalidatsiya
+  `["topics"]` prefiksi bo'yicha). **`components/QuickTaskModal.tsx`** (eski TeachTasksPage
+  AssignModal'dan) — prefill bilan **4 joyda**: keys baholash paneli ("Vazifa berish" +
+  "Mavzuni takrorlang: X" prefill), StudentDetailPage, GroupProfile (har talaba + guruhga),
+  ProgressTab talaba modali. Reyting: GroupProfile qatorlarida tartib raqami (top-3 brand),
+  TeachDashboard'da "Eng yaxshi 3 / Orqada qolgan 3" kartalari.
+  **(C) Talaba:** StudentDashboard'da **"Bugun" harakat markazi** — davom ettirish kartasi +
+  o'qituvchi topshiriqlari (bir bosishda "Bajardim") + avto vazifalar (to'g'ridan `?tab=`
+  deep-link) + kelgusi darslar (sana/xona) bitta ro'yxatda; **ProfilePage v2** (skrinshot
+  strukturasi, to'lovsiz): identity-karta (avatar+badge+"Guruhda N/M-o'rin") + 4 stat-karta +
+  **tablar** Umumiy(faollik lentasi)/Kurslar/Davomat; davomat `AttendanceSection`ga ajratildi —
+  profil tabida HAM, `/app/attendance` sahifasida HAM; CoursePath element chiplari endi
+  **bosiladi** (video/test/keys → `?tab=`). `AsyncSection` += `emptyHint`, `StackedBar` += `total`.
+  **Tekshirildi:** 17/17 HTTP smoke (fan pipeline, subjectId mavzular, dashboard+guruh rank
+  tartibi, keys studentId, vazifa o'qituvchi→talaba yetib bordi, jadval/faollik/rank,
+  rank javobida ism yo'qligi); tsc+build ikkala tomonda toza. Demo: talaba 3 kelgusi dars.
 
 ## 9. Loyiha holati va ishga tushirish (operatsion — sessiya 0)
 

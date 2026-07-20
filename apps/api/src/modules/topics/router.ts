@@ -29,22 +29,31 @@ function parseId(raw: string): number {
 export const topicsRouter = Router();
 topicsRouter.use(requireRoles("TEACHER"));
 
-const createSchema = z.object({
-  courseId: z.number().int().positive(),
-  title: z.string().trim().min(1),
-});
+// Faza 3: mavzu fanga tegishli — kurs YOKI fan konteksti orqali yaratiladi.
+const createSchema = z
+  .object({
+    courseId: z.number().int().positive().optional(),
+    subjectId: z.number().int().positive().optional(),
+    title: z.string().trim().min(1),
+  })
+  .refine((b) => b.courseId !== undefined || b.subjectId !== undefined, { message: "courseId yoki subjectId kerak" });
 const updateSchema = z.object({
   title: z.string().trim().min(1).optional(),
   status: z.enum(["DRAFT", "PUBLISHED"]).optional(),
 });
 const reorderSchema = z.object({ orderedIds: z.array(z.number().int().positive()) });
 
-// List by course: GET /api/v1/topics?courseId=
+// List by course OR subject: GET /api/v1/topics?courseId= | ?subjectId=
 topicsRouter.get(
   "/",
   wrap(async (req, res) => {
     const courseId = Number(req.query.courseId);
-    if (!Number.isInteger(courseId) || courseId <= 0) throw badRequest("courseId kerak", "Требуется courseId");
+    const subjectId = Number(req.query.subjectId);
+    if (Number.isInteger(subjectId) && subjectId > 0) {
+      res.json(await svc.listTopicsBySubject(subjectId, req.user!.id));
+      return;
+    }
+    if (!Number.isInteger(courseId) || courseId <= 0) throw badRequest("courseId yoki subjectId kerak", "Требуется courseId или subjectId");
     res.json(await svc.listTopics(courseId, req.user!.id));
   })
 );

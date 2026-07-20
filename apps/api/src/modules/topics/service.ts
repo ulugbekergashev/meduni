@@ -98,31 +98,60 @@ function toTopicOut(
 
 // ---------- Topics CRUD ----------
 
+const topicListInclude = {
+  _count: { select: { materials: true } },
+  digest: { select: { approvedByTeacher: true } },
+  contentItems: { select: { kind: true, status: true } },
+} as const;
+
 export async function listTopics(courseId: number, teacherId: number) {
   const course = await courseForTeacher(courseId, teacherId);
   const rows = await prisma.topic.findMany({
     where: { subjectId: course.subjectId },
     orderBy: { orderIndex: "asc" },
-    include: {
-      _count: { select: { materials: true } },
-      digest: { select: { approvedByTeacher: true } },
-      contentItems: { select: { kind: true, status: true } },
-    },
+    include: topicListInclude,
   });
   return rows.map((t) => toTopicOut(t, courseId));
 }
 
-export async function createTopic(input: { courseId: number; title: string }, teacherId: number) {
-  const course = await courseForTeacher(input.courseId, teacherId);
+/** Fan sahifasi uchun: kurs kontekstisiz, to'g'ridan fan bo'yicha. */
+export async function listTopicsBySubject(subjectId: number, teacherId: number) {
+  await assertSubjectTeacher(subjectId, teacherId);
+  const [rows, backCourseId] = await Promise.all([
+    prisma.topic.findMany({
+      where: { subjectId },
+      orderBy: { orderIndex: "asc" },
+      include: topicListInclude,
+    }),
+    teacherCourseIdForSubject(subjectId, teacherId),
+  ]);
+  return rows.map((t) => toTopicOut(t, backCourseId));
+}
+
+export async function createTopic(
+  input: { courseId?: number; subjectId?: number; title: string },
+  teacherId: number
+) {
+  let subjectId: number;
+  let backCourseId: number | null = null;
+  if (input.courseId !== undefined) {
+    const course = await courseForTeacher(input.courseId, teacherId);
+    subjectId = course.subjectId;
+    backCourseId = input.courseId;
+  } else {
+    await assertSubjectTeacher(input.subjectId!, teacherId);
+    subjectId = input.subjectId!;
+    backCourseId = await teacherCourseIdForSubject(subjectId, teacherId);
+  }
   const last = await prisma.topic.findFirst({
-    where: { subjectId: course.subjectId },
+    where: { subjectId },
     orderBy: { orderIndex: "desc" },
   });
   const orderIndex = (last?.orderIndex ?? -1) + 1;
   const t = await prisma.topic.create({
-    data: { subjectId: course.subjectId, title: input.title.trim(), orderIndex },
+    data: { subjectId, title: input.title.trim(), orderIndex },
   });
-  return toTopicOut(t, input.courseId);
+  return toTopicOut(t, backCourseId);
 }
 
 export async function updateTopic(

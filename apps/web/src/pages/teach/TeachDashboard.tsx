@@ -7,16 +7,17 @@ import {
   ClipboardCheck,
   FileClock,
   ListChecks,
+  Trophy,
   Users2,
   UserX,
   type LucideIcon,
 } from "lucide-react";
-import { BarRow, Card, Icon, ProgressRing, Spinner } from "@meduni/ui";
+import { BarRow, Card, Icon, ProgressBar, ProgressRing, Spinner } from "@meduni/ui";
 import { AsyncSection } from "../../components/AsyncSection";
 import { useLocale } from "../../lib/useLocale";
 import { formatDate } from "../../lib/date";
 import { useMe } from "../../lib/auth";
-import { useTeachCourses, useTeachDashboard } from "./api";
+import { useTeachCourses, useTeachDashboard, type RankedStudent } from "./api";
 import { CourseCard } from "./CourseCard";
 
 function QuickAction({ icon, label, tone, chip, onClick }: { icon: LucideIcon; label: string; tone: string; chip: string; onClick: () => void }) {
@@ -66,6 +67,49 @@ function MetricCard({ ring, tone, label, sublabel }: { ring: number; tone: "bran
         <p className="text-body font-semibold text-ink">{label}</p>
         {sublabel && <p className="mt-0.5 text-note text-ink-faint">{sublabel}</p>}
       </div>
+    </Card>
+  );
+}
+
+/** Reyting kartasi — eng yuqori yoki orqada qolgan talabalar (o'qituvchi ko'rinishi). */
+function RankingCard({
+  title,
+  icon,
+  tone,
+  rows,
+  emptyText,
+  onPick,
+}: {
+  title: string;
+  icon: LucideIcon;
+  tone: string;
+  rows: RankedStudent[];
+  emptyText: string;
+  onPick: (id: number) => void;
+}) {
+  return (
+    <Card>
+      <p className={`mb-2.5 flex items-center gap-1.5 text-note font-bold uppercase tracking-wide ${tone}`}>
+        <Icon icon={icon} size={14} /> {title}
+      </p>
+      {rows.length === 0 ? (
+        <p className="py-2 text-note text-ink-faint">{emptyText}</p>
+      ) : (
+        <div className="space-y-1.5">
+          {rows.map((r, i) => (
+            <button
+              key={r.id}
+              onClick={() => onPick(r.id)}
+              className="flex w-full items-center gap-2.5 rounded-control px-1.5 py-1 text-left transition-colors hover:bg-bg"
+            >
+              <span className="w-4 shrink-0 text-note font-bold tabular-nums text-ink-faint">{i + 1}</span>
+              <span className="min-w-0 flex-1 truncate text-body text-ink">{r.fullName}</span>
+              <ProgressBar value={r.overallPct} className="hidden w-20 shrink-0 sm:block" tone={r.behind ? "rose" : "emerald"} />
+              <span className="w-9 shrink-0 text-right text-note font-bold tabular-nums text-ink-soft">{r.overallPct}%</span>
+            </button>
+          ))}
+        </div>
+      )}
     </Card>
   );
 }
@@ -158,6 +202,28 @@ export function TeachDashboard() {
                 ))}
               </div>
             </Card>
+          )}
+
+          {/* Reyting: eng yuqori / orqada qolganlar */}
+          {dash.data && (dash.data.ranking.top.length > 0 || dash.data.ranking.behind.length > 0) && (
+            <div className="mt-2.5 grid gap-2.5 sm:grid-cols-2">
+              <RankingCard
+                title={t("rankTop")}
+                icon={Trophy}
+                tone="text-emerald"
+                rows={dash.data.ranking.top}
+                emptyText={t("rankEmpty")}
+                onPick={(id) => navigate(`/teach/students/${id}`)}
+              />
+              <RankingCard
+                title={t("rankBehind")}
+                icon={UserX}
+                tone="text-rose"
+                rows={dash.data.ranking.behind}
+                emptyText={t("rankNoBehind")}
+                onPick={(id) => navigate(`/teach/students/${id}`)}
+              />
+            </div>
           )}
 
           {/* Clickable group chips */}

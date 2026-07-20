@@ -32,6 +32,8 @@ export interface GroupStudent {
   attendancePct: number | null;
   lastActiveAt: string | null;
   behind: boolean;
+  /** Guruh ichidagi o'rin (progress, teng bo'lsa test balli bo'yicha). */
+  rank: number;
 }
 export interface TeachGroup {
   id: number;
@@ -210,6 +212,14 @@ export function useManualUnlock(courseId: number) {
   });
 }
 
+export interface RankedStudent {
+  id: number;
+  fullName: string;
+  overallPct: number;
+  behind: boolean;
+  lastActiveAt: string | null;
+}
+
 export interface TeachDashboard {
   courses: {
     id: number;
@@ -232,6 +242,7 @@ export interface TeachDashboard {
     avgAttendance: number | null;
     groupList: { id: number; name: string }[];
   };
+  ranking: { top: RankedStudent[]; behind: RankedStudent[] };
   upcomingSessions: {
     id: number;
     courseId: number;
@@ -345,6 +356,7 @@ export interface ReviewFilters {
 
 export interface CaseReviewDetail {
   id: number;
+  studentId: number;
   studentName: string;
   courseId: number;
   subjectName: string;
