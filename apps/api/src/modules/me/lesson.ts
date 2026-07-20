@@ -3,7 +3,7 @@ import { ApiError, badRequest, notFound } from "../../lib/errors";
 import { readFileBuffer } from "../../lib/storage";
 import { buildPdf } from "../content/presentation";
 import type { CaseJson, Slide } from "../../ai/types";
-import { assertTopicOpen, recomputeTopic, syncTopicProgress, type TopicOut } from "./service";
+import { assertTopicOpen, enrolledCourseIdForTopic, recomputeTopic, syncTopicProgress, type TopicOut } from "./service";
 
 const persistAndReport = syncTopicProgress;
 
@@ -21,7 +21,6 @@ export async function getTopicLesson(studentId: number, topicId: number) {
   const topic = await prisma.topic.findUnique({
     where: { id: topicId },
     include: {
-      course: true,
       contentItems: {
         where: { status: "PUBLISHED" },
         include: { quiz: { include: { questions: { orderBy: { orderIndex: "asc" } } } }, clinicalCase: true, presentation: true, video: true },
@@ -29,6 +28,10 @@ export async function getTopicLesson(studentId: number, topicId: number) {
     },
   });
   if (!topic) throw notFound("Mavzu");
+
+  // Faza 3: mavzu fanga tegishli — default unlock-qoida talabaning shu fandagi kursidan olinadi.
+  const enrolledCourseId = (await enrolledCourseIdForTopic(studentId, topicId))!;
+  const enrolledCourse = await prisma.course.findUnique({ where: { id: enrolledCourseId } });
 
   const rule = state; // TopicOut carries elements; thresholds come from the course rule below
   const progress = await prisma.progress.findUnique({ where: { studentId_topicId: { studentId, topicId } } });
@@ -100,14 +103,14 @@ export async function getTopicLesson(studentId: number, topicId: number) {
     };
   }
 
-  const courseRule = (topic.unlockRuleJson ?? topic.course.defaultUnlockRuleJson) as Record<string, unknown> | null;
+  const courseRule = (topic.unlockRuleJson ?? enrolledCourse?.defaultUnlockRuleJson) as Record<string, unknown> | null;
   const videoThreshold = (courseRule?.videoWatchedPct as number) ?? 80;
 
   return {
     topicId: topic.id,
     orderIndex: topic.orderIndex,
     title: topic.title,
-    courseId: topic.courseId,
+    courseId: enrolledCourseId,
     state: state.state,
     completed: state.state === "COMPLETED",
     thresholds: { video: videoThreshold, quizPass: quizItem?.quiz?.passThreshold ?? 70 },

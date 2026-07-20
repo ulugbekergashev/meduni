@@ -11,22 +11,19 @@ import { departmentForTopic } from "../../ai/glossary";
 import { slidesGenSchema, slidesResponseSchema, type DigestJson, type Slide, type SlidesGen } from "../../ai/types";
 import { slidesSystemPrompt, slidesUserContent } from "../../ai/prompts/slides";
 import { imagePromptForSlide } from "../../ai/prompts/images";
+import { assertSubjectTeacher } from "../topics/service";
 
-function forbidden(): ApiError {
-  return new ApiError(403, "forbidden", "Bu sizning kursingiz emas", "Это не ваш курс");
-}
-
-// ---------- Ownership ----------
+// ---------- Ownership (Faza 3: fan/kafedra darajasida) ----------
 
 async function topicForTeacher(topicId: number, teacherId: number) {
-  const topic = await prisma.topic.findUnique({ where: { id: topicId }, include: { course: true, digest: true } });
+  const topic = await prisma.topic.findUnique({ where: { id: topicId }, include: { digest: true } });
   if (!topic) throw notFound("Mavzu");
-  if (topic.course.teacherId !== teacherId) throw forbidden();
+  await assertSubjectTeacher(topic.subjectId, teacherId);
   return topic;
 }
 
 const presInclude = {
-  contentItem: { include: { topic: { include: { course: true } } } },
+  contentItem: { include: { topic: true } },
 } satisfies Prisma.PresentationInclude;
 
 type PresFull = Prisma.PresentationGetPayload<{ include: typeof presInclude }>;
@@ -34,7 +31,7 @@ type PresFull = Prisma.PresentationGetPayload<{ include: typeof presInclude }>;
 async function presentationForTeacher(presentationId: number, teacherId: number): Promise<PresFull> {
   const pres = await prisma.presentation.findUnique({ where: { id: presentationId }, include: presInclude });
   if (!pres) throw notFound("Prezentatsiya");
-  if (pres.contentItem.topic.course.teacherId !== teacherId) throw forbidden();
+  await assertSubjectTeacher(pres.contentItem.topic.subjectId, teacherId);
   return pres;
 }
 

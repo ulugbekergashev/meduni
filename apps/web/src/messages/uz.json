@@ -453,6 +453,7 @@
     "statStudentsN": "{{n}} talaba"
   },
   "topics": {
+    "subjectShared": "Mavzular fanga tegishli — bu fandan ochilgan barcha kurslar (guruhlar) bir xil mavzularni ko‘radi.",
     "addForm": "Yangi mavzu",
     "chipMaterial": "Material",
     "chipDigest": "Konspekt",

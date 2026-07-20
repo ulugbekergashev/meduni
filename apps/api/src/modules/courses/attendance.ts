@@ -77,11 +77,11 @@ export async function listSessions(courseId: number, teacherId: number, opts: { 
 }
 
 export async function createSession(courseId: number, teacherId: number, body: { date?: string; title?: string; topicId?: number | null; room?: string }) {
-  await ownCourse(courseId, teacherId);
+  const course = await ownCourse(courseId, teacherId);
   if (!body.date) throw badRequest("Sana kiriting", "Введите дату");
   if (body.topicId) {
     const topic = await prisma.topic.findUnique({ where: { id: body.topicId } });
-    if (!topic || topic.courseId !== courseId) throw notFound("Mavzu");
+    if (!topic || topic.subjectId !== course.subjectId) throw notFound("Mavzu");
   }
   const s = await prisma.lessonSession.create({
     data: { courseId, date: new Date(body.date), title: body.title?.trim() || null, topicId: body.topicId || null, room: body.room?.trim() || null, createdById: teacherId },
@@ -93,7 +93,7 @@ export async function updateSession(sessionId: number, teacherId: number, body: 
   const session = await ownSession(sessionId, teacherId);
   if (body.topicId) {
     const topic = await prisma.topic.findUnique({ where: { id: body.topicId } });
-    if (!topic || topic.courseId !== session.courseId) throw notFound("Mavzu");
+    if (!topic || topic.subjectId !== session.course.subjectId) throw notFound("Mavzu");
   }
   await prisma.lessonSession.update({
     where: { id: sessionId },

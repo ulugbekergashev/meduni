@@ -217,6 +217,7 @@ model Subject {
   description  String?
   createdAt    DateTime   @default(now())
   courses      Course[]
+  topics       Topic[]
 
   @@unique([departmentId, name])
   @@map("subjects")
@@ -249,7 +250,6 @@ model Course {
   createdAt             DateTime      @default(now())
   courseGroups          CourseGroup[]
   enrollments           Enrollment[]
-  topics                Topic[]
   sessions              LessonSession[]
 
   @@map("courses")
@@ -257,8 +257,8 @@ model Course {
 
 model Topic {
   id             Int              @id @default(autoincrement())
-  courseId       Int
-  course         Course           @relation(fields: [courseId], references: [id])
+  subjectId      Int
+  subject        Subject          @relation(fields: [subjectId], references: [id])
   title          String
   orderIndex     Int
   status         TopicStatus      @default(DRAFT)

@@ -21,6 +21,7 @@ import {
   type VideoVisual,
 } from "../../ai/types";
 import { videoScriptSystemPrompt, videoScriptUserContent } from "../../ai/prompts/videoScript";
+import { assertSubjectTeacher } from "../topics/service";
 
 function forbidden(): ApiError {
   return new ApiError(403, "forbidden", "Bu sizning kursingiz emas", "Это не ваш курс");
@@ -43,17 +44,17 @@ function geminiVoiceFor(voiceId: string | null): string {
   return female ? GEMINI_VOICES.female : GEMINI_VOICES.male;
 }
 
-// ---------- Ownership ----------
+// ---------- Ownership (Faza 3: fan/kafedra darajasida) ----------
 
 async function topicForTeacher(topicId: number, teacherId: number) {
-  const topic = await prisma.topic.findUnique({ where: { id: topicId }, include: { course: true, digest: true } });
+  const topic = await prisma.topic.findUnique({ where: { id: topicId }, include: { digest: true } });
   if (!topic) throw notFound("Mavzu");
-  if (topic.course.teacherId !== teacherId) throw forbidden();
+  await assertSubjectTeacher(topic.subjectId, teacherId);
   return topic;
 }
 
 const videoInclude = {
-  contentItem: { include: { topic: { include: { course: true } } } },
+  contentItem: { include: { topic: true } },
 } satisfies Prisma.VideoInclude;
 
 type VideoFull = Prisma.VideoGetPayload<{ include: typeof videoInclude }>;
@@ -61,7 +62,7 @@ type VideoFull = Prisma.VideoGetPayload<{ include: typeof videoInclude }>;
 async function videoForTeacher(videoId: number, teacherId: number): Promise<VideoFull> {
   const v = await prisma.video.findUnique({ where: { id: videoId }, include: videoInclude });
   if (!v) throw notFound("Video");
-  if (v.contentItem.topic.course.teacherId !== teacherId) throw forbidden();
+  await assertSubjectTeacher(v.contentItem.topic.subjectId, teacherId);
   return v;
 }
 
@@ -308,7 +309,13 @@ async function stageTtsAndRender(videoId: number) {
   const v = await prisma.video.findUnique({ where: { id: videoId }, include: videoInclude });
   if (!v) return;
   const topicId = v.contentItem.topicId;
-  const teacherId = v.contentItem.topic.course.teacherId;
+  // Fon-jobda initsiatorni bilmaymiz — AiUsage fanning birinchi kurs o'qituvchisiga yoziladi.
+  const subjectCourse = await prisma.course.findFirst({
+    where: { subjectId: v.contentItem.topic.subjectId },
+    orderBy: { id: "asc" },
+    select: { teacherId: true },
+  });
+  const teacherId = subjectCourse?.teacherId ?? null;
   const departmentId = await departmentForTopic(topicId);
   const edgeVoice = v.voiceId ?? VOICES[`${v.language}:female`];
   const geminiVoice = geminiVoiceFor(v.voiceId);

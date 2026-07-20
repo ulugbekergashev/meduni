@@ -144,7 +144,7 @@ export function TopicConstructor() {
   return (
     <div>
       <button
-        onClick={() => navigate(`/teach/courses/${topic.courseId}/topics`)}
+        onClick={() => navigate(topic.courseId ? `/teach/courses/${topic.courseId}/topics` : "/teach")}
         className="text-body font-medium text-brand-deep hover:underline"
       >
         {t("back")}

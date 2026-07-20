@@ -19,17 +19,14 @@ import {
 } from "../../ai/types";
 import { quizSystemPrompt, quizUserContent } from "../../ai/prompts/quiz";
 import { caseSystemPrompt, caseUserContent } from "../../ai/prompts/case";
+import { assertSubjectTeacher } from "../topics/service";
 
-function forbidden(): ApiError {
-  return new ApiError(403, "forbidden", "Bu sizning kursingiz emas", "Это не ваш курс");
-}
-
-// ---------- Ownership ----------
+// ---------- Ownership (Faza 3: fan/kafedra darajasida) ----------
 
 async function topicForTeacher(topicId: number, teacherId: number) {
-  const topic = await prisma.topic.findUnique({ where: { id: topicId }, include: { course: true, digest: true } });
+  const topic = await prisma.topic.findUnique({ where: { id: topicId }, include: { digest: true } });
   if (!topic) throw notFound("Mavzu");
-  if (topic.course.teacherId !== teacherId) throw forbidden();
+  await assertSubjectTeacher(topic.subjectId, teacherId);
   return topic;
 }
 
@@ -46,10 +43,10 @@ type ContentFull = Prisma.ContentItemGetPayload<{ include: typeof contentInclude
 async function contentForTeacher(contentId: number, teacherId: number): Promise<ContentFull> {
   const item = await prisma.contentItem.findUnique({
     where: { id: contentId },
-    include: { ...contentInclude, topic: { include: { course: true } } },
+    include: { ...contentInclude, topic: true },
   });
   if (!item) throw notFound("Kontent");
-  if (item.topic.course.teacherId !== teacherId) throw forbidden();
+  await assertSubjectTeacher(item.topic.subjectId, teacherId);
   return item;
 }
 

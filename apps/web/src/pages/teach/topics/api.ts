@@ -6,7 +6,9 @@ export type ParseStatus = "pending" | "processing" | "done" | "error";
 
 export interface TopicRow {
   id: number;
-  courseId: number;
+  subjectId: number;
+  /** O'qituvchining shu fandagi kursi (back-nav uchun); fan kafedradosh bo'lsa null bo'lishi mumkin. */
+  courseId: number | null;
   title: string;
   orderIndex: number;
   status: TopicStatus;

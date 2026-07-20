@@ -756,6 +756,33 @@ Barcha modullar tugadi (1-17).
   ma'lumot bilan. ⚠️ **DISK TO'LA (C: 0GB)** — npm keshi tozalanди (~350MB bo'shadi),
   foydalanuvchi joy bo'shatishi kerak; ffmpeg video generatsiya to'la diskда ishlamaydi.
 
+- **Modul 20 Faza 3 — kafedra-markazlashgan kontent (2026-07-20). Topic endi FANGA
+  tegishli.** Prisma: `Topic.courseId` → `Topic.subjectId` (qo'lda migratsiya
+  `topic_to_subject`: data saqlanadi, bir fanga bir necha kursdan kelgan mavzular
+  (courseId, orderIndex) tartibida MERGE + qayta indekslanadi; index topics_subjectId).
+  **Egalik modeli:** `topics/service.ts::assertSubjectTeacher` — o'qituvchi fan
+  kafedrasining a'zosi (TeacherProfile.departmentId) YOKI shu fandan kurs olib boradi;
+  topics/content/presentation/video barcha ownership shu orqali (eski
+  `topic.course.teacherId` YO'Q). `toTopicOut` frontendga `courseId`ni kontekstдан
+  qaytaradi (list=so'ralgan kurs, detail=o'qituvchining fandagi birinchi kursi,
+  bo'lmasa null → konstruktor back-nav /teach'ga). **me/service:** courseInclude
+  endi `subject.topics`; `loadCourse` fan mavzularini `course.topics`ga normalizatsiya
+  qiladi (downstream — progress matritsa/tasks/lesson — o'zgarishsiz ishlaydi);
+  `enrolledCourseIdForTopic` — mavzu fanidан talabaning ACTIVE kursini topadi
+  (assertTopicOpen/recomputeTopic/lesson default-rule shu kurs orqali).
+  **review.ts:** javobning "kursi" endi `resolveAttemptCourses` — talabaning
+  o'qituvchi kursidagi enrollment'idan (attemptId→courseId xarita); xaritada yo'q
+  attempt = begona talaba → ko'rinmaydi/403. tasks/stats/users-profil/admin-students/
+  search/courses.service/attendance topic-filtrlari `subject:{courses:{some:...}}` /
+  `subjectId` ko'rinishiga o'tdi (admin stats'да `subjectScope`). Frontend: TopicRow
+  += subjectId, courseId nullable; TopicsTab'да "mavzular fanga tegishli" izohi
+  (i18n topics.subjectShared). **Tekshirildi:** 20/20 HTTP smoke (teacher mavzular/
+  progress/keys-navbat, student yo'l/dars/LOCKED-403, admin stats/students/topicCount)
+  + negativ: begona kafedra o'qituvchisi list/detail/create → 403; tsc+build ikkala
+  tomonда toza. **Natija:** bitta fan kontenti bir marta yaratiladi — fandagi barcha
+  kurslar (guruhlar) bir xil mavzularni ko'radi; parallel kurslarning eski mavzulari
+  bitta ro'yxatga birlashgan (dev bazада T1 dublikatlar ko'rinishi mumkin — demo data).
+
 ## 9. Loyiha holati va ishga tushirish (operatsion — sessiya 0)
 
 **Monorepo (npm workspaces):**
