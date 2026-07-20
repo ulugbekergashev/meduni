@@ -918,6 +918,21 @@ Barcha modullar tugadi (1-17).
   quizzes[] += `passThreshold` va `history[]` (attemptNo/ball/o'tdi/sana).
   tsc+build toza.
 
+- **Modul 22D — talaba layout: kenglikni ishlatish (2026-07-20, foydalanuvchi: "spacelar
+  qolib ketgan, joyni zo'r ishlat").** Muammo: SidebarLayout 1280px beradi, sahifalar esa
+  `max-w-2xl/3xl` (672-768px) da qotgan edi — ekranning yarmi bo'sh, "prezentatsiya"
+  taassuroti. Barcha talaba sahifalari to'liq kenglikka o'tdi (`max-w-*` olib tashlandi;
+  CoursePath 4xl, Profil 5xl — o'qish qulayligi uchun ataylab cheklangan).
+  **Dashboard qayta qurildi:** (1) hero — bitta karta: salom+sana chapda, ProgressRing va
+  4 bosiladigan tile o'ngda (avval alohida qatorlar edi); (2) `lg:grid-cols-[1fr_320px]` —
+  chapda ish (ixcham gorizontal "Davom ettirish" + "Bugun" ro'yxati **konkret vazifa
+  qatorlari bilan** + joriy kurslar 3 ustunli grid), o'ngda **rels**: kelgusi darslar
+  (sana+vaqt bloki), bildirishnomalar, so'nggi faollik — hammasi `RailCard` da.
+  **Baholarim:** kurs bloklari `xl:grid-cols-2`, stat kartalar 3 ustun.
+  **Vazifalar:** `lg:grid-cols-[1fr_340px]` — chapda ish, o'ngda "Bajarilganlar" tarixi.
+  **Davomat:** hero ustunlari qayta o'lchandi (260px + qolgani trend/jadval).
+  tsc+build toza.
+
 ## 9. Loyiha holati va ishga tushirish (operatsion — sessiya 0)
 
 **Monorepo (npm workspaces):**

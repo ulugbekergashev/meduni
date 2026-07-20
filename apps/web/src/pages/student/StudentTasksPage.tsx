@@ -93,7 +93,7 @@ export function StudentTasksPage() {
   const fmt = (iso: string) => formatDate(locale === "ru" ? "ru" : "uz", iso, "short");
 
   return (
-    <div className="mx-auto max-w-3xl">
+    <div>
       <h1 className="text-h1 font-bold text-ink">{t("studentTitle")}</h1>
       <p className="mt-0.5 text-note text-ink-faint">{t("studentHint")}</p>
 
@@ -106,7 +106,8 @@ export function StudentTasksPage() {
           <p className="py-4 text-center text-body text-rose">{t("error")}</p>
         </Card>
       ) : (
-        <div className="mt-6 space-y-6">
+        <div className="mt-6 grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
+          <div className="min-w-0 space-y-6">
           {/* O'qituvchi topshiriqlari — eng muhim, tepada */}
           {assigned.length > 0 && (
             <section>
@@ -176,7 +177,10 @@ export function StudentTasksPage() {
             </Card>
           )}
 
-          {/* Bajarilganlar tarixi */}
+          </div>
+
+          {/* O'ng ustun — bajarilganlar tarixi */}
+          <aside className="min-w-0 space-y-5">
           {history.length > 0 && (
             <section>
               <button
@@ -200,6 +204,7 @@ export function StudentTasksPage() {
               )}
             </section>
           )}
+          </aside>
         </div>
       )}
     </div>

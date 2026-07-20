@@ -114,7 +114,7 @@ export function StudentCoursesPage() {
   const filtering = !!search.trim() || !!year || !!semester;
 
   return (
-    <div className="mx-auto max-w-4xl">
+    <div>
       <h1 className="text-h1 font-bold text-ink">{t("title")}</h1>
       <p className="mt-1 text-body text-ink-soft">{t("subtitle")}</p>
 

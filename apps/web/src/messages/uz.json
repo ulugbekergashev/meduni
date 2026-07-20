@@ -1052,7 +1052,9 @@
       "case_graded": "Keys baholandi"
     },
     "currentCourses": "Joriy semestr kurslari",
-    "seeAllCourses": "Barchasi"
+    "seeAllCourses": "Barchasi",
+    "upcomingLessons": "Kelgusi darslar",
+    "noLessons": "Dars yoʻq"
   },
   "review": {
     "back": "← Bosh sahifa",

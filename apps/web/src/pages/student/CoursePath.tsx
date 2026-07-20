@@ -184,7 +184,7 @@ export function CoursePath() {
   const allDone = !!c && c.topicsTotal > 0 && c.topicsCompleted === c.topicsTotal;
 
   return (
-    <div className="mx-auto max-w-2xl">
+    <div className="mx-auto max-w-4xl">
       <button onClick={() => navigate("/app")} className="mb-3 flex items-center gap-1 text-[14.5px] font-medium text-brand-deep hover:underline">
         <Icon icon={ArrowLeft} size={15} />
         {t("back")}
