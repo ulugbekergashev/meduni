@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { LogOut, Moon, Sun } from "lucide-react";
 import { Icon, SidebarLayout, type SidebarItem } from "@meduni/ui";
 import { useLogout, useMe } from "../lib/auth";
@@ -7,6 +8,7 @@ import { getTheme, setTheme, type Theme } from "../lib/theme";
 import { useLocale } from "../lib/useLocale";
 import { formatDate } from "../lib/date";
 import { LocaleSwitcher } from "./LocaleSwitcher";
+import { Avatar } from "./Avatar";
 
 /** Adapter: SidebarLayout expects a component taking `href`; react-router's Link takes `to`. */
 function RouterLink({ href, className, children }: { href: string; className?: string; children: ReactNode }) {
@@ -50,13 +52,17 @@ export function RoleShell({
   items,
   children,
   headerSlot,
+  profileHref,
 }: {
   brand: string;
   items: RoleShellItem[];
   children: ReactNode;
   headerSlot?: ReactNode;
+  /** Header'dagi user bloki shu sahifaga olib boradi (rolga qarab profil/sozlamalar). */
+  profileHref: string;
 }) {
   const { data: me } = useMe();
+  const { t } = useTranslation(undefined, { keyPrefix: "nav" });
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const logout = useLogout();
@@ -85,12 +91,18 @@ export function RoleShell({
           <span className="hidden whitespace-nowrap text-[13.5px] font-medium text-ink-faint xl:block">{today}</span>
           <LocaleSwitcher />
           <ThemeButton />
-          <div className="hidden min-w-0 items-center border-l border-line pl-3 sm:flex">
-            <div className="min-w-0 text-right leading-tight">
+          {/* User bloki — avatar + ism, bosilsa profil/sozlamalar sahifasi */}
+          <Link
+            to={profileHref}
+            title={t("openProfile")}
+            className="ml-1 flex min-w-0 items-center gap-2.5 rounded-control border-l border-line py-1 pl-3 pr-1.5 transition-colors hover:bg-bg"
+          >
+            <div className="hidden min-w-0 text-right leading-tight sm:block">
               <p className="max-w-[150px] truncate text-[13.5px] font-semibold text-ink">{me?.full_name}</p>
               <p className="max-w-[150px] truncate text-[12px] text-ink-faint">{me?.email}</p>
             </div>
-          </div>
+            <Avatar name={me?.full_name ?? ""} />
+          </Link>
           <button
             onClick={() => logout.mutate(undefined, { onSuccess: () => navigate("/login", { replace: true }) })}
             aria-label="logout"

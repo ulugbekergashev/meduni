@@ -53,6 +53,7 @@ export function StudentShell() {
     <RoleShell
       brand="MedUni AI"
       headerSlot={<GlobalSearch fetch={search} />}
+      profileHref="/app/profile"
       items={[
         { href: "/app", label: t("dashboard"), icon: <Icon icon={Home} />, end: true },
         { href: "/app/tasks", label: t("tasks"), icon: <Icon icon={ListChecks} />, badge: openTasks },

@@ -65,6 +65,7 @@ export function AdminShell() {
     <RoleShell
       brand="MedUni AI · Admin"
       headerSlot={<GlobalSearch fetch={search} />}
+      profileHref="/admin/settings"
       items={[
         { href: "/admin", label: t("dashboard"), icon: <Icon icon={Home} />, end: true },
         // Students are a faculty-level contingent; dept admins have no student scope.
