@@ -12,7 +12,9 @@ import {
   Layers,
   PlayCircle,
   Sparkles,
+  Medal,
   Stethoscope,
+  Trophy,
   type LucideIcon,
 } from "lucide-react";
 import { Card, EmptyState, Icon, ProgressRing, cls } from "@meduni/ui";
@@ -21,13 +23,26 @@ import { PeriodSection, groupByPeriod } from "../../components/PeriodGroups";
 import { useLocale } from "../../lib/useLocale";
 import { formatDate } from "../../lib/date";
 import {
+  useMyActivity,
   useMyDashboard,
   useMyProfile,
+  useMyRank,
   useMySchedule,
   useMyTasks,
   useSetMyTaskDone,
+  type ActivityType,
   type CourseSummary,
 } from "./api";
+
+/** Faollik lentasi belgilar — o'quv tarixi bosh sahifada ko'rinadi. */
+const ACTIVITY_META: Record<ActivityType, { icon: LucideIcon; tone: string }> = {
+  topic_completed: { icon: CheckCircle2, tone: "bg-emerald-soft text-emerald" },
+  topic_activity: { icon: PlayCircle, tone: "bg-brand-soft text-brand-deep" },
+  quiz_passed: { icon: ClipboardList, tone: "bg-blue-soft text-blue" },
+  quiz_failed: { icon: ClipboardList, tone: "bg-rose-soft text-rose" },
+  case_submitted: { icon: Stethoscope, tone: "bg-violet-soft text-violet" },
+  case_graded: { icon: Medal, tone: "bg-emerald-soft text-emerald" },
+};
 
 function ProgressBar({ pct, tone = "brand" }: { pct: number; tone?: "brand" | "white" }) {
   return (
@@ -147,6 +162,8 @@ export function StudentDashboard() {
   const profile = useMyProfile();
   const tasksQ = useMyTasks();
   const scheduleQ = useMySchedule();
+  const rankQ = useMyRank();
+  const activityQ = useMyActivity();
   const done = useSetMyTaskDone();
 
   const d = q.data;
@@ -154,6 +171,8 @@ export function StudentDashboard() {
   const auto = tasksQ.data?.auto ?? [];
   const assigned = tasksQ.data?.assigned ?? []; // backend faqat OPEN qaytaradi
   const schedule = scheduleQ.data ?? [];
+  const rank = rankQ.data;
+  const activity = activityQ.data ?? [];
   const overallPct =
     d && d.courses.length > 0
       ? Math.round(d.courses.reduce((sum, c) => sum + c.progressPct, 0) / d.courses.length)
@@ -181,7 +200,7 @@ export function StudentDashboard() {
             {d.courses.length > 0 && (
               <Card className="mt-5 flex flex-wrap items-center gap-x-7 gap-y-4 !p-5">
                 <ProgressRing value={overallPct} size={96} stroke={10} label={t("overall")} />
-                <div className="grid min-w-0 flex-1 grid-cols-1 gap-3 sm:grid-cols-3">
+                <div className="grid min-w-0 flex-1 grid-cols-2 gap-3 sm:grid-cols-4">
                   <SummaryTile
                     icon={Layers}
                     value={`${d.courses.reduce((s, c) => s + c.topicsCompleted, 0)}/${d.courses.reduce((s, c) => s + c.topicsTotal, 0)}`}
@@ -203,6 +222,13 @@ export function StudentDashboard() {
                     value={String(d.courses.length)}
                     label={t("summaryCourses")}
                     tone="bg-brand-soft text-brand-deep"
+                  />
+                  {/* Guruhdagi o'rin — faqat o'zining, boshqalar ro'yxati yo'q */}
+                  <SummaryTile
+                    icon={Trophy}
+                    value={rank?.rank ? `${rank.rank}/${rank.total}` : "—"}
+                    label={t("summaryRank")}
+                    tone="bg-amber-soft text-amber"
                   />
                 </div>
               </Card>
@@ -286,6 +312,39 @@ export function StudentDashboard() {
                 )}
               </div>
             </section>
+
+            {/* So'nggi faollik — o'quv tarixi (profilda emas, shu modulda) */}
+            {activity.length > 0 && (
+              <div className="mt-8">
+                <h2 className="text-section font-bold text-ink">{t("recentActivity")}</h2>
+                <Card className="mt-3 divide-y divide-line p-0">
+                  {activity.slice(0, 5).map((a, i) => {
+                    const m = ACTIVITY_META[a.type];
+                    return (
+                      <button
+                        key={`${a.type}-${a.topicId}-${i}`}
+                        onClick={() => navigate(`/app/topics/${a.topicId}`)}
+                        className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-bg"
+                      >
+                        <div className={cls("flex h-9 w-9 shrink-0 items-center justify-center rounded-full", m.tone)}>
+                          <Icon icon={m.icon} size={16} />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-[14.5px] font-semibold text-ink">{t(`activity.${a.type}`)}</p>
+                          <p className="truncate text-[13px] text-ink-faint">{a.topic}</p>
+                        </div>
+                        {a.score !== null && (
+                          <span className="shrink-0 text-[15px] font-bold tabular-nums text-ink-soft">{a.score}%</span>
+                        )}
+                        <span className="shrink-0 text-[12.5px] text-ink-faint">
+                          {formatDate(locale === "ru" ? "ru" : "uz", a.at, "short")}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </Card>
+              </div>
+            )}
 
             {/* Notifications */}
             {d.notifications.length > 0 && (

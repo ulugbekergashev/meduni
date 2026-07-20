@@ -55,24 +55,41 @@ export async function getMyAttendance(studentId: number, opts: { courseId?: numb
 }
 
 export async function getMyProfile(studentId: number) {
-  const user = await prisma.user.findUnique({ where: { id: studentId }, include: { group: true } });
+  const user = await prisma.user.findUnique({
+    where: { id: studentId },
+    include: { group: { include: { faculty: { select: { name: true } } } } },
+  });
   if (!user) throw notFound("Foydalanuvchi");
 
-  const [coursesCount, completedTopics, attendance] = await Promise.all([
+  const [coursesCount, completedTopics, attendance, currentEnrollment] = await Promise.all([
     prisma.enrollment.count({ where: { studentId, status: "ACTIVE" } }),
     prisma.progress.count({ where: { studentId, state: "COMPLETED" } }),
     prisma.attendance.groupBy({ by: ["status"], where: { studentId }, _count: true }),
+    // Joriy o'quv davri — eng yangi ACTIVE yozilishdan (ma'lumotnoma uchun).
+    prisma.enrollment.findFirst({
+      where: { studentId, status: "ACTIVE" },
+      orderBy: [{ course: { academicYear: "desc" } }, { course: { semester: "desc" } }],
+      select: { course: { select: { academicYear: true, semester: true } } },
+    }),
   ]);
 
   const counts = { PRESENT: 0, ABSENT: 0, LATE: 0, EXCUSED: 0 } as Record<Status, number>;
   for (const a of attendance) counts[a.status as Status] = a._count;
 
   return {
+    // Ma'lumotnoma (shaxsiy + o'quv tegishliligi)
+    id: user.id,
     fullName: user.fullName,
     email: user.email,
     phone: user.phone,
-    groupName: user.group?.name ?? null,
+    isActive: user.isActive,
     locale: user.locale,
+    groupName: user.group?.name ?? null,
+    facultyName: user.group?.faculty.name ?? null,
+    yearOfStudy: user.group?.yearOfStudy ?? null,
+    academicYear: currentEnrollment?.course.academicYear ?? null,
+    semester: currentEnrollment?.course.semester ?? null,
+    // Ko'rsatkichlar — asosiy modullar (bosh sahifa/davomat) uchun
     coursesCount,
     completedTopics,
     attendancePct: attendancePct(counts.PRESENT, counts.ABSENT, counts.LATE, counts.EXCUSED),
