@@ -32,6 +32,7 @@ export function AttendanceSection() {
   const [courseId, setCourseId] = useState<number | undefined>(undefined);
   const [range, setRange] = useState<{ from?: string; to?: string }>({});
   const [expanded, setExpanded] = useState<number | null>(null);
+  const [statusFilter, setStatusFilter] = useState<AttStatus | null>(null);
 
   const coursesQ = useMyCourses();
   const scheduleQ = useMySchedule();
@@ -57,13 +58,14 @@ export function AttendanceSection() {
     type Row = NonNullable<typeof data>["sessions"][number];
     const m = new Map<string, Row[]>();
     for (const s of data?.sessions ?? []) {
+      if (statusFilter && s.status !== statusFilter) continue;
       const d = new Date(s.date);
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
       if (!m.has(key)) m.set(key, []);
       m.get(key)!.push(s);
     }
     return [...m.entries()].sort((a, b) => b[0].localeCompare(a[0]));
-  }, [data]);
+  }, [data, statusFilter]);
 
   if (q.isLoading) {
     return (
@@ -94,12 +96,32 @@ export function AttendanceSection() {
                   { value: st.absent, tone: "rose" },
                 ]}
               />
-              <div className="mt-3 space-y-1.5">
-                <LegendRow tone="emerald" label={t("present")} value={st.present} />
-                <LegendRow tone="amber" label={t("late")} value={st.late} />
-                <LegendRow tone="blue" label={t("excused")} value={st.excused} />
-                <LegendRow tone="rose" label={t("absent")} value={st.absent} />
+              {/* Bosiladigan legenda — ro'yxatni holat bo'yicha filtrlaydi */}
+              <div className="mt-3 space-y-1">
+                {([
+                  ["PRESENT", "emerald", t("present"), st.present],
+                  ["LATE", "amber", t("late"), st.late],
+                  ["EXCUSED", "blue", t("excused"), st.excused],
+                  ["ABSENT", "rose", t("absent"), st.absent],
+                ] as const).map(([key, tone, label, value]) => (
+                  <LegendRow
+                    key={key}
+                    tone={tone}
+                    label={label}
+                    value={value}
+                    selected={statusFilter === key}
+                    onClick={() => setStatusFilter((cur) => (cur === key ? null : (key as AttStatus)))}
+                  />
+                ))}
               </div>
+              {statusFilter && (
+                <button
+                  onClick={() => setStatusFilter(null)}
+                  className="mt-2 text-note font-semibold text-brand-deep hover:underline"
+                >
+                  {t("clearFilter")}
+                </button>
+              )}
             </div>
           </div>
 
@@ -153,26 +175,22 @@ export function AttendanceSection() {
             <tbody>
               {data.byCourse.map((c) => {
                 const missed = missedByCourse.get(c.courseName) ?? [];
+                const courseSessions = (data?.sessions ?? []).filter((x) => x.courseName === c.courseName);
                 const open = expanded === c.courseId;
                 const lowRow = c.pct !== null && c.pct < 75;
                 return (
                   <Fragment key={c.courseId}>
                     <tr
-                      onClick={() => missed.length > 0 && setExpanded(open ? null : c.courseId)}
-                      className={cls(
-                        "border-t border-line text-[14.5px]",
-                        missed.length > 0 && "cursor-pointer hover:bg-bg"
-                      )}
+                      onClick={() => setExpanded(open ? null : c.courseId)}
+                      className="cursor-pointer border-t border-line text-[14.5px] transition-colors hover:bg-bg" 
                     >
                       <td className="px-4 py-2.5">
                         <span className="flex items-center gap-1.5 font-semibold text-ink">
-                          {missed.length > 0 && (
-                            <Icon
-                              icon={ChevronDown}
-                              size={14}
-                              className={cls("text-ink-faint transition-transform", !open && "-rotate-90")}
-                            />
-                          )}
+                          <Icon
+                            icon={ChevronDown}
+                            size={14}
+                            className={cls("text-ink-faint transition-transform", !open && "-rotate-90")}
+                          />
                           {c.courseName}
                         </span>
                       </td>
@@ -185,22 +203,48 @@ export function AttendanceSection() {
                         {c.pct !== null ? `${c.pct}%` : "—"}
                       </td>
                     </tr>
-                    {open && missed.length > 0 && (
-                      <tr className="border-t border-line bg-rose-soft/30">
-                        <td colSpan={7} className="px-4 py-2.5">
-                          <p className="mb-1.5 text-note font-bold uppercase tracking-wide text-rose">
-                            {t("missedSection")}
+                    {open && (
+                      <tr className="border-t border-line bg-bg/60">
+                        <td colSpan={7} className="px-4 py-3">
+                          {missed.length > 0 && (
+                            <>
+                              <p className="mb-1.5 text-note font-bold uppercase tracking-wide text-rose">
+                                {t("missedSection")}
+                              </p>
+                              <div className="mb-3 space-y-1">
+                                {missed.map((m) => (
+                                  <div key={m.id} className="flex items-center gap-2 text-note">
+                                    <Icon icon={X} size={12} className="shrink-0 text-rose" />
+                                    <span className="shrink-0 font-semibold tabular-nums text-ink">
+                                      {formatDate(locale === "ru" ? "ru" : "uz", m.date, "short")}
+                                    </span>
+                                    <span className="min-w-0 truncate text-ink-soft">{m.title ?? c.courseName}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </>
+                          )}
+                          <p className="mb-1.5 text-note font-bold uppercase tracking-wide text-ink-faint">
+                            {t("courseJournal")}
                           </p>
                           <div className="space-y-1">
-                            {missed.map((m) => (
-                              <div key={m.id} className="flex items-center gap-2 text-note">
-                                <Icon icon={X} size={12} className="shrink-0 text-rose" />
-                                <span className="shrink-0 font-semibold tabular-nums text-ink">
-                                  {formatDate(locale === "ru" ? "ru" : "uz", m.date, "short")}
-                                </span>
-                                <span className="min-w-0 truncate text-ink-soft">{m.title ?? c.courseName}</span>
-                              </div>
-                            ))}
+                            {courseSessions.map((cs) => {
+                              const cm = META[cs.status];
+                              return (
+                                <div key={cs.id} className="flex items-center gap-2 text-note">
+                                  <span className={cls("flex h-5 w-5 shrink-0 items-center justify-center rounded-full", cm.chip)}>
+                                    <Icon icon={cm.icon} size={11} />
+                                  </span>
+                                  <span className="shrink-0 font-semibold tabular-nums text-ink">
+                                    {formatDate(locale === "ru" ? "ru" : "uz", cs.date, "short")}
+                                  </span>
+                                  <span className="min-w-0 flex-1 truncate text-ink-soft">{cs.title ?? c.courseName}</span>
+                                  <span className={cls("shrink-0 rounded-pill px-2 py-0.5 text-[12px] font-semibold", cm.chip)}>
+                                    {t(`status.${cs.status}`)}
+                                  </span>
+                                </div>
+                              );
+                            })}
                           </div>
                         </td>
                       </tr>

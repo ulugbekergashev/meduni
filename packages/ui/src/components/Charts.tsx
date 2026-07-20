@@ -120,14 +120,39 @@ export function Donut({
   );
 }
 
-/** Legend row for Donut/StackedBar: colored square + label + tabular value. */
-export function LegendRow({ tone, label, value }: { tone: ToneKey; label: string; value?: ReactNode }) {
-  return (
-    <div className="flex items-center gap-2.5 text-[14px]">
+/** Legend row for Donut/StackedBar: colored square + label + tabular value.
+ *  `onClick` beriladi — qator filtr tugmasiga aylanadi (`selected` faol holat). */
+export function LegendRow({
+  tone,
+  label,
+  value,
+  onClick,
+  selected = false,
+}: {
+  tone: ToneKey;
+  label: string;
+  value?: ReactNode;
+  onClick?: () => void;
+  selected?: boolean;
+}) {
+  const inner = (
+    <>
       <span className="h-2.5 w-2.5 shrink-0 rounded-[3px]" style={{ background: toneVar[tone] }} />
       <span className="min-w-0 flex-1 truncate text-ink-soft">{label}</span>
       {value !== undefined && <span className="shrink-0 font-semibold tabular-nums text-ink">{value}</span>}
-    </div>
+    </>
+  );
+  if (!onClick) return <div className="flex items-center gap-2.5 text-[14px]">{inner}</div>;
+  return (
+    <button
+      onClick={onClick}
+      aria-pressed={selected}
+      className={`flex w-full items-center gap-2.5 rounded-control px-1.5 py-1 text-left text-[14px] transition-colors ${
+        selected ? "bg-brand-soft ring-1 ring-brand/30" : "hover:bg-bg"
+      }`}
+    >
+      {inner}
+    </button>
   );
 }
 
@@ -183,6 +208,10 @@ export function MiniBars({
   format?: (v: number) => string;
 }) {
   const max = Math.max(1, ...data.map((d) => d.value));
+  // Nuqta kam bo'lsa ustunlar kengroq va yorliqlar ko'rinadi — bitta ustun
+  // "buzuq grafik" bo'lib qolmasin.
+  const few = data.length <= 8;
+  const barMax = data.length <= 3 ? 44 : data.length <= 6 ? 28 : 16;
   return (
     <div className="w-full">
       <div className="flex items-end gap-[3px]" style={{ height }}>
@@ -190,15 +219,37 @@ export function MiniBars({
           const h = d.value > 0 ? Math.max(3, (d.value / max) * height) : 0;
           return (
             <div key={i} className="group relative flex flex-1 items-end justify-center" style={{ height }}>
+              {few && d.value > 0 && (
+                <span
+                  className="pointer-events-none absolute left-1/2 -translate-x-1/2 text-[11.5px] font-bold tabular-nums text-ink-soft"
+                  style={{ bottom: h + 4 }}
+                >
+                  {format(d.value)}
+                </span>
+              )}
               <div
-                className="w-full max-w-[16px] rounded-t-[3px] transition-all"
-                style={{ height: h, background: d.value > 0 ? toneVar[tone] : "var(--line)", minHeight: d.value > 0 ? 3 : 2 }}
+                className="w-full rounded-t-[3px] transition-all group-hover:opacity-80"
+                style={{
+                  height: h,
+                  maxWidth: barMax,
+                  background: d.value > 0 ? toneVar[tone] : "var(--line)",
+                  minHeight: d.value > 0 ? 3 : 2,
+                }}
                 title={d.tip ?? `${d.label}: ${format(d.value)}`}
               />
             </div>
           );
         })}
       </div>
+      {few && (
+        <div className="mt-1.5 flex gap-[3px]">
+          {data.map((d, i) => (
+            <span key={i} className="flex-1 truncate text-center text-[11.5px] text-ink-faint" title={d.label}>
+              {d.label}
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
