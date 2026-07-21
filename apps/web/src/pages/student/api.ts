@@ -206,6 +206,28 @@ export interface CaseTabData {
   attempt: CaseAttemptData | null;
 }
 
+/** AI konspekt (TopicDigest) — o'qituvchi tasdiqlagan bo'lsagina keladi. */
+export interface Term {
+  ru: string;
+  uz: string;
+  lat: string;
+}
+export interface DigestJson {
+  objectives: string[];
+  concepts: string[];
+  terms: Term[];
+  facts: string[];
+  dosages: string[];
+  imageIdeas: string[];
+}
+
+export type MaterialType = "pdf" | "docx" | "pptx" | "txt" | "md" | string;
+export interface LessonMaterial {
+  id: number;
+  fileName: string;
+  fileType: MaterialType;
+}
+
 export interface Lesson {
   topicId: number;
   orderIndex: number;
@@ -218,6 +240,10 @@ export interface Lesson {
   completed: boolean;
   thresholds: { video: number; quizPass: number };
   elements: TopicElements;
+  /** Chap panel — o'qituvchi manba materiallari. */
+  materials: LessonMaterial[];
+  /** O'rta panel — AI konspekt (tasdiqlanmagan bo'lsa null). */
+  digest: DigestJson | null;
   tabs: {
     video: VideoTabData | null;
     slides: SlidesTabData | null;

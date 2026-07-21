@@ -161,3 +161,25 @@ meRouter.get(
     res.send(buf);
   })
 );
+
+const MATERIAL_MIME: Record<string, string> = {
+  pdf: "application/pdf",
+  docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  txt: "text/plain; charset=utf-8",
+  md: "text/plain; charset=utf-8",
+};
+
+meRouter.get(
+  "/materials/:id/file",
+  wrap(async (req, res) => {
+    const { buf, fileName, fileType } = await lesson.studentMaterialFile(req.user!.id, parseId(req.params.id));
+    const inline = fileType === "pdf" || fileType === "txt" || fileType === "md";
+    res.setHeader("Content-Type", MATERIAL_MIME[fileType] ?? "application/octet-stream");
+    res.setHeader(
+      "Content-Disposition",
+      `${inline ? "inline" : "attachment"}; filename*=UTF-8''${encodeURIComponent(fileName)}`
+    );
+    res.send(buf);
+  })
+);
