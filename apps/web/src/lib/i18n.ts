@@ -24,4 +24,15 @@ export function setLocale(locale: Locale) {
   document.documentElement.lang = locale;
 }
 
+// Dev: tarjima JSON o'zgarganda i18next resurslarini yangilaydi. Busiz HMR
+// modulni almashtiradi-yu, i18next init paytidagi eski nusxada qolib ketadi va
+// ekranda xom kalitlar ("lesson.stage_quiz") chiqadi.
+if (import.meta.hot) {
+  import.meta.hot.accept(["../messages/uz.json", "../messages/ru.json"], ([nextUz, nextRu]) => {
+    if (nextUz) i18n.addResourceBundle("uz", "translation", nextUz.default, true, true);
+    if (nextRu) i18n.addResourceBundle("ru", "translation", nextRu.default, true, true);
+    i18n.changeLanguage(i18n.language);
+  });
+}
+
 export default i18n;
