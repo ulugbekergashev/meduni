@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import { Award, BookOpen, CalendarCheck, CalendarDays, FileText, Home, ListChecks, User } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Icon } from "@meduni/ui";
@@ -19,6 +19,9 @@ export function StudentShell() {
   const locale = useLocale();
   const tasks = useMyTasks();
   const openTasks = tasks.data?.auto.length ?? 0;
+  // Dars sahifasi — ishchi panel (to'liq ekran, panel ichida skroll).
+  const { pathname } = useLocation();
+  const isWorkspace = /^\/app\/topics\/\d+/.test(pathname);
 
   const search = useCallback(
     async (q: string): Promise<SearchSection[]> => {
@@ -54,6 +57,7 @@ export function StudentShell() {
       brand="MedUni AI"
       headerSlot={<GlobalSearch fetch={search} />}
       profileHref="/app/profile"
+      fullBleed={isWorkspace}
       items={[
         { href: "/app", label: t("dashboard"), icon: <Icon icon={Home} />, end: true },
         { href: "/app/courses", label: t("myCourses"), icon: <Icon icon={BookOpen} />, end: true },
