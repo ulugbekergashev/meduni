@@ -61,7 +61,7 @@ export function TeachCoursesPage() {
         <span className="text-note font-semibold text-ink-soft">{t("totalN", { n: filtered.length })}</span>
       </div>
 
-      <div className="mt-6">
+      <div className="mt-3">
         <AsyncSection
           isLoading={list.isLoading}
           isError={list.isError}

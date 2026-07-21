@@ -40,8 +40,8 @@ export function SlidesTab({ topicId, data }: { topicId: number; data: SlidesTabD
           touchX.current = null;
         }}
       >
-        <div className="p-6 sm:p-8 min-h-[300px]">
-          <div className="mb-6 flex items-start gap-4">
+        <div className="p-4 sm:p-4 min-h-[300px]">
+          <div className="mb-3 flex items-start gap-4">
             <div className="mt-1 h-8 w-1.5 shrink-0 rounded-full bg-brand" />
             <h3 className="text-[22px] font-black text-ink leading-snug">{slide.title}</h3>
           </div>

@@ -141,7 +141,7 @@ export function SubjectsPage() {
           emptyHint={subjects.length === 0 ? t("emptyHint") : undefined}
           onRetry={() => q.refetch()}
         >
-          <div className="space-y-6">
+          <div className="space-y-3">
             {byDept.map(([dept, rows]) => (
               <section key={dept}>
                 {byDept.length > 1 && (

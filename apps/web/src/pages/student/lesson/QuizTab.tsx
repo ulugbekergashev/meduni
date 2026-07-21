@@ -16,7 +16,7 @@ import {
 function Intro({ data, onStart, starting }: { data: QuizTabData; onStart: () => void; starting: boolean }) {
   const { t } = useTranslation(undefined, { keyPrefix: "lesson" });
   return (
-    <Card className="space-y-5 text-center p-8 shadow-sm">
+    <Card className="space-y-5 text-center p-4 shadow-sm">
       <div className="inline-flex items-center justify-center rounded-full bg-blue-soft p-4 text-blue">
         <Icon icon={ClipboardList} size={32} />
       </div>
@@ -236,7 +236,7 @@ export function QuizTab({ topicId, data }: { topicId: number; data: QuizTabData 
   const onStart = () => start.mutate(data.quizId, { onSuccess: (a) => setStartedId(a.id) });
 
   if (attemptId === null) return <Intro data={data} onStart={onStart} starting={start.isPending} />;
-  if (attemptQ.isLoading) return <div className="flex justify-center py-10"><Spinner size={24} /></div>;
+  if (attemptQ.isLoading) return <div className="flex justify-center py-5"><Spinner size={24} /></div>;
   if (!attemptQ.data) return <Intro data={data} onStart={onStart} starting={start.isPending} />;
 
   return attemptQ.data.status === "finished" ? <Result attempt={attemptQ.data} /> : <Running attempt={attemptQ.data} topicId={topicId} />;

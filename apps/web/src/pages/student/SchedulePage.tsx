@@ -121,7 +121,7 @@ export function SchedulePage() {
   const nextLesson = upcoming[0];
 
   return (
-    <motion.div variants={containerVariants} initial="hidden" animate="show" className="space-y-6">
+    <motion.div variants={containerVariants} initial="hidden" animate="show" className="space-y-3">
       <motion.div variants={itemVariants}>
         <HeroCard
           title={t("title")}
@@ -183,7 +183,7 @@ export function SchedulePage() {
       </motion.div>
 
       {q.isLoading ? (
-        <div className="mt-10 flex justify-center">
+        <div className="mt-4 flex justify-center">
           <Spinner size={26} />
         </div>
       ) : slots.length === 0 ? (

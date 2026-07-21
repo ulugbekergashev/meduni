@@ -99,7 +99,7 @@ export function StudentsPage() {
       </div>
 
       {/* Stats */}
-      <div className={cls("mt-6 grid grid-cols-2 gap-3", showDonut ? "lg:grid-cols-3" : "lg:grid-cols-4")}>
+      <div className={cls("mt-3 grid grid-cols-2 gap-3", showDonut ? "lg:grid-cols-3" : "lg:grid-cols-4")}>
         <StatCard icon={GraduationCap} value={s?.total} label={t("stats.total")} hint={t("stats.totalHint")} tone="bg-blue-soft text-blue" />
         <StatCard icon={UserCheck} value={s?.active} label={t("stats.active")} hint={t("stats.activeHint")} tone="bg-emerald-soft text-emerald" />
         <StatCard
@@ -116,7 +116,7 @@ export function StudentsPage() {
 
       {/* Faculty composition (only when there is something to compare) */}
       {showDonut && s && (
-        <Card className="mt-3 flex flex-wrap items-center gap-6 !p-5">
+        <Card className="mt-3 flex flex-wrap items-center gap-3 !p-5">
           <Donut
             size={120}
             stroke={14}

@@ -35,7 +35,7 @@ export function CaseTab({ topicId, data }: { topicId: number; data: CaseTabData 
     );
 
   return (
-    <div className="grid gap-6 items-start lg:grid-cols-[1fr_1fr] xl:grid-cols-[450px_1fr]">
+    <div className="grid gap-3 items-start lg:grid-cols-[1fr_1fr] xl:grid-cols-[450px_1fr]">
       {/* Chap qism: Bemor ma'lumotlari (Sticky) */}
       <div className="space-y-4 lg:sticky lg:top-6">
         <Card className="space-y-5 border-l-4 border-l-brand shadow-sm">

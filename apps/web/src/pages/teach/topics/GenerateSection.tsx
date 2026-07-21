@@ -27,7 +27,7 @@ function LangSelect({ value, onChange }: { value: "uz" | "ru"; onChange: (v: "uz
 
 function GeneratingPulse({ label }: { label: string }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-4 py-8">
+    <div className="flex flex-col items-center justify-center gap-4 py-4">
       <div className="relative flex h-16 w-16 items-center justify-center">
         <div className="absolute inset-0 animate-ping rounded-full bg-brand/30 duration-[2000ms]"></div>
         <div className="absolute inset-2 animate-pulse rounded-full bg-brand/50"></div>

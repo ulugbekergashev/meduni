@@ -105,14 +105,14 @@ export function CourseDetail() {
       </p>
 
       {/* Stat tiles */}
-      <div className="mt-6 grid gap-3 sm:grid-cols-3">
+      <div className="mt-3 grid gap-3 sm:grid-cols-3">
         <StatItem icon={<Icon icon={Users} size={18} />} label={t("students")} value={c.studentCount} />
         <StatItem icon={<Icon icon={GraduationCap} size={18} />} label={t("groups")} value={c.groups.length} />
         <StatItem icon={<Icon icon={BookOpen} size={18} />} label={t("detail.topicCount")} value={c.topicCount} />
       </div>
 
       {/* Manage groups */}
-      <Card className="mt-6">
+      <Card className="mt-3">
         <h2 className="mb-4 text-section font-bold text-ink">{t("detail.manageGroups")}</h2>
         <ChipSelect
           options={groupOptions.map((g) => ({ id: g.id, label: g.name }))}
@@ -128,7 +128,7 @@ export function CourseDetail() {
       </Card>
 
       {/* Enrolled students */}
-      <div className="mt-6">
+      <div className="mt-3">
         <h2 className="mb-3 text-section font-bold text-ink">{t("detail.enrolledStudents")}</h2>
         {c.students.length === 0 ? (
           <Card>

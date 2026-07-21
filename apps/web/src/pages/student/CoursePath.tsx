@@ -254,7 +254,7 @@ export function CoursePath() {
               )}
 
               {/* Topic path */}
-              <motion.ol variants={containerVariants} initial="hidden" animate="show" className="mt-6">
+              <motion.ol variants={containerVariants} initial="hidden" animate="show" className="mt-3">
                 {c.topics.map((topic, i) => (
                   <TopicCard key={topic.id} topic={topic} last={i === c.topics.length - 1} />
                 ))}

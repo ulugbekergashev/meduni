@@ -60,7 +60,7 @@ export function AdminTasksPage() {
       <p className="mt-0.5 text-note text-ink-faint">{t("hint")}</p>
 
       {/* Assign form */}
-      <Card className="mt-6 space-y-4">
+      <Card className="mt-3 space-y-4">
         <h2 className="text-section font-bold text-ink">{t("newTask")}</h2>
         <div className="grid gap-3 sm:grid-cols-2">
           <Field label={t("target")}>
@@ -109,7 +109,7 @@ export function AdminTasksPage() {
       </Card>
 
       {/* Created tasks */}
-      <section className="mt-8">
+      <section className="mt-4">
         <h2 className="mb-3 text-section font-bold text-ink">{t("created")}</h2>
         <AsyncSection
           isLoading={created.isLoading}

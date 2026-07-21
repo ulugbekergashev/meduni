@@ -65,7 +65,7 @@ export function StructurePage() {
 
       {/* Leadership (university-level admins) */}
       {canFaculty && (supers.data?.items.length ?? 0) > 0 && (
-        <Card className="mt-6 !p-0">
+        <Card className="mt-3 !p-0">
           <div className="flex items-center gap-2 border-b border-line px-5 py-3">
             <Icon icon={ShieldCheck} size={16} className="text-brand-deep" />
             <h2 className="text-[15px] font-bold text-ink">{ts("leadership")}</h2>

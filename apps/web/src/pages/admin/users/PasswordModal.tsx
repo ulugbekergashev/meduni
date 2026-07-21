@@ -32,7 +32,7 @@ export function PasswordModal({ password, onClose }: { password: string | null; 
           {copied ? t("copied") : t("copy")}
         </Button>
       </div>
-      <div className="mt-6 flex justify-end">
+      <div className="mt-3 flex justify-end">
         <Button variant="ghost" onClick={onClose}>
           {t("close")}
         </Button>

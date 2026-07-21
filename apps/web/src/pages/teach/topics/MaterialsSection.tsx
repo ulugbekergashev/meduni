@@ -94,7 +94,7 @@ export function MaterialsSection({ topicId, materials }: { topicId: number; mate
         onDragLeave={() => setDragOver(false)}
         onDrop={onDrop}
         className={
-          "flex w-full flex-col items-center gap-2 rounded-card border-2 border-dashed px-6 py-10 text-center transition-colors " +
+          "flex w-full flex-col items-center gap-2 rounded-card border-2 border-dashed px-6 py-5 text-center transition-colors " +
           (dragOver ? "border-brand bg-brand-soft" : "border-line bg-surface hover:bg-bg")
         }
       >
@@ -164,7 +164,7 @@ export function MaterialsSection({ topicId, materials }: { topicId: number; mate
       {/* Extracted text viewer */}
       <Modal open={!!viewing} onClose={() => setViewing(null)} title={t("textTitle")} className="max-w-2xl">
         {viewText === null ? (
-          <div className="flex justify-center py-10">
+          <div className="flex justify-center py-5">
             <Spinner size={24} />
           </div>
         ) : (

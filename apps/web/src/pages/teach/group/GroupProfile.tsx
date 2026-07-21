@@ -123,7 +123,7 @@ function StudentsTab({ group }: { group: TeachGroup }) {
   };
 
   if (group.students.length === 0) {
-    return <Card><p className="py-8 text-center text-body text-ink-soft">{t("noStudents")}</p></Card>;
+    return <Card><p className="py-4 text-center text-body text-ink-soft">{t("noStudents")}</p></Card>;
   }
   // Behind students first, then by progress descending (rank raqami saqlanadi).
   const sorted = [...group.students].sort((a, b) => Number(b.behind) - Number(a.behind) || b.overallPct - a.overallPct);
@@ -234,7 +234,7 @@ export function GroupProfile() {
               <GroupStats group={group} />
 
               {/* Tabs — segmented track, active tab sits on a brand chip */}
-              <div className="mt-6 inline-flex max-w-full gap-1 overflow-x-auto rounded-control border border-line bg-surface p-1 shadow-card">
+              <div className="mt-3 inline-flex max-w-full gap-1 overflow-x-auto rounded-control border border-line bg-surface p-1 shadow-card">
                 {TABS.map((x) => (
                   <button
                     key={x.key}
@@ -253,7 +253,7 @@ export function GroupProfile() {
               <div className="mt-5">
                 {tab === "students" && <StudentsTab group={group} />}
                 {tab !== "students" && activeCourseId === null && (
-                  <Card><p className="py-8 text-center text-[14.5px] text-ink-soft">{t("noCourses")}</p></Card>
+                  <Card><p className="py-4 text-center text-[14.5px] text-ink-soft">{t("noCourses")}</p></Card>
                 )}
                 {tab !== "students" && activeCourseId !== null && (
                   <>

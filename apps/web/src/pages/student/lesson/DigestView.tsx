@@ -32,7 +32,7 @@ export function DigestView({ digest }: { digest: DigestJson }) {
   const { t } = useTranslation(undefined, { keyPrefix: "lesson" });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {digest.objectives.length > 0 && (
         <Section icon={ListChecks} title={t("konspekt_objectives")} tone="bg-brand-soft text-brand-deep">
           <ol className="space-y-1.5">

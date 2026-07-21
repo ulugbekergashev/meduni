@@ -132,7 +132,7 @@ export function TeachDashboard() {
   return (
     <div>
       {/* Hero band: greeting + date + at-a-glance numbers */}
-      <div className="rounded-card bg-gradient-to-br from-brand-deep to-brand p-6 text-white shadow-card sm:p-7">
+      <div className="rounded-card bg-gradient-to-br from-brand-deep to-brand p-4 text-white shadow-card sm:p-7">
         <div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-5">
           <div className="min-w-0">
             <h1 className="text-[26px] font-bold leading-tight tracking-tight">
@@ -141,7 +141,7 @@ export function TeachDashboard() {
             <p className="mt-1 text-[14.5px] font-medium text-white/70">{today}</p>
           </div>
           {stats && (
-            <div className="flex gap-8">
+            <div className="flex gap-3">
               <HeroStat value={stats.students} label={t("statStudents")} />
               <HeroStat value={stats.courses} label={t("qaCourses")} />
               <HeroStat value={stats.groupList.length} label={t("qaGroups")} />
@@ -159,7 +159,7 @@ export function TeachDashboard() {
       </div>
 
       {/* Tasks */}
-      <section className="mt-8">
+      <section className="mt-4">
         <h2 className="mb-3 text-section font-bold text-ink">{t("tasks")}</h2>
         {dash.isLoading ? (
           <div className="flex h-24 items-center justify-center"><Spinner size={22} /></div>
@@ -179,7 +179,7 @@ export function TeachDashboard() {
 
       {/* Analytics */}
       {stats && (
-        <section className="mt-8">
+        <section className="mt-4">
           <h2 className="mb-3 text-section font-bold text-ink">{t("analytics")}</h2>
           <div className="grid gap-2.5 lg:grid-cols-3">
             <MetricCard ring={stats.avgProgress} tone="brand" label={t("statAvgProgress")} sublabel={t("statStudentsN", { n: stats.students })} />
@@ -248,7 +248,7 @@ export function TeachDashboard() {
 
       {/* Upcoming sessions */}
       {dash.data?.upcomingSessions && dash.data.upcomingSessions.length > 0 && (
-        <section className="mt-8">
+        <section className="mt-4">
           <h2 className="mb-3 text-section font-bold text-ink">{t("upcoming")}</h2>
           <div className="space-y-2">
             {dash.data.upcomingSessions.map((s) => (
@@ -268,7 +268,7 @@ export function TeachDashboard() {
       )}
 
       {/* Courses preview */}
-      <section className="mt-8">
+      <section className="mt-4">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-section font-bold text-ink">{t("myCourses")}</h2>
           <button onClick={() => navigate("/teach/courses")} className="text-body font-semibold text-brand-deep hover:underline">{t("seeAll")} →</button>

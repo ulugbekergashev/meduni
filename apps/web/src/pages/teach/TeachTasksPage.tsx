@@ -65,14 +65,14 @@ export function TeachTasksPage() {
 
       {/* Department assignments (from admin) */}
       {assigned.length > 0 && (
-        <section className="mt-6">
+        <section className="mt-3">
           <h2 className="mb-3 text-section font-bold text-ink">{t("assignedSection")}</h2>
           <AssignedTaskList items={assigned} onDone={(id) => done.mutate(id)} pendingId={done.isPending ? (done.variables as number) : null} locale={locale} />
         </section>
       )}
 
       {/* Auto-derived tasks */}
-      <section className="mt-6">
+      <section className="mt-3">
         <h2 className="mb-3 text-section font-bold text-ink">{t("autoSection")}</h2>
         {q.isLoading ? (
           <div className="flex h-24 items-center justify-center">
@@ -109,7 +109,7 @@ export function TeachTasksPage() {
 
       {/* Assignments I gave to students */}
       {(created.data ?? []).length > 0 && (
-        <section className="mt-8">
+        <section className="mt-4">
           <h2 className="mb-3 text-section font-bold text-ink">{ta("mySection")}</h2>
           <CreatedTaskList items={created.data ?? []} onDelete={setDeleting} locale={locale} />
         </section>

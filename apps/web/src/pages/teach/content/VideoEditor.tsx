@@ -98,7 +98,7 @@ export function VideoEditor({ content }: { content: ContentFull }) {
       </div>
 
       {/* Player / build status */}
-      <div className="mt-6">
+      <div className="mt-3">
         {building ? (
           <Card>
             <div className="flex items-center gap-3 py-6">
@@ -120,7 +120,7 @@ export function VideoEditor({ content }: { content: ContentFull }) {
       </div>
 
       {/* Script editor */}
-      <div className="mt-6 flex items-center justify-between">
+      <div className="mt-3 flex items-center justify-between">
         <h2 className="text-section font-bold text-ink">{t("script")}</h2>
         <Button onClick={save} disabled={update.isPending || building}>
           {t("save")}

@@ -103,7 +103,7 @@ export function TopicListSection({ scope, showSharedNote = true }: { scope: Topi
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       {showSharedNote && (
         <p className="rounded-control border border-line bg-brand-soft/50 px-4 py-2.5 text-note text-ink-soft">
           {t("subjectShared")}

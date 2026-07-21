@@ -65,11 +65,11 @@ export function QuizEditor({ content }: { content: ContentFull }) {
       </div>
 
       {questions.length === 0 ? (
-        <Card className="mt-6">
+        <Card className="mt-3">
           <p className="py-6 text-center text-[14.5px] text-ink-soft">{t("empty")}</p>
         </Card>
       ) : (
-        <div className="mt-6 space-y-4">
+        <div className="mt-3 space-y-4">
           {questions.map((q, qi) => (
             <Card key={qi} className="space-y-4">
               <div className="flex items-center justify-between gap-3">

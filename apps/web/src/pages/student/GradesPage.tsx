@@ -150,7 +150,7 @@ function CourseBlock({ c, filter }: { c: GradesCourse; filter: Filter }) {
   if (quizzes.length === 0 && cases.length === 0) return null;
 
   return (
-    <motion.section variants={itemVariants} className="mt-6 first:mt-0">
+    <motion.section variants={itemVariants} className="mt-3 first:mt-0">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2 px-1">
         <div className="flex items-center gap-3">
           <h2 className="text-[17px] font-bold tracking-tight text-ink">{c.subjectName}</h2>
@@ -224,7 +224,7 @@ export function GradesPage() {
     .slice(0, 6);
 
   return (
-    <motion.div variants={containerVariants} initial="hidden" animate="show" className="space-y-6">
+    <motion.div variants={containerVariants} initial="hidden" animate="show" className="space-y-3">
       <motion.div variants={itemVariants}>
         <HeroCard
           title={t("title")}
@@ -291,7 +291,7 @@ export function GradesPage() {
         </motion.div>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
+      <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_340px]">
         <div className="min-w-0">
           <AsyncSection
             isLoading={q.isLoading}
@@ -308,7 +308,7 @@ export function GradesPage() {
           </AsyncSection>
         </div>
 
-        <aside className="min-w-0 space-y-6">
+        <aside className="min-w-0 space-y-3">
           <motion.div variants={itemVariants}>
             <LeaderboardCard />
           </motion.div>

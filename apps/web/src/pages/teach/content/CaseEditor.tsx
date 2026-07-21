@@ -55,7 +55,7 @@ export function CaseEditor({ content }: { content: ContentFull }) {
       </div>
 
       {/* Patient case blocks */}
-      <Card className="mt-6 space-y-5">
+      <Card className="mt-3 space-y-5">
         <Block title={t("complaints")}>
           <Textarea value={draft.complaints} onChange={(e) => patch({ complaints: e.target.value })} />
         </Block>

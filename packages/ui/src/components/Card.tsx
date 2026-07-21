@@ -9,7 +9,8 @@ export function Card({ interactive = false, className, children, ...rest }: Card
   return (
     <div
       className={cls(
-        "rounded-card border border-line bg-surface p-6 shadow-card transition-all duration-200",
+        // ZICHLIK QOIDASI (CLAUDE.md §4): panel padding 12-16px, katta emas.
+        "rounded-card border border-line bg-surface p-4 shadow-card transition-all duration-200",
         interactive && "cursor-pointer hover:-translate-y-0.5 hover:shadow-card-hover hover:border-brand-soft",
         className
       )}
