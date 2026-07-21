@@ -82,7 +82,7 @@ export function ContentPanel({
   return (
     <Panel
       header={
-        <div className="flex flex-wrap items-center gap-1">
+        <div className="flex flex-wrap items-center gap-1.5 p-1">
           {contentTabs.map((c) => {
             const on = c === active;
             return (
@@ -90,18 +90,20 @@ export function ContentPanel({
                 key={c}
                 onClick={() => setView(c)}
                 className={cls(
-                  "inline-flex items-center gap-1.5 rounded-control px-2.5 py-1 text-note font-bold transition-colors",
-                  on ? "bg-brand-soft text-brand-deep" : "text-ink-soft hover:bg-bg hover:text-ink"
+                  "inline-flex items-center gap-2 rounded-xl px-3 py-1.5 text-[13.5px] font-extrabold transition-all duration-200",
+                  on
+                    ? "bg-gradient-to-r from-brand to-brand-deep text-white shadow-md shadow-brand/20 scale-[1.02]"
+                    : "text-ink-soft hover:bg-bg hover:text-ink"
                 )}
               >
-                <Icon icon={SUBTAB_ICON[c]} size={14} className={on ? "" : "text-ink-faint"} />
+                <Icon icon={SUBTAB_ICON[c]} size={15} className={on ? "text-white" : "text-ink-faint"} />
                 {t(`tab_${c}`)}
               </button>
             );
           })}
         </div>
       }
-      bodyClassName="p-3"
+      bodyClassName="p-4"
     >
       {active === "konspekt" && lesson.digest && <DigestView digest={lesson.digest} />}
       {active === "video" && lesson.tabs.video && (
