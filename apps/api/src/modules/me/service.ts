@@ -2,6 +2,7 @@ import type { Prisma } from "../../lib/prisma";
 import { prisma } from "../../lib/prisma";
 import { ApiError, notFound } from "../../lib/errors";
 import { DEFAULT_RULE, evaluateRule, lockedReason, type Facts, type Reason, type UnlockRule } from "./rules";
+import { computeStreak } from "./profile";
 
 // A topic is visible to students only once it has at least one PUBLISHED content
 // item. Un-published topics don't appear on the path at all.
@@ -281,12 +282,15 @@ export async function getDashboard(studentId: number) {
   }
 
   // Notifications: recently graded clinical cases ("your case was reviewed").
-  const reviewed = await prisma.caseAttempt.findMany({
-    where: { studentId, reviewedAt: { not: null } },
-    orderBy: { reviewedAt: "desc" },
-    take: 5,
-    include: { clinicalCase: { include: { contentItem: { include: { topic: true } } } } },
-  });
+  const [reviewed, streak] = await Promise.all([
+    prisma.caseAttempt.findMany({
+      where: { studentId, reviewedAt: { not: null } },
+      orderBy: { reviewedAt: "desc" },
+      take: 5,
+      include: { clinicalCase: { include: { contentItem: { include: { topic: true } } } } },
+    }),
+    computeStreak(studentId),
+  ]);
   const notifications = reviewed.map((a) => ({
     type: "case_reviewed" as const,
     caseAttemptId: a.id,
@@ -296,7 +300,7 @@ export async function getDashboard(studentId: number) {
     reviewedAt: a.reviewedAt,
   }));
 
-  return { fullName: me?.fullName ?? "", resume, courses, notifications };
+  return { fullName: me?.fullName ?? "", resume, courses, notifications, streak };
 }
 
 // ---------- Shared access helpers (used by the lesson module) ----------

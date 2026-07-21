@@ -9,6 +9,7 @@ import { AsyncSection } from "../../components/AsyncSection";
 import { formatDate } from "../../lib/date";
 import { useLocale } from "../../lib/useLocale";
 import { useMyGrades, type GradeCase, type GradeQuiz, type GradesCourse } from "./api";
+import { LeaderboardCard } from "./LeaderboardCard";
 
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
@@ -308,6 +309,10 @@ export function GradesPage() {
         </div>
 
         <aside className="min-w-0 space-y-6">
+          <motion.div variants={itemVariants}>
+            <LeaderboardCard />
+          </motion.div>
+
           {recent.length > 0 && (
             <motion.div variants={itemVariants}>
               <RailCard title={t("recentGrades")} icon={Award}>

@@ -1059,7 +1059,26 @@
     "currentCourses": "Курсы текущего семестра",
     "seeAllCourses": "Все курсы",
     "upcomingLessons": "Ближайшие занятия",
-    "noLessons": "Занятий нет"
+    "noLessons": "Занятий нет",
+    "streakDays": "{{count}} дней подряд",
+    "streakStart": "Начните учиться сегодня",
+    "streakPausedHint": "Сегодня вы ещё не занимались — продолжите серию",
+    "goToCourses": "Перейти к курсам",
+    "todayLessons": "Занятия сегодня",
+    "nextLessons": "Следующие занятия",
+    "noLessonsWeek": "На этой неделе занятий нет",
+    "missedLessons": "Пропущенные занятия",
+    "missedN": "{{count}} пропущено",
+    "mastery": "Успеваемость",
+    "semesterAttendance": "Посещаемость за семестр",
+    "avgQuizShort": "Средний балл",
+    "openSchedule": "Открыть расписание"
+  },
+  "leaderboard": {
+    "title": "Рейтинг группы",
+    "you": "вы",
+    "completedN": "{{count}} тем",
+    "empty": "Рейтинг ещё не сформирован"
   },
   "review": {
     "back": "← Главная",
