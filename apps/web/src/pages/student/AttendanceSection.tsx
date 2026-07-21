@@ -1,5 +1,6 @@
 import { Fragment, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { motion, type Variants } from "framer-motion";
 import { AlertTriangle, BookOpen, CalendarCheck, CalendarDays, Check, ChevronDown, Clock, Minus, X } from "lucide-react";
 import { Card, Icon, LegendRow, MiniBars, Spinner, StackedBar, cls } from "@meduni/ui";
 import { AsyncSection } from "../../components/AsyncSection";
@@ -24,6 +25,16 @@ function monthLabel(key: string, locale: string) {
   const name = names[Number(m) - 1] ?? key;
   return `${name[0].toUpperCase()}${name.slice(1)} ${y}`;
 }
+
+const containerVariants: Variants = {
+  hidden: { opacity: 0 },
+  show: { opacity: 1, transition: { staggerChildren: 0.08 } }
+};
+
+const itemVariants: Variants = {
+  hidden: { opacity: 0, y: 15 },
+  show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
+};
 
 /** Talaba davomati — alohida sahifada ham, profil tabida ham ishlatiladi. */
 export function AttendanceSection() {
@@ -78,11 +89,15 @@ export function AttendanceSection() {
   const st = data?.stats;
 
   return (
-    <div className="space-y-4">
+    <motion.div variants={containerVariants} initial="hidden" animate="show" className="space-y-6">
       {/* Hero: umumiy % + taqsimot + oylik trend */}
       {st && (
-        <Card className="grid gap-x-8 gap-y-6 lg:grid-cols-[minmax(0,260px)_minmax(0,1fr)]">
-          <div>
+        <motion.div variants={itemVariants}>
+        <Card className="grid gap-x-8 gap-y-6 lg:grid-cols-[minmax(0,260px)_minmax(0,1fr)] overflow-hidden relative">
+          {/* Subtle glow background */}
+          <div className="absolute -top-32 -left-32 w-64 h-64 bg-brand-soft rounded-full blur-3xl"></div>
+          
+          <div className="relative z-10">
             <p className="text-note font-bold uppercase tracking-wide text-ink-soft">{t("overallPct")}</p>
             <p className={cls("mt-1 text-[44px] font-bold leading-none tabular-nums", low ? "text-rose" : "text-brand-deep")}>
               {pct !== null ? `${pct}%` : "—"}
@@ -143,20 +158,24 @@ export function AttendanceSection() {
 
           </div>
         </Card>
+        </motion.div>
       )}
 
       {/* Low-attendance notice — informative, not scary */}
       {low && (
-        <div className="flex items-start gap-2 rounded-card bg-amber-soft p-3.5 text-[14px] text-amber">
-          <Icon icon={AlertTriangle} size={17} className="mt-0.5 shrink-0" />
-          <p>{t("lowWarning", { pct })}</p>
-        </div>
+        <motion.div variants={itemVariants}>
+          <div className="flex items-start gap-3 rounded-card border border-amber/30 bg-amber-soft p-4 text-[14.5px] text-amber shadow-sm">
+            <Icon icon={AlertTriangle} size={18} className="mt-0.5 shrink-0" />
+            <p className="font-medium">{t("lowWarning", { pct })}</p>
+          </div>
+        </motion.div>
       )}
 
       {/* FANLAR BO'YICHA — jami/keldi/kechikdi/sababli/QOLDIRDI + davomat % */}
       {data && data.byCourse.length > 0 && (
+        <motion.div variants={itemVariants}>
         <Card className="overflow-x-auto p-0">
-          <div className="flex items-center gap-2 border-b border-line px-4 py-2.5">
+          <div className="flex items-center gap-2 border-b border-line px-5 py-3.5 bg-surface">
             <Icon icon={BookOpen} size={15} className="text-ink-faint" />
             <p className="text-note font-bold uppercase tracking-wide text-ink-soft">{t("byCourse")}</p>
           </div>
@@ -204,7 +223,7 @@ export function AttendanceSection() {
                       </td>
                     </tr>
                     {open && (
-                      <tr className="border-t border-line bg-bg/60">
+                      <tr className="border-t border-line bg-bg">
                         <td colSpan={7} className="px-4 py-3">
                           {missed.length > 0 && (
                             <>
@@ -255,18 +274,20 @@ export function AttendanceSection() {
             </tbody>
           </table>
         </Card>
+        </motion.div>
       )}
 
       {/* Kelgusi darslar */}
       {schedule.length > 0 && (
+        <motion.div variants={itemVariants}>
         <Card className="p-0">
-          <div className="flex items-center gap-2 border-b border-line px-4 py-2.5">
+          <div className="flex items-center gap-2 border-b border-line px-5 py-3.5 bg-surface">
             <Icon icon={CalendarDays} size={15} className="text-ink-faint" />
             <p className="text-note font-bold uppercase tracking-wide text-ink-soft">{t("upcoming")}</p>
           </div>
           <div className="divide-y divide-line">
             {schedule.slice(0, 5).map((s) => (
-              <div key={s.id} className="flex items-center gap-3 px-4 py-2.5">
+              <div key={s.id} className="flex items-center gap-3 px-5 py-3 transition-colors hover:bg-bg">
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-body font-semibold text-ink">{s.title ?? s.courseName}</p>
                   <p className="truncate text-note text-ink-faint">
@@ -274,21 +295,22 @@ export function AttendanceSection() {
                     {s.room ? ` · ${s.room}` : ""}
                   </p>
                 </div>
-                <span className="shrink-0 text-note font-medium text-ink-soft">
+                <span className="shrink-0 rounded-pill bg-brand-soft px-2.5 py-1 text-note font-semibold text-brand-deep">
                   {formatDate(locale === "ru" ? "ru" : "uz", s.date, "short")}
                 </span>
               </div>
             ))}
           </div>
         </Card>
+        </motion.div>
       )}
 
       {/* Filtrlar */}
-      <div className="flex flex-wrap items-center gap-2">
+      <motion.div variants={itemVariants} className="flex flex-wrap items-center gap-3 pt-2">
         <select
           value={courseId ?? ""}
           onChange={(e) => setCourseId(e.target.value ? Number(e.target.value) : undefined)}
-          className="rounded-control border border-line bg-surface px-2 py-2 text-[14px] outline-none focus:border-brand"
+          className="rounded-control border border-line bg-surface px-3 py-2 text-[14.5px] font-medium outline-none transition-colors focus:border-brand shadow-sm"
         >
           <option value="">{t("allCourses")}</option>
           {(coursesQ.data ?? []).map((c) => (
@@ -297,61 +319,65 @@ export function AttendanceSection() {
             </option>
           ))}
         </select>
-        <input
-          type="date"
-          value={range.from ?? ""}
-          onChange={(e) => setRange((r) => ({ ...r, from: e.target.value || undefined }))}
-          className="rounded-control border border-line px-2 py-2 text-[14px] outline-none focus:border-brand"
-        />
-        <span className="text-ink-faint">—</span>
-        <input
-          type="date"
-          value={range.to ?? ""}
-          onChange={(e) => setRange((r) => ({ ...r, to: e.target.value || undefined }))}
-          className="rounded-control border border-line px-2 py-2 text-[14px] outline-none focus:border-brand"
-        />
-      </div>
+        <div className="flex items-center gap-2 bg-surface border border-line rounded-control p-0.5 shadow-sm">
+          <input
+            type="date"
+            value={range.from ?? ""}
+            onChange={(e) => setRange((r) => ({ ...r, from: e.target.value || undefined }))}
+            className="rounded-control border-none px-2.5 py-1.5 text-[14px] outline-none bg-transparent"
+          />
+          <span className="text-ink-faint">—</span>
+          <input
+            type="date"
+            value={range.to ?? ""}
+            onChange={(e) => setRange((r) => ({ ...r, to: e.target.value || undefined }))}
+            className="rounded-control border-none px-2.5 py-1.5 text-[14px] outline-none bg-transparent"
+          />
+        </div>
+      </motion.div>
 
       {/* Darslar ro'yxati — oylar bo'yicha */}
-      <AsyncSection
-        isLoading={false}
-        isError={q.isError}
-        isEmpty={!!data && data.sessions.length === 0}
-        emptyIcon={<Icon icon={CalendarCheck} size={22} />}
-        emptyText={t("empty")}
-        onRetry={() => q.refetch()}
-      >
-        <div className="space-y-5">
-          {byMonth.map(([month, rows]) => (
-            <div key={month}>
-              <p className="mb-2 text-note font-bold uppercase tracking-wide text-ink-faint">
-                {monthLabel(month, locale)} · {t("lessonsN", { n: rows.length })}
-              </p>
-              <Card className="divide-y divide-line p-0">
-                {rows.map((s) => {
-                  const m = META[s.status];
-                  return (
-                    <div key={s.id} className="flex items-center gap-3 px-4 py-3">
-                      <div className={cls("flex h-9 w-9 shrink-0 items-center justify-center rounded-full", m.chip)}>
-                        <Icon icon={m.icon} size={17} />
+      <motion.div variants={itemVariants}>
+        <AsyncSection
+          isLoading={false}
+          isError={q.isError}
+          isEmpty={!!data && data.sessions.length === 0}
+          emptyIcon={<Icon icon={CalendarCheck} size={22} />}
+          emptyText={t("empty")}
+          onRetry={() => q.refetch()}
+        >
+          <div className="space-y-6">
+            {byMonth.map(([month, rows]) => (
+              <div key={month}>
+                <p className="mb-2 text-note font-bold uppercase tracking-wide text-ink-faint ml-1">
+                  {monthLabel(month, locale)} · {t("lessonsN", { n: rows.length })}
+                </p>
+                <Card className="divide-y divide-line p-0">
+                  {rows.map((s) => {
+                    const m = META[s.status];
+                    return (
+                      <div key={s.id} className="flex items-center gap-4 px-5 py-3.5 transition-colors hover:bg-bg">
+                        <div className={cls("flex h-10 w-10 shrink-0 items-center justify-center rounded-full", m.chip)}>
+                          <Icon icon={m.icon} size={18} />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-[15px] font-semibold text-ink">{s.title ?? s.courseName}</p>
+                          <p className="truncate text-[13.5px] text-ink-soft mt-0.5">
+                            {formatDate(locale === "ru" ? "ru" : "uz", s.date, "short")} · {s.courseName}
+                          </p>
+                        </div>
+                        <span className={cls("shrink-0 rounded-pill px-3 py-1 text-[13px] font-semibold shadow-sm border border-transparent", m.chip)}>
+                          {t(`status.${s.status}`)}
+                        </span>
                       </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-[14.5px] font-semibold text-ink">{s.title ?? s.courseName}</p>
-                        <p className="truncate text-[13px] text-ink-faint">
-                          {formatDate(locale === "ru" ? "ru" : "uz", s.date, "short")} · {s.courseName}
-                        </p>
-                      </div>
-                      <span className={cls("shrink-0 rounded-pill px-2.5 py-0.5 text-[12.5px] font-semibold", m.chip)}>
-                        {t(`status.${s.status}`)}
-                      </span>
-                    </div>
-                  );
-                })}
-              </Card>
-            </div>
-          ))}
-        </div>
-      </AsyncSection>
-    </div>
+                    );
+                  })}
+                </Card>
+              </div>
+            ))}
+          </div>
+        </AsyncSection>
+      </motion.div>
+    </motion.div>
   );
 }

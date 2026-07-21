@@ -29,9 +29,9 @@ export function SlidesTab({ topicId, data }: { topicId: number; data: SlidesTabD
   const go = (d: number) => setI((p) => Math.min(Math.max(p + d, 0), total - 1));
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-5">
       <div
-        className="rounded-card border border-line bg-surface p-5 sm:p-7"
+        className="relative overflow-hidden rounded-[16px] border-2 border-line bg-surface shadow-[0_10px_40px_rgba(0,0,0,0.05)]"
         onTouchStart={(e) => (touchX.current = e.touches[0].clientX)}
         onTouchEnd={(e) => {
           if (touchX.current === null) return;
@@ -40,40 +40,48 @@ export function SlidesTab({ topicId, data }: { topicId: number; data: SlidesTabD
           touchX.current = null;
         }}
       >
-        <div className="mb-3 h-1 w-12 rounded-pill bg-brand" />
-        <h3 className="text-[19px] font-bold text-ink">{slide.title}</h3>
-        {slide.imageUrl && (
-          <img src={`${API_URL}${slide.imageUrl}`} alt="" className="my-4 max-h-64 w-full rounded-control object-contain" />
-        )}
-        <ul className="mt-3 space-y-2">
-          {slide.bullets.map((b, bi) => (
-            <li key={bi} className="flex gap-2 text-[15px] text-ink-soft">
-              <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-brand" />
-              {b}
-            </li>
-          ))}
-        </ul>
+        <div className="p-6 sm:p-8 min-h-[300px]">
+          <div className="mb-6 flex items-start gap-4">
+            <div className="mt-1 h-8 w-1.5 shrink-0 rounded-full bg-brand" />
+            <h3 className="text-[22px] font-black text-ink leading-snug">{slide.title}</h3>
+          </div>
+          {slide.imageUrl && (
+            <img src={`${API_URL}${slide.imageUrl}`} alt="" className="my-5 max-h-72 w-full rounded-[12px] object-contain shadow-sm border border-line" />
+          )}
+          <ul className="mt-4 space-y-3">
+            {slide.bullets.map((b, bi) => (
+              <li key={bi} className="flex gap-3 text-[16px] font-medium text-ink-soft leading-relaxed">
+                <span className="mt-2.5 h-1.5 w-1.5 shrink-0 rounded-full bg-brand/80" />
+                {b}
+              </li>
+            ))}
+          </ul>
+        </div>
+        {/* Progress Bar inside the card at the bottom */}
+        <div className="h-1.5 w-full bg-bg">
+          <div className="h-full bg-brand transition-all duration-300" style={{ width: `${((i + 1) / total) * 100}%` }} />
+        </div>
       </div>
 
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex items-center justify-between gap-4 px-2">
         <button
           onClick={() => go(-1)}
           disabled={i === 0}
-          className="flex h-10 w-10 items-center justify-center rounded-control border border-line text-ink-soft transition-colors hover:bg-bg disabled:opacity-40"
+          className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-line bg-surface text-ink-soft shadow-sm transition-all hover:border-brand hover:text-brand disabled:opacity-40 disabled:hover:border-line disabled:hover:text-ink-soft"
           aria-label="prev"
         >
-          <Icon icon={ChevronLeft} size={18} />
+          <Icon icon={ChevronLeft} size={20} strokeWidth={2.5} />
         </button>
-        <span className="text-[14px] font-semibold text-ink-soft">
-          {i + 1} / {total}
+        <span className="rounded-pill bg-surface px-4 py-1.5 text-[15px] font-black tracking-widest text-ink-soft shadow-sm border border-line">
+          {i + 1} <span className="opacity-50">/</span> {total}
         </span>
         <button
           onClick={() => go(1)}
           disabled={i === total - 1}
-          className="flex h-10 w-10 items-center justify-center rounded-control border border-line text-ink-soft transition-colors hover:bg-bg disabled:opacity-40"
+          className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-line bg-surface text-ink-soft shadow-sm transition-all hover:border-brand hover:text-brand disabled:opacity-40 disabled:hover:border-line disabled:hover:text-ink-soft"
           aria-label="next"
         >
-          <Icon icon={ChevronRight} size={18} />
+          <Icon icon={ChevronRight} size={20} strokeWidth={2.5} />
         </button>
       </div>
 

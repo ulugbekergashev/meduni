@@ -5,17 +5,17 @@ type Variant = "primary" | "deep" | "ghost" | "soft" | "danger";
 type Size = "sm" | "md" | "lg";
 
 const variantClass: Record<Variant, string> = {
-  primary: "bg-brand text-white hover:bg-brand-deep",
-  deep: "bg-brand-deep text-white hover:bg-brand",
-  ghost: "bg-surface text-ink border border-line hover:bg-bg",
-  soft: "bg-brand-soft text-brand-deep hover:bg-brand/10",
-  danger: "bg-rose text-white hover:bg-rose/90",
+  primary: "bg-brand text-white shadow-sm hover:shadow-md hover:bg-brand-deep hover:-translate-y-[1px]",
+  deep: "bg-brand-deep text-white shadow-sm hover:shadow-md hover:bg-brand hover:-translate-y-[1px]",
+  ghost: "bg-surface text-ink border border-line hover:bg-bg hover:border-brand-soft",
+  soft: "bg-brand-soft text-brand-deep hover:brightness-[0.97]",
+  danger: "bg-rose text-white shadow-sm hover:shadow-md hover:brightness-95 hover:-translate-y-[1px]",
 };
 
 const sizeClass: Record<Size, string> = {
-  sm: "h-9 px-3.5 text-[14px] gap-1.5",
-  md: "h-11 px-5 text-[15px] gap-2",
-  lg: "h-12 px-6 text-[16.5px] gap-2.5",
+  sm: "h-8 px-3.5 text-[13.5px] gap-1.5",
+  md: "h-10 px-4 text-[14.5px] gap-2",
+  lg: "h-12 px-5 text-[15.5px] gap-2.5",
 };
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {

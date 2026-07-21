@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { motion, AnimatePresence, type Variants } from "framer-motion";
 import { Award, ChevronDown, ClipboardList, Clock, MessageSquareQuote, Stethoscope, Target, TrendingUp } from "lucide-react";
 import { Badge, Card, Icon, ProgressBar, ProgressRing, cls } from "@meduni/ui";
 import { HeroCard, HeroTile, RailCard } from "../../components/HeroStats";
@@ -8,6 +9,16 @@ import { AsyncSection } from "../../components/AsyncSection";
 import { formatDate } from "../../lib/date";
 import { useLocale } from "../../lib/useLocale";
 import { useMyGrades, type GradeCase, type GradeQuiz, type GradesCourse } from "./api";
+
+const containerVariants: Variants = {
+  hidden: { opacity: 0 },
+  show: { opacity: 1, transition: { staggerChildren: 0.08 } }
+};
+
+const itemVariants: Variants = {
+  hidden: { opacity: 0, y: 15 },
+  show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
+};
 
 function scoreTone(pct: number) {
   if (pct >= 85) return "text-emerald";
@@ -22,57 +33,68 @@ function QuizRow({ q, onOpen }: { q: GradeQuiz; onOpen: () => void }) {
   const [open, setOpen] = useState(false);
 
   return (
-    <div>
+    <div className="border-b border-line last:border-b-0 group">
       <div
         onClick={() => setOpen((o) => !o)}
-        className="flex w-full cursor-pointer items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-bg"
+        className="flex w-full cursor-pointer items-center gap-4 px-5 py-3.5 text-left transition-colors hover:bg-bg"
       >
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-soft text-blue">
-          <Icon icon={ClipboardList} size={16} />
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-soft text-blue shadow-sm">
+          <Icon icon={ClipboardList} size={18} />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-body font-semibold text-ink">{q.topicTitle}</p>
-          <p className="flex items-center gap-1.5 text-note text-ink-faint">
-            {t("attemptsN", { n: q.attempts })} · {q.passed ? t("passed") : t("notPassed")}
+          <p className="truncate text-[15.5px] font-bold text-ink transition-colors group-hover:text-brand-deep">{q.topicTitle}</p>
+          <p className="flex items-center gap-1.5 text-[13px] text-ink-faint mt-0.5">
+            {t("attemptsN", { n: q.attempts })} · <span className={q.passed ? "text-emerald font-medium" : ""}>{q.passed ? t("passed") : t("notPassed")}</span>
             <span className="text-ink-faint">· {t("passThreshold", { n: q.passThreshold })}</span>
           </p>
         </div>
-        <span className={cls("shrink-0 text-[19px] font-bold tabular-nums", scoreTone(q.bestScore))}>{q.bestScore}%</span>
-        <Icon
-          icon={ChevronDown}
-          size={16}
-          className={cls("shrink-0 text-ink-faint transition-transform", !open && "-rotate-90")}
-        />
+        <span className={cls("shrink-0 text-[20px] font-bold tabular-nums tracking-tight", scoreTone(q.bestScore))}>{q.bestScore}%</span>
+        <div className={cls("flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface text-ink-soft transition-all ml-2 border border-line shadow-sm", open && "bg-brand-soft text-brand border-transparent")}>
+          <Icon
+            icon={ChevronDown}
+            size={16}
+            className={cls("transition-transform", !open && "-rotate-90")}
+          />
+        </div>
       </div>
 
       {/* Urinishlar tarixi + mavzuga o'tish */}
+      <AnimatePresence>
       {open && (
-        <div className="border-t border-line bg-bg/60 px-4 py-3">
-          <p className="mb-2 text-note font-bold uppercase tracking-wide text-ink-faint">{t("historyTitle")}</p>
-          <div className="space-y-1.5">
-            {q.history.map((h) => (
-              <div key={h.attemptNo} className="flex items-center gap-3 text-note">
-                <span className="w-20 shrink-0 font-semibold text-ink">{t("attemptsN", { n: h.attemptNo })}</span>
-                <span className="flex-1">
-                  <ProgressBar value={h.scorePct} tone={h.passed ? "emerald" : "rose"} />
-                </span>
-                <span className={cls("w-12 shrink-0 text-right font-bold tabular-nums", scoreTone(h.scorePct))}>
-                  {h.scorePct}%
-                </span>
-                <span className="w-20 shrink-0 text-right text-ink-faint">
-                  {h.finishedAt ? formatDate(locale === "ru" ? "ru" : "uz", h.finishedAt, "short") : "—"}
-                </span>
-              </div>
-            ))}
+        <motion.div
+          initial={{ height: 0, opacity: 0 }}
+          animate={{ height: "auto", opacity: 1 }}
+          exit={{ height: 0, opacity: 0 }}
+          className="overflow-hidden bg-bg"
+        >
+          <div className="border-t border-line px-5 py-4">
+            <p className="mb-3 text-[12.5px] font-bold uppercase tracking-wider text-ink-faint">{t("historyTitle")}</p>
+            <div className="space-y-2.5">
+              {q.history.map((h) => (
+                <div key={h.attemptNo} className="flex items-center gap-4 text-[14px]">
+                  <span className="w-20 shrink-0 font-semibold text-ink-soft">{t("attemptsN", { n: h.attemptNo })}</span>
+                  <span className="flex-1">
+                    <ProgressBar value={h.scorePct} tone={h.passed ? "emerald" : "rose"} />
+                  </span>
+                  <span className={cls("w-12 shrink-0 text-right font-bold tabular-nums", scoreTone(h.scorePct))}>
+                    {h.scorePct}%
+                  </span>
+                  <span className="w-20 shrink-0 text-right font-medium text-ink-faint">
+                    {h.finishedAt ? formatDate(locale === "ru" ? "ru" : "uz", h.finishedAt, "short") : "—"}
+                  </span>
+                </div>
+              ))}
+            </div>
+            <button
+              onClick={onOpen}
+              className="mt-4 text-[13.5px] font-bold text-brand-deep hover:underline inline-flex items-center gap-1.5"
+            >
+              {t("openTopic")} <Icon icon={ChevronDown} size={14} className="-rotate-90" />
+            </button>
           </div>
-          <button
-            onClick={onOpen}
-            className="mt-2.5 text-note font-semibold text-brand-deep hover:underline"
-          >
-            {t("openTopic")} →
-          </button>
-        </div>
+        </motion.div>
       )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -83,21 +105,21 @@ function CaseRow({ c, onOpen }: { c: GradeCase; onOpen: () => void }) {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="px-4 py-3">
-      <div className="flex items-center gap-3">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-rose-soft text-rose">
-          <Icon icon={Stethoscope} size={16} />
+    <div className="border-b border-line last:border-b-0 px-5 py-4 group hover:bg-bg transition-colors">
+      <div className="flex items-center gap-4">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-rose-soft text-rose shadow-sm">
+          <Icon icon={Stethoscope} size={18} />
         </div>
         <button onClick={onOpen} className="min-w-0 flex-1 text-left">
-          <p className="truncate text-body font-semibold text-ink">{c.topicTitle}</p>
-          <p className="text-note text-ink-faint">
+          <p className="truncate text-[15.5px] font-bold text-ink transition-colors group-hover:text-brand-deep">{c.topicTitle}</p>
+          <p className="text-[13px] text-ink-soft mt-0.5 font-medium">
             {c.reviewed && c.reviewedAt
               ? `${c.reviewedByName ?? "—"} · ${formatDate(locale === "ru" ? "ru" : "uz", c.reviewedAt, "short")}`
               : formatDate(locale === "ru" ? "ru" : "uz", c.submittedAt, "short")}
           </p>
         </button>
         {c.reviewed ? (
-          <span className="shrink-0 text-[19px] font-bold tabular-nums text-emerald">{c.score}</span>
+          <span className="shrink-0 text-[20px] font-bold tabular-nums text-emerald tracking-tight">{c.score}</span>
         ) : (
           <Badge tone="amber">{t("underReview")}</Badge>
         )}
@@ -107,10 +129,10 @@ function CaseRow({ c, onOpen }: { c: GradeCase; onOpen: () => void }) {
       {c.feedback && (
         <button
           onClick={() => setOpen((o) => !o)}
-          className="mt-2 flex w-full items-start gap-2 rounded-control bg-emerald-soft px-3 py-2 text-left text-note text-ink"
+          className="mt-3 flex w-full items-start gap-2.5 rounded-card bg-emerald-soft border border-emerald/20 px-4 py-3 text-left text-[14px] text-ink transition-colors hover:bg-emerald-soft"
         >
-          <Icon icon={MessageSquareQuote} size={14} className="mt-0.5 shrink-0 text-emerald" />
-          <span className={cls("min-w-0 flex-1", !open && "truncate")}>{c.feedback}</span>
+          <Icon icon={MessageSquareQuote} size={16} className="mt-0.5 shrink-0 text-emerald" />
+          <span className={cls("min-w-0 flex-1 leading-relaxed", !open && "truncate")}>{c.feedback}</span>
         </button>
       )}
     </div>
@@ -127,22 +149,22 @@ function CourseBlock({ c, filter }: { c: GradesCourse; filter: Filter }) {
   if (quizzes.length === 0 && cases.length === 0) return null;
 
   return (
-    <section className="mt-5 first:mt-0">
-      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <h2 className="text-section font-bold text-ink">{c.subjectName}</h2>
-          <span className="rounded-pill bg-bg px-2 py-0.5 text-note text-ink-soft">
+    <motion.section variants={itemVariants} className="mt-6 first:mt-0">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2 px-1">
+        <div className="flex items-center gap-3">
+          <h2 className="text-[17px] font-bold tracking-tight text-ink">{c.subjectName}</h2>
+          <span className="rounded-pill bg-surface border border-line px-2.5 py-0.5 text-[12px] font-bold text-ink-soft shadow-sm">
             {c.academicYear} · {tp("semester", { n: c.semester })}
           </span>
         </div>
         {c.avgQuiz !== null && (
-          <span className="text-note font-semibold text-ink-soft">
+          <span className="text-[14px] font-bold text-ink-soft">
             {t("avgQuizShort")}: <span className={scoreTone(c.avgQuiz)}>{c.avgQuiz}%</span>
           </span>
         )}
       </div>
 
-      <Card className="divide-y divide-line p-0">
+      <Card className="p-0 overflow-hidden shadow-sm">
         {quizzes.map((q) => (
           <QuizRow key={`q${q.topicId}`} q={q} onOpen={() => navigate(`/app/topics/${q.topicId}?tab=quiz`)} />
         ))}
@@ -150,7 +172,7 @@ function CourseBlock({ c, filter }: { c: GradesCourse; filter: Filter }) {
           <CaseRow key={`c${k.topicId}`} c={k} onOpen={() => navigate(`/app/topics/${k.topicId}?tab=case`)} />
         ))}
       </Card>
-    </section>
+    </motion.section>
   );
 }
 
@@ -201,72 +223,74 @@ export function GradesPage() {
     .slice(0, 6);
 
   return (
-    <div>
-      <HeroCard
-        title={t("title")}
-        subtitle={t("subtitle")}
-        left={
-          s && s.avgQuiz !== null ? (
-            <div className="flex items-center gap-3">
-              <ProgressRing value={s.avgQuiz} size={64} stroke={8} tone="blue" />
-              <span className="text-note text-ink-soft">{t("avgQuiz")}</span>
-            </div>
-          ) : undefined
-        }
-      >
-        <HeroTile
-          icon={TrendingUp}
-          value={s?.avgQuiz !== null && s?.avgQuiz !== undefined ? `${s.avgQuiz}%` : "—"}
-          label={t("avgQuiz")}
-          tone="bg-blue-soft text-blue"
-          onClick={() => toggle("quiz")}
-          selected={filter === "quiz"}
-        />
-        <HeroTile
-          icon={Target}
-          value={`${s?.quizzesPassed ?? 0}/${s?.quizzesTotal ?? 0}`}
-          label={t("quizzesPassed")}
-          tone="bg-emerald-soft text-emerald"
-          onClick={() => toggle("quiz")}
-          selected={filter === "quiz"}
-        />
-        <HeroTile
-          icon={Award}
-          value={`${s?.casesGraded ?? 0}/${s?.casesTotal ?? 0}`}
-          label={t("casesGraded")}
-          tone="bg-rose-soft text-rose"
-          onClick={() => toggle("case")}
-          selected={filter === "case"}
-        />
-        <HeroTile
-          icon={Clock}
-          value={String(pendingCases.length)}
-          label={t("statPending")}
-          tone={pendingCases.length > 0 ? "bg-amber-soft text-amber" : "bg-bg text-ink-faint"}
-          onClick={() => toggle("case")}
-          selected={filter === "case"}
-        />
-      </HeroCard>
+    <motion.div variants={containerVariants} initial="hidden" animate="show" className="space-y-6">
+      <motion.div variants={itemVariants}>
+        <HeroCard
+          title={t("title")}
+          subtitle={t("subtitle")}
+          left={
+            s && s.avgQuiz !== null ? (
+              <div className="flex items-center gap-4">
+                <ProgressRing value={s.avgQuiz} size={72} stroke={8} tone="blue" />
+                <span className="text-[14px] font-bold text-ink-soft">{t("avgQuiz")}</span>
+              </div>
+            ) : undefined
+          }
+        >
+          <HeroTile
+            icon={TrendingUp}
+            value={s?.avgQuiz !== null && s?.avgQuiz !== undefined ? `${s.avgQuiz}%` : "—"}
+            label={t("avgQuiz")}
+            tone="bg-blue-soft text-blue"
+            onClick={() => toggle("quiz")}
+            selected={filter === "quiz"}
+          />
+          <HeroTile
+            icon={Target}
+            value={`${s?.quizzesPassed ?? 0}/${s?.quizzesTotal ?? 0}`}
+            label={t("quizzesPassed")}
+            tone="bg-emerald-soft text-emerald"
+            onClick={() => toggle("quiz")}
+            selected={filter === "quiz"}
+          />
+          <HeroTile
+            icon={Award}
+            value={`${s?.casesGraded ?? 0}/${s?.casesTotal ?? 0}`}
+            label={t("casesGraded")}
+            tone="bg-rose-soft text-rose"
+            onClick={() => toggle("case")}
+            selected={filter === "case"}
+          />
+          <HeroTile
+            icon={Clock}
+            value={String(pendingCases.length)}
+            label={t("statPending")}
+            tone={pendingCases.length > 0 ? "bg-amber-soft text-amber" : "bg-bg text-ink-faint"}
+            onClick={() => toggle("case")}
+            selected={filter === "case"}
+          />
+        </HeroCard>
+      </motion.div>
 
       {/* Tur filtri — segmented */}
       {withGradesAny && (
-        <div className="mt-5 inline-flex gap-1 rounded-control border border-line bg-surface p-1 shadow-card">
+        <motion.div variants={itemVariants} className="inline-flex gap-1.5 rounded-[12px] border border-line bg-surface p-1 shadow-sm">
           {(["all", "quiz", "case"] as Filter[]).map((f) => (
             <button
               key={f}
               onClick={() => setFilter(f)}
               className={cls(
-                "rounded-[8px] px-3.5 py-1.5 text-body font-semibold transition-all",
-                filter === f ? "bg-brand-soft text-brand-deep" : "text-ink-soft hover:bg-bg hover:text-ink"
+                "rounded-[8px] px-4 py-1.5 text-[14px] font-bold transition-all",
+                filter === f ? "bg-brand-soft text-brand-deep shadow-sm" : "text-ink-soft hover:bg-bg hover:text-ink"
               )}
             >
               {t(`filter.${f}`)}
             </button>
           ))}
-        </div>
+        </motion.div>
       )}
 
-      <div className="mt-4 grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
         <div className="min-w-0">
           <AsyncSection
             isLoading={q.isLoading}
@@ -283,49 +307,55 @@ export function GradesPage() {
           </AsyncSection>
         </div>
 
-        <aside className="min-w-0 space-y-5">
+        <aside className="min-w-0 space-y-6">
           {recent.length > 0 && (
-            <RailCard title={t("recentGrades")} icon={Award}>
-              <div className="divide-y divide-line">
-                {recent.map((r) => (
-                  <button
-                    key={r.key}
-                    onClick={() => navigateTo(`/app/topics/${r.topicId}?tab=${r.tab}`)}
-                    className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left transition-colors hover:bg-bg"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-note font-semibold text-ink">{r.title}</p>
-                      <p className="truncate text-[12.5px] text-ink-faint">{r.subject}</p>
-                    </div>
-                    <span className="shrink-0 text-body font-bold tabular-nums text-ink-soft">{r.score}</span>
-                  </button>
-                ))}
-              </div>
-            </RailCard>
+            <motion.div variants={itemVariants}>
+              <RailCard title={t("recentGrades")} icon={Award}>
+                <div className="divide-y divide-line">
+                  {recent.map((r) => (
+                    <button
+                      key={r.key}
+                      onClick={() => navigateTo(`/app/topics/${r.topicId}?tab=${r.tab}`)}
+                      className="flex w-full items-center gap-3 px-5 py-3 text-left transition-colors hover:bg-bg"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-[14.5px] font-bold text-ink">{r.title}</p>
+                        <p className="truncate text-[13px] font-medium text-ink-faint mt-0.5">{r.subject}</p>
+                      </div>
+                      <span className="shrink-0 text-[16px] font-bold tabular-nums text-ink">{r.score}</span>
+                    </button>
+                  ))}
+                </div>
+              </RailCard>
+            </motion.div>
           )}
 
           {pendingCases.length > 0 && (
-            <RailCard title={t("statPending")} icon={Clock}>
-              <div className="divide-y divide-line">
-                {pendingCases.map((k) => (
-                  <button
-                    key={`p${k.topicId}`}
-                    onClick={() => navigateTo(`/app/topics/${k.topicId}?tab=case`)}
-                    className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left transition-colors hover:bg-bg"
-                  >
-                    <Icon icon={Stethoscope} size={14} className="shrink-0 text-amber" />
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-note font-semibold text-ink">{k.topicTitle}</p>
-                      <p className="truncate text-[12.5px] text-ink-faint">{k.subjectName}</p>
-                    </div>
-                    <Badge tone="amber">{t("underReview")}</Badge>
-                  </button>
-                ))}
-              </div>
-            </RailCard>
+            <motion.div variants={itemVariants}>
+              <RailCard title={t("statPending")} icon={Clock}>
+                <div className="divide-y divide-line">
+                  {pendingCases.map((k) => (
+                    <button
+                      key={`p${k.topicId}`}
+                      onClick={() => navigateTo(`/app/topics/${k.topicId}?tab=case`)}
+                      className="flex w-full items-center gap-3 px-5 py-3 text-left transition-colors hover:bg-bg"
+                    >
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-soft text-amber">
+                        <Icon icon={Stethoscope} size={15} />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-[14.5px] font-bold text-ink">{k.topicTitle}</p>
+                        <p className="truncate text-[13px] font-medium text-ink-faint mt-0.5">{k.subjectName}</p>
+                      </div>
+                      <Badge tone="amber">{t("underReview")}</Badge>
+                    </button>
+                  ))}
+                </div>
+              </RailCard>
+            </motion.div>
           )}
         </aside>
       </div>
-    </div>
+    </motion.div>
   );
 }

@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { motion, AnimatePresence, type Variants } from "framer-motion";
 import {
   AlertTriangle,
   ArrowRight,
@@ -24,6 +25,16 @@ import { formatDate } from "../../lib/date";
 import { useLocale } from "../../lib/useLocale";
 import { useMySchedule, useMyTasks, useSetMyTaskDone, type AutoTask } from "./api";
 
+const containerVariants: Variants = {
+  hidden: { opacity: 0 },
+  show: { opacity: 1, transition: { staggerChildren: 0.08 } }
+};
+
+const itemVariants: Variants = {
+  hidden: { opacity: 0, y: 15 },
+  show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
+};
+
 const META: Record<string, { icon: LucideIcon; labelKey: string; chip: string }> = {
   study: { icon: PlayCircle, labelKey: "study", chip: "bg-brand-soft text-brand-deep" },
   quiz_todo: { icon: ClipboardList, labelKey: "quizTodo", chip: "bg-blue-soft text-blue" },
@@ -41,43 +52,47 @@ function AutoTaskGroup({ task }: { task: AutoTask }) {
   const items = task.items ?? [];
 
   return (
-    <section>
-      <div className="mb-2 flex items-center gap-2">
-        <div className={cls("flex h-7 w-7 shrink-0 items-center justify-center rounded-full", meta.chip)}>
-          <Icon icon={meta.icon} size={15} />
+    <motion.section variants={itemVariants}>
+      <div className="mb-3 flex items-center gap-2.5">
+        <div className={cls("flex h-8 w-8 shrink-0 items-center justify-center rounded-full shadow-sm", meta.chip)}>
+          <Icon icon={meta.icon} size={16} />
         </div>
-        <h3 className="text-body font-bold text-ink">{t(meta.labelKey)}</h3>
-        <span className="rounded-pill bg-bg px-2 py-0.5 text-note font-semibold text-ink-soft">
+        <h3 className="text-[16px] font-bold text-ink">{t(meta.labelKey)}</h3>
+        <span className="rounded-pill bg-surface border border-line px-2.5 py-0.5 text-[12.5px] font-bold text-ink-soft shadow-sm">
           {task.type === "attendance_low" ? `${task.count}%` : task.count}
         </span>
       </div>
 
       {items.length === 0 ? (
-        <Card interactive onClick={() => navigate(task.link)} className="flex items-center gap-3 py-3">
-          <p className="min-w-0 flex-1 text-body text-ink">{t("attendanceLowHint", { pct: task.count })}</p>
-          <Icon icon={ArrowRight} size={16} className="shrink-0 text-ink-faint" />
+        <Card interactive onClick={() => navigate(task.link)} className="flex items-center gap-3 py-4 transition-all hover:border-brand/30 hover:bg-bg">
+          <p className="min-w-0 flex-1 text-[15px] font-medium text-ink">{t("attendanceLowHint", { pct: task.count })}</p>
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-soft text-brand">
+            <Icon icon={ArrowRight} size={16} className="shrink-0" />
+          </div>
         </Card>
       ) : (
-        <Card className="divide-y divide-line p-0">
+        <Card className="divide-y divide-line p-0 overflow-hidden">
           {items.map((it, i) => (
             <button
               key={`${it.topicId}-${i}`}
               onClick={() => navigate(it.link)}
-              className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-bg"
+              className="group flex w-full items-center gap-4 px-5 py-3.5 text-left transition-colors hover:bg-bg"
             >
               <div className="min-w-0 flex-1">
-                <p className="truncate text-body font-semibold text-ink">{it.topicTitle}</p>
-                <p className="truncate text-note text-ink-faint">{it.courseName}</p>
+                <p className="truncate text-[15px] font-semibold text-ink transition-colors group-hover:text-brand-deep">{it.topicTitle}</p>
+                <p className="truncate text-[13.5px] text-ink-soft mt-0.5">{it.courseName}</p>
               </div>
               {it.value !== undefined && it.value !== null && (
-                <span className="shrink-0 text-[17px] font-bold tabular-nums text-emerald">{it.value}</span>
+                <span className="shrink-0 text-[18px] font-bold tabular-nums text-emerald">{it.value}</span>
               )}
-              <Icon icon={ArrowRight} size={16} className="shrink-0 text-ink-faint" />
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-bg text-ink-soft transition-colors group-hover:bg-brand-soft group-hover:text-brand">
+                <Icon icon={ArrowRight} size={16} />
+              </div>
             </button>
           ))}
         </Card>
       )}
-    </section>
+    </motion.section>
   );
 }
 
@@ -111,40 +126,42 @@ export function StudentTasksPage() {
   const toggle = (f: Filter) => setFilter((cur) => (cur === f ? "all" : f));
 
   return (
-    <div>
-      <HeroCard title={t("studentTitle")} subtitle={t("studentHint")}>
-        <HeroTile
-          icon={ListChecks}
-          value={String(totalOpen)}
-          label={t("statOpen")}
-          tone="bg-brand-soft text-brand-deep"
-          onClick={() => setFilter("all")}
-          selected={filter === "all"}
-        />
-        <HeroTile
-          icon={UserRound}
-          value={String(assignedAll.length)}
-          label={t("statFromTeacher")}
-          tone="bg-violet-soft text-violet"
-          onClick={() => toggle("teacher")}
-          selected={filter === "teacher"}
-        />
-        <HeroTile
-          icon={AlertTriangle}
-          value={String(overdue.length)}
-          label={t("statOverdue")}
-          tone={overdue.length > 0 ? "bg-rose-soft text-rose" : "bg-bg text-ink-faint"}
-          onClick={() => toggle("overdue")}
-          selected={filter === "overdue"}
-        />
-        <HeroTile
-          icon={CheckCircle2}
-          value={String(history.length)}
-          label={t("statDone")}
-          tone="bg-emerald-soft text-emerald"
-          onClick={() => setHistoryOpen(true)}
-        />
-      </HeroCard>
+    <motion.div variants={containerVariants} initial="hidden" animate="show" className="space-y-6">
+      <motion.div variants={itemVariants}>
+        <HeroCard title={t("studentTitle")} subtitle={t("studentHint")}>
+          <HeroTile
+            icon={ListChecks}
+            value={String(totalOpen)}
+            label={t("statOpen")}
+            tone="bg-brand-soft text-brand-deep"
+            onClick={() => setFilter("all")}
+            selected={filter === "all"}
+          />
+          <HeroTile
+            icon={UserRound}
+            value={String(assignedAll.length)}
+            label={t("statFromTeacher")}
+            tone="bg-violet-soft text-violet"
+            onClick={() => toggle("teacher")}
+            selected={filter === "teacher"}
+          />
+          <HeroTile
+            icon={AlertTriangle}
+            value={String(overdue.length)}
+            label={t("statOverdue")}
+            tone={overdue.length > 0 ? "bg-rose-soft text-rose" : "bg-bg text-ink-faint"}
+            onClick={() => toggle("overdue")}
+            selected={filter === "overdue"}
+          />
+          <HeroTile
+            icon={CheckCircle2}
+            value={String(history.length)}
+            label={t("statDone")}
+            tone="bg-emerald-soft text-emerald"
+            onClick={() => setHistoryOpen(true)}
+          />
+        </HeroCard>
+      </motion.div>
 
       {q.isLoading ? (
         <div className="flex h-40 items-center justify-center">
@@ -155,155 +172,184 @@ export function StudentTasksPage() {
           <p className="py-4 text-center text-body text-rose">{t("error")}</p>
         </Card>
       ) : (
-        <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
-          <div className="min-w-0 space-y-6">
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
+          <div className="min-w-0 space-y-8">
             {/* O'qituvchi topshiriqlari */}
             {showTeacher && assigned.length > 0 && (
-              <section>
-                <h2 className="mb-3 text-section font-bold text-ink">{t("teacherAssignedSection")}</h2>
-                <div className="space-y-2">
+              <motion.section variants={itemVariants}>
+                <h2 className="mb-4 text-section font-bold tracking-tight text-ink">{t("teacherAssignedSection")}</h2>
+                <div className="space-y-3">
+                  <AnimatePresence>
                   {assigned.map((task) => {
                     const isOverdue = task.dueDate && new Date(task.dueDate) < new Date();
                     return (
-                      <Card
+                      <motion.div
                         key={task.id}
-                        className={cls("flex flex-wrap items-start justify-between gap-3", isOverdue && "border-rose/40")}
+                        layout
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.9, filter: "blur(4px)" }}
                       >
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2">
-                            <p className="text-body font-semibold text-ink">{task.title}</p>
-                            {task.priority === "HIGH" && <Badge tone="rose">{t("priorityHigh")}</Badge>}
-                          </div>
-                          {task.description && <p className="mt-0.5 text-note text-ink-soft">{task.description}</p>}
-                          <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-note text-ink-faint">
-                            <span className="inline-flex items-center gap-1">
-                              <Icon icon={UserRound} size={13} /> {task.createdByName}
-                            </span>
-                            {task.dueDate && (
-                              <span className={cls("inline-flex items-center gap-1", isOverdue && "font-semibold text-rose")}>
-                                <Icon icon={Clock} size={13} /> {fmt(task.dueDate)}
-                                {isOverdue && ` · ${t("overdue")}`}
+                        <Card
+                          className={cls("flex flex-wrap items-start justify-between gap-4 transition-all hover:shadow-md", isOverdue ? "border-rose/40 bg-rose/5" : "bg-surface")}
+                        >
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <p className="text-[15.5px] font-bold text-ink">{task.title}</p>
+                              {task.priority === "HIGH" && <Badge tone="rose">{t("priorityHigh")}</Badge>}
+                            </div>
+                            {task.description && <p className="mt-1 text-[14px] text-ink-soft leading-relaxed">{task.description}</p>}
+                            <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-[13.5px] text-ink-faint">
+                              <span className="inline-flex items-center gap-1.5 font-medium">
+                                <Icon icon={UserRound} size={14} className="text-ink-soft" /> {task.createdByName}
                               </span>
-                            )}
+                              {task.dueDate && (
+                                <span className={cls("inline-flex items-center gap-1.5 font-medium", isOverdue && "font-bold text-rose")}>
+                                  <Icon icon={Clock} size={14} /> {fmt(task.dueDate)}
+                                  {isOverdue && ` · ${t("overdue")}`}
+                                </span>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                        <div className="flex shrink-0 items-center gap-2">
-                          {task.linkUrl && (
-                            <Button variant="ghost" size="sm" onClick={() => navigate(task.linkUrl!)}>
-                              {t("open")}
+                          <div className="flex shrink-0 items-center gap-2">
+                            {task.linkUrl && (
+                              <Button variant="ghost" size="sm" onClick={() => navigate(task.linkUrl!)}>
+                                {t("open")}
+                              </Button>
+                            )}
+                            <Button
+                              variant={isOverdue ? "primary" : "soft"}
+                              size="sm"
+                              icon={<Icon icon={CheckCircle2} size={16} />}
+                              onClick={() => done.mutate(task.id)}
+                              disabled={done.isPending && done.variables === task.id}
+                              className={isOverdue ? "bg-rose hover:bg-rose/90 text-white" : ""}
+                            >
+                              {t("markDone")}
                             </Button>
-                          )}
-                          <Button
-                            variant="soft"
-                            size="sm"
-                            icon={<Icon icon={CheckCircle2} size={15} />}
-                            onClick={() => done.mutate(task.id)}
-                            disabled={done.isPending && done.variables === task.id}
-                          >
-                            {t("markDone")}
-                          </Button>
-                        </div>
-                      </Card>
+                          </div>
+                        </Card>
+                      </motion.div>
                     );
                   })}
+                  </AnimatePresence>
                 </div>
-              </section>
+              </motion.section>
             )}
 
             {/* O'quv vazifalari — konkret mavzular */}
             {showStudy && auto.length > 0 && (
-              <section>
-                <h2 className="mb-3 text-section font-bold text-ink">{t("studySection")}</h2>
-                <div className="space-y-5">
+              <motion.section variants={itemVariants}>
+                <h2 className="mb-4 text-section font-bold tracking-tight text-ink">{t("studySection")}</h2>
+                <div className="space-y-6">
                   {auto.map((task) => (
                     <AutoTaskGroup key={task.type} task={task} />
                   ))}
                 </div>
-              </section>
+              </motion.section>
             )}
 
             {nothing && (
-              <Card className="flex items-center gap-3 border-emerald/40 bg-emerald-soft">
-                <Icon icon={Sparkles} size={22} className="text-emerald" />
-                <p className="text-body font-semibold text-emerald">{t("studentAllDone")}</p>
-              </Card>
+              <motion.div variants={itemVariants}>
+                <Card className="flex items-center gap-3 border-emerald/30 bg-emerald-soft shadow-sm p-6">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-soft text-emerald shadow-sm">
+                    <Icon icon={Sparkles} size={24} />
+                  </div>
+                  <p className="text-[16px] font-bold text-emerald">{t("studentAllDone")}</p>
+                </Card>
+              </motion.div>
             )}
 
             {!nothing && ((showTeacher && assigned.length === 0 && filter !== "all") || (showStudy && auto.length === 0 && filter === "study")) && (
-              <Card>
-                <p className="py-4 text-center text-body text-ink-faint">{t("noMatchFilter")}</p>
-              </Card>
+              <motion.div variants={itemVariants}>
+                <Card className="bg-surface border-dashed p-8 text-center">
+                  <p className="text-[15px] text-ink-faint">{t("noMatchFilter")}</p>
+                </Card>
+              </motion.div>
             )}
           </div>
 
           {/* O'ng ustun — kontekst */}
-          <aside className="min-w-0 space-y-5">
-            <RailCard
-              title={t("upcomingLessons")}
-              icon={CalendarDays}
-              action={{ label: t("open"), onClick: () => navigate("/app/schedule") }}
-            >
-              {schedule.length === 0 ? (
-                <p className="px-4 py-4 text-note text-ink-faint">{t("noLessonsShort")}</p>
-              ) : (
-                <div className="divide-y divide-line">
-                  {schedule.slice(0, 3).map((s) => (
-                    <button
-                      key={s.id}
-                      onClick={() => navigate("/app/schedule")}
-                      className="flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-bg"
-                    >
-                      <div className="w-10 shrink-0 text-center">
-                        <p className="text-[16px] font-bold leading-none tabular-nums text-brand-deep">
-                          {new Date(s.date).getDate()}
-                        </p>
-                        <p className="mt-0.5 text-[11.5px] tabular-nums text-ink-faint">
-                          {`${String(new Date(s.date).getHours()).padStart(2, "0")}:${String(new Date(s.date).getMinutes()).padStart(2, "0")}`}
-                        </p>
-                      </div>
-                      <div className="min-w-0 flex-1 border-l border-line pl-3">
-                        <p className="truncate text-body font-semibold text-ink">{s.title ?? s.courseName}</p>
-                        <p className="truncate text-note text-ink-faint">{s.courseName}</p>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </RailCard>
-
-            <RailCard title={t("doneSection")} icon={ClipboardCheck}>
-              {history.length === 0 ? (
-                <p className="px-4 py-4 text-note text-ink-faint">{t("noDoneYet")}</p>
-              ) : (
-                <>
-                  <button
-                    onClick={() => setHistoryOpen((o) => !o)}
-                    className="flex w-full items-center gap-2 px-4 py-2 text-left text-note font-semibold text-ink-soft transition-colors hover:bg-bg"
-                  >
-                    <Icon
-                      icon={ChevronDown}
-                      size={14}
-                      className={cls("transition-transform", !historyOpen && "-rotate-90")}
-                    />
-                    {t("doneCountN", { n: history.length })}
-                  </button>
-                  {historyOpen && (
-                    <div className="divide-y divide-line border-t border-line">
-                      {history.slice(0, 8).map((h) => (
-                        <div key={h.id} className="flex items-center gap-2.5 px-4 py-2.5">
-                          <Icon icon={CheckCircle2} size={14} className="shrink-0 text-emerald" />
-                          <p className="min-w-0 flex-1 truncate text-note text-ink-soft line-through">{h.title}</p>
-                          {h.doneAt && <span className="shrink-0 text-[12px] text-ink-faint">{fmt(h.doneAt)}</span>}
+          <aside className="min-w-0 space-y-6">
+            <motion.div variants={itemVariants}>
+              <RailCard
+                title={t("upcomingLessons")}
+                icon={CalendarDays}
+                action={{ label: t("open"), onClick: () => navigate("/app/schedule") }}
+              >
+                {schedule.length === 0 ? (
+                  <p className="px-5 py-5 text-[14px] text-ink-faint">{t("noLessonsShort")}</p>
+                ) : (
+                  <div className="divide-y divide-line">
+                    {schedule.slice(0, 3).map((s) => (
+                      <button
+                        key={s.id}
+                        onClick={() => navigate("/app/schedule")}
+                        className="flex w-full items-center gap-3 px-5 py-3 text-left transition-colors hover:bg-bg"
+                      >
+                        <div className="w-10 shrink-0 text-center">
+                          <p className="text-[17px] font-bold leading-none tabular-nums text-brand-deep">
+                            {new Date(s.date).getDate()}
+                          </p>
+                          <p className="mt-0.5 text-[12px] tabular-nums text-ink-soft">
+                            {`${String(new Date(s.date).getHours()).padStart(2, "0")}:${String(new Date(s.date).getMinutes()).padStart(2, "0")}`}
+                          </p>
                         </div>
-                      ))}
-                    </div>
-                  )}
-                </>
-              )}
-            </RailCard>
+                        <div className="min-w-0 flex-1 border-l border-line pl-4">
+                          <p className="truncate text-[15px] font-semibold text-ink">{s.title ?? s.courseName}</p>
+                          <p className="truncate text-[13.5px] text-ink-soft mt-0.5">{s.courseName}</p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </RailCard>
+            </motion.div>
+
+            <motion.div variants={itemVariants}>
+              <RailCard title={t("doneSection")} icon={ClipboardCheck}>
+                {history.length === 0 ? (
+                  <p className="px-5 py-5 text-[14px] text-ink-faint">{t("noDoneYet")}</p>
+                ) : (
+                  <>
+                    <button
+                      onClick={() => setHistoryOpen((o) => !o)}
+                      className="flex w-full items-center gap-2 px-5 py-3 text-left text-[14px] font-semibold uppercase tracking-wide text-ink-soft transition-colors hover:bg-bg"
+                    >
+                      <Icon
+                        icon={ChevronDown}
+                        size={15}
+                        className={cls("transition-transform", !historyOpen && "-rotate-90")}
+                      />
+                      {t("doneCountN", { n: history.length })}
+                    </button>
+                    <AnimatePresence>
+                    {historyOpen && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className="overflow-hidden border-t border-line"
+                      >
+                        <div className="divide-y divide-line">
+                          {history.slice(0, 8).map((h) => (
+                            <div key={h.id} className="flex items-center gap-3 px-5 py-3 bg-bg">
+                              <Icon icon={CheckCircle2} size={16} className="shrink-0 text-emerald/60" />
+                              <p className="min-w-0 flex-1 truncate text-[14px] text-ink-soft line-through">{h.title}</p>
+                              {h.doneAt && <span className="shrink-0 text-[12.5px] font-medium text-ink-faint tabular-nums">{fmt(h.doneAt)}</span>}
+                            </div>
+                          ))}
+                        </div>
+                      </motion.div>
+                    )}
+                    </AnimatePresence>
+                  </>
+                )}
+              </RailCard>
+            </motion.div>
           </aside>
         </div>
       )}
-    </div>
+    </motion.div>
   );
 }
