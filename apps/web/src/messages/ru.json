@@ -1404,7 +1404,10 @@
     "statAll": "Всего курсов",
     "statCurrent": "Текущий семестр",
     "statTopics": "Темы",
-    "statDone": "Завершено"
+    "statDone": "Завершено",
+    "currentSemester": "Текущий семестр",
+    "backToCurrent": "К текущему семестру",
+    "continueShort": "Продолжить"
   },
   "grades": {
     "title": "Мои оценки",

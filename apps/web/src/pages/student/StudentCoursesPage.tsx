@@ -1,8 +1,8 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { motion, type Variants } from "framer-motion";
-import { BookOpen, CheckCircle2, Layers, PlayCircle, Search, UserRound, Users } from "lucide-react";
+import { BookOpen, CheckCircle2, ChevronRight, Layers, PlayCircle, RotateCcw, Search, Users } from "lucide-react";
 import { Card, Icon, ProgressBar, ProgressRing, cls } from "@meduni/ui";
 import { HeroCard, HeroTile } from "../../components/HeroStats";
 import { AsyncSection } from "../../components/AsyncSection";
@@ -11,96 +11,93 @@ import { useMyCourses, type CourseSummary } from "./api";
 
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
-  show: { opacity: 1, transition: { staggerChildren: 0.08 } }
+  show: { opacity: 1, transition: { staggerChildren: 0.08 } },
 };
 
 const itemVariants: Variants = {
   hidden: { opacity: 0, y: 15 },
-  show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
+  show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } },
 };
 
-function CourseCard({ course }: { course: CourseSummary }) {
+function CourseRow({ course }: { course: CourseSummary }) {
   const { t } = useTranslation(undefined, { keyPrefix: "studentCourses" });
-  const { t: tp } = useTranslation(undefined, { keyPrefix: "period" });
   const navigate = useNavigate();
   const done = course.topicsTotal > 0 && course.topicsCompleted === course.topicsTotal;
 
   return (
-    <motion.div variants={itemVariants} className="h-full">
-      <Card
-        interactive
-        onClick={() => navigate(`/app/courses/${course.id}`)}
-        className="flex h-full flex-col gap-4 p-5"
+    <div
+      onClick={() => navigate(`/app/courses/${course.id}`)}
+      className="flex cursor-pointer items-center gap-4 px-4 py-3.5 transition-colors hover:bg-bg"
+    >
+      <div
+        className={cls(
+          "flex h-11 w-11 shrink-0 items-center justify-center rounded-full",
+          done ? "bg-emerald-soft text-emerald" : "bg-brand-soft text-brand-deep"
+        )}
       >
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <h3 className="line-clamp-2 text-[17px] font-bold leading-snug text-ink">{course.subjectName}</h3>
-            <p className="mt-1 flex items-center gap-1.5 truncate text-[13px] font-medium text-ink-soft">
-              <Icon icon={UserRound} size={14} className="text-ink-faint" /> {course.teacherName}
-            </p>
-          </div>
-          <div
-            className={cls(
-              "flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] shadow-sm",
-              done ? "bg-emerald-soft text-emerald" : "bg-brand-soft text-brand-deep"
-            )}
-          >
-            <Icon icon={done ? CheckCircle2 : BookOpen} size={20} />
-          </div>
-        </div>
+        <Icon icon={done ? CheckCircle2 : BookOpen} size={20} />
+      </div>
 
-        <div className="flex flex-wrap gap-1.5 text-[12.5px] font-bold">
-          <span className="rounded-[6px] bg-brand-soft border border-brand/20 px-2.5 py-0.5 text-brand-deep shadow-sm">
-            {tp("semester", { n: course.semester })}
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-body font-bold text-ink">{course.subjectName}</p>
+        <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 truncate text-note text-ink-faint">
+          <span className="truncate">{course.teacherName}</span>
+          <span className="text-line">·</span>
+          <span className="whitespace-nowrap">
+            {course.topicsCompleted}/{course.topicsTotal} {t("topics")}
           </span>
-          <span className="rounded-[6px] bg-surface border border-line px-2.5 py-0.5 text-ink-soft shadow-sm">{course.academicYear}</span>
           {course.groupName && (
-            <span className="inline-flex items-center gap-1 rounded-[6px] bg-surface border border-line px-2.5 py-0.5 text-ink-soft shadow-sm">
-              <Icon icon={Users} size={12} className="text-ink-faint" /> {course.groupName}
-            </span>
-          )}
-        </div>
-
-        <div className="space-y-2 mt-auto">
-          <ProgressBar value={course.progressPct} tone={done ? "emerald" : "brand"} />
-          <div className="flex items-center justify-between text-[13px]">
-            <span className={cls("font-bold", done ? "text-emerald" : "text-brand-deep")}>{course.progressPct}%</span>
-            <span className="font-semibold text-ink-soft">
-              {course.topicsCompleted}/{course.topicsTotal} {t("topics")}
-            </span>
-          </div>
-        </div>
-
-        <div className="pt-2">
-          {course.nextTopicId ? (
             <>
-              <p className="mb-2.5 truncate text-[13px] font-semibold text-ink-soft">
-                <span className="text-ink-faint font-medium">{t("nextTopic")}: </span>
-                {course.nextTopic}
-              </p>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  navigate(`/app/topics/${course.nextTopicId}`);
-                }}
-                className="flex w-full items-center justify-center gap-2 rounded-[10px] bg-brand px-4 py-2.5 text-[14px] font-bold text-white shadow-sm transition-all hover:bg-brand-deep hover:shadow-md hover:-translate-y-[1px]"
-              >
-                <Icon icon={PlayCircle} size={18} />
-                {t("continue")}
-              </button>
+              <span className="text-line">·</span>
+              <span className="inline-flex items-center gap-0.5 whitespace-nowrap">
+                <Icon icon={Users} size={11} /> {course.groupName}
+              </span>
             </>
-          ) : (
-            <p className="rounded-[10px] bg-emerald-soft border border-emerald/20 px-4 py-2.5 text-center text-[14px] font-bold text-emerald shadow-sm">
-              {done ? t("allDone") : t("noOpenTopic")}
-            </p>
           )}
+        </p>
+        <div className="mt-1.5 max-w-[360px]">
+          <ProgressBar value={course.progressPct} tone={done ? "emerald" : "brand"} />
         </div>
-      </Card>
-    </motion.div>
+      </div>
+
+      <div className="flex shrink-0 flex-col items-end gap-1.5 sm:flex-row sm:items-center sm:gap-3">
+        <span className={cls("text-[17px] font-bold tabular-nums", done ? "text-emerald" : "text-brand-deep")}>
+          {course.progressPct}%
+        </span>
+        {course.nextTopicId ? (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/app/topics/${course.nextTopicId}`);
+            }}
+            className="inline-flex items-center gap-1.5 rounded-control border border-line bg-surface px-3 py-1.5 text-note font-bold text-brand-deep transition-colors hover:border-brand-soft hover:bg-brand-soft"
+          >
+            <Icon icon={PlayCircle} size={15} />
+            <span className="hidden sm:inline">{t("continueShort")}</span>
+          </button>
+        ) : done ? (
+          <span title={t("allDone")}>
+            <Icon icon={CheckCircle2} size={18} className="text-emerald" />
+          </span>
+        ) : null}
+        <Icon icon={ChevronRight} size={18} className="text-ink-faint" />
+      </div>
+    </div>
   );
 }
 
-/** "Kurslarim" — talabaning asosiy moduli: barcha kurslar davrlar bo'yicha. */
+function CourseList({ rows }: { rows: CourseSummary[] }) {
+  return (
+    <Card className="divide-y divide-line overflow-hidden p-0">
+      {rows.map((c) => (
+        <CourseRow key={c.id} course={c} />
+      ))}
+    </Card>
+  );
+}
+
+/** "Kurslarim" — talabaning asosiy moduli: kurslar ro'yxat ko'rinishida,
+ *  sukut bo'yicha joriy semestr filtri bilan. */
 export function StudentCoursesPage() {
   const { t } = useTranslation(undefined, { keyPrefix: "studentCourses" });
   const q = useMyCourses();
@@ -111,27 +108,49 @@ export function StudentCoursesPage() {
   const [semester, setSemester] = useState("");
   const options = usePeriodOptions(courses);
 
+  // Sukut bo'yicha joriy semestr — foydalanuvchi filtrga tegmaguncha.
+  const touched = useRef(false);
+  const newest = courses[0];
+  useEffect(() => {
+    if (touched.current || !newest) return;
+    setYear(newest.academicYear);
+    setSemester(String(newest.semester));
+  }, [newest]);
+
+  const onYear = (v: string) => {
+    touched.current = true;
+    setYear(v);
+  };
+  const onSemester = (v: string) => {
+    touched.current = true;
+    setSemester(v);
+  };
+  const backToCurrent = () => {
+    if (!newest) return;
+    setYear(newest.academicYear);
+    setSemester(String(newest.semester));
+  };
+
   const filtered = useMemo(() => {
     const needle = search.trim().toLowerCase();
     return courses.filter((c) => {
       if (year && c.academicYear !== year) return false;
       if (semester && String(c.semester) !== semester) return false;
       if (!needle) return true;
-      return (
-        c.subjectName.toLowerCase().includes(needle) ||
-        c.teacherName.toLowerCase().includes(needle)
-      );
+      return c.subjectName.toLowerCase().includes(needle) || c.teacherName.toLowerCase().includes(needle);
     });
   }, [courses, search, year, semester]);
 
+  const specificPeriod = !!year && !!semester;
   const groups = useMemo(() => groupByPeriod(filtered), [filtered]);
   const filtering = !!search.trim() || !!year || !!semester;
+  const isCurrentDefault =
+    !!newest && year === newest.academicYear && semester === String(newest.semester) && !search.trim();
 
   const avgProgress = courses.length
     ? Math.round(courses.reduce((a, c) => a + c.progressPct, 0) / courses.length)
     : 0;
   const doneCourses = courses.filter((c) => c.topicsTotal > 0 && c.topicsCompleted === c.topicsTotal).length;
-  const newest = courses[0];
   const currentCount = courses.filter(
     (c) => newest && c.academicYear === newest.academicYear && c.semester === newest.semester
   ).length;
@@ -146,8 +165,8 @@ export function StudentCoursesPage() {
           subtitle={t("subtitle")}
           left={
             <div className="flex items-center gap-4">
-              <ProgressRing value={avgProgress} size={72} stroke={8} tone="brand" />
-              <span className="text-[14px] font-bold text-ink-soft">{t("avgProgress")}</span>
+              <ProgressRing value={avgProgress} size={64} stroke={8} tone="brand" />
+              <span className="text-note font-bold text-ink-soft">{t("avgProgress")}</span>
             </div>
           }
         >
@@ -157,7 +176,8 @@ export function StudentCoursesPage() {
             value={String(currentCount)}
             label={t("statCurrent")}
             tone="bg-blue-soft text-blue"
-            onClick={newest ? () => { setYear(newest.academicYear); setSemester(String(newest.semester)); } : undefined}
+            selected={isCurrentDefault}
+            onClick={newest ? backToCurrent : undefined}
           />
           <HeroTile icon={Layers} value={`${topicsDone}/${topicsTotal}`} label={t("statTopics")} tone="bg-violet-soft text-violet" />
           <HeroTile icon={CheckCircle2} value={String(doneCourses)} label={t("statDone")} tone="bg-emerald-soft text-emerald" />
@@ -171,23 +191,32 @@ export function StudentCoursesPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={t("searchPlaceholder")}
-            className="w-full rounded-[10px] border border-line bg-surface py-2.5 pl-10 pr-4 text-[14px] font-medium outline-none focus:border-brand shadow-sm transition-colors"
+            className="w-full rounded-control border border-line bg-surface py-2.5 pl-10 pr-4 text-[14px] font-medium outline-none transition-colors focus:border-brand"
           />
         </div>
-        <div className="flex items-center gap-2 bg-surface p-1 rounded-[12px] border border-line shadow-sm">
+        <div className="flex items-center gap-2 rounded-control border border-line bg-surface p-1">
           <PeriodFilter
             years={options.years}
             semesters={options.semesters}
             year={year}
             semester={semester}
-            onYear={setYear}
-            onSemester={setSemester}
+            onYear={onYear}
+            onSemester={onSemester}
           />
         </div>
-        <span className="text-[13px] font-bold text-ink-soft ml-2">{t("totalN", { n: filtered.length })}</span>
+        {!isCurrentDefault && newest && (
+          <button
+            onClick={backToCurrent}
+            className="inline-flex items-center gap-1.5 rounded-control border border-line bg-surface px-3 py-2 text-note font-semibold text-brand-deep transition-colors hover:bg-brand-soft"
+          >
+            <Icon icon={RotateCcw} size={14} />
+            {t("backToCurrent")}
+          </button>
+        )}
+        <span className="ml-auto text-note font-bold text-ink-soft">{t("totalN", { n: filtered.length })}</span>
       </motion.div>
 
-      <motion.div variants={itemVariants} className="mt-2">
+      <motion.div variants={itemVariants}>
         <AsyncSection
           isLoading={q.isLoading}
           isError={q.isError}
@@ -197,22 +226,18 @@ export function StudentCoursesPage() {
           emptyHint={courses.length === 0 ? t("emptyHint") : undefined}
           onRetry={() => q.refetch()}
         >
-          {groups.map((g, i) => (
-            <PeriodSection
-              key={g.year}
-              group={g}
-              defaultOpen={i === 0 || filtering}
-              renderRows={(rows) => (
-                <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                  {rows.map((c) => (
-                    <li key={c.id}>
-                      <CourseCard course={c} />
-                    </li>
-                  ))}
-                </ul>
-              )}
-            />
-          ))}
+          {specificPeriod ? (
+            <CourseList rows={filtered} />
+          ) : (
+            groups.map((g, i) => (
+              <PeriodSection
+                key={g.year}
+                group={g}
+                defaultOpen={i === 0 || filtering}
+                renderRows={(rows) => <CourseList rows={rows} />}
+              />
+            ))
+          )}
         </AsyncSection>
       </motion.div>
     </motion.div>
