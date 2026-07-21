@@ -1,5 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { motion, type Variants } from "framer-motion";
 import {
   ArrowRight,
   BookOpen,
@@ -121,6 +122,16 @@ function CourseCard({ course }: { course: CourseSummary }) {
   );
 }
 
+const containerVariants: Variants = {
+  hidden: { opacity: 0 },
+  show: { opacity: 1, transition: { staggerChildren: 0.08 } }
+};
+
+const itemVariants: Variants = {
+  hidden: { opacity: 0, y: 15 },
+  show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
+};
+
 export function StudentDashboard() {
   const { t } = useTranslation(undefined, { keyPrefix: "student" });
   const { t: tt } = useTranslation(undefined, { keyPrefix: "tasks" });
@@ -165,21 +176,22 @@ export function StudentDashboard() {
         onRetry={() => q.refetch()}
       >
         {d && (
-          <>
+          <motion.div variants={containerVariants} initial="hidden" animate="show">
             {/* Hero — salom + xulosa, butun kenglik */}
-            <HeroCard
-              title={`${t("hello")}, ${d.fullName.split(" ")[0]}`}
-              subtitle={today}
-              left={
-                <button
-                  onClick={() => navigate("/app/courses")}
-                  title={t("overall")}
-                  className="rounded-full transition-transform hover:scale-105"
-                >
-                  <ProgressRing value={overallPct} size={72} stroke={8} label={t("overall")} />
-                </button>
-              }
-            >
+            <motion.div variants={itemVariants}>
+              <HeroCard
+                title={`${t("hello")}, ${d.fullName.split(" ")[0]}`}
+                subtitle={today}
+                left={
+                  <button
+                    onClick={() => navigate("/app/courses")}
+                    title={t("overall")}
+                    className="rounded-full transition-transform hover:scale-105"
+                  >
+                    <ProgressRing value={overallPct} size={72} stroke={8} label={t("overall")} />
+                  </button>
+                }
+              >
                 <HeroTile
                   icon={Layers}
                   value={`${d.courses.reduce((s, c) => s + c.topicsCompleted, 0)}/${d.courses.reduce((s, c) => s + c.topicsTotal, 0)}`}
@@ -213,13 +225,14 @@ export function StudentDashboard() {
                   onClick={() => navigate("/app/grades")}
                 />
             </HeroCard>
+            </motion.div>
 
             {/* Asosiy maydon: chapda ish, o'ngda kontekst */}
-            <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
-              <div className="min-w-0 space-y-5">
+            <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
+              <div className="min-w-0 space-y-6">
                 {/* Davom ettirish — ixcham gorizontal */}
                 {d.resume && (
-                  <div className="flex flex-wrap items-center gap-4 rounded-card bg-gradient-to-br from-brand-deep to-brand p-4 text-white shadow-md">
+                  <motion.div variants={itemVariants} className="flex flex-wrap items-center gap-4 rounded-card bg-gradient-to-br from-brand-deep to-brand p-5 text-white shadow-md">
                     <div className="min-w-0 flex-1">
                       <p className="text-[12.5px] font-bold uppercase tracking-wide text-white/70">
                         {t("continueLabel")}
@@ -242,11 +255,12 @@ export function StudentDashboard() {
                         {t("continue")}
                       </button>
                     </Link>
-                  </div>
+                  </motion.div>
                 )}
 
                 {/* Bugun — konkret vazifa qatorlari */}
-                <Card className="p-0">
+                <motion.div variants={itemVariants}>
+                  <Card className="p-0 overflow-hidden border-line">
                   <div className="flex items-center gap-2 border-b border-line px-4 py-2.5">
                     <p className="flex-1 text-note font-bold uppercase tracking-wide text-ink-soft">{t("todayTitle")}</p>
                     <button
@@ -307,11 +321,12 @@ export function StudentDashboard() {
                       <p className="text-body font-semibold text-emerald">{tt("studentAllDone")}</p>
                     </div>
                   )}
-                </Card>
+                  </Card>
+                </motion.div>
 
                 {/* Joriy semestr kurslari */}
                 {currentCourses.length > 0 && (
-                  <div>
+                  <motion.div variants={itemVariants}>
                     <div className="mb-2.5 flex items-center justify-between gap-3">
                       <h2 className="text-section font-bold text-ink">{t("currentCourses")}</h2>
                       <Link to="/app/courses" className="text-note font-semibold text-brand-deep hover:underline">
@@ -323,12 +338,13 @@ export function StudentDashboard() {
                         <CourseCard key={c.id} course={c} />
                       ))}
                     </div>
-                  </div>
+                  </motion.div>
                 )}
               </div>
 
               {/* O'ng ustun — jadval, bildirishnoma, faollik */}
-              <aside className="min-w-0 space-y-5">
+              <aside className="min-w-0 space-y-6">
+                <motion.div variants={itemVariants}>
                 <RailCard
                   title={t("upcomingLessons")}
                   icon={CalendarDays}
@@ -368,8 +384,10 @@ export function StudentDashboard() {
                     </div>
                   )}
                 </RailCard>
+                </motion.div>
 
                 {d.notifications.length > 0 && (
+                  <motion.div variants={itemVariants}>
                   <RailCard title={t("notifications")} icon={ClipboardCheck}>
                     <div className="divide-y divide-line">
                       {d.notifications.slice(0, 4).map((n) => (
@@ -392,9 +410,11 @@ export function StudentDashboard() {
                       ))}
                     </div>
                   </RailCard>
+                  </motion.div>
                 )}
 
                 {activity.length > 0 && (
+                  <motion.div variants={itemVariants}>
                   <RailCard title={t("recentActivity")} icon={Sparkles}>
                     <div className="divide-y divide-line">
                       {activity.slice(0, 5).map((a, i) => {
@@ -419,11 +439,12 @@ export function StudentDashboard() {
                         );
                       })}
                     </div>
-                  </RailCard>
+                      </RailCard>
+                  </motion.div>
                 )}
               </aside>
             </div>
-          </>
+          </motion.div>
         )}
       </AsyncSection>
 

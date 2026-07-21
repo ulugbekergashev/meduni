@@ -25,6 +25,24 @@ function LangSelect({ value, onChange }: { value: "uz" | "ru"; onChange: (v: "uz
   );
 }
 
+function GeneratingPulse({ label }: { label: string }) {
+  return (
+    <div className="flex flex-col items-center justify-center gap-4 py-8">
+      <div className="relative flex h-16 w-16 items-center justify-center">
+        <div className="absolute inset-0 animate-ping rounded-full bg-brand/30 duration-[2000ms]"></div>
+        <div className="absolute inset-2 animate-pulse rounded-full bg-brand/50"></div>
+        <Icon icon={Sparkles} size={28} className="relative z-10 text-brand" />
+      </div>
+      <div className="text-center">
+        <p className="text-[16px] font-bold text-brand-deep">{label}</p>
+        <p className="mt-1.5 text-[13px] font-medium text-ink-soft max-w-[240px] leading-relaxed mx-auto">
+          Sun'iy intellekt ishlamoqda. Bu bir necha soniya olishi mumkin.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 function ReadyRow({ summary, onEdit }: { summary: ContentSummary; onEdit: () => void }) {
   const { t } = useTranslation(undefined, { keyPrefix: "generate" });
   return (
@@ -55,7 +73,7 @@ function QuizCard({ topic }: { topic: TopicDetail }) {
   const [difficulty, setDifficulty] = useState("balanced");
 
   const run = () =>
-    gen.mutate({ language, questionCount: Number(questionCount), difficulty }, { onSuccess: () => show(t("ready")) });
+    gen.mutate({ language, questionCount: Number(questionCount), difficulty }, { onSuccess: () => show("✨ " + t("ready")) });
 
   return (
     <Card className="flex flex-col gap-4">
@@ -67,9 +85,7 @@ function QuizCard({ topic }: { topic: TopicDetail }) {
       </div>
 
       {gen.isPending ? (
-        <div className="flex items-center gap-2 py-2 text-body text-ink-soft">
-          <Spinner size={16} /> {t("generatingQuiz")}
-        </div>
+        <GeneratingPulse label={t("generatingQuiz")} />
       ) : (
         <>
           <div className="grid grid-cols-2 gap-3">
@@ -113,6 +129,7 @@ function CaseCard({ topic }: { topic: TopicDetail }) {
   const { t } = useTranslation(undefined, { keyPrefix: "generate" });
   const locale = useLocale();
   const navigate = useNavigate();
+  const { show } = useToast();
   const gen = useGenerateCase(topic.id);
   const existing = topic.content.find((c) => c.kind === "case");
 
@@ -129,9 +146,7 @@ function CaseCard({ topic }: { topic: TopicDetail }) {
       </div>
 
       {gen.isPending ? (
-        <div className="flex items-center gap-2 py-2 text-body text-ink-soft">
-          <Spinner size={16} /> {t("generatingCase")}
-        </div>
+        <GeneratingPulse label={t("generatingCase")} />
       ) : (
         <>
           <div className="grid grid-cols-2 gap-3">
@@ -146,7 +161,7 @@ function CaseCard({ topic }: { topic: TopicDetail }) {
             </Field>
           </div>
           {gen.isError && <p className="text-body text-rose">{apiErrorMessage(gen.error, locale) ?? t("error")}</p>}
-          <Button icon={<Icon icon={Sparkles} size={16} />} onClick={() => gen.mutate({ language, format })}>
+          <Button icon={<Icon icon={Sparkles} size={16} />} onClick={() => gen.mutate({ language, format }, { onSuccess: () => show("✨ " + t("ready")) })}>
             {existing ? t("regenerate") : t("generateCase")}
           </Button>
         </>
@@ -179,9 +194,7 @@ function PresentationCard({ topic }: { topic: TopicDetail }) {
       </div>
 
       {gen.isPending ? (
-        <div className="flex items-center gap-2 py-2 text-body text-ink-soft">
-          <Spinner size={16} /> {t("generatingSlides")}
-        </div>
+        <GeneratingPulse label={t("generatingSlides")} />
       ) : (
         <>
           <Field label={t("language")}>
@@ -191,7 +204,7 @@ function PresentationCard({ topic }: { topic: TopicDetail }) {
           {gen.isError && <p className="text-body text-rose">{apiErrorMessage(gen.error, locale) ?? t("error")}</p>}
           <Button
             icon={<Icon icon={Sparkles} size={16} />}
-            onClick={() => gen.mutate({ language }, { onSuccess: () => show(t("ready")) })}
+            onClick={() => gen.mutate({ language }, { onSuccess: () => show("✨ " + t("ready")) })}
           >
             {existing ? t("regenerate") : t("generatePresentation")}
           </Button>

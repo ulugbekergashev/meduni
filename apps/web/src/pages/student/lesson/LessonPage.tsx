@@ -108,8 +108,8 @@ export function LessonPage() {
                   </div>
                 )}
 
-                {/* Tab bar — segmented track; each tab keeps its element color */}
-                <div className="mt-5 inline-flex max-w-full gap-1 overflow-x-auto rounded-control border border-line bg-surface p-1 shadow-card">
+                {/* Tab bar — premium segmented track */}
+                <div className="mt-8 mb-2 flex max-w-full gap-3 overflow-x-auto pb-4 pt-1 px-1 scrollbar-hide">
                   {tabs.map((tb) => {
                     const on = tb.key === active;
                     const c = tabColor[tb.color];
@@ -118,15 +118,18 @@ export function LessonPage() {
                         key={tb.key}
                         onClick={() => setTab(tb.key)}
                         className={cls(
-                          "flex shrink-0 items-center gap-2 whitespace-nowrap rounded-[8px] px-3.5 py-2 text-[15px] font-semibold transition-all",
-                          on ? c.active : "text-ink-soft hover:bg-bg hover:text-ink"
+                          "relative flex shrink-0 items-center gap-2.5 rounded-[12px] px-5 py-3 text-[15.5px] font-bold transition-all overflow-hidden border-2",
+                          on 
+                            ? `${c.active.replace('text-', 'text-').replace('bg-', 'bg-')} border-transparent shadow-[0_8px_20px_rgba(0,0,0,0.06)] scale-[1.02]` 
+                            : "bg-surface border-line text-ink-soft hover:bg-bg hover:border-line-heavy hover:text-ink"
                         )}
                       >
-                        <Icon icon={tb.icon} size={16} />
-                        {t(`tab_${tb.key}`)}
+                        {on && <div className={cls("absolute inset-0 opacity-10", c.dot)}></div>}
+                        <Icon icon={tb.icon} size={18} className={on ? "relative z-10" : "text-ink-faint"} />
+                        <span className="relative z-10">{t(`tab_${tb.key}`)}</span>
                         {tb.done && (
-                          <span className="flex h-4 w-4 items-center justify-center rounded-full bg-emerald text-white">
-                            <Icon icon={Check} size={11} />
+                          <span className="relative z-10 flex h-5 w-5 items-center justify-center rounded-full bg-emerald text-white shadow-sm ml-1">
+                            <Icon icon={Check} size={12} strokeWidth={3} />
                           </span>
                         )}
                       </button>

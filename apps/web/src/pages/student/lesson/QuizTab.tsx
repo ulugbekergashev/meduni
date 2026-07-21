@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { AlertTriangle, Check, ChevronLeft, ChevronRight, X } from "lucide-react";
+import { AlertTriangle, Check, ChevronLeft, ChevronRight, ClipboardList, X } from "lucide-react";
 import { Card, Icon, Spinner, cls, useToast } from "@meduni/ui";
 import { ConfirmDialog } from "../../../components/ConfirmDialog";
 import {
@@ -16,26 +16,32 @@ import {
 function Intro({ data, onStart, starting }: { data: QuizTabData; onStart: () => void; starting: boolean }) {
   const { t } = useTranslation(undefined, { keyPrefix: "lesson" });
   return (
-    <Card className="space-y-4 text-center">
-      <div className="flex flex-wrap justify-center gap-3 text-[14.5px] text-ink-soft">
-        <span>
-          <span className="font-bold text-ink">{data.questionCount}</span> {t("questions")}
+    <Card className="space-y-5 text-center p-8 shadow-sm">
+      <div className="inline-flex items-center justify-center rounded-full bg-blue-soft p-4 text-blue">
+        <Icon icon={ClipboardList} size={32} />
+      </div>
+      <div className="flex flex-wrap justify-center gap-4 text-[16px] text-ink-soft">
+        <span className="rounded-pill bg-surface border border-line px-4 py-1.5">
+          <span className="font-black text-ink">{data.questionCount}</span> {t("questions")}
         </span>
-        <span>·</span>
-        <span>
-          {t("passIs")} <span className="font-bold text-ink">{data.passThreshold}%</span>
+        <span className="rounded-pill bg-surface border border-line px-4 py-1.5">
+          {t("passIs")} <span className="font-black text-ink">{data.passThreshold}%</span>
         </span>
       </div>
-      <div className="flex items-start gap-2 rounded-control bg-amber-soft p-3 text-left text-[14px] text-amber">
-        <Icon icon={AlertTriangle} size={16} className="mt-0.5 shrink-0" />
+      <div className="flex items-start gap-3 rounded-[12px] bg-amber-soft p-4 text-left text-[14.5px] font-medium text-amber border border-amber/20">
+        <Icon icon={AlertTriangle} size={20} className="mt-0.5 shrink-0" />
         {t("quizWarning")}
       </div>
       <button
         onClick={onStart}
         disabled={starting}
-        className="w-full rounded-control bg-blue px-4 py-3 text-[16px] font-bold text-white transition-all hover:opacity-90 disabled:opacity-60"
+        className="w-full rounded-[12px] bg-gradient-to-r from-blue to-blue-deep px-5 py-4 text-[17px] font-black text-white shadow-lg transition-all hover:scale-[1.02] hover:shadow-xl disabled:opacity-60 disabled:hover:scale-100 mt-2"
       >
-        {starting ? t("starting") : t("startQuiz")}
+        {starting ? (
+          <span className="flex items-center justify-center gap-2"><Spinner size={18} className="text-white" /> {t("starting")}</span>
+        ) : (
+          t("startQuiz")
+        )}
       </button>
     </Card>
   );

@@ -160,57 +160,67 @@ function ReviewPanel({ id, onSavedNext, onClose }: { id: number; onSavedNext: ()
         ))}
       </div>
 
-      {/* Grade */}
-      <Card className="space-y-3">
-        <div className="flex items-center gap-3">
-          <label className="text-[14.5px] font-semibold text-ink">{t("score")}</label>
-          <input
-            type="number"
-            min={0}
-            max={100}
-            value={score}
-            onChange={(e) => { setScore(e.target.value); setErr(null); }}
-            className="w-24 rounded-control border border-line px-3 py-2 text-[16px] font-bold outline-none focus:border-brand"
-            placeholder="0–100"
-          />
-          <span className="text-[13px] text-ink-faint">/ 100</span>
-        </div>
+      {/* Grade Sticky Bottom */}
+      <div className="sticky bottom-0 z-20 mt-6 border-t-2 border-brand/20 bg-surface p-5 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] sm:rounded-card">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          
+          <div className="flex flex-1 flex-col gap-3">
+            <div className="flex items-center gap-3">
+              <label className="text-[15px] font-bold text-ink uppercase tracking-wide">{t("score")}</label>
+              <div className="relative">
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={score}
+                  onChange={(e) => { setScore(e.target.value); setErr(null); }}
+                  className="w-28 rounded-[8px] border-2 border-line bg-white px-3 py-2 text-[18px] font-black outline-none transition-all focus:border-brand focus:ring-4 focus:ring-brand/10"
+                  placeholder="0–100"
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[14px] font-bold text-ink-faint">/ 100</span>
+              </div>
+            </div>
 
-        <textarea
-          value={feedback}
-          onChange={(e) => setFeedback(e.target.value)}
-          placeholder={t("feedbackPlaceholder")}
-          rows={3}
-          className="w-full rounded-control border border-line px-3 py-2 text-[14.5px] outline-none focus:border-brand"
-        />
-        <div className="flex flex-wrap gap-1.5">
-          {templates.map((tpl) => (
-            <button
-              key={tpl}
-              onClick={() => setFeedback((f) => (f ? f + " " : "") + tpl)}
-              className="rounded-pill border border-line px-2.5 py-1 text-[13px] text-ink-soft transition-colors hover:bg-bg"
-            >
-              + {tpl}
-            </button>
-          ))}
-        </div>
+            <textarea
+              value={feedback}
+              onChange={(e) => setFeedback(e.target.value)}
+              placeholder={t("feedbackPlaceholder")}
+              rows={2}
+              className="w-full rounded-[8px] border-2 border-line bg-white px-3 py-2 text-[14.5px] outline-none transition-all focus:border-brand focus:ring-4 focus:ring-brand/10 resize-y"
+            />
+            <div className="flex flex-wrap gap-1.5">
+              {templates.map((tpl) => (
+                <button
+                  key={tpl}
+                  onClick={() => setFeedback((f) => (f ? f + " " : "") + tpl)}
+                  className="rounded-pill border border-line bg-white px-3 py-1 text-[13px] font-medium text-ink-soft transition-colors hover:border-brand/40 hover:bg-brand-soft hover:text-brand-deep"
+                >
+                  + {tpl}
+                </button>
+              ))}
+            </div>
+            {err && <p className="text-[13.5px] font-bold text-rose">{err}</p>}
+          </div>
 
-        {err && <p className="text-[13.5px] font-medium text-rose">{err}</p>}
+          <div className="flex flex-col gap-2 sm:w-[180px]">
+            <Button onClick={() => save(true)} disabled={review.isPending} className="w-full h-[46px] bg-gradient-to-r from-brand to-brand-deep shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all text-[15px] font-bold">
+              <Icon icon={CheckCircle2} size={18} /> {t("saveAndNext")}
+            </Button>
+            <Button variant="soft" onClick={() => save(false)} disabled={review.isPending} className="w-full h-[40px]">
+              {t("saveOnly")}
+            </Button>
+            <div className="flex items-center justify-between mt-1">
+              <button onClick={() => setAssign(true)} className="text-[13px] font-medium text-brand-deep hover:underline">
+                <Icon icon={ListPlus} size={14} className="inline mr-1 mb-0.5" />{t("assignTask")}
+              </button>
+              <button onClick={onSavedNext} className="text-[13px] font-medium text-ink-faint hover:text-ink">
+                {t("skip")}
+              </button>
+            </div>
+          </div>
 
-        <div className="flex flex-wrap gap-2">
-          <Button onClick={() => save(true)} disabled={review.isPending}>
-            <Icon icon={CheckCircle2} size={16} /> {t("saveAndNext")}
-          </Button>
-          <Button variant="soft" onClick={() => save(false)} disabled={review.isPending}>
-            {t("saveOnly")}
-          </Button>
-          {/* Baholash oqimidan chiqmasdan vazifa berish (masalan "mavzuni takrorlang") */}
-          <Button variant="ghost" icon={<Icon icon={ListPlus} size={16} />} onClick={() => setAssign(true)}>
-            {t("assignTask")}
-          </Button>
-          <Button variant="ghost" onClick={onSavedNext}>{t("skip")}</Button>
         </div>
-      </Card>
+      </div>
 
       <QuickTaskModal
         open={assign}

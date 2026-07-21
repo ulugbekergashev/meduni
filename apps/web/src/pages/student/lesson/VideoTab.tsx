@@ -71,27 +71,43 @@ export function VideoTab({ topicId, data, threshold }: { topicId: number; data: 
   const shownPct = Math.max(pct, data.watchedPct);
   const done = shownPct >= threshold;
 
+  const [isPlaying, setIsPlaying] = useState(false);
+  const formatTime = (sec: number) => {
+    const m = Math.floor(sec / 60).toString().padStart(2, "0");
+    const s = Math.floor(sec % 60).toString().padStart(2, "0");
+    return `${m}:${s}`;
+  };
+
+  const playVideo = () => {
+    if (ref.current) {
+      ref.current.play();
+      setIsPlaying(true);
+    }
+  };
+
   if (failed || !data.hasMp4) {
     return (
-      <div className="rounded-card border border-line bg-surface p-8 text-center">
-        <p className="text-[14.5px] text-ink-soft">{t("videoUnavailable")}</p>
+      <div className="rounded-card border border-line bg-surface p-8 text-center shadow-sm">
+        <p className="text-[14.5px] font-medium text-ink-soft">{t("videoUnavailable")}</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-3">
-      <div className="overflow-hidden rounded-card bg-black">
+    <div className="mx-auto max-w-5xl space-y-4">
+      {/* Kino rejimi (Theater mode) uslubidagi media player */}
+      <div className="relative overflow-hidden rounded-[16px] bg-black shadow-2xl ring-1 ring-black/5">
         <video
           ref={ref}
           src={src}
-          controls
+          controls={isPlaying || data.positionSec === 0}
           playsInline
           crossOrigin="use-credentials"
-          className="aspect-video w-full"
+          className="aspect-video w-full outline-none"
           onLoadedMetadata={(e) => {
             if (data.positionSec > 0) e.currentTarget.currentTime = data.positionSec;
           }}
+          onPlay={() => setIsPlaying(true)}
           onTimeUpdate={onTime}
           onPause={() => ref.current && send(shownPct, Math.round(ref.current.currentTime))}
           onEnded={() => send(100, ref.current?.duration ? Math.round(ref.current.duration) : 0)}
@@ -99,35 +115,54 @@ export function VideoTab({ topicId, data, threshold }: { topicId: number; data: 
         >
           {captions && vttUrl && <track kind="subtitles" src={vttUrl} default label="uz" />}
         </video>
+
+        {/* Continue Watching Overlay */}
+        {!isPlaying && data.positionSec > 0 && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 transition-all duration-300 hover:bg-black/40">
+            <button
+              onClick={playVideo}
+              className="group flex flex-col items-center gap-4 transition-transform hover:scale-105 active:scale-95"
+            >
+              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-brand text-white shadow-[0_0_40px_rgba(0,184,148,0.5)] transition-all group-hover:bg-brand-deep group-hover:shadow-[0_0_60px_rgba(0,184,148,0.7)]">
+                <svg className="ml-2 h-10 w-10 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+              </div>
+              <span className="rounded-full border border-white/20 bg-black/40 px-5 py-2 text-[15px] font-bold text-white shadow-sm">
+                Davom etish ({formatTime(data.positionSec)})
+              </span>
+            </button>
+          </div>
+        )}
       </div>
 
-      <div className="flex items-center justify-between gap-2">
+      {/* Ostki boshqaruv va status paneli */}
+      <div className="flex items-center justify-between gap-4 rounded-[12px] bg-surface p-4 shadow-sm border border-line">
         {data.hasSrt && (
           <button
             onClick={() => setCaptions((c) => !c)}
-            className={`inline-flex items-center gap-1.5 rounded-control border px-3 py-1.5 text-[14px] font-medium transition-colors ${
-              captions ? "border-violet bg-violet-soft text-violet" : "border-line text-ink-soft hover:bg-bg"
+            className={`inline-flex items-center gap-2 rounded-pill border px-4 py-2 text-[14px] font-bold transition-all ${
+              captions ? "border-violet/30 bg-violet-soft text-violet shadow-sm" : "border-line text-ink-soft hover:bg-bg hover:text-ink"
             }`}
           >
-            <Icon icon={Captions} size={15} />
+            <Icon icon={Captions} size={18} />
             {t("subtitles")}
           </button>
         )}
-        <div className="ml-auto text-right">
-          {done ? (
-            <span className="inline-flex items-center gap-1 text-[14px] font-semibold text-emerald">
-              <Icon icon={CheckCircle2} size={15} /> {t("videoDone")}
-            </span>
-          ) : (
-            <span className="text-[13.5px] text-ink-soft">
-              {t("videoNeed", { threshold })} <span className="font-bold text-ink">({shownPct}%)</span>
-            </span>
-          )}
+        <div className="ml-auto flex-1 max-w-[280px]">
+          <div className="mb-2 flex items-center justify-between">
+            {done ? (
+              <span className="inline-flex items-center gap-1.5 text-[14px] font-bold text-emerald">
+                <Icon icon={CheckCircle2} size={16} /> {t("videoDone")}
+              </span>
+            ) : (
+              <span className="text-[13.5px] font-medium text-ink-soft">
+                {t("videoNeed", { threshold })} <span className="font-bold text-ink">({shownPct}%)</span>
+              </span>
+            )}
+          </div>
+          <div className="h-2 w-full overflow-hidden rounded-pill bg-bg shadow-inner">
+            <div className="h-full rounded-pill bg-gradient-to-r from-violet to-violet-soft transition-all duration-500" style={{ width: `${Math.max(shownPct, 2)}%` }} />
+          </div>
         </div>
-      </div>
-
-      <div className="h-1.5 w-full overflow-hidden rounded-pill bg-bg">
-        <div className="h-full rounded-pill bg-violet transition-all" style={{ width: `${Math.max(shownPct, 2)}%` }} />
       </div>
     </div>
   );

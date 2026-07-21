@@ -1,5 +1,6 @@
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { motion, type Variants } from "framer-motion";
 import {
   ArrowLeft,
   CheckCircle2,
@@ -97,6 +98,16 @@ function Dot({ state }: { state: StudentTopic["state"] }) {
   );
 }
 
+const containerVariants: Variants = {
+  hidden: { opacity: 0 },
+  show: { opacity: 1, transition: { staggerChildren: 0.1 } }
+};
+
+const itemVariants: Variants = {
+  hidden: { opacity: 0, y: 20 },
+  show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
+};
+
 function TopicCard({ topic, last }: { topic: StudentTopic; last: boolean }) {
   const { t } = useTranslation(undefined, { keyPrefix: "student" });
   const locale = useLocale();
@@ -105,7 +116,7 @@ function TopicCard({ topic, last }: { topic: StudentTopic; last: boolean }) {
   const current = topic.state === "AVAILABLE" || topic.state === "IN_PROGRESS";
 
   return (
-    <li className="relative flex gap-3">
+    <motion.li variants={itemVariants} className="relative flex gap-3">
       <div className="flex flex-col items-center">
         <Dot state={topic.state} />
         {!last && <span className="w-0.5 flex-1 bg-line" />}
@@ -169,7 +180,7 @@ function TopicCard({ topic, last }: { topic: StudentTopic; last: boolean }) {
           )}
         </Card>
       </div>
-    </li>
+    </motion.li>
   );
 }
 
@@ -243,11 +254,11 @@ export function CoursePath() {
               )}
 
               {/* Topic path */}
-              <ol className="mt-6">
+              <motion.ol variants={containerVariants} initial="hidden" animate="show" className="mt-6">
                 {c.topics.map((topic, i) => (
                   <TopicCard key={topic.id} topic={topic} last={i === c.topics.length - 1} />
                 ))}
-              </ol>
+              </motion.ol>
             </>
             );
           })()}
