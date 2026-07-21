@@ -161,7 +161,7 @@ function ReviewPanel({ id, onSavedNext, onClose }: { id: number; onSavedNext: ()
       </div>
 
       {/* Grade Sticky Bottom */}
-      <div className="sticky bottom-0 z-20 mt-6 border-t-2 border-brand/20 bg-surface p-5 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] sm:rounded-card">
+      <div className="sticky bottom-0 z-20 mt-3 border-t-2 border-brand/20 bg-surface p-5 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] sm:rounded-card">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           
           <div className="flex flex-1 flex-col gap-3">
@@ -312,7 +312,7 @@ export function CaseReviewQueue() {
             </div>
           </AsyncSection>
           {queue.length === 0 && !queueQ.isLoading && !queueQ.isError && (
-            <Card className="flex flex-col items-center gap-2 border-emerald/40 bg-emerald-soft py-10 text-center">
+            <Card className="flex flex-col items-center gap-2 border-emerald/40 bg-emerald-soft py-5 text-center">
               <Icon icon={CheckCircle2} size={26} className="text-emerald" />
               <p className="text-[15px] font-bold text-emerald">{t("emptyQueue")}</p>
             </Card>

@@ -27,11 +27,11 @@ export function ResultPanel({ lesson }: { lesson: Lesson }) {
   const nextOpen = !!next && next.state !== "LOCKED";
 
   return (
-    <div className="space-y-5">
-      <Card className="flex flex-col items-center gap-4 text-center">
+    <div className="space-y-3">
+      <Card className="flex flex-col items-center gap-3 !p-4 text-center">
         {hasScore ? (
           <>
-            <ProgressRing value={fs.value ?? 0} size={116} stroke={11} tone="brand" />
+            <ProgressRing value={fs.value ?? 0} size={96} stroke={10} tone="brand" />
             <div>
               <p className="text-section font-bold text-ink">{t("finalScore")}</p>
               {fs.pendingCase && (
@@ -96,7 +96,7 @@ export function ResultPanel({ lesson }: { lesson: Lesson }) {
       </Card>
 
       {/* AI-yordamchi — keyingi sessiya */}
-      <Card className="flex items-start gap-3 opacity-90">
+      <Card className="flex items-start gap-2.5 !p-3 opacity-90">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-violet-soft text-violet">
           <Icon icon={Sparkles} size={18} />
         </div>

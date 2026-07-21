@@ -161,7 +161,7 @@ export function Login() {
           animate="show"
           className="relative z-10 max-w-md px-12"
         >
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-[13px] font-bold text-white/80 shadow-sm">
+          <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-[13px] font-bold text-white/80 shadow-sm">
             <Sparkles size={14} className="text-brand-soft" />
             Academic Excellence Platform
           </div>
@@ -171,7 +171,7 @@ export function Login() {
               Next-Gen Portal
             </span>
           </h2>
-          <p className="text-white/50 text-[16px] leading-relaxed mb-8">
+          <p className="text-white/50 text-[16px] leading-relaxed mb-3">
             Welcome to the unified platform for students, teachers, and faculty administrators. Your entire academic journey, elevated.
           </p>
 

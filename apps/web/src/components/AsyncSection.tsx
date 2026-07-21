@@ -47,7 +47,7 @@ export function AsyncSection({
   if (isError) {
     return (
       <Card>
-        <div className="flex flex-col items-center gap-3 py-10 text-center">
+        <div className="flex flex-col items-center gap-3 py-5 text-center">
           <div className="flex h-12 w-12 items-center justify-center rounded-full bg-rose-soft text-rose">
             <Icon icon={AlertCircle} size={22} />
           </div>

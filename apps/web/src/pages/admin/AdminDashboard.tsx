@@ -96,7 +96,7 @@ export function AdminDashboard() {
       {s && (
         <>
           {/* Core stats */}
-          <motion.div variants={itemVariants} className="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
+          <motion.div variants={itemVariants} className="mt-4 grid grid-cols-2 gap-4 lg:grid-cols-4">
             <StatCard icon={Users} value={s.counts.students} label={t("students")} hint={t("studentsHint")} tone="bg-blue-soft text-blue" onClick={() => navigate("/admin/users")} />
             <StatCard icon={GraduationCap} value={s.counts.teachers} label={t("teachers")} hint={t("teachersHint")} tone="bg-violet-soft text-violet" onClick={() => navigate("/admin/users")} />
             <StatCard icon={BookOpen} value={s.counts.courses} label={t("courses")} hint={t("coursesHint")} tone="bg-brand-soft text-brand-deep" onClick={() => navigate("/admin/courses")} />
@@ -107,7 +107,7 @@ export function AdminDashboard() {
           <motion.div variants={itemVariants} className="mt-4 grid gap-4 lg:grid-cols-5">
             <Card className="lg:col-span-2 relative overflow-hidden flex flex-col justify-between">
               <h2 className="text-section font-bold tracking-tight text-ink">{t("composition")}</h2>
-              <div className="mt-6 flex items-center justify-center gap-8 flex-1">
+              <div className="mt-3 flex items-center justify-center gap-3 flex-1">
                 <Donut
                   size={140}
                   stroke={16}
@@ -132,7 +132,7 @@ export function AdminDashboard() {
                 <h2 className="text-section font-bold tracking-tight text-ink">{t("timeline14")}</h2>
                 <span className="text-[13px] font-medium text-ink-faint bg-bg px-2 py-0.5 rounded-pill">{t("timeline14Hint")}</span>
               </div>
-              <div className="mt-6 flex-1 flex flex-col justify-end">
+              <div className="mt-3 flex-1 flex flex-col justify-end">
                 {s.activitySeries.some((d) => d.activeStudents > 0) ? (
                   <MiniBars
                     height={110}
@@ -157,7 +157,7 @@ export function AdminDashboard() {
           </motion.div>
 
           {/* Attention */}
-          <motion.section variants={itemVariants} className="mt-6">
+          <motion.section variants={itemVariants} className="mt-3">
             <h2 className="mb-4 text-section font-bold tracking-tight text-ink">{t("attention")}</h2>
             {allClear ? (
               <Card className="flex items-center gap-3 border-emerald/30 bg-emerald/5 shadow-sm">
@@ -178,11 +178,11 @@ export function AdminDashboard() {
           {/* AI spend */}
           <motion.section variants={itemVariants} className="mt-4">
             <button onClick={() => navigate("/admin/ai")} className="block w-full text-left outline-none group">
-              <div className="relative overflow-hidden rounded-card bg-surface p-6 shadow-sm border border-line transition-all duration-300 group-hover:shadow-md group-hover:border-brand/30">
+              <div className="relative overflow-hidden rounded-card bg-surface p-4 shadow-sm border border-line transition-all duration-300 group-hover:shadow-md group-hover:border-brand/30">
                 {/* Subtle gradient background effect */}
                 <div className="absolute top-0 right-0 w-64 h-64 bg-brand-soft rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
                 
-                <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-3">
                   <div>
                     <div className="flex items-center gap-2 text-brand font-bold mb-2">
                       <Icon icon={Sparkles} size={18} />

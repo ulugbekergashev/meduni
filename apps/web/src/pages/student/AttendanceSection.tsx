@@ -80,7 +80,7 @@ export function AttendanceSection() {
 
   if (q.isLoading) {
     return (
-      <div className="mt-8 flex justify-center">
+      <div className="mt-4 flex justify-center">
         <Spinner size={26} />
       </div>
     );
@@ -89,7 +89,7 @@ export function AttendanceSection() {
   const st = data?.stats;
 
   return (
-    <motion.div variants={containerVariants} initial="hidden" animate="show" className="space-y-6">
+    <motion.div variants={containerVariants} initial="hidden" animate="show" className="space-y-3">
       {/* Hero: umumiy % + taqsimot + oylik trend */}
       {st && (
         <motion.div variants={itemVariants}>
@@ -346,7 +346,7 @@ export function AttendanceSection() {
           emptyText={t("empty")}
           onRetry={() => q.refetch()}
         >
-          <div className="space-y-6">
+          <div className="space-y-3">
             {byMonth.map(([month, rows]) => (
               <div key={month}>
                 <p className="mb-2 text-note font-bold uppercase tracking-wide text-ink-faint ml-1">

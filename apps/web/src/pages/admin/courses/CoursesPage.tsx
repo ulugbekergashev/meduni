@@ -196,7 +196,7 @@ export function CoursesPage() {
       </Modal>
 
       {/* Filtrlar — kurslar semestrlar bo'ylab ko'payadi, kerakligini tez topish uchun */}
-      <div className="mt-6 flex flex-wrap items-center gap-2">
+      <div className="mt-3 flex flex-wrap items-center gap-2">
         <div className="relative min-w-[200px] flex-1">
           <Icon icon={Search} size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-faint" />
           <input

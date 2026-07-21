@@ -103,7 +103,7 @@ export function PresentationEditor({ content }: { content: ContentFull }) {
         </div>
       </div>
 
-      <div className="mt-6 space-y-4">
+      <div className="mt-3 space-y-4">
         {slides.map((slide, si) => (
           <Card key={slide.id} className="grid gap-4 md:grid-cols-[1fr_18rem]">
             <div className="space-y-3">

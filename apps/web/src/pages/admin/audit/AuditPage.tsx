@@ -43,7 +43,7 @@ export function AuditPage() {
       </div>
 
       <div className="mt-4">
-        {q.isLoading ? <div className="flex justify-center py-10"><Spinner size={24} /></div> : (
+        {q.isLoading ? <div className="flex justify-center py-5"><Spinner size={24} /></div> : (
           <AsyncSection isLoading={false} isError={q.isError} isEmpty={!!data && data.items.length === 0} emptyIcon={<Icon icon={ScrollText} size={22} />} emptyText={t("empty")} onRetry={() => q.refetch()}>
             <div className="overflow-x-auto rounded-card border border-line">
               <table className="w-full border-collapse text-[14px]">

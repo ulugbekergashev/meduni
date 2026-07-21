@@ -208,7 +208,7 @@ export function TopicConstructor() {
       </div>
 
       {/* Active step panel */}
-      <section className="mt-6">
+      <section className="mt-3">
         <div className="mb-4 flex items-center gap-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-soft text-brand-deep">
             <Icon icon={STEP_ICON[active]} size={16} />
@@ -231,7 +231,7 @@ export function TopicConstructor() {
       </section>
 
       {/* Prev / Next navigation */}
-      <div className="mt-8 flex items-center justify-between gap-3 border-t border-line pt-5">
+      <div className="mt-4 flex items-center justify-between gap-3 border-t border-line pt-5">
         {prevStep ? (
           <Button variant="ghost" onClick={() => go(prevStep)}>
             <Icon icon={ChevronLeft} size={16} /> {t("nav.prev")}

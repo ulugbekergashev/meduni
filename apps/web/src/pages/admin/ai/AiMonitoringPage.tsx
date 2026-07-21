@@ -121,7 +121,7 @@ export function AiMonitoringPage() {
       ) : (
         <>
           {/* Hero totals */}
-          <div className="mt-5 rounded-card bg-gradient-to-br from-brand-deep to-brand p-6 text-white shadow-card">
+          <div className="mt-5 rounded-card bg-gradient-to-br from-brand-deep to-brand p-4 text-white shadow-card">
             <div className="flex items-center gap-2"><Icon icon={Sparkles} size={16} className="text-white/90" /><p className="text-[13.5px] font-medium uppercase tracking-wide text-white/75">{t("thisMonth")}</p></div>
             <div className="mt-4 grid grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-4">
               <HeroMetric icon={Coins} value={u.totals.tokens.toLocaleString()} label={t("tokens")} />
@@ -147,7 +147,7 @@ export function AiMonitoringPage() {
                 }))}
               />
             ) : (
-              <p className="py-8 text-center text-body text-ink-faint">{t("empty")}</p>
+              <p className="py-4 text-center text-body text-ink-faint">{t("empty")}</p>
             )}
           </Card>
 
@@ -182,7 +182,7 @@ export function AiMonitoringPage() {
           )}
 
           {/* By department + quota */}
-          <section className="mt-6">
+          <section className="mt-3">
             <h2 className="mb-3 text-section font-bold text-ink">{t("byDept")}</h2>
             {u.byDept.length ? (
               <div className="overflow-x-auto rounded-card border border-line shadow-card">

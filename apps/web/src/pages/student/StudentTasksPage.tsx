@@ -126,7 +126,7 @@ export function StudentTasksPage() {
   const toggle = (f: Filter) => setFilter((cur) => (cur === f ? "all" : f));
 
   return (
-    <motion.div variants={containerVariants} initial="hidden" animate="show" className="space-y-6">
+    <motion.div variants={containerVariants} initial="hidden" animate="show" className="space-y-3">
       <motion.div variants={itemVariants}>
         <HeroCard title={t("studentTitle")} subtitle={t("studentHint")}>
           <HeroTile
@@ -172,8 +172,8 @@ export function StudentTasksPage() {
           <p className="py-4 text-center text-body text-rose">{t("error")}</p>
         </Card>
       ) : (
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
-          <div className="min-w-0 space-y-8">
+        <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_340px]">
+          <div className="min-w-0 space-y-3">
             {/* O'qituvchi topshiriqlari */}
             {showTeacher && assigned.length > 0 && (
               <motion.section variants={itemVariants}>
@@ -241,7 +241,7 @@ export function StudentTasksPage() {
             {showStudy && auto.length > 0 && (
               <motion.section variants={itemVariants}>
                 <h2 className="mb-4 text-section font-bold tracking-tight text-ink">{t("studySection")}</h2>
-                <div className="space-y-6">
+                <div className="space-y-3">
                   {auto.map((task) => (
                     <AutoTaskGroup key={task.type} task={task} />
                   ))}
@@ -251,7 +251,7 @@ export function StudentTasksPage() {
 
             {nothing && (
               <motion.div variants={itemVariants}>
-                <Card className="flex items-center gap-3 border-emerald/30 bg-emerald-soft shadow-sm p-6">
+                <Card className="flex items-center gap-3 border-emerald/30 bg-emerald-soft shadow-sm p-4">
                   <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-soft text-emerald shadow-sm">
                     <Icon icon={Sparkles} size={24} />
                   </div>
@@ -262,7 +262,7 @@ export function StudentTasksPage() {
 
             {!nothing && ((showTeacher && assigned.length === 0 && filter !== "all") || (showStudy && auto.length === 0 && filter === "study")) && (
               <motion.div variants={itemVariants}>
-                <Card className="bg-surface border-dashed p-8 text-center">
+                <Card className="bg-surface border-dashed p-4 text-center">
                   <p className="text-[15px] text-ink-faint">{t("noMatchFilter")}</p>
                 </Card>
               </motion.div>
@@ -270,7 +270,7 @@ export function StudentTasksPage() {
           </div>
 
           {/* O'ng ustun — kontekst */}
-          <aside className="min-w-0 space-y-6">
+          <aside className="min-w-0 space-y-3">
             <motion.div variants={itemVariants}>
               <RailCard
                 title={t("upcomingLessons")}

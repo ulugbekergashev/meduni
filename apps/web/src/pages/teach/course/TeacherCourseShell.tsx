@@ -29,7 +29,7 @@ export function TeacherCourseShell() {
     return (
       <div>
         <HeaderSkeleton />
-        <div className="mt-6 h-9 w-full max-w-md animate-pulse rounded bg-line" />
+        <div className="mt-3 h-9 w-full max-w-md animate-pulse rounded bg-line" />
       </div>
     );
   }
@@ -88,7 +88,7 @@ export function TeacherCourseShell() {
       </div>
 
       {/* Tab bar (URL-driven) */}
-      <div className="mt-6">
+      <div className="mt-3">
         <TabNav
           items={[
             { to: `${base}/topics`, label: t("tabs.topics") },
@@ -101,7 +101,7 @@ export function TeacherCourseShell() {
       </div>
 
       {/* Active tab module — loads its own data independently */}
-      <div className="mt-6">
+      <div className="mt-3">
         <Outlet />
       </div>
     </div>

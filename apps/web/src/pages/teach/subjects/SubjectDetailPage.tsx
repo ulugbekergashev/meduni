@@ -33,7 +33,7 @@ export function SubjectDetailPage() {
   if (q.isError || !s) {
     return (
       <Card>
-        <p className="py-8 text-center text-body text-rose">{t("loadError")}</p>
+        <p className="py-4 text-center text-body text-rose">{t("loadError")}</p>
       </Card>
     );
   }
@@ -122,7 +122,7 @@ export function SubjectDetailPage() {
         </Card>
       )}
 
-      <div className="mt-6">
+      <div className="mt-3">
         <TopicListSection scope={{ subjectId }} />
       </div>
     </div>

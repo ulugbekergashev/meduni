@@ -87,7 +87,7 @@ export function VideoTab({ topicId, data, threshold }: { topicId: number; data: 
 
   if (failed || !data.hasMp4) {
     return (
-      <div className="rounded-card border border-line bg-surface p-8 text-center shadow-sm">
+      <div className="rounded-card border border-line bg-surface p-4 text-center shadow-sm">
         <p className="text-[14.5px] font-medium text-ink-soft">{t("videoUnavailable")}</p>
       </div>
     );

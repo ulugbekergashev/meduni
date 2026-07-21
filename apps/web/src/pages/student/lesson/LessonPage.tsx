@@ -43,7 +43,7 @@ export function LessonPage() {
 
   if (q.isLoading) {
     return (
-      <div className="flex min-h-[50vh] items-center justify-center">
+      <div className="flex h-full items-center justify-center py-20">
         <Spinner size={26} />
       </div>
     );
@@ -52,11 +52,11 @@ export function LessonPage() {
   if (q.isError || !lesson) {
     const msg = apiErrorMessage(q.error, locale === "ru" ? "ru" : "uz");
     return (
-      <div className="mx-auto max-w-md py-16 text-center">
+      <div className="mx-auto max-w-md px-4 py-16 text-center">
         <p className="text-body font-semibold text-ink">{msg ?? t("lockedBack")}</p>
         <button
           onClick={() => navigate(-1)}
-          className="mt-4 inline-flex items-center gap-1.5 rounded-control bg-brand px-4 py-2.5 text-body font-bold text-white transition-colors hover:bg-brand-deep"
+          className="mt-3 inline-flex items-center gap-1.5 rounded-control bg-brand px-4 py-2 text-body font-bold text-white transition-colors hover:bg-brand-deep"
         >
           <Icon icon={ArrowLeft} size={15} />
           {t("lockedBack")}
@@ -72,47 +72,42 @@ export function LessonPage() {
 
   const setView = (v: LessonView) => setParams({ view: v }, { replace: true });
   const onStage = (key: StageKey) => setView(stageToView(key, lesson));
-
   const stages = buildStages(lesson);
 
   return (
-    <div>
-      {/* Shapka */}
-      <button
-        onClick={() => navigate(`/app/courses/${lesson.courseId}`)}
-        className="mb-3 flex items-center gap-1 text-note font-medium text-brand-deep hover:underline"
-      >
-        <Icon icon={ArrowLeft} size={15} />
-        {lesson.subjectName}
-      </button>
-
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="min-w-0">
-          <p className="text-note font-bold uppercase tracking-wide text-ink-faint">
-            {t("topic")} {lesson.orderIndex}
-          </p>
-          <h1 className="text-h1 font-bold text-ink">{lesson.title}</h1>
-        </div>
+    <div className="flex flex-col lg:h-full">
+      {/* Ixcham mavzu paneli — ZICHLIK: bitta qator, katta bo'shliqsiz */}
+      <div className="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-1 border-b border-line bg-surface px-3 py-2">
+        <button
+          onClick={() => navigate(`/app/courses/${lesson.courseId}`)}
+          className="inline-flex items-center gap-1 rounded-control px-1.5 py-1 text-note font-semibold text-brand-deep transition-colors hover:bg-bg"
+        >
+          <Icon icon={ArrowLeft} size={15} />
+          {lesson.subjectName}
+        </button>
+        <span className="text-line">/</span>
+        <span className="text-note font-bold uppercase tracking-wide text-ink-faint">
+          {t("topic")} {lesson.orderIndex}
+        </span>
+        <h1 className="min-w-0 flex-1 truncate text-section font-bold text-ink">{lesson.title}</h1>
         {lesson.completed && (
-          <span className="inline-flex items-center gap-1.5 rounded-pill bg-emerald-soft px-3 py-1 text-note font-bold text-emerald">
-            <Icon icon={CheckCircle2} size={14} />
+          <span className="inline-flex shrink-0 items-center gap-1 rounded-pill bg-emerald-soft px-2.5 py-0.5 text-[12px] font-bold text-emerald">
+            <Icon icon={CheckCircle2} size={13} />
             {t("topicDone")}
           </span>
         )}
       </div>
 
-      {/* 3 panel — mobil: rail → kontent → materiallar; desktop: materiallar | kontent | rail */}
-      <div className="mt-6 grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)_320px]">
-        <div className="order-3 lg:order-1">
+      {/* Uch panel — to'liq balandlik, ingichka oraliq, har biri o'z ichida skroll */}
+      <div className="grid gap-2 p-2 lg:min-h-0 lg:flex-1 lg:grid-cols-[260px_minmax(0,1fr)_300px]">
+        <div className="order-3 flex min-h-0 flex-col lg:order-1">
           <MaterialsPanel materials={lesson.materials} />
         </div>
-        <div className="order-2 min-w-0 lg:order-2">
+        <div className="order-2 flex min-h-0 min-w-0 flex-col lg:order-2">
           <ContentPanel lesson={lesson} topicId={topicId} view={view} setView={setView} />
         </div>
-        <div className="order-1 lg:order-3">
-          <div className="lg:sticky lg:top-[73px]">
-            <StageRail stages={stages} view={view} onSelect={onStage} />
-          </div>
+        <div className="order-1 flex min-h-0 flex-col lg:order-3">
+          <StageRail stages={stages} view={view} onSelect={onStage} />
         </div>
       </div>
     </div>

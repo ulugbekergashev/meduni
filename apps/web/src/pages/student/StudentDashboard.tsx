@@ -266,8 +266,8 @@ export function StudentDashboard() {
             </motion.div>
 
             {/* Asosiy maydon: chapda ish, o'ngda kontekst */}
-            <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
-              <div className="min-w-0 space-y-6">
+            <div className="mt-3 grid gap-3 lg:grid-cols-[minmax(0,1fr)_340px]">
+              <div className="min-w-0 space-y-3">
                 {/* Davom ettirish */}
                 {d.resume && (
                   <motion.div
@@ -418,7 +418,7 @@ export function StudentDashboard() {
                 </motion.div>
 
                 {/* Davomat + o'zlashtirish */}
-                <motion.div variants={itemVariants} className="grid gap-6 sm:grid-cols-2">
+                <motion.div variants={itemVariants} className="grid gap-3 sm:grid-cols-2">
                   {/* Davomat */}
                   <button
                     onClick={() => navigate("/app/attendance")}
@@ -481,7 +481,7 @@ export function StudentDashboard() {
               </div>
 
               {/* O'ng ustun — bildirishnoma, faollik */}
-              <aside className="min-w-0 space-y-6">
+              <aside className="min-w-0 space-y-3">
                 {d.notifications.length > 0 && (
                   <motion.div variants={itemVariants}>
                     <RailCard title={t("notifications")} icon={ClipboardCheck}>

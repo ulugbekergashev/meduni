@@ -17,7 +17,7 @@ export function TeachGroupsPage() {
       <h1 className="text-h1 font-bold text-ink">{t("title")}</h1>
       <p className="mt-1 text-[14px] text-ink-soft">{t("subtitle")}</p>
 
-      <div className="mt-6">
+      <div className="mt-3">
         <AsyncSection
           isLoading={q.isLoading}
           isError={q.isError}
