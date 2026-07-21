@@ -2,7 +2,7 @@ import { Prisma, prisma } from "../../lib/prisma";
 import { ApiError, badRequest, notFound } from "../../lib/errors";
 import { readFileBuffer } from "../../lib/storage";
 import { buildPdf } from "../content/presentation";
-import type { CaseJson, Slide } from "../../ai/types";
+import type { CaseJson, DigestJson, Slide } from "../../ai/types";
 import {
   assertTopicOpen,
   computeTopics,
@@ -47,6 +47,11 @@ export async function getTopicLesson(studentId: number, topicId: number) {
         where: { status: "PUBLISHED" },
         include: { quiz: { include: { questions: { orderBy: { orderIndex: "asc" } } } }, clinicalCase: true, presentation: true, video: true },
       },
+      // O'qituvchi manba materiallari (talaba faqat asl faylni ko'radi/yuklab
+      // oladi — parse ichki maydonlari sizib chiqmaydi).
+      materials: { orderBy: { createdAt: "asc" } },
+      // AI konspekt — FAQAT o'qituvchi tasdiqlagan bo'lsa ko'rsatiladi.
+      digest: true,
     },
   });
   if (!topic) throw notFound("Mavzu");
@@ -136,6 +141,10 @@ export async function getTopicLesson(studentId: number, topicId: number) {
     completed: state.state === "COMPLETED",
     thresholds: { video: videoThreshold, quizPass: quizItem?.quiz?.passThreshold ?? 70 },
     elements: rule.elements,
+    // Chap panel — o'qituvchi materiallari (faqat asl fayl metama'lumoti).
+    materials: topic.materials.map((m) => ({ id: m.id, fileName: m.fileName, fileType: m.fileType })),
+    // O'rta panel — AI konspekt (tasdiqlanmagan bo'lsa null → video/slaydlarga fallback).
+    digest: topic.digest?.approvedByTeacher ? (topic.digest.digestJson as unknown as DigestJson) : null,
     tabs: {
       video: videoItem?.video
         ? {
@@ -402,4 +411,17 @@ export async function studentSlotImage(studentId: number, presentationId: number
 export async function studentPresentationPdf(studentId: number, presentationId: number): Promise<Buffer> {
   const p = await presentationAccess(studentId, presentationId);
   return buildPdf(p.slidesJson as unknown as Slide[]);
+}
+
+/** O'qituvchi manba materialini talabaga oqim qiladi. Egalik/qulf tekshiruvi
+ *  assertTopicOpen orqali (enrolled + published + unlocked; aks holda 403). */
+export async function studentMaterialFile(
+  studentId: number,
+  materialId: number
+): Promise<{ buf: Buffer; fileName: string; fileType: string }> {
+  const m = await prisma.sourceMaterial.findUnique({ where: { id: materialId } });
+  if (!m) throw notFound("Fayl");
+  await assertTopicOpen(studentId, m.topicId);
+  const buf = await readFileBuffer(m.fileUrl);
+  return { buf, fileName: m.fileName, fileType: m.fileType };
 }
