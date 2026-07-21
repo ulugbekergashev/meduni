@@ -363,15 +363,56 @@ export async function getMyActivity(studentId: number): Promise<ActivityEvent[]>
   return events.slice(0, 15);
 }
 
-/** O'z o'rni guruhda (tugallangan mavzular soni bo'yicha). Boshqa talabalar
- *  ismi/ro'yxati QAYTMAYDI — ochiq leaderboard atayin yo'q. */
+/** Local-time day key (toISOString would shift days across the UTC boundary —
+ *  same rationale as admin/stats.ts). */
+function dayKey(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+/** Uzluksiz o'qish kunlari (streak). Har qanday o'quv faolligi — mavzu
+ *  progressi, test yakunlash, keys topshirish — kun sanaladi. Bugundan (agar
+ *  bugun faollik bo'lsa) yoki kechadan (bugun hali boshlanmagan bo'lsa — streak
+ *  buzilmagan) orqaga uzluksiz kunlar sanaladi. Yangi jadval kerak emas.
+ *  ⚠️ Progress.updatedAt @updatedAt bo'lgani uchun o'qituvchi keys baholashi ham
+ *  (syncTopicProgress orqali) kunni "faol" belgilashi mumkin — qabul qilingan
+ *  shovqin; test/keys vaqtlari aniq. */
+export async function computeStreak(studentId: number): Promise<{ days: number; activeToday: boolean }> {
+  const [progress, quizzes, cases] = await Promise.all([
+    prisma.progress.findMany({ where: { studentId }, select: { updatedAt: true } }),
+    prisma.quizAttempt.findMany({ where: { studentId, finishedAt: { not: null } }, select: { finishedAt: true } }),
+    prisma.caseAttempt.findMany({ where: { studentId }, select: { submittedAt: true } }),
+  ]);
+
+  const active = new Set<string>();
+  for (const p of progress) active.add(dayKey(p.updatedAt));
+  for (const q of quizzes) if (q.finishedAt) active.add(dayKey(q.finishedAt));
+  for (const c of cases) active.add(dayKey(c.submittedAt));
+
+  const today = new Date();
+  const activeToday = active.has(dayKey(today));
+
+  // Start from today if active today, else from yesterday (streak not yet broken).
+  const cursor = new Date(today);
+  if (!activeToday) cursor.setDate(cursor.getDate() - 1);
+
+  let days = 0;
+  while (active.has(dayKey(cursor))) {
+    days++;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+  return { days, activeToday };
+}
+
+/** O'z o'rni guruhda + guruh top-10 (tugallangan mavzular soni bo'yicha).
+ *  Ochiq leaderboard (ismlar bilan) — buyurtmachi qarori (2026-07-21), eski
+ *  maxfiylik qoidasi bekor qilindi; faqat o'z guruhi ko'rsatiladi. */
 export async function getMyRank(studentId: number) {
   const me = await prisma.user.findUnique({ where: { id: studentId }, select: { groupId: true } });
-  if (!me?.groupId) return { rank: null, total: 0 };
+  if (!me?.groupId) return { rank: null, total: 0, completed: 0, top: [] };
 
   const peers = await prisma.user.findMany({
     where: { groupId: me.groupId, role: "STUDENT", isActive: true },
-    select: { id: true },
+    select: { id: true, fullName: true },
   });
   const completed = await prisma.progress.groupBy({
     by: ["studentId"],
@@ -380,10 +421,21 @@ export async function getMyRank(studentId: number) {
   });
   const doneBy = new Map(completed.map((c) => [c.studentId, c._count]));
   const ranked = peers
-    .map((p) => ({ id: p.id, done: doneBy.get(p.id) ?? 0 }))
-    .sort((a, b) => b.done - a.done);
+    .map((p) => ({ id: p.id, fullName: p.fullName, done: doneBy.get(p.id) ?? 0 }))
+    .sort((a, b) => b.done - a.done || a.fullName.localeCompare(b.fullName));
   const idx = ranked.findIndex((r) => r.id === studentId);
-  return { rank: idx === -1 ? null : idx + 1, total: ranked.length };
+  const top = ranked.slice(0, 10).map((r, i) => ({
+    rank: i + 1,
+    fullName: r.fullName,
+    completed: r.done,
+    isMe: r.id === studentId,
+  }));
+  return {
+    rank: idx === -1 ? null : idx + 1,
+    total: ranked.length,
+    completed: idx === -1 ? 0 : ranked[idx].done,
+    top,
+  };
 }
 
 export async function setLocale(studentId: number, locale: unknown) {

@@ -66,6 +66,7 @@ export interface Dashboard {
   resume: Resume | null;
   courses: CourseSummary[];
   notifications: Notification[];
+  streak: { days: number; activeToday: boolean };
 }
 
 export function useMyDashboard() {
@@ -486,10 +487,23 @@ export function useMyActivity() {
 }
 
 /** O'z o'rni guruhda — boshqa talabalar ro'yxati qaytmaydi. */
+export interface LeaderboardRow {
+  rank: number;
+  fullName: string;
+  completed: number;
+  isMe: boolean;
+}
+export interface MyRank {
+  rank: number | null;
+  total: number;
+  completed: number;
+  top: LeaderboardRow[];
+}
+
 export function useMyRank() {
   return useQuery({
     queryKey: ["me-rank"],
-    queryFn: () => api<{ rank: number | null; total: number }>("/api/v1/me/rank"),
+    queryFn: () => api<MyRank>("/api/v1/me/rank"),
   });
 }
 

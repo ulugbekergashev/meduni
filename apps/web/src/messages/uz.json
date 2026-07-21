@@ -1063,7 +1063,26 @@
     "currentCourses": "Joriy semestr kurslari",
     "seeAllCourses": "Barchasi",
     "upcomingLessons": "Kelgusi darslar",
-    "noLessons": "Dars yoʻq"
+    "noLessons": "Dars yoʻq",
+    "streakDays": "{{count}} kun ketma-ket",
+    "streakStart": "Bugun oʻqishni boshlang",
+    "streakPausedHint": "Bugun hali oʻqimadingiz — streakni davom ettiring",
+    "goToCourses": "Kurslarga oʻtish",
+    "todayLessons": "Bugungi darslar",
+    "nextLessons": "Keyingi darslar",
+    "noLessonsWeek": "Bu haftada dars yoʻq",
+    "missedLessons": "Qoldirilgan darslar",
+    "missedN": "{{count}} ta qoldirilgan",
+    "mastery": "Oʻzlashtirish",
+    "semesterAttendance": "Semestr davomati",
+    "avgQuizShort": "Oʻrtacha test",
+    "openSchedule": "Jadvalni ochish"
+  },
+  "leaderboard": {
+    "title": "Guruh reytingi",
+    "you": "siz",
+    "completedN": "{{count}} mavzu",
+    "empty": "Reyting hali shakllanmagan"
   },
   "review": {
     "back": "← Bosh sahifa",

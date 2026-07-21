@@ -10,6 +10,7 @@ import {
   ClipboardCheck,
   ClipboardList,
   DoorOpen,
+  Flame,
   GraduationCap,
   Layers,
   Medal,
@@ -19,21 +20,23 @@ import {
   Trophy,
   type LucideIcon,
 } from "lucide-react";
-import { Card, EmptyState, Icon, ProgressBar, ProgressRing, cls } from "@meduni/ui";
+import { Card, EmptyState, Icon, ProgressRing, BarRow, cls } from "@meduni/ui";
 import { AsyncSection } from "../../components/AsyncSection";
 import { HeroCard, HeroTile, RailCard } from "../../components/HeroStats";
 import { useLocale } from "../../lib/useLocale";
 import { formatDate } from "../../lib/date";
 import {
   useMyActivity,
+  useMyAttendance,
   useMyDashboard,
+  useMyGrades,
   useMyProfile,
   useMyRank,
   useMySchedule,
   useMyTasks,
   useSetMyTaskDone,
   type ActivityType,
-  type CourseSummary,
+  type ScheduleItem,
 } from "./api";
 
 const ACTIVITY_META: Record<ActivityType, { icon: LucideIcon; tone: string }> = {
@@ -53,7 +56,40 @@ const AUTO_META: Record<string, { icon: LucideIcon; labelKey: string; tone: stri
   attendance_low: { icon: CalendarCheck2, labelKey: "attendanceLow", tone: "bg-amber-soft text-amber" },
 };
 
-/** Harakat qatori — vazifa, topshiriq yoki dars. */
+function sameLocalDay(dateStr: string, now: Date): boolean {
+  const d = new Date(dateStr);
+  return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate();
+}
+
+function hhmm(dateStr: string): string {
+  const d = new Date(dateStr);
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+
+/** Bugungi (hali tugamagan) darslar, aks holda birinchi kelgusi kunning darslari. */
+function pickSchedule(
+  schedule: ScheduleItem[],
+  now: Date
+): { mode: "today" | "next"; date: string; sessions: ScheduleItem[] } | null {
+  const todays = schedule.filter((s) => sameLocalDay(s.date, now));
+  const todaysUpcoming = todays.filter((s) => !s.isPast);
+  if (todaysUpcoming.length > 0) {
+    return { mode: "today", date: now.toISOString(), sessions: todays };
+  }
+  const future = schedule
+    .filter((s) => !s.isPast && new Date(s.date).getTime() > now.getTime() && !sameLocalDay(s.date, now))
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  if (future.length > 0) {
+    const first = new Date(future[0].date);
+    const key = (d: Date) => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+    const k = key(first);
+    const sessions = future.filter((s) => key(new Date(s.date)) === k);
+    return { mode: "next", date: future[0].date, sessions };
+  }
+  return null;
+}
+
+/** Harakat qatori — vazifa yoki topshiriq. */
 function ActionRow({
   icon,
   tone,
@@ -88,53 +124,20 @@ function ActionRow({
   );
 }
 
-function CourseCard({ course }: { course: CourseSummary }) {
-  const { t } = useTranslation(undefined, { keyPrefix: "student" });
-  const navigate = useNavigate();
-
-  return (
-    <Card interactive onClick={() => navigate(`/app/courses/${course.id}`)} className="flex flex-col gap-2.5 !p-4">
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <h3 className="truncate text-body font-bold text-ink">{course.subjectName}</h3>
-          <p className="truncate text-note text-ink-faint">{course.teacherName}</p>
-        </div>
-        <span className="shrink-0 text-[17px] font-bold tabular-nums text-brand-deep">{course.progressPct}%</span>
-      </div>
-      <ProgressBar value={course.progressPct} />
-      <div className="flex items-center justify-between gap-2 text-note text-ink-soft">
-        <span>
-          {course.topicsCompleted}/{course.topicsTotal} {t("topics")}
-        </span>
-        {course.nextTopicId && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              navigate(`/app/topics/${course.nextTopicId}`);
-            }}
-            className="inline-flex items-center gap-1 font-semibold text-brand-deep hover:underline"
-          >
-            {t("continue")} <Icon icon={ArrowRight} size={13} />
-          </button>
-        )}
-      </div>
-    </Card>
-  );
-}
-
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
-  show: { opacity: 1, transition: { staggerChildren: 0.08 } }
+  show: { opacity: 1, transition: { staggerChildren: 0.08 } },
 };
 
 const itemVariants: Variants = {
   hidden: { opacity: 0, y: 15 },
-  show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
+  show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } },
 };
 
 export function StudentDashboard() {
   const { t } = useTranslation(undefined, { keyPrefix: "student" });
   const { t: tt } = useTranslation(undefined, { keyPrefix: "tasks" });
+  const { t: tp } = useTranslation(undefined, { keyPrefix: "period" });
   const locale = useLocale();
   const navigate = useNavigate();
 
@@ -144,6 +147,8 @@ export function StudentDashboard() {
   const scheduleQ = useMySchedule();
   const rankQ = useMyRank();
   const activityQ = useMyActivity();
+  const attendanceQ = useMyAttendance(undefined, {});
+  const gradesQ = useMyGrades();
   const done = useSetMyTaskDone();
 
   const d = q.data;
@@ -162,8 +167,33 @@ export function StudentDashboard() {
   const currentCourses = (d?.courses ?? []).filter(
     (c) => newest && c.academicYear === newest.academicYear && c.semester === newest.semester
   );
+  const currentIds = new Set(currentCourses.map((c) => c.id));
+
+  // Joriy semestr davomati (byCourse ∩ joriy kurslar).
+  const attRows = (attendanceQ.data?.byCourse ?? []).filter((r) => currentIds.has(r.courseId));
+  const attMarked = attRows.reduce((s, r) => s + r.marked, 0);
+  const attCame = attRows.reduce((s, r) => s + r.present + r.late, 0);
+  const attMissed = attRows.reduce((s, r) => s + r.absent, 0);
+  const attPct = attMarked > 0 ? Math.round((attCame / attMarked) * 100) : null;
+
+  // Joriy semestr o'zlashtirishi.
+  const masteryCourses = (gradesQ.data?.courses ?? []).filter((c) => currentIds.has(c.courseId));
+  const masteryVals = masteryCourses.map((c) => c.avgQuiz).filter((v): v is number => v !== null);
+  const masteryAvg = masteryVals.length
+    ? Math.round(masteryVals.reduce((a, b) => a + b, 0) / masteryVals.length)
+    : null;
+
+  const now = new Date();
+  const sched = pickSchedule(schedule, now);
   const hasToday = !!d?.resume || auto.length > 0 || assigned.length > 0;
-  const today = formatDate(locale === "ru" ? "ru" : "uz", new Date(), "long");
+  const today = formatDate(locale === "ru" ? "ru" : "uz", now, "long");
+
+  // Hero subtitle: guruh · semestr · o'quv yili · sana.
+  const ctx: string[] = [];
+  if (p?.groupName) ctx.push(p.groupName);
+  if (p?.semester) ctx.push(tp("semester", { n: p.semester }));
+  if (p?.academicYear) ctx.push(p.academicYear);
+  const subtitle = ctx.length ? `${ctx.join(" · ")} · ${today}` : today;
 
   return (
     <div>
@@ -177,19 +207,31 @@ export function StudentDashboard() {
       >
         {d && (
           <motion.div variants={containerVariants} initial="hidden" animate="show">
-            {/* Hero — salom + xulosa, butun kenglik */}
+            {/* Hero — salom + streak + kontekst + ko'rsatkichlar */}
             <motion.div variants={itemVariants}>
               <HeroCard
                 title={`${t("hello")}, ${d.fullName.split(" ")[0]}`}
-                subtitle={today}
+                subtitle={subtitle}
                 left={
-                  <button
-                    onClick={() => navigate("/app/courses")}
-                    title={t("overall")}
-                    className="rounded-full transition-transform hover:scale-105"
-                  >
-                    <ProgressRing value={overallPct} size={72} stroke={8} label={t("overall")} />
-                  </button>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <button
+                      onClick={() => navigate("/app/courses")}
+                      title={t("overall")}
+                      className="rounded-full transition-transform hover:scale-105"
+                    >
+                      <ProgressRing value={overallPct} size={64} stroke={8} label={t("overall")} />
+                    </button>
+                    <div
+                      className={cls(
+                        "inline-flex items-center gap-1.5 rounded-pill px-3 py-1.5 text-body font-bold",
+                        d.streak.activeToday ? "bg-amber-soft text-amber" : "bg-bg text-ink-faint"
+                      )}
+                      title={!d.streak.activeToday && d.streak.days > 0 ? t("streakPausedHint") : undefined}
+                    >
+                      <Icon icon={Flame} size={16} />
+                      {d.streak.days > 0 ? t("streakDays", { count: d.streak.days }) : t("streakStart")}
+                    </div>
+                  </div>
                 }
               >
                 <HeroTile
@@ -201,13 +243,9 @@ export function StudentDashboard() {
                 />
                 <HeroTile
                   icon={CalendarCheck2}
-                  value={p?.attendancePct !== null && p?.attendancePct !== undefined ? `${p.attendancePct}%` : "—"}
+                  value={attPct !== null ? `${attPct}%` : "—"}
                   label={t("summaryAttendance")}
-                  tone={
-                    p?.attendancePct !== null && p?.attendancePct !== undefined && p.attendancePct < 75
-                      ? "bg-rose-soft text-rose"
-                      : "bg-blue-soft text-blue"
-                  }
+                  tone={attPct !== null && attPct < 75 ? "bg-rose-soft text-rose" : "bg-blue-soft text-blue"}
                   onClick={() => navigate("/app/attendance")}
                 />
                 <HeroTile
@@ -224,19 +262,20 @@ export function StudentDashboard() {
                   tone="bg-amber-soft text-amber"
                   onClick={() => navigate("/app/grades")}
                 />
-            </HeroCard>
+              </HeroCard>
             </motion.div>
 
             {/* Asosiy maydon: chapda ish, o'ngda kontekst */}
             <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
               <div className="min-w-0 space-y-6">
-                {/* Davom ettirish — ixcham gorizontal */}
+                {/* Davom ettirish */}
                 {d.resume && (
-                  <motion.div variants={itemVariants} className="flex flex-wrap items-center gap-4 rounded-card bg-gradient-to-br from-brand-deep to-brand p-5 text-white shadow-md">
+                  <motion.div
+                    variants={itemVariants}
+                    className="flex flex-wrap items-center gap-4 rounded-card bg-gradient-to-br from-brand-deep to-brand p-5 text-white shadow-card"
+                  >
                     <div className="min-w-0 flex-1">
-                      <p className="text-[12.5px] font-bold uppercase tracking-wide text-white/70">
-                        {t("continueLabel")}
-                      </p>
+                      <p className="text-[12.5px] font-bold uppercase tracking-wide text-white/70">{t("continueLabel")}</p>
                       <h2 className="mt-0.5 truncate text-[19px] font-bold leading-tight">{d.resume.topic}</h2>
                       <p className="truncate text-note text-white/85">{d.resume.subjectName}</p>
                       <div className="mt-2 flex items-center gap-2">
@@ -258,188 +297,243 @@ export function StudentDashboard() {
                   </motion.div>
                 )}
 
-                {/* Bugun — konkret vazifa qatorlari */}
+                {/* Bugungi / keyingi darslar */}
                 <motion.div variants={itemVariants}>
-                  <Card className="p-0 overflow-hidden border-line">
-                  <div className="flex items-center gap-2 border-b border-line px-4 py-2.5">
-                    <p className="flex-1 text-note font-bold uppercase tracking-wide text-ink-soft">{t("todayTitle")}</p>
-                    <button
-                      onClick={() => navigate("/app/tasks")}
-                      className="text-note font-semibold text-brand-deep hover:underline"
-                    >
-                      {t("seeAllCourses")}
-                    </button>
-                  </div>
-                  {hasToday ? (
-                    <div className="divide-y divide-line">
-                      {assigned.map((a) => (
-                        <ActionRow
-                          key={`as${a.id}`}
-                          icon={ClipboardCheck}
-                          tone="bg-violet-soft text-violet"
-                          title={a.title}
-                          sub={
-                            a.dueDate
-                              ? `${tt("dueShort")}: ${formatDate(locale === "ru" ? "ru" : "uz", a.dueDate, "short")}`
-                              : tt("fromTeacher")
-                          }
-                          right={done.isPending && done.variables === a.id ? "…" : tt("markDone")}
-                          onClick={() => done.mutate(a.id)}
-                        />
-                      ))}
-                      {auto.flatMap((task) => {
-                        const meta = AUTO_META[task.type];
-                        if (!meta) return [];
-                        const items = task.items ?? [];
-                        if (items.length === 0)
-                          return [
-                            <ActionRow
-                              key={task.type}
-                              icon={meta.icon}
-                              tone={meta.tone}
-                              title={tt(meta.labelKey)}
-                              sub={`${task.count}%`}
-                              onClick={() => navigate(task.link)}
-                            />,
-                          ];
-                        return items.map((it, i) => (
-                          <ActionRow
-                            key={`${task.type}-${i}`}
-                            icon={meta.icon}
-                            tone={meta.tone}
-                            title={`${tt(meta.labelKey)}: ${it.topicTitle}`}
-                            sub={it.courseName}
-                            right={it.value !== undefined && it.value !== null ? String(it.value) : undefined}
-                            onClick={() => navigate(it.link)}
-                          />
-                        ));
-                      })}
+                  <Card className="overflow-hidden p-0">
+                    <div className="flex items-center gap-2 border-b border-line px-4 py-2.5">
+                      <Icon icon={CalendarDays} size={15} className="text-ink-faint" />
+                      <p className="flex-1 text-note font-bold uppercase tracking-wide text-ink-soft">
+                        {sched?.mode === "next"
+                          ? `${t("nextLessons")} · ${formatDate(locale === "ru" ? "ru" : "uz", sched.date, "short")}`
+                          : t("todayLessons")}
+                      </p>
+                      <button
+                        onClick={() => navigate("/app/schedule")}
+                        className="text-note font-semibold text-brand-deep hover:underline"
+                      >
+                        {t("openSchedule")}
+                      </button>
                     </div>
-                  ) : (
-                    <div className="flex items-center gap-3 px-4 py-5">
-                      <Icon icon={Sparkles} size={20} className="text-emerald" />
-                      <p className="text-body font-semibold text-emerald">{tt("studentAllDone")}</p>
-                    </div>
-                  )}
+                    {sched ? (
+                      <div className="divide-y divide-line">
+                        {sched.sessions.map((s) => (
+                          <button
+                            key={s.id}
+                            onClick={() => navigate("/app/schedule")}
+                            className={cls(
+                              "flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-bg",
+                              s.isPast && "opacity-55"
+                            )}
+                          >
+                            <div className="w-12 shrink-0 text-center">
+                              <p className="text-[15px] font-bold leading-none tabular-nums text-brand-deep">{hhmm(s.date)}</p>
+                            </div>
+                            <div className="min-w-0 flex-1 border-l border-line pl-3">
+                              <p className="truncate text-body font-semibold text-ink">{s.title ?? s.courseName}</p>
+                              <p className="flex items-center gap-1.5 truncate text-note text-ink-faint">
+                                {s.courseName}
+                                {s.room && (
+                                  <span className="inline-flex items-center gap-0.5">
+                                    <Icon icon={DoorOpen} size={11} /> {s.room}
+                                  </span>
+                                )}
+                              </p>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="px-4 py-5">
+                        <EmptyState icon={<Icon icon={CalendarDays} size={20} />} text={t("noLessonsWeek")} />
+                      </div>
+                    )}
                   </Card>
                 </motion.div>
 
-                {/* Joriy semestr kurslari */}
-                {currentCourses.length > 0 && (
-                  <motion.div variants={itemVariants}>
-                    <div className="mb-2.5 flex items-center justify-between gap-3">
-                      <h2 className="text-section font-bold text-ink">{t("currentCourses")}</h2>
-                      <Link to="/app/courses" className="text-note font-semibold text-brand-deep hover:underline">
-                        {t("seeAllCourses")} →
-                      </Link>
-                    </div>
-                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                      {currentCourses.slice(0, 6).map((c) => (
-                        <CourseCard key={c.id} course={c} />
-                      ))}
-                    </div>
-                  </motion.div>
-                )}
-              </div>
-
-              {/* O'ng ustun — jadval, bildirishnoma, faollik */}
-              <aside className="min-w-0 space-y-6">
+                {/* Bugun — vazifalar */}
                 <motion.div variants={itemVariants}>
-                <RailCard
-                  title={t("upcomingLessons")}
-                  icon={CalendarDays}
-                  action={{ label: t("seeAllCourses"), onClick: () => navigate("/app/schedule") }}
-                >
-                  {schedule.length === 0 ? (
-                    <p className="px-4 py-4 text-note text-ink-faint">{t("noLessons")}</p>
-                  ) : (
-                    <div className="divide-y divide-line">
-                      {schedule.slice(0, 4).map((s) => (
-                        <button
-                          key={s.id}
-                          onClick={() => navigate("/app/schedule")}
-                          className="flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-bg"
-                        >
-                          <div className="w-10 shrink-0 text-center">
-                            <p className="text-[16px] font-bold leading-none tabular-nums text-brand-deep">
-                              {new Date(s.date).getDate()}
-                            </p>
-                            <p className="mt-0.5 text-[11.5px] tabular-nums text-ink-faint">
-                              {`${String(new Date(s.date).getHours()).padStart(2, "0")}:${String(new Date(s.date).getMinutes()).padStart(2, "0")}`}
-                            </p>
-                          </div>
-                          <div className="min-w-0 flex-1 border-l border-line pl-3">
-                            <p className="truncate text-body font-semibold text-ink">{s.title ?? s.courseName}</p>
-                            <p className="flex items-center gap-1.5 truncate text-note text-ink-faint">
-                              {s.courseName}
-                              {s.room && (
-                                <span className="inline-flex items-center gap-0.5">
-                                  <Icon icon={DoorOpen} size={11} /> {s.room}
-                                </span>
-                              )}
-                            </p>
-                          </div>
-                        </button>
-                      ))}
+                  <Card className="overflow-hidden p-0">
+                    <div className="flex items-center gap-2 border-b border-line px-4 py-2.5">
+                      <Icon icon={ClipboardCheck} size={15} className="text-ink-faint" />
+                      <p className="flex-1 text-note font-bold uppercase tracking-wide text-ink-soft">{t("todayTitle")}</p>
+                      <button
+                        onClick={() => navigate("/app/tasks")}
+                        className="text-note font-semibold text-brand-deep hover:underline"
+                      >
+                        {t("seeAllCourses")}
+                      </button>
                     </div>
-                  )}
-                </RailCard>
+                    {hasToday ? (
+                      <div className="divide-y divide-line">
+                        {assigned.map((a) => (
+                          <ActionRow
+                            key={`as${a.id}`}
+                            icon={ClipboardCheck}
+                            tone="bg-violet-soft text-violet"
+                            title={a.title}
+                            sub={
+                              a.dueDate
+                                ? `${tt("dueShort")}: ${formatDate(locale === "ru" ? "ru" : "uz", a.dueDate, "short")}`
+                                : tt("fromTeacher")
+                            }
+                            right={done.isPending && done.variables === a.id ? "…" : tt("markDone")}
+                            onClick={() => done.mutate(a.id)}
+                          />
+                        ))}
+                        {auto.flatMap((task) => {
+                          const meta = AUTO_META[task.type];
+                          if (!meta) return [];
+                          const items = task.items ?? [];
+                          if (items.length === 0)
+                            return [
+                              <ActionRow
+                                key={task.type}
+                                icon={meta.icon}
+                                tone={meta.tone}
+                                title={tt(meta.labelKey)}
+                                sub={`${task.count}%`}
+                                onClick={() => navigate(task.link)}
+                              />,
+                            ];
+                          return items.map((it, i) => (
+                            <ActionRow
+                              key={`${task.type}-${i}`}
+                              icon={meta.icon}
+                              tone={meta.tone}
+                              title={`${tt(meta.labelKey)}: ${it.topicTitle}`}
+                              sub={it.courseName}
+                              right={it.value !== undefined && it.value !== null ? String(it.value) : undefined}
+                              onClick={() => navigate(it.link)}
+                            />
+                          ));
+                        })}
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-3 px-4 py-5">
+                        <Icon icon={Sparkles} size={20} className="text-emerald" />
+                        <p className="text-body font-semibold text-emerald">{tt("studentAllDone")}</p>
+                      </div>
+                    )}
+                  </Card>
                 </motion.div>
 
+                {/* Davomat + o'zlashtirish */}
+                <motion.div variants={itemVariants} className="grid gap-6 sm:grid-cols-2">
+                  {/* Davomat */}
+                  <button
+                    onClick={() => navigate("/app/attendance")}
+                    className="flex flex-col rounded-card border border-line bg-surface p-5 text-left shadow-card transition-all hover:-translate-y-0.5 hover:shadow-card-hover"
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-soft text-blue">
+                        <Icon icon={CalendarCheck2} size={16} />
+                      </div>
+                      <p className="text-note font-bold uppercase tracking-wide text-ink-soft">{t("semesterAttendance")}</p>
+                    </div>
+                    <div className="mt-3 flex items-end justify-between">
+                      <span className={cls("text-stat font-bold tabular-nums", attPct !== null && attPct < 75 ? "text-rose" : "text-ink")}>
+                        {attPct !== null ? `${attPct}%` : "—"}
+                      </span>
+                      {attMissed > 0 && (
+                        <span className="mb-1 rounded-pill bg-rose-soft px-2.5 py-0.5 text-note font-bold text-rose">
+                          {t("missedN", { count: attMissed })}
+                        </span>
+                      )}
+                    </div>
+                  </button>
+
+                  {/* O'zlashtirish */}
+                  <button
+                    onClick={() => navigate("/app/grades")}
+                    className="flex flex-col rounded-card border border-line bg-surface p-5 text-left shadow-card transition-all hover:-translate-y-0.5 hover:shadow-card-hover"
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-soft text-brand-deep">
+                        <Icon icon={GraduationCap} size={16} />
+                      </div>
+                      <p className="text-note font-bold uppercase tracking-wide text-ink-soft">{t("mastery")}</p>
+                    </div>
+                    <div className="mt-3 flex items-center gap-4">
+                      <ProgressRing value={masteryAvg ?? 0} size={56} stroke={7} />
+                      <div className="min-w-0 flex-1 space-y-1.5">
+                        {masteryCourses.slice(0, 3).map((c) => (
+                          <BarRow key={c.courseId} label={c.subjectName} value={c.avgQuiz ?? 0} />
+                        ))}
+                        {masteryCourses.length === 0 && (
+                          <p className="text-note text-ink-faint">{t("avgQuizShort")}: —</p>
+                        )}
+                      </div>
+                    </div>
+                  </button>
+                </motion.div>
+
+                {/* Kurslarga o'tish */}
+                <motion.div variants={itemVariants}>
+                  <button
+                    onClick={() => navigate("/app/courses")}
+                    className="flex w-full items-center justify-center gap-2 rounded-card bg-brand px-4 py-3.5 text-body font-bold text-white shadow-card transition-all hover:bg-brand-deep hover:shadow-card-hover"
+                  >
+                    <Icon icon={BookOpen} size={18} />
+                    {t("goToCourses")}
+                    <Icon icon={ArrowRight} size={16} />
+                  </button>
+                </motion.div>
+              </div>
+
+              {/* O'ng ustun — bildirishnoma, faollik */}
+              <aside className="min-w-0 space-y-6">
                 {d.notifications.length > 0 && (
                   <motion.div variants={itemVariants}>
-                  <RailCard title={t("notifications")} icon={ClipboardCheck}>
-                    <div className="divide-y divide-line">
-                      {d.notifications.slice(0, 4).map((n) => (
-                        <button
-                          key={n.caseAttemptId}
-                          onClick={() => navigate(`/app/topics/${n.topicId}?tab=case`)}
-                          className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left transition-colors hover:bg-bg"
-                        >
-                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-soft text-emerald">
-                            <Icon icon={ClipboardCheck} size={15} />
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate text-body font-semibold text-ink">{t("caseGraded")}</p>
-                            <p className="truncate text-note text-ink-faint">{n.topic}</p>
-                          </div>
-                          {n.score !== null && (
-                            <span className="shrink-0 text-body font-bold text-emerald">{n.score}</span>
-                          )}
-                        </button>
-                      ))}
-                    </div>
-                  </RailCard>
+                    <RailCard title={t("notifications")} icon={ClipboardCheck}>
+                      <div className="divide-y divide-line">
+                        {d.notifications.slice(0, 4).map((n) => (
+                          <button
+                            key={n.caseAttemptId}
+                            onClick={() => navigate(`/app/topics/${n.topicId}?tab=case`)}
+                            className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left transition-colors hover:bg-bg"
+                          >
+                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-soft text-emerald">
+                              <Icon icon={ClipboardCheck} size={15} />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-body font-semibold text-ink">{t("caseGraded")}</p>
+                              <p className="truncate text-note text-ink-faint">{n.topic}</p>
+                            </div>
+                            {n.score !== null && <span className="shrink-0 text-body font-bold text-emerald">{n.score}</span>}
+                          </button>
+                        ))}
+                      </div>
+                    </RailCard>
                   </motion.div>
                 )}
 
                 {activity.length > 0 && (
                   <motion.div variants={itemVariants}>
-                  <RailCard title={t("recentActivity")} icon={Sparkles}>
-                    <div className="divide-y divide-line">
-                      {activity.slice(0, 5).map((a, i) => {
-                        const m = ACTIVITY_META[a.type];
-                        return (
-                          <button
-                            key={`${a.type}-${a.topicId}-${i}`}
-                            onClick={() => navigate(`/app/topics/${a.topicId}`)}
-                            className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left transition-colors hover:bg-bg"
-                          >
-                            <div className={cls("flex h-7 w-7 shrink-0 items-center justify-center rounded-full", m.tone)}>
-                              <Icon icon={m.icon} size={13} />
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <p className="truncate text-note font-semibold text-ink">{t(`activity.${a.type}`)}</p>
-                              <p className="truncate text-[12.5px] text-ink-faint">{a.topic}</p>
-                            </div>
-                            {a.score !== null && (
-                              <span className="shrink-0 text-note font-bold tabular-nums text-ink-soft">{a.score}%</span>
-                            )}
-                          </button>
-                        );
-                      })}
-                    </div>
-                      </RailCard>
+                    <RailCard title={t("recentActivity")} icon={Sparkles}>
+                      <div className="divide-y divide-line">
+                        {activity.slice(0, 5).map((a, i) => {
+                          const m = ACTIVITY_META[a.type];
+                          return (
+                            <button
+                              key={`${a.type}-${a.topicId}-${i}`}
+                              onClick={() => navigate(`/app/topics/${a.topicId}`)}
+                              className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left transition-colors hover:bg-bg"
+                            >
+                              <div className={cls("flex h-7 w-7 shrink-0 items-center justify-center rounded-full", m.tone)}>
+                                <Icon icon={m.icon} size={13} />
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <p className="truncate text-note font-semibold text-ink">{t(`activity.${a.type}`)}</p>
+                                <p className="truncate text-[12.5px] text-ink-faint">{a.topic}</p>
+                              </div>
+                              {a.score !== null && (
+                                <span className="shrink-0 text-note font-bold tabular-nums text-ink-soft">{a.score}%</span>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </RailCard>
                   </motion.div>
                 )}
               </aside>
