@@ -13,27 +13,35 @@ function activeStageKey(view: LessonView): StageKey {
 }
 
 function Bubble({ n, state, active }: { n: number; state: StageInfo["state"]; active: boolean }) {
-  const base = "flex h-7 w-7 shrink-0 items-center justify-center rounded-full";
+  const base = "flex h-8 w-8 shrink-0 items-center justify-center rounded-xl font-bold transition-all duration-200";
   if (state === "done")
     return (
-      <div className={cls(base, "bg-emerald text-white")}>
-        <Icon icon={Check} size={14} strokeWidth={3} />
+      <div className={cls(base, "bg-emerald text-white shadow-md shadow-emerald/20")}>
+        <Icon icon={Check} size={16} strokeWidth={3} />
       </div>
     );
   if (state === "pendingReview")
     return (
-      <div className={cls(base, "bg-amber-soft text-amber")}>
-        <Icon icon={Clock} size={14} />
+      <div className={cls(base, "bg-amber-soft text-amber border border-amber/30")}>
+        <Icon icon={Clock} size={15} />
       </div>
     );
   if (state === "soon")
     return (
-      <div className={cls(base, "bg-bg text-ink-faint")}>
-        <Icon icon={Lock} size={13} />
+      <div className={cls(base, "bg-bg text-ink-faint border border-line opacity-50")}>
+        <Icon icon={Lock} size={14} />
       </div>
     );
   return (
-    <div className={cls(base, "text-[13px] font-bold tabular-nums", active ? "bg-brand text-white" : "bg-bg text-ink-soft")}>
+    <div
+      className={cls(
+        base,
+        "text-[14px] tabular-nums",
+        active
+          ? "bg-gradient-to-tr from-brand to-brand-deep text-white shadow-md shadow-brand/30 scale-105"
+          : "bg-surface border border-line text-ink-soft"
+      )}
+    >
       {n}
     </div>
   );
@@ -60,32 +68,38 @@ export function StageRail({
   }
 
   return (
-    <Panel title={t("stageProgress")} icon={ListChecks} bodyClassName="p-1.5">
-      <ol className="space-y-0.5">
+    <Panel title={t("stageProgress")} icon={ListChecks} bodyClassName="p-2 space-y-1">
+      <ol className="relative space-y-1.5 before:absolute before:left-6 before:top-4 before:bottom-4 before:w-0.5 before:bg-line/60">
         {stages.map((st, i) => {
           const active = current === st.key;
           const clickable = st.key !== "flashcards" && st.state !== "soon";
           const subLine = sub(st);
           const Wrapper = clickable ? "button" : "div";
           return (
-            <li key={st.key}>
+            <li key={st.key} className="relative z-10">
               <Wrapper
                 onClick={clickable ? () => onSelect(st.key) : undefined}
                 className={cls(
-                  "flex w-full items-center gap-2.5 rounded-control px-2 py-1.5 text-left transition-colors",
-                  active && "bg-brand-soft",
-                  clickable && !active && "hover:bg-bg",
-                  !clickable && "cursor-default opacity-60"
+                  "flex w-full items-center gap-3 rounded-xl p-2.5 text-left transition-all duration-200",
+                  active && "bg-brand-soft/80 border border-brand/30 shadow-sm backdrop-blur-md",
+                  clickable && !active && "hover:bg-bg/80 border border-transparent hover:border-line",
+                  !clickable && "cursor-default opacity-50 border border-transparent"
                 )}
               >
                 <Bubble n={i + 1} state={st.state} active={active} />
                 <div className="min-w-0 flex-1">
-                  <p className={cls("truncate text-note font-bold", active ? "text-brand-deep" : "text-ink")}>
+                  <p className={cls("truncate text-[14.5px] font-extrabold tracking-tight", active ? "text-brand-deep" : "text-ink")}>
                     {t(`stage_${st.key}`)}
                   </p>
-                  {subLine && <p className="truncate text-[12px] text-ink-faint">{subLine}</p>}
+                  {subLine && <p className="truncate text-[12px] font-medium text-ink-faint">{subLine}</p>}
                 </div>
-                {clickable && <Icon icon={ChevronRight} size={14} className="shrink-0 text-ink-faint" />}
+                {clickable && (
+                  <Icon
+                    icon={ChevronRight}
+                    size={16}
+                    className={cls("shrink-0 transition-transform", active ? "text-brand-deep translate-x-0.5" : "text-ink-faint")}
+                  />
+                )}
               </Wrapper>
             </li>
           );

@@ -20,36 +20,44 @@ export function MaterialsPanel({ materials }: { materials: LessonMaterial[] }) {
   const { t } = useTranslation(undefined, { keyPrefix: "lesson" });
 
   return (
-    <Panel title={t("materialsTitle")} icon={FolderOpen}>
+    <Panel title={t("materialsTitle")} icon={FolderOpen} bodyClassName="p-2 space-y-2">
       {materials.length === 0 ? (
-        <p className="px-3 py-4 text-note text-ink-faint">{t("materialsEmpty")}</p>
+        <div className="flex flex-col items-center justify-center p-6 text-center">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-bg text-ink-faint mb-2">
+            <Icon icon={FolderOpen} size={22} />
+          </div>
+          <p className="text-[13.5px] font-medium text-ink-faint leading-snug">{t("materialsEmpty")}</p>
+        </div>
       ) : (
-        <div className="divide-y divide-line">
+        <div className="space-y-2">
           {materials.map((m) => (
             <a
               key={m.id}
               href={`${API_URL}/api/v1/me/materials/${m.id}/file`}
               target="_blank"
               rel="noreferrer"
-              className="flex items-center gap-2.5 px-3 py-2.5 transition-colors hover:bg-bg"
+              className="group flex items-center gap-3 rounded-xl border border-line/80 bg-surface/60 p-2.5 transition-all duration-200 hover:border-brand/40 hover:bg-surface hover:shadow-md"
             >
               <div
                 className={cls(
-                  "flex h-8 w-8 shrink-0 items-center justify-center rounded-control",
+                  "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl font-bold shadow-sm transition-transform group-hover:scale-105",
                   TYPE_TONE[m.fileType] ?? "bg-bg text-ink-soft"
                 )}
               >
-                <Icon icon={FileText} size={15} />
+                <Icon icon={FileText} size={18} />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-note font-semibold text-ink">{m.fileName}</p>
-                <p className="text-[12px] uppercase text-ink-faint">{m.fileType}</p>
+                <p className="truncate text-[13.5px] font-extrabold text-ink group-hover:text-brand-deep transition-colors">{m.fileName}</p>
+                <span className="inline-block rounded-md bg-bg border border-line px-1.5 py-0.5 text-[10px] font-black uppercase text-ink-faint tracking-wider">
+                  {m.fileType}
+                </span>
               </div>
-              <Icon
-                icon={INLINE.has(m.fileType) ? ExternalLink : Download}
-                size={14}
-                className="shrink-0 text-ink-faint"
-              />
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-bg text-ink-faint group-hover:bg-brand-soft group-hover:text-brand-deep transition-colors">
+                <Icon
+                  icon={INLINE.has(m.fileType) ? ExternalLink : Download}
+                  size={14}
+                />
+              </div>
             </a>
           ))}
         </div>
