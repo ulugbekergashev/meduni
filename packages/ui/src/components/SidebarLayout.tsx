@@ -19,6 +19,10 @@ export interface SidebarLayoutProps {
   children: ReactNode;
   headerSlot?: ReactNode;
   rightSlot?: ReactNode;
+  /** Ishchi sahifalar (dars paneli) — shell max-w/padding qo'ymaydi, kontent
+   *  butun ekranni to'ldiradi va panellar o'z ichida skroll qiladi.
+   *  ZICHLIK QOIDASI (CLAUDE.md §4). */
+  fullBleed?: boolean;
   LinkComponent?: ComponentType<{ href: string; className?: string; children: ReactNode }>;
 }
 
@@ -32,7 +36,7 @@ function DefaultLink({ href, className, children }: { href: string; className?: 
 
 const COLLAPSE_KEY = "meduni.sidebar";
 
-export function SidebarLayout({ brand, items, children, headerSlot, rightSlot, LinkComponent }: SidebarLayoutProps) {
+export function SidebarLayout({ brand, items, children, headerSlot, rightSlot, fullBleed = false, LinkComponent }: SidebarLayoutProps) {
   const Link = LinkComponent ?? DefaultLink;
   const [collapsed, setCollapsed] = useState(
     () => typeof window !== "undefined" && window.localStorage.getItem(COLLAPSE_KEY) === "collapsed"
@@ -47,7 +51,7 @@ export function SidebarLayout({ brand, items, children, headerSlot, rightSlot, L
     });
 
   return (
-    <div className="flex min-h-screen bg-bg">
+    <div className={cls("flex bg-bg", fullBleed ? "h-screen overflow-hidden" : "min-h-screen")}>
       <aside
         className={cls(
           "sticky top-0 z-20 h-screen shrink-0 flex flex-col border-r border-side-line bg-side transition-[width] duration-200",
@@ -112,7 +116,13 @@ export function SidebarLayout({ brand, items, children, headerSlot, rightSlot, L
           {rightSlot && <div className="flex shrink-0 items-center gap-2">{rightSlot}</div>}
         </header>
 
-        <div className="mx-auto w-full max-w-[1280px] flex-1 px-5 py-6 sm:px-8 sm:py-8">{children}</div>
+        {fullBleed ? (
+          // Ishchi rejim — kontent butun maydonni to'ldiradi. Desktopda panel
+          // ichida skroll; mobilda sahifa skroll qiladi (panellar ustma-ust).
+          <div className="min-h-0 flex-1 overflow-y-auto lg:overflow-hidden">{children}</div>
+        ) : (
+          <div className="mx-auto w-full max-w-[1280px] flex-1 px-4 py-4 sm:px-6 sm:py-5">{children}</div>
+        )}
       </main>
     </div>
   );

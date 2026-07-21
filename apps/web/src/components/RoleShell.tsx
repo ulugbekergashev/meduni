@@ -53,6 +53,7 @@ export function RoleShell({
   children,
   headerSlot,
   profileHref,
+  fullBleed = false,
 }: {
   brand: string;
   items: RoleShellItem[];
@@ -60,6 +61,8 @@ export function RoleShell({
   headerSlot?: ReactNode;
   /** Header'dagi user bloki shu sahifaga olib boradi (rolga qarab profil/sozlamalar). */
   profileHref: string;
+  /** Ishchi sahifa (dars paneli) — to'liq ekran, panel ichida skroll. */
+  fullBleed?: boolean;
 }) {
   const { data: me } = useMe();
   const { t } = useTranslation(undefined, { keyPrefix: "nav" });
@@ -85,6 +88,7 @@ export function RoleShell({
       brand={brand}
       items={sidebarItems}
       headerSlot={headerSlot}
+      fullBleed={fullBleed}
       LinkComponent={RouterLink}
       rightSlot={
         <>

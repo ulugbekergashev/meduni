@@ -86,17 +86,37 @@ brand, emerald, amber, blue, rose (amber↔emerald yonma-yon faqat 2px oraliq/yo
 - Sarlavha h1: 28px/700, katta raqam: 36px/700 tabular-nums, bo'lim: 16px/700, matn: 14px, izoh: 12.5px/ink-faint (2026-07 scale-up: hammasi kattalashtirildi)
 - Soyalar tokenli: `--shadow-card` / `--shadow-card-hover` (ink-tinted, dark'da o'z varianti); Tailwind `shadow-card`/`shadow-card-hover`
 - Sana formati: `lib/date.ts::formatDate(locale, date, "long|short|shortYear")` — uz oy nomlari qo'lda ("15-iyul, 2026-yil"; uz-UZ ICU "M07" buzuq), toLocaleDateString'ni oy-nomli formatda ISHLATMA
-- Panel padding 20-22px, kartalar orasi 14-16px
+- Panel padding 12-16px (`p-3`/`p-4`), kartalar orasi **8-12px** (`gap-2`/`gap-3`) — ZICHLIK QOIDASIga qarang
 - Shrift: Inter / system-ui
 
 ### Umumiy komponentlar (packages/ui da)
 Button (primary/deep/ghost/soft/danger, sm/md/lg, ikonka, hoverда brand→brand-deep, active:scale-98), StatusPill (draft/review/published), Card (p-6, shadow-card, hoverда ko'tariladi), **StatCard (ikonka-chip + katta raqam + label/hint; tone=class string; selected=filtr holati; compact)**, Icon (SVG, stroke 1.7 yoki lucide-react), Input/Textarea (focusда brand chegara+ring), Modal (markazда, Escape+tashqi bosishда yopiladi), Toast (pastда, 2.6s, ok/warn), Spinner, EmptyState (text+hint+action, dashed karta), **Sidebar layout (272px, YORUG' — oq surface, border-r, faol=brand-soft chip + chap indigo indikator; `--side-*` tokenlar, dark'da o'z varianti)**, Charts (ProgressRing def 116/11, **Donut (segmentli, 2px oraliq, markazda qiymat) + LegendRow**, BarRow, MiniBars, StackedBar 2px-gap segmentlar). Kontent max-w 1280px. Tablar: segmented uslub (bordered surface track p-1, faol=brand-soft chip) — TabNav/GroupProfile/LessonPage bir xil.
 
+### ⛔ ZICHLIK QOIDASI (2026-07-21 — BUZILMAYDI, eng ko'p buzilgan qoida)
+
+Foydalanuvchi talabi: **"katta spacelar qolib ketmasin, faqatgina paddingga ruxsat"**.
+Namuna — **NotebookLM**: chap manbalar / o'rta ish maydoni / o'ng studio; uchalasi
+to'liq ekran balandligida, oralari ingichka, har biri O'Z ICHIDA skroll qiladi,
+bo'sh ekran qolmaydi.
+
+- **Bo'shliqni `gap`/`space-y`/`margin` bilan YASAMA — `padding` bilan yasa.**
+  Bo'shliq element ICHIDA bo'ladi, elementlar ORASIDA emas.
+- **Panellar/kartalar orasi: `gap-2`/`gap-3` (8–12px).** `gap-6`, `gap-8`,
+  `space-y-6`, `space-y-8`, `mt-8` — **TAQIQ** (ular ekranni parchalab tashlaydi).
+- **Ishchi sahifalar (dars paneli kabi) viewport balandligini TO'LDIRADI:**
+  `h-full` + `min-h-0` + har panel `overflow-y-auto`. Sahifa emas — PANEL skroll
+  qiladi. Bunday sahifalar `fullBleed` rejimida (shell max-w/padding qo'ymaydi).
+- **Markazda tor ustun + yon tomonlarda bo'sh ekran — TAQIQ.** Kontent mavjud
+  kenglikni egallaydi.
+- Panel ichi padding: `p-3`/`p-4` (ixcham), panel shapkasi `px-3 py-2`.
+- Har yangi sahifadan keyin savol: *"ekranda ma'nosiz bo'sh joy bormi?"* — bo'lsa
+  qayta ishla.
+
 ### Tamoyillar
 - Har statistika o'z rangida (talaba=ko'k, o'qituvchi=violet, kurs=brand/indigo, ...)
 - Har karta interaktiv (hover jonlanadi)
 - Gradient faqat urg'u uchun (brand-deep→brand)
-- Bo'shliq ko'p, nafas oladi
+- Zich, ma'lumotga to'la (yuqoridagi ZICHLIK QOIDASI)
 - Mobil: talaba sahifalari mobil-birinchi
 
 ---
