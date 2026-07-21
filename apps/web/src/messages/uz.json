@@ -1408,7 +1408,10 @@
     "statAll": "Jami kurs",
     "statCurrent": "Joriy semestr",
     "statTopics": "Mavzular",
-    "statDone": "Tugallangan"
+    "statDone": "Tugallangan",
+    "currentSemester": "Joriy semestr",
+    "backToCurrent": "Joriy semestrga qaytish",
+    "continueShort": "Davom"
   },
   "grades": {
     "title": "Baholarim",
