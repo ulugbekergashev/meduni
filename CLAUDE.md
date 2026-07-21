@@ -115,10 +115,13 @@ Button (primary/deep/ghost/soft/danger, sm/md/lg, ikonka, hoverда brand→bran
 - Rollar: **SUPERADMIN → FACULTY_ADMIN → DEPT_ADMIN → TEACHER → STUDENT** (Modul 20 Faza 2;
   ilgari faqat 3 rol edi, `ADMIN` enum'da deprecated qoldi, seed'da SUPERADMIN'ga ko'chiriladi).
   Admin-scope User.facultyId (fakultet-admin) / User.adminDepartmentId (kafedra-admin);
-  teacher scope o'sha TeacherProfile.departmentId. **XP, badge, streak, QR — YO'Q.**
-  **Reyting (Modul 21'da yumshatildi):** o'qituvchi guruhda tartib raqamini ko'radi;
-  talaba FAQAT o'z o'rnini ko'radi ("guruhda 4/22", `/me/rank` boshqa talabalar
-  ismini qaytarmaydi) — ochiq leaderboard (ismlar ro'yxati) baribir YO'Q.
+  teacher scope o'sha TeacherProfile.departmentId. **XP, badge, QR — YO'Q.**
+  **Streak — BOR (Modul 23, 2026-07-21 buyurtmachi qarori):** uzluksiz o'qish
+  kunlari (dashboard hero), timestamp'lardan hisoblanadi, jadval yo'q.
+  **Reyting — endi OCHIQ (Modul 23, eski qoida BEKOR):** `/me/rank` guruh top-10
+  ni ismlar bilan qaytaradi (`top[{rank,fullName,completed,isMe}]`) + o'z o'rni;
+  talaba GradesPage'da guruh reytingini ko'radi. (Ilgari faqat o'z o'rni edi —
+  buyurtmachi ochiq leaderboard so'radi.)
 - **Hech narsa avtomatik publish bo'lmaydi.** Ikki qulf: (1) o'qituvchi konspektni tasdiqlaydi, keyingina generatsiya; (2) o'qituvchi kontentни tasdiqlaydi, keyingina talaba ko'radi.
 - **AI faqat yuklangan materialdan** (RAG). O'zidan fakt/doza/protokol qo'shmaydi. Faktcheck bu buzilmaganini tekshiradi.
 - Yo'qlama — sodda (o'qituvchi qo'lda belgilaydi: keldi/kelmadi/kechikdi/sababli). QR YO'Q.
@@ -951,6 +954,44 @@ Barcha modullar tugadi (1-17).
   "Oxirgi baholar" (test+keys aralash, sana bo'yicha) va "Tekshiruvda" ro'yxati.
   i18n: `tasks.stat*`, `schedule.stat*`, `studentCourses.stat*`, `grades.statPending/recentGrades`.
   tsc+build toza.
+
+- **Dizayn tozalash (2026-07-21, foydalanuvchi: glass yoqmadi).** WIP glass/blur
+  redizayn olib tashlandi, Indigo Pro tokenlariga qat'iy qaytildi: tokens.css bg
+  #f6f7f9, radius 16/10/20, ink-tinted soyalar, `--surface-glass` solid (shaffoflik
+  yo'q). Card/Button/Input'dan `glass` prop + arbitrary-opacity hoverlar; SidebarLayout
+  suzuvchi glass panel o'rniga **flush border-r yon panel** (side-* tokenlar, solid
+  57px header — wizard `top-[57px]` bilan mos, collapse saqlandi). 17 sahifadan
+  backdrop-blur + bg-surface-glass tozalandi, accent tintlar (`-/10`) → `-soft`.
+  Alohida: turbo monorepo + API helmet/rate-limit + ko'p-rol seed commit qilindi.
+
+- **Modul 23 — Talaba paneli qayta qurish (2026-07-21, buyurtmachi katta spec).**
+  Reja: `.claude/plans/polished-juggling-hippo.md`. **A/B/C bosqich (har biri commit):**
+  **(A) Bosh sahifa** kunlik ish markaziga aylandi (kurslar gridi OLIB TASHLANDI →
+  "Kurslarga o'tish" tugma): hero'da **streak** (🔥 `computeStreak` me/profile.ts —
+  Progress/quiz/case timestamp'laridan LOCAL dayKey), subtitle=guruh·semestr·yil;
+  "Bugungi/Keyingi darslar" kartasi (jadvaldan client-side), davomat + o'zlashtirish
+  kartalari (joriy semestr kesimi), **top-10 reyting** (`getMyRank` kengaytirildi
+  `{rank,total,completed,top[]}` — ismlar bilan, `LeaderboardCard` GradesPage'da).
+  **(B) Kurslar** karta-griddan **ro'yxatga** (`CourseRow`), sukut bo'yicha **joriy
+  semestr** filtri (touched ref); aniq semestr→yassi, "barcha"→PeriodSection.
+  **(C) Dars sahifasi — 3 panel** (mobil: rail→kontent→material; desktop: material |
+  kontent | rail sticky). **YANGI backend:** talaba endi `SourceMaterial` (chap panel,
+  `GET /me/materials/:id/file` — assertTopicOpen himoya, MIME) va `TopicDigest` (o'rta
+  panel konspekt — FAQAT `approvedByTeacher` bo'lsa) ni ko'radi; ikkalasi ilgari
+  talabaga UMUMAN ochilmagan edi. `me/lesson.ts` payload += `materials[]`+`digest`.
+  Frontend `student/lesson/`: `stages.ts` (sof — buildStages O'rganish→Keys→Test→
+  Kartochkalar→Natija + finalScore [test-best+tekshirilgan keys o'rtachasi, backend
+  chaqiruvsiz]), `StageRail`/`MaterialsPanel`/`ContentPanel` (Konspekt|Video|Slaydlar
+  sub-tab + case/quiz/result host)/`DigestView` (doza amber blok)/`ResultPanel`
+  (yakuniy ball + keyingi dars + **AI-chat placeholder**). `?view=` + eski `?tab=`
+  mapping. Re-entry: test/keys tugagach natija-only (mavjud tab mantiqidan),
+  Fleshkartalar+AI-chat "tez orada". **KEYINGI SESSIYALAR** (`.claude/plans/`da):
+  flashcards (ContentKind FLASHCARDS, o'qituvchi tasdiqlaydi), AI tutor chat
+  (Conversation/Message + gemini multi-turn, digest+material grounding), virtual
+  bemor roleplay, spaced repetition, smart tooltip, kurs chati (polling),
+  notifications center, bookmarks. tsc+transform toza; smoke: streak/rank/lesson
+  payload. ⚠️ Demo'da approved digest/material yo'q — 3-panel to'liq ko'rinishi
+  uchun o'qituvchi tomonidan konspekt tasdiqlanishi/material yuklanishi kerak.
 
 ## 9. Loyiha holati va ishga tushirish (operatsion — sessiya 0)
 
