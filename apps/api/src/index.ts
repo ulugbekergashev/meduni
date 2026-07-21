@@ -1,6 +1,8 @@
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
 import { env } from "./env";
 import { authMiddleware } from "./middleware/auth";
 import { errorMiddleware } from "./middleware/error";
@@ -17,6 +19,16 @@ import { adminRouter } from "./modules/admin/router";
 import { tasksRouter } from "./modules/tasks/router";
 
 const app = express();
+
+app.use(helmet());
+
+const apiLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minute
+  max: 100, // Limit each IP to 100 requests per windowMs
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use(apiLimiter);
 
 app.use(cors({ origin: env.webOrigin, credentials: true }));
 app.use(express.json());

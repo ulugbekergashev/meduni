@@ -1,14 +1,19 @@
 {
   "name": "meduni",
   "private": true,
+  "packageManager": "npm@10.8.2",
   "workspaces": [
     "apps/*",
     "packages/*"
   ],
   "scripts": {
-    "dev:api": "npm run dev --workspace=apps/api",
-    "dev:web": "npm run dev --workspace=apps/web",
-    "db:migrate": "npm run migrate --workspace=packages/db",
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "db:generate": "turbo generate --filter=@meduni/db",
+    "db:migrate": "turbo migrate --filter=@meduni/db",
     "db:seed": "npm run seed --workspace=packages/db"
+  },
+  "devDependencies": {
+    "turbo": "^2.10.5"
   }
 }
