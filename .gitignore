@@ -12,6 +12,7 @@ node_modules/
 out/
 dist/
 *.tsbuildinfo
+.turbo/
 
 # Env & local data
 .env

@@ -4,30 +4,29 @@ import argon2 from "argon2";
 const prisma = new PrismaClient();
 
 async function main() {
-  const existing = await prisma.user.findUnique({ where: { email: "admin@meduni.uz" } });
-  if (existing) {
-    // Legacy seeds created the root account with the deprecated ADMIN role.
-    if (existing.role !== "SUPERADMIN") {
-      await prisma.user.update({ where: { id: existing.id }, data: { role: "SUPERADMIN" } });
-      console.log("admin@meduni.uz roli SUPERADMIN'ga ko'tarildi.");
-    } else {
-      console.log("Сиды уже применены — пропускаю.");
-    }
-    return;
+  const seeds = [
+    { fullName: "Super Admin", email: "admin@meduni.uz", pass: "admin123", role: "SUPERADMIN" },
+    { fullName: "Fakultet Admin", email: "fakultet.admin@meduni.uz", pass: "admin123", role: "FACULTY_ADMIN" },
+    { fullName: "Kafedra Admin", email: "kafedra.admin@meduni.uz", pass: "admin123", role: "DEPT_ADMIN" },
+    { fullName: "O'qituvchi", email: "teacher.m11demo@meduni.uz", pass: "student123", role: "TEACHER" },
+    { fullName: "Talaba", email: "student@meduni.uz", pass: "student123", role: "STUDENT" },
+  ] as const;
+
+  for (const s of seeds) {
+    const passwordHash = await argon2.hash(s.pass);
+    await prisma.user.upsert({
+      where: { email: s.email },
+      update: { passwordHash, role: s.role },
+      create: {
+        fullName: s.fullName,
+        email: s.email,
+        passwordHash,
+        role: s.role,
+        locale: "uz",
+      },
+    });
+    console.log(`Tayyor: ${s.email} / ${s.pass} (${s.role})`);
   }
-
-  const passwordHash = await argon2.hash("admin123");
-  await prisma.user.create({
-    data: {
-      fullName: "Administrator",
-      email: "admin@meduni.uz",
-      passwordHash,
-      role: "SUPERADMIN",
-      locale: "uz",
-    },
-  });
-
-  console.log("Готово: admin@meduni.uz / admin123 (SUPERADMIN)");
 }
 
 main()
