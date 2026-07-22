@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, BookText, ClipboardList, Layers, Stethoscope, Trophy, Video } from "lucide-react";
+import { ArrowLeft, BookText, ClipboardList, Layers, Sparkles, Stethoscope, Trophy, Video } from "lucide-react";
 import { EmptyState, Icon } from "@meduni/ui";
 import type { Lesson } from "../api";
 import { Panel } from "./Panel";
@@ -11,6 +11,7 @@ import { VideoTab } from "./VideoTab";
 import { SlidesTab } from "./SlidesTab";
 import { QuizTab } from "./QuizTab";
 import { CaseTab } from "./CaseTab";
+import { FlashcardsTab } from "./FlashcardsTab";
 import { ResultPanel } from "./ResultPanel";
 
 const SUBTAB_ICON: Record<ContentView, typeof BookText> = {
@@ -19,7 +20,12 @@ const SUBTAB_ICON: Record<ContentView, typeof BookText> = {
   slides: Layers,
 };
 
-const SURFACE_ICON = { case: Stethoscope, quiz: ClipboardList, result: Trophy } as const;
+const SURFACE_ICON = {
+  case: Stethoscope,
+  quiz: ClipboardList,
+  flashcards: Sparkles,
+  result: Trophy,
+} as const;
 
 export function ContentPanel({
   lesson,
@@ -55,10 +61,11 @@ export function ContentPanel({
 
   // ---- Baholash / natija yuzasi ----
   if (!isContentView && view !== "overview") {
-    const key = view as "case" | "quiz" | "result";
+    const key = view as "case" | "quiz" | "flashcards" | "result";
     const terminal =
       (key === "quiz" && lesson.tabs.quiz?.attempt?.status === "finished") ||
-      (key === "case" && !!lesson.tabs.case?.attempt);
+      (key === "case" && !!lesson.tabs.case?.attempt) ||
+      key === "flashcards";
     return (
       <Panel
         header={
@@ -80,6 +87,7 @@ export function ContentPanel({
       >
         {view === "case" && lesson.tabs.case && <CaseTab topicId={topicId} data={lesson.tabs.case} />}
         {view === "quiz" && lesson.tabs.quiz && <QuizTab topicId={topicId} data={lesson.tabs.quiz} />}
+        {view === "flashcards" && <FlashcardsTab topicId={topicId} />}
         {view === "result" && <ResultPanel lesson={lesson} />}
         {terminal && <NextStageBar stages={stages} currentKey={key as StageKey} onSelect={onStage} />}
       </Panel>

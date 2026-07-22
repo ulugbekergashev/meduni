@@ -6,6 +6,7 @@ import * as svc from "./service";
 import * as lesson from "./lesson";
 import * as profile from "./profile";
 import * as chat from "./chat";
+import * as flashcards from "./flashcards";
 import { computeStudentAutoTasks, listAssigned } from "../tasks/service";
 import { studentSearch } from "../search/service";
 
@@ -99,6 +100,27 @@ meRouter.post(
   wrap(async (req, res) =>
     res.json(await lesson.markSectionRead(req.user!.id, parseId(req.params.id), Number(req.params.index)))
   )
+);
+
+// ---------- Fleshkartalar (takrorlash) ----------
+
+meRouter.get(
+  "/topics/:id/flashcards",
+  wrap(async (req, res) => res.json(await flashcards.getFlashcards(req.user!.id, parseId(req.params.id))))
+);
+
+const reviewSchema = z.object({ cardKey: z.string().min(1).max(64), known: z.boolean() });
+meRouter.post(
+  "/topics/:id/flashcards/review",
+  wrap(async (req, res) => {
+    const b = parseBody(reviewSchema, req.body);
+    res.json(await flashcards.reviewFlashcard(req.user!.id, parseId(req.params.id), b.cardKey, b.known));
+  })
+);
+
+meRouter.post(
+  "/topics/:id/flashcards/reset",
+  wrap(async (req, res) => res.json(await flashcards.resetFlashcards(req.user!.id, parseId(req.params.id))))
 );
 
 // ---------- AI-tutor chat (layout v2, 2C) ----------

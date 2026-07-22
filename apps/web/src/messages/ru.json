@@ -1338,7 +1338,21 @@
     "flagQuestion": "Отметить",
     "materialsLockedQuiz": "Во время теста материалы временно закрыты — режим честности.",
     "slidesN": "{{n}} слайдов",
-    "minShort": "мин"
+    "minShort": "мин",
+    "cardFromQuiz": "Из теста",
+    "cardFromTerm": "Термин",
+    "cardTapToFlip": "Нажмите, чтобы увидеть ответ",
+    "cardOf": "{{n}} / {{total}} карточек",
+    "cardKnownN": "{{n}} знаю",
+    "cardKnow": "Знаю",
+    "cardDontKnow": "Не знаю",
+    "cardReset": "Заново",
+    "cardAllReviewed": "Все карточки просмотрены: {{n}}/{{total}} знаю",
+    "flashLockedTitle": "Карточки пока закрыты",
+    "flashLockedHint": "Карточки формируются из вопросов теста — сначала завершите тест.",
+    "flashLockedShort": "Откроются после теста",
+    "flashReady": "Готово к повторению",
+    "flashEmpty": "В этой теме нет карточек для повторения"
   },
   "search": {
     "placeholder": "Поиск… (студент, группа, курс)",

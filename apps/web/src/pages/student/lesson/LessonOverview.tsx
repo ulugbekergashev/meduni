@@ -69,7 +69,7 @@ export function LessonOverview({
         return t("casesN", { n: 1 });
       }
       case "flashcards":
-        return t("stageSoon");
+        return st.state === "soon" ? t("flashLockedShort") : t("flashReady");
       case "result":
         return st.state === "soon" ? t("overviewResultLocked") : t("overviewResultOpen");
     }
@@ -108,7 +108,7 @@ export function LessonOverview({
         variants={{ show: { transition: { staggerChildren: 0.05 } } }}
       >
         {stages.map((st, i) => {
-          const clickable = st.key !== "flashcards" && st.state !== "soon";
+          const clickable = st.state !== "soon";
           const subLine = sub(st);
           const Wrapper = clickable ? "button" : "div";
           return (

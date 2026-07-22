@@ -59,7 +59,7 @@ export function StageStepper({
       <div className="flex min-w-0 flex-1 items-center gap-0.5 overflow-x-auto scrollbar-hide">
         {stages.map((st, i) => {
           const active = current === st.key;
-          const clickable = st.key !== "flashcards" && st.state !== "soon";
+          const clickable = st.state !== "soon";
           return (
             <div key={st.key} className="flex shrink-0 items-center">
               {i > 0 && <Icon icon={ChevronRight} size={12} className="mx-0.5 shrink-0 text-ink-dim" />}

@@ -1338,7 +1338,21 @@
     "flagQuestion": "Belgilash",
     "materialsLockedQuiz": "Test davomida materiallar vaqtincha yopiq — halollik rejimi.",
     "slidesN": "{{n}} slayd",
-    "minShort": "daq"
+    "minShort": "daq",
+    "cardFromQuiz": "Testdan",
+    "cardFromTerm": "Atama",
+    "cardTapToFlip": "Javobni koʻrish uchun bosing",
+    "cardOf": "{{n}} / {{total}} karta",
+    "cardKnownN": "{{n}} ta bilaman",
+    "cardKnow": "Bilaman",
+    "cardDontKnow": "Bilmayman",
+    "cardReset": "Qaytadan",
+    "cardAllReviewed": "Barcha kartalar koʻrib chiqildi: {{n}}/{{total}} bilaman",
+    "flashLockedTitle": "Fleshkartalar hali yopiq",
+    "flashLockedHint": "Kartalar test savollaridan tuziladi — avval testni yakunlang.",
+    "flashLockedShort": "Testdan keyin ochiladi",
+    "flashReady": "Takrorlashga tayyor",
+    "flashEmpty": "Bu mavzuda takrorlash uchun karta yoʻq"
   },
   "search": {
     "placeholder": "Qidirish… (talaba, guruh, kurs)",

@@ -130,6 +130,7 @@ model User {
   progress          Progress[]
   overriddenProgress Progress[]      @relation("ProgressOverrider")
   sectionReads      SectionRead[]
+  flashcardReviews  FlashcardReview[]
   tutorMessages     TutorMessage[]
   quizAttempts      QuizAttempt[]
   caseAttempts      CaseAttempt[]    @relation("CaseStudent")
@@ -274,6 +275,7 @@ model Topic {
   contentItems   ContentItem[]
   progress       Progress[]
   sectionReads   SectionRead[]
+  flashcardReviews FlashcardReview[]
   tutorMessages  TutorMessage[]
   sessions       LessonSession[]
 
@@ -556,6 +558,25 @@ model TutorMessage {
 
   @@index([studentId, topicId, createdAt])
   @@map("tutor_messages")
+}
+
+/// Fleshkarta ko'rib chiqilishi (takrorlash uchun). Kartalar mavjud
+/// ma'lumotdan hosil qilinadi (test savollari + konspekt atamalari) — alohida
+/// AI generatsiyasi yo'q. cardKey: "q:<questionId>" yoki "t:<index>".
+/// Keyinchalik interval-takrorlash (spaced repetition) shu jadvaldan o'sadi.
+model FlashcardReview {
+  id         Int      @id @default(autoincrement())
+  studentId  Int
+  student    User     @relation(fields: [studentId], references: [id])
+  topicId    Int
+  topic      Topic    @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  cardKey    String
+  known      Boolean
+  reviewedAt DateTime @updatedAt
+
+  @@unique([studentId, topicId, cardKey])
+  @@index([studentId, topicId])
+  @@map("flashcard_reviews")
 }
 
 /// Konspekt bo'limi o'qilganini kuzatish (1a "O'qildi 2/6").

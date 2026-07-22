@@ -22,7 +22,7 @@ import {
   type StageKey,
 } from "./stages";
 
-const ALL_VIEWS: LessonView[] = ["overview", "konspekt", "video", "slides", "case", "quiz", "result"];
+const ALL_VIEWS: LessonView[] = ["overview", "konspekt", "video", "slides", "case", "quiz", "flashcards", "result"];
 
 /** So'ralgan ko'rinish mavjudmi — bo'lmasa overview'ga tushadi. */
 function viewAvailable(v: LessonView, lesson: Lesson): boolean {
@@ -39,6 +39,7 @@ function viewAvailable(v: LessonView, lesson: Lesson): boolean {
       return !!lesson.tabs.case;
     case "quiz":
       return !!lesson.tabs.quiz;
+    case "flashcards":
     case "result":
       return true;
   }
