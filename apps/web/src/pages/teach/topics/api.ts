@@ -106,11 +106,30 @@ export interface QuizQuestion {
   sourceFragment: string | null;
 }
 
+/** v2 — qadam varianti (o'qituvchi to'g'ri javob va izohni ko'radi/tahrirlaydi). */
+export interface CaseStepOption {
+  text: string;
+  correct: boolean;
+  feedback: string;
+}
+
+export interface CaseStepJson {
+  title: string;
+  prompt: string;
+  options: CaseStepOption[];
+}
+
 export interface CaseJson {
   complaints: string;
   anamnesis: string;
   objectiveStatus: string;
   labData: string;
+  /** v2 — bemor kartasi. Eski keyslarda bo'lmasligi mumkin. */
+  patientName?: string;
+  patientInfo?: string;
+  vitals?: { bp?: string; pulse?: string; spo2?: string; temp?: string };
+  /** v2 — bosqichma-bosqich qarorlar. Eski keyslarda bo'sh/yo'q. */
+  steps?: CaseStepJson[];
   questions: string[];
   referenceAnswer: string[];
 }

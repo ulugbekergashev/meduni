@@ -223,6 +223,126 @@ ishga tushadi — shuning uchun yurak to'xtab qolmaydi.
   },
 ];
 
+/**
+ * v2 klinik keys — bosqichma-bosqich qaror qabul qilish (4 qadam) + yozma savollar.
+ * Bemor vitals'i konspektdagi normal diapazonlardan kelib chiqadi; doza YO'Q.
+ */
+const CASE_JSON = {
+  patientName: "Bemor R.A.",
+  patientInfo: "62 yosh, erkak",
+  vitals: { bp: "110/70 mm sim. ust.", pulse: "38 urish/daq", spo2: "96%", temp: "36,6 °C" },
+  complaints:
+    "Umumiy holsizlik, bosh aylanishi, zinapoyaga ko'tarilganda hansirash. So'nggi hafta ichida ikki marta ko'z oldi qorayib, bir necha soniya hushidan ketgan.",
+  anamnesis:
+    "Shikoyatlar taxminan bir oy oldin boshlangan va asta-sekin kuchaygan. Ilgari yurak kasalliklari bo'yicha kuzatilmagan, muntazam dori qabul qilmaydi.",
+  objectiveStatus:
+    "Holati qoniqarli. Teri oqargan. Puls ritmik, lekin sekin — 38 urish/daq. Yurak chegaralari kengaymagan. O'pkada vezikulyar nafas.",
+  labData:
+    "EKG: bo'lmacha va qorincha qisqarishlari bir-biridan mustaqil; qorincha chastotasi 38/daq, bo'lmacha chastotasi 78/daq. Umumiy qon tahlili — o'zgarishsiz.",
+  steps: [
+    {
+      title: "Anamnez",
+      prompt: "Bemorning hushidan ketishi qaysi mexanizmga eng ko'p mos keladi?",
+      options: [
+        {
+          text: "Yurak chiqishi kamayib, miya qon bilan yetarli ta'minlanmagan",
+          correct: true,
+          feedback:
+            "To'g'ri. Yurak chiqishi = zarba hajmi × yurak urishi soni. Chastota keskin kamayganda minutlik hajm tushadi va miya perfuziyasi buziladi.",
+        },
+        {
+          text: "O'pka ventilyatsiyasi buzilgan (gipoksiya)",
+          correct: false,
+          feedback: "Noto'g'ri: SpO₂ normal va o'pkada vezikulyar nafas — nafas tizimi buzilishiga dalil yo'q.",
+        },
+        {
+          text: "Anemiya tufayli kislorod tashish kamaygan",
+          correct: false,
+          feedback: "Noto'g'ri: umumiy qon tahlili o'zgarishsiz.",
+        },
+      ],
+    },
+    {
+      title: "Tekshiruv",
+      prompt: "Ritm manbaini aniqlash uchun qaysi tekshiruv birinchi navbatda ma'lumot beradi?",
+      options: [
+        {
+          text: "EKG — bo'lmacha va qorincha qisqarishlari nisbatini baholash",
+          correct: true,
+          feedback:
+            "To'g'ri. Impuls SA tugundan Giss tutamigacha bo'lgan yo'lni bosib o'tadi; EKG shu yo'lning qayerida uzilish borligini ko'rsatadi.",
+        },
+        {
+          text: "Qorin bo'shlig'i UTT",
+          correct: false,
+          feedback: "Noto'g'ri: yurak o'tkazuvchi tizimi haqida ma'lumot bermaydi.",
+        },
+        {
+          text: "Spirometriya",
+          correct: false,
+          feedback: "Noto'g'ri: bu tashqi nafas funksiyasini baholaydi, ritmni emas.",
+        },
+      ],
+    },
+    {
+      title: "Talqin",
+      prompt:
+        "EKG'da bo'lmacha 78/daq, qorincha 38/daq va ular bir-biridan mustaqil qisqaryapti. Qorincha ritmini kim boshqarmoqda?",
+      options: [
+        {
+          text: "AV tugundan pastdagi markaz (Giss–Purkinye), chunki yuqoridan impuls o'tmayapti",
+          correct: true,
+          feedback:
+            "To'g'ri. Yuqori vodiy ritm markazi bilan bog'lanish uzilganda quyi markaz o'z chastotasida (20–40 imp/daq) ishga tushadi — shuning uchun yurak butunlay to'xtamaydi.",
+        },
+        {
+          text: "SA tugun — u sekinlashib qolgan",
+          correct: false,
+          feedback:
+            "Noto'g'ri: SA tugun bo'lmachalarni 78/daq bilan boshqaryapti; muammo impulsning qorinchalarga yetib bormasligida.",
+        },
+        {
+          text: "Bo'lmacha miokardi qorinchalarni to'g'ridan-to'g'ri qo'zg'atmoqda",
+          correct: false,
+          feedback:
+            "Noto'g'ri: normal sharoitda bo'lmacha va qorincha faqat o'tkazuvchi tizim orqali bog'lanadi.",
+        },
+      ],
+    },
+    {
+      title: "Taktika",
+      prompt: "Fiziologik nuqtai nazardan davolash maqsadi nima bo'lishi kerak?",
+      options: [
+        {
+          text: "Qorincha chastotasini yetarli darajaga ko'tarib, yurak chiqishini tiklash",
+          correct: true,
+          feedback:
+            "To'g'ri. Zarba hajmi cheklangan sharoitda minutlik hajmni tiklashning asosiy yo'li — chastotani oshirish.",
+        },
+        {
+          text: "Zarba hajmini oshirish uchun ritmni yanada sekinlashtirish",
+          correct: false,
+          feedback:
+            "Noto'g'ri: Frank–Starling mexanizmi zarba hajmini biroz oshirsa-da, bu chastota tushishini qoplay olmaydi.",
+        },
+        {
+          text: "Faqat kuzatuv — aralashuv shart emas",
+          correct: false,
+          feedback: "Noto'g'ri: takroriy hushdan ketish miya perfuziyasi yetishmasligining xavfli belgisi.",
+        },
+      ],
+    },
+  ],
+  questions: [
+    "Yurak chiqishi qanday shakllanadi va bu bemorda nima uchun kamaygan? Formulaga tayanib tushuntiring.",
+    "Nima uchun yuqori vodiy ritm markazi ishlamay qolganda ham yurak butunlay to'xtamaydi?",
+  ],
+  referenceAnswer: [
+    "Yurak chiqishi = zarba hajmi × yurak urishi soni (tinch holatda ~70 ml × 60–80 ≈ 5 l/daq). Bemorda chastota 38/daq gacha tushgan, zarba hajmi esa Frank–Starling mexanizmi hisobiga faqat cheklangan darajada oshadi — natijada minutlik hajm normadan past bo'lib, miya perfuziyasi buziladi (bosh aylanishi, hushdan ketish).",
+    "O'tkazuvchi tizimning har bir bo'limi o'z avtomatizmiga ega: SA tugun 60–100, AV tugun 40–60, Purkinye tolalari 20–40 imp/daq. Yuqori markaz impulsi yetib bormasa, quyi markaz o'z chastotasida vodiy ritm rolini oladi — shuning uchun qorinchalar 38/daq bilan qisqarishda davom etmoqda.",
+  ],
+};
+
 async function main() {
   const topicId = Number(process.argv[2] ?? 29);
   const topic = await prisma.topic.findUnique({
@@ -302,6 +422,28 @@ async function main() {
     await prisma.topicLink.create({ data: { topicId, ...l, orderIndex: i } });
     console.log(`✓ Havola: ${l.title}`);
   }
+
+  // 4) Klinik keys (v2 — 4 qadamli qaror + yozma savollar), chop etilgan.
+  const caseItem = await prisma.contentItem.upsert({
+    where: { topicId_kind: { topicId, kind: "CASE" } },
+    create: {
+      topicId,
+      kind: "CASE",
+      language: "uz",
+      status: "PUBLISHED",
+      approvedById: teacher.id,
+      approvedAt: new Date(),
+      factcheckStatus: "CLEAN",
+      factcheckedAt: new Date(),
+    },
+    update: { status: "PUBLISHED", approvedById: teacher.id, approvedAt: new Date() },
+  });
+  await prisma.clinicalCase.upsert({
+    where: { contentItemId: caseItem.id },
+    create: { contentItemId: caseItem.id, caseJson: CASE_JSON, format: "EXTENDED" },
+    update: { caseJson: CASE_JSON, format: "EXTENDED" },
+  });
+  console.log(`✓ Klinik keys (v2, ${CASE_JSON.steps.length} qadam + ${CASE_JSON.questions.length} yozma savol)`);
 
   console.log("\nTayyor. Dars sahifasini oching: /app/topics/" + topicId);
 }

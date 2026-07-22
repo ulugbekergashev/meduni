@@ -1,145 +1,310 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ClipboardCheck, FlaskConical, HeartPulse, Stethoscope, User } from "lucide-react";
-import { Card, Icon, Textarea, useToast } from "@meduni/ui";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import {
+  Activity,
+  Check,
+  ChevronRight,
+  ClipboardList,
+  FlaskConical,
+  HeartPulse,
+  Stethoscope,
+  Thermometer,
+  User,
+  X,
+} from "lucide-react";
+import { Icon, Textarea, cls } from "@meduni/ui";
 import { ConfirmDialog } from "../../../components/ConfirmDialog";
-import { useSubmitCase, type CaseTabData } from "../api";
+import { useSubmitCase, type CaseStep, type CaseTabData } from "../api";
 
 function Block({ icon, title, text }: { icon: typeof User; title: string; text: string }) {
   if (!text) return null;
   return (
-    <div>
-      <h4 className="mb-1 flex items-center gap-1.5 text-[13px] font-bold uppercase tracking-wide text-ink-soft">
-        <Icon icon={icon} size={14} />
+    <div className="border-b border-line py-2.5 last:border-b-0">
+      <p className="mb-1 inline-flex items-center gap-1.5 text-micro font-extrabold uppercase tracking-wider text-ink-dim">
+        <Icon icon={icon} size={11} />
         {title}
-      </h4>
-      <p className="whitespace-pre-line text-[14.5px] text-ink">{text}</p>
+      </p>
+      <p className="whitespace-pre-line text-note leading-relaxed text-ink-strong">{text}</p>
+    </div>
+  );
+}
+
+/** Bemor kartasi — ism, ma'lumot va hayotiy ko'rsatkichlar (materialda bo'lsa). */
+function PatientCard({ patient }: { patient: CaseTabData["patient"] }) {
+  const v = patient?.vitals;
+  const vitals = [
+    { icon: Activity, label: "AB", value: v?.bp },
+    { icon: HeartPulse, label: "Puls", value: v?.pulse },
+    { icon: Activity, label: "SpO₂", value: v?.spo2 },
+    { icon: Thermometer, label: "t°", value: v?.temp },
+  ].filter((x) => x.value);
+
+  if (!patient?.name && !patient?.info && vitals.length === 0) return null;
+
+  return (
+    <div className="rounded-card border border-line bg-surface-raised p-3.5">
+      <div className="flex items-center gap-2.5">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-control bg-rose-soft text-rose">
+          <Icon icon={User} size={16} />
+        </div>
+        <div className="min-w-0">
+          {patient.name && <p className="truncate text-body font-extrabold text-ink">{patient.name}</p>}
+          {patient.info && <p className="truncate text-micro text-ink-dim">{patient.info}</p>}
+        </div>
+      </div>
+      {vitals.length > 0 && (
+        <div className="mt-2.5 flex flex-wrap gap-1.5">
+          {vitals.map((x) => (
+            <span
+              key={x.label}
+              className="inline-flex items-center gap-1 rounded-control bg-surface px-2 py-1 text-micro font-bold text-ink-soft"
+            >
+              <Icon icon={x.icon} size={11} className="text-ink-dim" />
+              {x.label} <span className="tabular-nums text-ink">{x.value}</span>
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Bitta qadam — variant tanlangach darhol izoh chiqadi. */
+function StepView({
+  step,
+  chosen,
+  onPick,
+  locked,
+}: {
+  step: CaseStep;
+  chosen: number | null;
+  onPick: (i: number) => void;
+  locked: boolean;
+}) {
+  const reduce = useReducedMotion();
+  const picked = chosen !== null ? step.options.find((o) => o.index === chosen) : null;
+
+  return (
+    <div className="rounded-card border border-line bg-surface-raised p-4">
+      <p className="mb-0.5 text-micro font-extrabold uppercase tracking-wider text-brand-tint">
+        {step.index + 1}. {step.title}
+      </p>
+      <p className="mb-3 text-body font-bold leading-snug text-ink">{step.prompt}</p>
+
+      <div className="space-y-1.5">
+        {step.options.map((o) => {
+          const isChosen = chosen === o.index;
+          const revealed = o.correct !== undefined;
+          return (
+            <button
+              key={o.index}
+              onClick={() => !locked && chosen === null && onPick(o.index)}
+              disabled={locked || chosen !== null}
+              className={cls(
+                "flex w-full items-center gap-2.5 rounded-control border px-3 py-2.5 text-left transition-colors",
+                isChosen && o.correct && "border-emerald bg-emerald-soft",
+                isChosen && o.correct === false && "border-rose bg-rose-soft",
+                isChosen && !revealed && "border-brand bg-brand-soft",
+                !isChosen && revealed && o.correct && "border-emerald",
+                !isChosen && !(revealed && o.correct) && "border-line",
+                chosen === null && !locked && "hover:bg-surface"
+              )}
+            >
+              <span
+                className={cls(
+                  "flex h-6 w-6 shrink-0 items-center justify-center rounded-control text-micro font-extrabold",
+                  isChosen && o.correct
+                    ? "bg-emerald text-white"
+                    : isChosen && o.correct === false
+                      ? "bg-rose text-white"
+                      : "bg-surface text-ink-dim"
+                )}
+              >
+                {isChosen && o.correct ? (
+                  <Icon icon={Check} size={12} strokeWidth={3} />
+                ) : isChosen && o.correct === false ? (
+                  <Icon icon={X} size={12} strokeWidth={3} />
+                ) : (
+                  String.fromCharCode(65 + o.index)
+                )}
+              </span>
+              <span className="min-w-0 flex-1 text-note text-ink-strong">{o.text}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Darhol feedback */}
+      <AnimatePresence>
+        {picked?.feedback && (
+          <motion.p
+            initial={reduce ? false : { opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className={cls(
+              "mt-2.5 overflow-hidden rounded-control border-l-2 px-3 py-2 text-note leading-relaxed text-ink-strong",
+              picked.correct ? "border-emerald bg-emerald-soft" : "border-rose bg-rose-soft"
+            )}
+          >
+            {picked.feedback}
+          </motion.p>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
 
 export function CaseTab({ topicId, data }: { topicId: number; data: CaseTabData }) {
   const { t } = useTranslation(undefined, { keyPrefix: "lesson" });
-  const { show } = useToast();
   const submit = useSubmitCase(topicId);
-  const [answers, setAnswers] = useState<string[]>(data.questions.map(() => ""));
-  const [confirm, setConfirm] = useState(false);
   const attempt = data.attempt;
+  const submitted = !!attempt;
 
-  const allFilled = answers.every((a) => a.trim().length > 0);
+  const steps = data.steps ?? [];
+  const hasSteps = steps.length > 0;
+
+  const [picks, setPicks] = useState<Record<number, number>>(() => {
+    const init: Record<number, number> = {};
+    for (const s of steps) if (s.chosen !== null) init[s.index] = s.chosen;
+    return init;
+  });
+  const [answers, setAnswers] = useState<string[]>(attempt?.answers ?? data.questions.map(() => ""));
+  const [confirm, setConfirm] = useState(false);
+
+  const allStepsDone = !hasSteps || steps.every((s) => picks[s.index] !== undefined);
+  const allAnswered = answers.every((a) => a.trim().length > 0);
+  const canSubmit = allStepsDone && allAnswered && !submitted;
+
+  // Qadamlar ketma-ket ochiladi: oldingisi tanlangunicha keyingisi ko'rinmaydi.
+  const visibleSteps = submitted
+    ? steps
+    : steps.filter((_, i) => i === 0 || picks[steps[i - 1].index] !== undefined);
 
   const doSubmit = () =>
     submit.mutate(
-      { caseId: data.caseId, answers },
-      { onSuccess: () => { setConfirm(false); show(t("submitted")); } }
+      {
+        caseId: data.caseId,
+        answers: answers.map((a) => a.trim()),
+        steps: hasSteps ? Object.fromEntries(Object.entries(picks)) : undefined,
+      },
+      { onSuccess: () => setConfirm(false) }
     );
 
   return (
-    <div className="grid gap-3 items-start lg:grid-cols-[1fr_1fr] xl:grid-cols-[450px_1fr]">
-      {/* Chap qism: Bemor ma'lumotlari (Sticky) */}
-      <div className="space-y-4 lg:sticky lg:top-6">
-        <Card className="space-y-5 border-l-4 border-l-brand shadow-sm">
-          <div className="border-b border-line pb-3">
-            <h3 className="text-[18px] font-black text-ink">Bemor varaqasi</h3>
-            <p className="text-[13px] text-ink-soft mt-0.5">Tashxis qo'yish uchun asosiy ma'lumotlar</p>
-          </div>
-          <Block icon={User} title={t("caseComplaints")} text={data.blocks.complaints} />
-          <Block icon={HeartPulse} title={t("caseAnamnesis")} text={data.blocks.anamnesis} />
-          <Block icon={Stethoscope} title={t("caseObjective")} text={data.blocks.objectiveStatus} />
-          
-          {data.blocks.labData && (
-            <div>
-              <h4 className="mb-2 flex items-center gap-1.5 text-[13px] font-bold uppercase tracking-wide text-ink-soft">
-                <Icon icon={FlaskConical} size={14} />
-                {t("caseLab")}
-              </h4>
-              <div className="rounded-[8px] bg-blue-soft p-3 text-[14px] leading-relaxed text-ink border border-blue/20">
-                <div className="whitespace-pre-line font-mono text-[13px] text-ink-soft">
-                  {data.blocks.labData}
-                </div>
-              </div>
+    <div className="space-y-3">
+      <PatientCard patient={data.patient} />
+
+      {/* Keys sharti */}
+      <div className="rounded-card border border-line px-3.5 py-1">
+        <Block icon={User} title={t("caseComplaints")} text={data.blocks.complaints} />
+        <Block icon={ClipboardList} title={t("caseAnamnesis")} text={data.blocks.anamnesis} />
+        <Block icon={Stethoscope} title={t("caseObjective")} text={data.blocks.objectiveStatus} />
+        <Block icon={FlaskConical} title={t("caseLab")} text={data.blocks.labData} />
+      </div>
+
+      {/* v2 — bosqichma-bosqich qarorlar */}
+      {hasSteps && (
+        <div className="space-y-2.5">
+          <p className="flex items-center gap-1.5 text-micro font-extrabold uppercase tracking-wider text-ink-dim">
+            <Icon icon={ChevronRight} size={12} />
+            {t("caseSteps")} · {Object.keys(picks).length}/{steps.length}
+          </p>
+          {visibleSteps.map((s) => (
+            <StepView
+              key={s.index}
+              step={s}
+              chosen={picks[s.index] ?? null}
+              onPick={(i) => setPicks((p) => ({ ...p, [s.index]: i }))}
+              locked={submitted}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Erkin savollar — o'qituvchi baholaydi */}
+      {data.questions.length > 0 && (
+        <div className="space-y-2.5">
+          <p className="text-micro font-extrabold uppercase tracking-wider text-ink-dim">{t("caseWritten")}</p>
+          {data.questions.map((q, i) => (
+            <div key={i} className="rounded-card border border-line p-3.5">
+              <p className="mb-2 text-note font-bold leading-snug text-ink">
+                <span className="mr-1.5 tabular-nums text-ink-dim">{i + 1}.</span>
+                {q}
+              </p>
+              {submitted ? (
+                <>
+                  <p className="whitespace-pre-wrap rounded-control bg-surface-raised px-3 py-2 text-note text-ink-strong">
+                    {attempt!.answers[i]}
+                  </p>
+                  {attempt!.referenceAnswer[i] && (
+                    <div className="mt-2 rounded-control border-l-2 border-emerald bg-emerald-soft px-3 py-2">
+                      <p className="mb-0.5 text-micro font-extrabold uppercase tracking-wider text-emerald">
+                        {t("referenceAnswer")}
+                      </p>
+                      <p className="whitespace-pre-wrap text-note leading-relaxed text-ink-strong">
+                        {attempt!.referenceAnswer[i]}
+                      </p>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <Textarea
+                  value={answers[i]}
+                  onChange={(e) => setAnswers((a) => a.map((x, xi) => (xi === i ? e.target.value : x)))}
+                  placeholder={t("yourAnswerPlaceholder")}
+                />
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Natija / topshirish */}
+      {submitted ? (
+        <div className="space-y-2">
+          {attempt!.autoScore !== null && (
+            <div className="flex items-center gap-2.5 rounded-control bg-surface-raised px-3.5 py-2.5">
+              <Icon icon={Check} size={15} className="shrink-0 text-emerald" strokeWidth={3} />
+              <span className="flex-1 text-note font-bold text-ink">{t("caseAutoScore")}</span>
+              <span className="text-body font-extrabold tabular-nums text-ink">{attempt!.autoScore}%</span>
             </div>
           )}
-        </Card>
-      </div>
-
-      {/* O'ng qism: Savollar va Javoblar */}
-      <div className="space-y-4">
-        {data.questions.map((q, i) => (
-          <Card key={i} className="space-y-3 shadow-sm transition-all hover:border-brand/40">
-            <p className="text-[15.5px] font-bold text-ink leading-snug">
-              <span className="text-brand mr-1">{i + 1}.</span> {q}
-            </p>
-
-            {attempt ? (
-              <>
-                <div className="rounded-control border border-line bg-bg p-3.5 text-[14.5px] text-ink leading-relaxed">{attempt.answers[i]}</div>
-                <div className="rounded-control bg-emerald-soft border border-emerald/20 p-3.5">
-                  <p className="mb-1.5 text-[13px] font-bold uppercase tracking-wide text-emerald-deep">{t("referenceAnswer")}</p>
-                  <p className="text-[14.5px] text-ink-soft leading-relaxed">{attempt.referenceAnswer[i]}</p>
-                </div>
-              </>
-            ) : (
-              <Textarea
-                value={answers[i]}
-                onChange={(e) => setAnswers((a) => a.map((x, j) => (j === i ? e.target.value : x)))}
-                placeholder={t("yourAnswerPlaceholder")}
-                rows={4}
-                className="text-[15px] resize-y"
-              />
-            )}
-          </Card>
-        ))}
-
-        {/* Submit or status */}
-        {attempt ? (
-          attempt.reviewed ? (
-            <Card className="space-y-3 border-emerald/40 bg-emerald-soft shadow-sm">
-              <div className="flex items-center gap-2 text-emerald-deep">
-                <Icon icon={ClipboardCheck} size={20} />
-                <p className="text-[17px] font-black uppercase tracking-tight">
-                  {t("grade")}: <span className="text-[22px]">{attempt.score}</span>/100
-                </p>
-              </div>
-              {attempt.teacherFeedback && (
-                <div className="rounded-[8px] bg-white/60 p-3 border border-emerald/10">
-                  <p className="text-[12.5px] font-bold text-emerald uppercase mb-1">O'qituvchi izohi</p>
-                  <p className="text-[15px] text-ink leading-relaxed">{attempt.teacherFeedback}</p>
-                </div>
+          {attempt!.reviewed ? (
+            <div className="rounded-control border-l-2 border-emerald bg-emerald-soft px-3.5 py-2.5">
+              <p className="text-note font-extrabold text-emerald">
+                {t("grade")}: {attempt!.score}
+              </p>
+              {attempt!.teacherFeedback && (
+                <p className="mt-1 text-note leading-relaxed text-ink-strong">{attempt!.teacherFeedback}</p>
               )}
-            </Card>
-          ) : (
-            <div className="flex items-center gap-3 rounded-control bg-amber-soft border border-amber/20 px-4 py-3 shadow-sm">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-soft text-amber-deep">
-                <div className="h-4 w-4 animate-pulse rounded-full bg-amber" />
-              </div>
-              <div>
-                <p className="text-[15px] font-bold text-amber-deep">{t("underReview")}</p>
-                <p className="text-[13px] text-amber-deep/80">Javoblaringiz o'qituvchi tekshiruvi uchun yuborilgan.</p>
-              </div>
             </div>
-          )
-        ) : (
-          <button
-            onClick={() => setConfirm(true)}
-            disabled={!allFilled || submit.isPending}
-            className="w-full rounded-control bg-gradient-to-r from-brand to-brand-deep px-4 py-3.5 text-[16px] font-bold text-white shadow-lg shadow-brand/20 transition-all hover:shadow-xl hover:-translate-y-0.5 disabled:opacity-50 disabled:pointer-events-none disabled:transform-none"
-          >
-            {t("submitCase")}
-          </button>
-        )}
+          ) : (
+            <p className="rounded-control border-l-2 border-amber bg-amber-soft px-3.5 py-2.5 text-note font-bold text-amber">
+              {t("underReview")}
+            </p>
+          )}
+        </div>
+      ) : (
+        <button
+          onClick={() => setConfirm(true)}
+          disabled={!canSubmit || submit.isPending}
+          className="flex w-full items-center justify-center gap-2 rounded-control bg-brand px-4 py-2.5 text-body font-extrabold text-white transition-colors hover:bg-brand-deep disabled:opacity-40"
+        >
+          {t("submitCase")}
+        </button>
+      )}
 
-        <ConfirmDialog
-          open={confirm}
-          title={t("submitCaseTitle")}
-          message={t("submitCaseConfirm")}
-          confirmLabel={t("submitCase")}
-          confirmVariant="primary"
-          loading={submit.isPending}
-          onConfirm={doSubmit}
-          onClose={() => setConfirm(false)}
-        />
-      </div>
+      <ConfirmDialog
+        open={confirm}
+        title={t("submitCaseTitle")}
+        message={t("submitCaseConfirm")}
+        confirmLabel={t("submitCase")}
+        confirmVariant="primary"
+        loading={submit.isPending}
+        onConfirm={doSubmit}
+        onClose={() => setConfirm(false)}
+      />
     </div>
   );
 }
