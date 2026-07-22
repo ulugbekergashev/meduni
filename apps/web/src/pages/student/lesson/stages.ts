@@ -9,7 +9,7 @@ export type StageKey = "study" | "case" | "quiz" | "flashcards" | "result";
 export type StageState = "done" | "open" | "pendingReview" | "soon";
 export type ContentView = "konspekt" | "video" | "slides";
 /** "overview" — kirish landing'i: bosqichlar obzori (layout v2). */
-export type LessonView = "overview" | ContentView | "case" | "quiz" | "result";
+export type LessonView = "overview" | ContentView | "case" | "quiz" | "flashcards" | "result";
 
 export interface StageInfo {
   key: StageKey;
@@ -71,8 +71,10 @@ export function buildStages(lesson: Lesson): StageInfo[] {
     stages.push({ key: "quiz", state, hint });
   }
 
-  // Fleshkartalar — keyingi sessiya (qulfli placeholder).
-  stages.push({ key: "flashcards", state: "soon" });
+  // Fleshkartalar — takrorlash. Test savollari javobni oshkor qilgani uchun
+  // test yakunlanmaguncha yopiq (backend ham shu qoidani majburlaydi).
+  const quizFinished = !qz || qz.attempt?.status === "finished";
+  stages.push({ key: "flashcards", state: quizFinished ? "open" : "soon" });
 
   const caseTerminal = !cs || !!cs.attempt;
   const quizTerminal = !qz || qz.attempt?.status === "finished";
@@ -91,6 +93,8 @@ export function stageToView(key: StageKey, lesson: Lesson): LessonView {
       return "case";
     case "quiz":
       return "quiz";
+    case "flashcards":
+      return "flashcards";
     case "result":
       return "result";
     default:
@@ -116,7 +120,7 @@ export function nextOpenStage(stages: StageInfo[], currentKey: StageKey): StageI
   if (idx === -1) return null;
   for (let i = idx + 1; i < stages.length; i++) {
     const st = stages[i];
-    if (st.key === "flashcards" || st.state === "soon") continue;
+    if (st.state === "soon") continue; // qulfli bosqich tashlab ketiladi
     return st;
   }
   return null;

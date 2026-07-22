@@ -343,6 +343,64 @@ function useInvalidateLesson(topicId: number) {
   };
 }
 
+// ---- Fleshkartalar (takrorlash) ----
+
+export interface Flashcard {
+  key: string;
+  kind: "quiz" | "term";
+  front: string;
+  back: string;
+  note: string | null;
+  known: boolean | null;
+}
+
+export interface FlashcardsData {
+  locked: boolean;
+  reason: "quiz_not_finished" | null;
+  cards: Flashcard[];
+  total: number;
+  knownCount: number;
+  hasQuiz?: boolean;
+}
+
+export function useFlashcards(topicId: number) {
+  return useQuery({
+    queryKey: ["me-flashcards", topicId],
+    queryFn: () => api<FlashcardsData>(`/api/v1/me/topics/${topicId}/flashcards`),
+  });
+}
+
+export function useReviewFlashcard(topicId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (b: { cardKey: string; known: boolean }) =>
+      api<{ ok: boolean; knownCount: number; total: number }>(`/api/v1/me/topics/${topicId}/flashcards/review`, {
+        method: "POST",
+        body: JSON.stringify(b),
+      }),
+    onSuccess: (_r, b) => {
+      // Optimistik: kartaning holatini keshda yangilaymiz (qayta so'rovsiz).
+      qc.setQueryData<FlashcardsData>(["me-flashcards", topicId], (old) =>
+        old
+          ? {
+              ...old,
+              cards: old.cards.map((c) => (c.key === b.cardKey ? { ...c, known: b.known } : c)),
+              knownCount: old.cards.filter((c) => (c.key === b.cardKey ? b.known : c.known === true)).length,
+            }
+          : old
+      );
+    },
+  });
+}
+
+export function useResetFlashcards(topicId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api(`/api/v1/me/topics/${topicId}/flashcards/reset`, { method: "POST" }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["me-flashcards", topicId] }),
+  });
+}
+
 // ---- AI-tutor chat (layout v2, 2C) ----
 
 export interface TutorMsg {
