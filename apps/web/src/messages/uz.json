@@ -1312,7 +1312,13 @@
     "sectionsReadN": "{{n}} boʻlim · {{read}}/{{total}} oʻqildi",
     "questionsN": "{{n}} savol",
     "passIsN": "oʻtish balli {{n}}%",
-    "casesN": "{{n}} klinik keys"
+    "casesN": "{{n}} klinik keys",
+    "nextStage": "Keyingi bosqich",
+    "backToOverview": "Bosqichlar obzori",
+    "overviewStart": "Boshlash",
+    "overviewResume": "Davom ettirish",
+    "overviewResultLocked": "Yakunda ochiladi",
+    "overviewResultOpen": "Hisobot tayyor"
   },
   "search": {
     "placeholder": "Qidirish… (talaba, guruh, kurs)",

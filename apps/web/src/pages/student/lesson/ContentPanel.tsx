@@ -3,9 +3,10 @@ import { ArrowLeft, BookText, ClipboardList, FileText, Stethoscope, Trophy, Vide
 import { EmptyState, Icon, cls } from "@meduni/ui";
 import type { Lesson } from "../api";
 import { Panel } from "./Panel";
-import { firstContentView, type ContentView, type LessonView } from "./stages";
+import { firstContentView, nextOpenStage, type ContentView, type LessonView, type StageInfo, type StageKey } from "./stages";
 import { DigestView } from "./DigestView";
 import { SectionReader } from "./SectionReader";
+import { NextStageBar } from "./NextStageBar";
 import { VideoTab } from "./VideoTab";
 import { SlidesTab } from "./SlidesTab";
 import { QuizTab } from "./QuizTab";
@@ -25,6 +26,8 @@ export function ContentPanel({
   topicId,
   view,
   setView,
+  stages,
+  onStage,
   section,
   onSection,
   onMarkRead,
@@ -33,6 +36,9 @@ export function ContentPanel({
   topicId: number;
   view: LessonView;
   setView: (v: LessonView) => void;
+  /** Layout v2 — pastki "Keyingi bosqich" tugmasi uchun. */
+  stages: StageInfo[];
+  onStage: (key: StageKey) => void;
   /** 1a — faol konspekt bo'limi. */
   section: number;
   onSection: (index: number) => void;
@@ -48,16 +54,20 @@ export function ContentPanel({
 
   const isContentView = view === "konspekt" || view === "video" || view === "slides";
 
-  // ---- Baholash / natija yuzasi: shapkada orqaga qaytish ----
-  if (!isContentView) {
+  // ---- Baholash / natija yuzasi ----
+  if (!isContentView && view !== "overview") {
     const key = view as "case" | "quiz" | "result";
+    // Terminal holatда pastda "Keyingi bosqich" (natija sahifasining o'z CTA'si bor).
+    const terminal =
+      (key === "quiz" && lesson.tabs.quiz?.attempt?.status === "finished") ||
+      (key === "case" && !!lesson.tabs.case?.attempt);
     return (
       <Panel
         header={
           <div className="flex items-center gap-2">
             <button
               onClick={() => setView(firstContentView(lesson))}
-              className="inline-flex items-center gap-1 rounded-control px-2 py-1 text-note font-semibold text-brand-deep transition-colors hover:bg-bg"
+              className="inline-flex items-center gap-1 rounded-control px-2 py-1 text-note font-semibold text-brand-tint transition-colors hover:bg-surface-raised"
             >
               <Icon icon={ArrowLeft} size={14} />
               {t("backToContent")}
@@ -73,6 +83,7 @@ export function ContentPanel({
         {view === "case" && lesson.tabs.case && <CaseTab topicId={topicId} data={lesson.tabs.case} />}
         {view === "quiz" && lesson.tabs.quiz && <QuizTab topicId={topicId} data={lesson.tabs.quiz} />}
         {view === "result" && <ResultPanel lesson={lesson} />}
+        {terminal && <NextStageBar stages={stages} currentKey={key as StageKey} onSelect={onStage} />}
       </Panel>
     );
   }
@@ -89,6 +100,10 @@ export function ContentPanel({
   const active: ContentView = contentTabs.includes(view as ContentView) ? (view as ContentView) : contentTabs[0];
   // Bo'limli o'qish o'z layoutini boshqaradi (pillar + skroll + pastki bar).
   const readerMode = active === "konspekt" && hasSections;
+
+  // O'qish yakunlangach reader'ning oxirgi tugmasi keyingi bosqichga olib o'tadi.
+  const nextAfterStudy = nextOpenStage(stages, "study");
+  const studyDone = stages.find((s) => s.key === "study")?.state === "done";
 
   return (
     <Panel
@@ -125,14 +140,26 @@ export function ContentPanel({
             active={section}
             onActive={onSection}
             onMarkRead={onMarkRead}
+            onFinished={nextAfterStudy ? () => onStage(nextAfterStudy.key) : undefined}
+            finishedLabel={
+              nextAfterStudy ? `${t("nextStage")}: ${t(`stage_${nextAfterStudy.key}`)}` : undefined
+            }
           />
         ) : (
           lesson.digest && <DigestView digest={lesson.digest} />
         ))}
       {active === "video" && lesson.tabs.video && (
-        <VideoTab topicId={topicId} data={lesson.tabs.video} threshold={lesson.thresholds.video} />
+        <>
+          <VideoTab topicId={topicId} data={lesson.tabs.video} threshold={lesson.thresholds.video} />
+          {studyDone && <NextStageBar stages={stages} currentKey="study" onSelect={onStage} />}
+        </>
       )}
-      {active === "slides" && lesson.tabs.slides && <SlidesTab topicId={topicId} data={lesson.tabs.slides} />}
+      {active === "slides" && lesson.tabs.slides && (
+        <>
+          <SlidesTab topicId={topicId} data={lesson.tabs.slides} />
+          {studyDone && <NextStageBar stages={stages} currentKey="study" onSelect={onStage} />}
+        </>
+      )}
     </Panel>
   );
 }

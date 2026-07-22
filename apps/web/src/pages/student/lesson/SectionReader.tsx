@@ -92,12 +92,18 @@ export function SectionReader({
   active,
   onActive,
   onMarkRead,
+  onFinished,
+  finishedLabel,
 }: {
   sections: LessonSection[];
   active: number;
   onActive: (index: number) => void;
   /** Bo'lim o'qildi deb belgilash (aniq harakat: "Keyingi bo'lim"). */
   onMarkRead: (index: number) => void;
+  /** Oxirgi bo'lim yakunlangach — keyingi bosqichga o'tish (layout v2). */
+  onFinished?: () => void;
+  /** Oxirgi bo'lim tugmasi matni ("Keyingi bosqich: Test" kabi). */
+  finishedLabel?: string;
 }) {
   const { t } = useTranslation(undefined, { keyPrefix: "lesson" });
   const reduce = useReducedMotion();
@@ -114,9 +120,11 @@ export function SectionReader({
 
   if (!section) return null;
 
+  const last = idx === sections.length - 1;
   const goNext = () => {
     onMarkRead(idx);
-    if (idx < sections.length - 1) onActive(idx + 1);
+    if (!last) onActive(idx + 1);
+    else onFinished?.();
   };
 
   return (
@@ -238,7 +246,7 @@ export function SectionReader({
             onClick={goNext}
             className="inline-flex items-center gap-1.5 rounded-control bg-brand px-3.5 py-1.5 text-note font-bold text-white transition-colors hover:bg-brand-deep"
           >
-            {idx === sections.length - 1 ? t("finishReading") : t("nextSection")}
+            {last ? (finishedLabel ?? t("finishReading")) : t("nextSection")}
             <Icon icon={ArrowRight} size={14} />
           </button>
         </div>

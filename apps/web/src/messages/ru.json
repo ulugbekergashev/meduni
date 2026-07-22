@@ -1312,7 +1312,13 @@
     "sectionsReadN": "{{n}} разделов · {{read}}/{{total}} прочитано",
     "questionsN": "{{n}} вопросов",
     "passIsN": "проходной балл {{n}}%",
-    "casesN": "{{n}} клинических кейса"
+    "casesN": "{{n}} клинических кейса",
+    "nextStage": "Следующий этап",
+    "backToOverview": "Обзор этапов",
+    "overviewStart": "Начать",
+    "overviewResume": "Продолжить",
+    "overviewResultLocked": "Откроется в конце",
+    "overviewResultOpen": "Отчёт готов"
   },
   "search": {
     "placeholder": "Поиск… (студент, группа, курс)",

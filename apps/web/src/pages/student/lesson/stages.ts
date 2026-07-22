@@ -8,7 +8,8 @@ import type { Lesson } from "../api";
 export type StageKey = "study" | "case" | "quiz" | "flashcards" | "result";
 export type StageState = "done" | "open" | "pendingReview" | "soon";
 export type ContentView = "konspekt" | "video" | "slides";
-export type LessonView = ContentView | "case" | "quiz" | "result";
+/** "overview" — kirish landing'i: bosqichlar obzori (layout v2). */
+export type LessonView = "overview" | ContentView | "case" | "quiz" | "result";
 
 export interface StageInfo {
   key: StageKey;
@@ -97,14 +98,28 @@ export function stageToView(key: StageKey, lesson: Lesson): LessonView {
   }
 }
 
-/** Sukut bo'yicha ko'rinish — birinchi tugallanmagan (bloklanmagan) bosqich yuzasi. */
-export function defaultView(lesson: Lesson): LessonView {
+/** Birinchi tugallanmagan (bloklanmagan) bosqich yuzasi — overview CTA shu yerga
+ *  olib boradi ("Davom ettirish"). */
+export function resumeView(lesson: Lesson): LessonView {
   const stages = buildStages(lesson);
   const firstOpen = stages.find(
     (st) => st.key !== "flashcards" && st.state === "open"
   );
   if (firstOpen) return stageToView(firstOpen.key, lesson);
   return firstContentView(lesson);
+}
+
+/** Joriy bosqichdan KEYINGI ochiq bosqich (pastki "Keyingi bosqich: ..." tugmasi).
+ *  soon (qulfli) bosqichlar tashlab ketiladi; oxirida null. */
+export function nextOpenStage(stages: StageInfo[], currentKey: StageKey): StageInfo | null {
+  const idx = stages.findIndex((s) => s.key === currentKey);
+  if (idx === -1) return null;
+  for (let i = idx + 1; i < stages.length; i++) {
+    const st = stages[i];
+    if (st.key === "flashcards" || st.state === "soon") continue;
+    return st;
+  }
+  return null;
 }
 
 /** Mavzu jarayoni % (breadcrumb bari). Mavjud bosqichlar teng ulush oladi;
