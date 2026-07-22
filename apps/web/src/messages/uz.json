@@ -1326,7 +1326,14 @@
     "chatEmptyHint": "AI-tutor faqat shu dars materiali asosida javob beradi.",
     "chatSuggest1": "Bu mavzuni soddaroq tushuntirib ber",
     "chatSuggest2": "Asosiy atamalarni izohlab ber",
-    "chatLockedQuiz": "Test paytida chat yopiq — avval testni yakunlang."
+    "chatLockedQuiz": "Test paytida chat yopiq — avval testni yakunlang.",
+    "viewCards": "Kartochkalar",
+    "viewList": "Roʻyxat",
+    "stepOf": "{{n}}-QADAM / {{total}}",
+    "prevStep": "Orqaga",
+    "nextStep": "Keyingi",
+    "sectionFinish": "Boʻlim tugadi",
+    "keyboardHint": "← → tugmalari bilan oʻtishingiz mumkin"
   },
   "search": {
     "placeholder": "Qidirish… (talaba, guruh, kurs)",
