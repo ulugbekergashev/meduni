@@ -1019,6 +1019,48 @@ Barcha modullar tugadi (1-17).
   payload. ⚠️ Demo'da approved digest/material yo'q — 3-panel to'liq ko'rinishi
   uchun o'qituvchi tomonidan konspekt tasdiqlanishi/material yuklanishi kerak.
 
+- **Modul 24 — Mavzu ekrani (dars sahifasi) to'liq qayta qurish (2026-07-22).**
+  Reja: `.claude/plans/polished-juggling-hippo.md`. Modul 23'ning 3-paneli "bo'shu
+  arzon" ko'rindi — sabab CSS emas, **kontent arxitekturasi** edi (yassi konspekt,
+  metama'lumotsiz material). Bosqichma-bosqich qayta qurildi:
+  **(Faza 0 — vizual til)** `packages/ui/tokens.css` dark qiymatlari almashtirildi
+  (bg #06080d, surface #0f141f/#151c2b, line #1b2232, brand #6366f1 — yagona aksent),
+  shrift **Manrope** (`@fontsource-variable/manrope`) + zich shkala (h1 22, stat 34,
+  section 15, body 13, note 12, micro 11, **read 14/1.75** — o'qish ustuni uchun),
+  `SidebarLayout` += `fullBleed` (dars sahifasi 1280px konteynerdan chiqadi).
+  **(Faza 1 — kontent modeli)** Prisma: `TopicDigest.digestJson` v2 = `sections[]`
+  (title/minutes/sourceRef + bloklar `para|callout|list`; eski yassi konspekt ham
+  render bo'ladi), `SourceMaterial += sizeBytes/pageCount`, yangi `TopicLink`
+  (tashqi manba), yangi `SectionRead` (talaba qaysi bo'limni o'qidi).
+  `ai/types.ts` digest v2 + `ai/prompts/digest.ts` bo'limli generatsiya.
+  **(Faza 2/2B — layout)** `student/lesson/`: `LessonPage` orkestrator,
+  `StageStepper` (yuqorida gorizontal 5 bosqich), `LessonOverview` (kirish holati —
+  bosqichlar obzori + "Davom ettirish" CTA), `StudyRail` (chapda: o'quv bloklari
+  konspekt/slaydlar/video/materiallar + bo'limlar TOC + havolalar),
+  `SectionReader` (**barcha bo'limlar bir oqimda**, IntersectionObserver bilan
+  scroll-spy va **avto "o'qildi"**), `NextStageBar`.
+  **(Faza 2C — AI-tutor chat)** Prisma `TutorMessage`; `ai/prompts/tutor.ts` +
+  `modules/me/chat.ts` — javob FAQAT konspekt+material asosida (24k belgi budjeti,
+  oxirgi 12 xabar), **test jarayonida 403 `chat_locked_quiz`** (halollik).
+  **(REJIM AJRATILDI — buyurtmachi talabi, MUHIM)** 3 panel **faqat o'rganish uchun**:
+  konspekt/slaydlar/video/materiallar. Test, natija, keys, fleshkartalar —
+  **fokus rejim** (`focusMode`: rail ham, chat ham RENDER BO'LMAYDI). Halollik
+  strukturaviy: test paytida material/chat qulf oynasi emas, umuman yo'q.
+  **(Fleshkartalar)** `modules/me/flashcards.ts` — kartalar test savollari + konspekt
+  atamalaridan **hosila** (AI chaqiruvi YO'Q, o'qituvchi qayta tasdiqlamaydi);
+  yakunlangan test urinishi bo'lmasa **403 `flashcards_locked`**.
+  **(Mini-konspektlar)** `GET /me/materials/:id/text` (ajratilgan matn) va
+  prezentatsiyaning matn ko'rinishi — talaba faylni yuklab olmasdan o'qiydi.
+  **(Klinik keys v2)** `caseSchema` v2 (bemor kartasi + `steps[]` variant/izoh bilan),
+  `CASE_PROMPT_VERSION=2` (vitals FAQAT manbadan), `CaseAttempt += stepsJson/autoScore`
+  (migratsiya `case_steps_v2`); payloadda `correct`/`feedback` qadam tanlangunicha
+  **yashirin**; talaba qadamma-qadam qaror qabul qiladi, izoh darhol chiqadi;
+  gibrid baholash (qadamlar avto-%, yozma savollar — o'qituvchi). **CaseEditor v2**:
+  o'qituvchi AI qadamlarini ko'radi/tahrirlaydi (ilgari ko'rmasdan tasdiqlardi).
+  ⚠️ **Gemini**: `thinkingBudget: 0` endi 400 beradi — 3-bo'limga qarang (bu butun
+  AI generatsiyani jimgina sindirgan edi). Demo: `apps/api/src/scripts/demoLesson.ts`
+  (topic 29 — 5 bo'limli tasdiqlangan konspekt, 2 material, 2 havola, v2 keys).
+
 ## 9. Loyiha holati va ishga tushirish (operatsion — sessiya 0)
 
 **Monorepo (npm workspaces):**
@@ -1041,9 +1083,12 @@ packages/ui/    # Dizayn tokenlari (src/tokens.css) + 10 komponent. Web unga
 npm install                                    # ildizdan (workspaces)
 npm run db:migrate                             # Prisma migratsiya
 npm run db:seed                                # admin@meduni.uz / admin123
-npm run dev:api                                # Express, port 8000
+cd apps/api; npm run dev                       # Express, port 8000
 cd apps/web; npm run dev                       # Vite, port 3000
 ```
+⚠️ Turbo'ga o'tilgach ildizda `npm run dev:api` YO'Q — API'ni `apps/api` ichidan
+ishga tushir. Prisma migratsiya/generate oldidan API'ni to'xtat (dev-server query
+engine DLL'ini ushlab turadi → EPERM).
 
 **Muhim:**
 - Eski stack (FastAPI + Next.js, M1–M8 + R1) — `pre-rewrite-fastapi-nextjs` branchida
