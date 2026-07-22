@@ -1,18 +1,26 @@
 import { useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, CheckCircle2, FolderOpen } from "lucide-react";
+import { ArrowLeft, CheckCircle2, PanelLeft } from "lucide-react";
 import { Icon, Spinner, cls } from "@meduni/ui";
 import { apiErrorMessage } from "../../../lib/api";
 import { useLocale } from "../../../lib/useLocale";
 import { useLesson, useMarkSectionRead, type Lesson } from "../api";
 import { Panel } from "./Panel";
-import { MaterialsPanel } from "./MaterialsPanel";
+import { StudyRail } from "./StudyRail";
 import { ContentPanel } from "./ContentPanel";
 import { ChatPanel } from "./ChatPanel";
 import { StageStepper } from "./StageStepper";
 import { LessonOverview } from "./LessonOverview";
-import { buildStages, resumeView, stageToView, type LessonView, type StageKey } from "./stages";
+import {
+  buildStages,
+  firstContentView,
+  resumeView,
+  stageToView,
+  type ContentView,
+  type LessonView,
+  type StageKey,
+} from "./stages";
 
 const ALL_VIEWS: LessonView[] = ["overview", "konspekt", "video", "slides", "case", "quiz", "result"];
 
@@ -36,9 +44,10 @@ function viewAvailable(v: LessonView, lesson: Lesson): boolean {
   }
 }
 
-/** Materiallar ustuni holati — default YIG'IQ (foydalanuvchi: "muhim emas,
- *  lekin bo'lishi kerak"). */
-const MATERIALS_KEY = "meduni.lesson.materials";
+/** Chap ustun (o'rganish bloklari + materiallar) holati. Endi u asosiy
+ *  navigatsiya — shuning uchun default OCHIQ; tugma faqat kontentga
+ *  to'liq fokuslanmoqchi bo'lganda yopadi. */
+const RAIL_KEY = "meduni.lesson.rail";
 
 export function LessonPage() {
   const { id } = useParams();
@@ -51,16 +60,17 @@ export function LessonPage() {
   const q = useLesson(topicId);
   const lesson = q.data;
   const markRead = useMarkSectionRead(topicId);
-  // Faol konspekt bo'limi — birinchi o'qilmaganidan boshlanadi.
-  const [section, setSection] = useState<number | null>(null);
-  const [materialsOpen, setMaterialsOpen] = useState(
-    () => typeof window !== "undefined" && window.localStorage.getItem(MATERIALS_KEY) === "open"
+  /** TOC'dan tanlangan bo'lim (skroll uchun) va skrollda ko'rinayotgani. */
+  const [jumpTo, setJumpTo] = useState<number | null>(null);
+  const [visibleSection, setVisibleSection] = useState<number | null>(null);
+  const [railOpen, setRailOpen] = useState(
+    () => typeof window === "undefined" || window.localStorage.getItem(RAIL_KEY) !== "closed"
   );
-  const toggleMaterials = () =>
-    setMaterialsOpen((o) => {
+  const toggleRail = () =>
+    setRailOpen((o) => {
       const next = !o;
       try {
-        window.localStorage.setItem(MATERIALS_KEY, next ? "open" : "closed");
+        window.localStorage.setItem(RAIL_KEY, next ? "open" : "closed");
       } catch {}
       return next;
     });
@@ -99,10 +109,19 @@ export function LessonPage() {
   const onStage = (key: StageKey) => setView(stageToView(key, lesson));
   const stages = buildStages(lesson);
 
-  // Sukut bo'yicha birinchi o'qilmagan bo'lim (foydalanuvchi tanlamaguncha).
+  // Konspekt endi butunlay ko'rinadi — `section` faqat TOC'dan sakrash uchun,
+  // `visibleSection` esa skroll paytida qaysi bo'lim ko'rinayotganini bildiradi.
   const sections = lesson.sections ?? [];
-  const firstUnread = sections.findIndex((s) => !s.read);
-  const activeSection = section ?? (firstUnread === -1 ? 0 : firstUnread);
+
+  // O'rganish bloklari (chap ustunda tanlanadi).
+  const studyBlocks: ContentView[] = [];
+  if (lesson.digest || sections.length > 0) studyBlocks.push("konspekt");
+  if (lesson.tabs.slides) studyBlocks.push("slides");
+  if (lesson.tabs.video) studyBlocks.push("video");
+  const activeBlock: ContentView = studyBlocks.includes(view as ContentView)
+    ? (view as ContentView)
+    : firstContentView(lesson);
+  const isStudyView = view === "konspekt" || view === "slides" || view === "video";
 
   const materialsCount = lesson.materials.length + (lesson.links?.length ?? 0);
   /** Test jarayonida (tugallanmagan urinish) — halollik rejimi. */
@@ -132,16 +151,16 @@ export function LessonPage() {
           </span>
         )}
 
-        {/* Materiallar toggle (default yig'iq) */}
+        {/* Chap ustun toggle (default ochiq — u asosiy navigatsiya) */}
         <button
-          onClick={toggleMaterials}
-          title={t("materialsTitle")}
+          onClick={toggleRail}
+          title={t("stage_study")}
           className={cls(
             "inline-flex shrink-0 items-center gap-1.5 rounded-control border border-line px-2 py-1 text-note font-bold transition-colors",
-            materialsOpen ? "bg-brand-soft text-brand-tint" : "text-ink-soft hover:bg-surface-raised"
+            railOpen ? "bg-brand-soft text-brand-tint" : "text-ink-soft hover:bg-surface-raised"
           )}
         >
-          <Icon icon={FolderOpen} size={13} />
+          <Icon icon={PanelLeft} size={13} />
           <span className="tabular-nums">{materialsCount}</span>
         </button>
       </div>
@@ -149,21 +168,34 @@ export function LessonPage() {
       {/* Bosqichlar — yuqori gorizontal stepper (layout v2) */}
       <StageStepper lesson={lesson} stages={stages} view={view} onSelect={onStage} onOverview={() => setView("overview")} />
 
-      {/* Panellar: [materiallar?] | KONTENT (fokus) | chat */}
+      {/* Panellar: [o'rganish bloklari] | KONTENT (fokus) | chat */}
       <div
         className={cls(
           "grid gap-2 p-2 lg:min-h-0 lg:flex-1",
-          materialsOpen
-            ? "lg:grid-cols-[296px_minmax(0,1fr)_340px]"
+          railOpen && view !== "overview"
+            ? "lg:grid-cols-[280px_minmax(0,1fr)_340px]"
             : "lg:grid-cols-[minmax(0,1fr)_340px]"
         )}
       >
-        {materialsOpen && (
+        {railOpen && view !== "overview" && (
           <div className="order-3 flex min-h-0 flex-col lg:order-1">
-            {/* Halollik rejimi: test jarayonida materiallar ham, chat ham yopiq. */}
-            <MaterialsPanel
-              materials={lesson.materials}
-              links={lesson.links ?? []}
+            {/* O'rganish bloklari + bo'limlar TOC + materiallar.
+                Halollik rejimi: test jarayonida materiallar yopiq. */}
+            <StudyRail
+              lesson={lesson}
+              blocks={studyBlocks}
+              active={activeBlock}
+              onBlock={(v) => {
+                setJumpTo(null);
+                setView(v);
+              }}
+              sectionActive={isStudyView ? visibleSection : null}
+              onSection={(i) => {
+                if (view !== "konspekt") setView("konspekt");
+                setJumpTo(i);
+                // Bir xil bo'limni qayta bosish ham ishlashi uchun darhol tozalanadi.
+                setTimeout(() => setJumpTo(null), 600);
+              }}
               locked={quizRunning}
               lockedNote={t("materialsLockedQuiz")}
             />
@@ -188,8 +220,8 @@ export function LessonPage() {
               setView={setView}
               stages={stages}
               onStage={onStage}
-              section={activeSection}
-              onSection={setSection}
+              section={jumpTo}
+              onVisibleSection={setVisibleSection}
               onMarkRead={(i) => markRead.mutate(i)}
             />
           )}
