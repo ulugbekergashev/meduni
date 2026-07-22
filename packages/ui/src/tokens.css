@@ -4,15 +4,20 @@
      sit adjacent with a 2px gap or direct labels. Violet stays a UI accent (video). */
   --bg: #f6f7f9;
   --surface: #ffffff;
+  --surface-raised: #fbfbfd;
   --surface-glass: #ffffff;
   --ink: #101828;
+  --ink-strong: #101828;
   --ink-soft: #5b6474;
   --ink-faint: #98a1b2;
+  --ink-dim: #98a1b2;
   --line: #e7eaf0;
+  --line-raised: #dfe3ec;
 
   --brand: #4f46e5;
   --brand-soft: #eef2ff;
   --brand-deep: #3730a3;
+  --brand-tint: #4338ca;
 
   --blue: #0284c7;
   --blue-soft: #e0f2fe;
@@ -44,43 +49,48 @@
   --shadow-card-hover: 0 2px 4px rgba(16, 24, 40, 0.05), 0 16px 36px -12px rgba(16, 24, 40, 0.16);
 }
 
-/* Dark theme — neutrals inverted, soft tints darkened. Accent bases stay strong so
-   `bg-<accent> text-white` chips/buttons keep contrast; only the tints flip. */
+/* Dark theme — qiymatlar "Mavzu ekrani" dizaynidan aynan olingan
+   (Claude Design 66c8581e). Talaba tomoni shu palitrada ishlaydi. */
 :root[data-theme="dark"] {
   color-scheme: dark;
 
-  --bg: #0d1120;
-  --surface: #151a29;
-  --surface-glass: #151a29;
-  --ink: #e7ebf4;
-  --ink-soft: #9aa4b8;
-  --ink-faint: #6a7488;
-  --line: #252d42;
+  --bg: #06080d;          /* eng chuqur fon (sahifa) */
+  --surface: #0f141f;     /* asosiy panel */
+  --surface-raised: #151c2b; /* panel ichidagi karta */
+  --surface-glass: #0f141f;
+  --ink: #eef1f8;
+  --ink-strong: #dde3ef;
+  --ink-soft: #aab2c5;
+  --ink-faint: #8b93a7;
+  --ink-dim: #6b7385;
+  --line: #1b2232;
+  --line-raised: #232c40;
 
   --brand: #6366f1;
-  --brand-soft: #1e2445;
+  --brand-soft: #1c2743;
   --brand-deep: #4f46e5;
+  --brand-tint: #a5b4fc;
 
   --blue: #38bdf8;
   --blue-soft: #12283a;
   --violet: #a78bfa;
   --violet-soft: #241b3e;
-  --amber: #e0900f;
-  --amber-soft: #33260f;
-  --rose: #f43f5e;
-  --rose-soft: #341420;
-  --emerald: #10b981;
-  --emerald-soft: #103026;
+  --amber: #fbbf24;
+  --amber-soft: #2a2210;
+  --rose: #f87171;
+  --rose-soft: #2b1620;
+  --emerald: #34d399;
+  --emerald-soft: #0f2a24;
 
-  --side-bg: #12161f;
-  --side-bg-deep: #0f131b;
-  --side-ink: #e7ebf4;
-  --side-ink-soft: #8f99ad;
-  --side-line: #232b3d;
-  --side-active-bg: rgba(99, 102, 241, 0.18);
-  --side-active-ink: #a5b4fc;
-  --side-hover-bg: rgba(255, 255, 255, 0.05);
+  --side-bg: #0a0d14;
+  --side-bg-deep: #06080d;
+  --side-ink: #eef1f8;
+  --side-ink-soft: #8b93a7;
+  --side-line: #1b2232;
+  --side-active-bg: #1c2743;
+  --side-active-ink: #c7d2fe;
+  --side-hover-bg: #131926;
 
-  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.2), 0 8px 24px -12px rgba(0, 0, 0, 0.5);
-  --shadow-card-hover: 0 2px 4px rgba(0, 0, 0, 0.25), 0 16px 36px -12px rgba(0, 0, 0, 0.6);
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px -12px rgba(0, 0, 0, 0.6);
+  --shadow-card-hover: 0 2px 4px rgba(0, 0, 0, 0.45), 0 16px 36px -12px rgba(0, 0, 0, 0.7);
 }

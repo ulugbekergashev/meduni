@@ -19,3 +19,14 @@ export function setTheme(theme: Theme) {
   localStorage.setItem(KEY, theme);
   applyTheme(theme);
 }
+
+/** Vaqtincha majburlash (saqlamasdan) — talaba tomoni faqat qorong'i ishlaydi.
+ *  Foydalanuvchi tanlovi localStorage'da tegilmay qoladi. */
+export function forceTheme(theme: Theme) {
+  applyTheme(theme);
+}
+
+/** Majburlashdan keyin foydalanuvchi tanloviga qaytish. */
+export function restoreTheme() {
+  applyTheme(getTheme());
+}

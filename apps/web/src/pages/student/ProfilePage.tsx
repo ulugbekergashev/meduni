@@ -19,7 +19,6 @@ import { Badge, Button, Card, Icon, Spinner, cls, useToast } from "@meduni/ui";
 import { ApiError } from "../../lib/api";
 import { useLocale } from "../../lib/useLocale";
 import { useLogout } from "../../lib/auth";
-import { ThemeToggle } from "../../components/ThemeToggle";
 import { useChangePassword, useMyProfile, useSetLocale } from "./api";
 
 /** Ma'lumotnoma qatori: ikonka + yorliq + qiymat. */
@@ -195,7 +194,7 @@ export function ProfilePage() {
               </div>
             </div>
 
-            <ThemeToggle />
+            {/* Tema tanlash yo'q — talaba tomoni faqat qorong'i (dizayn qarori). */}
 
             <div className="space-y-2">
               <p className="text-[13.5px] font-semibold text-ink-soft">{t("changePassword")}</p>
