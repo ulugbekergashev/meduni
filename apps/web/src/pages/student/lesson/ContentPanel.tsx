@@ -1,11 +1,22 @@
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, BookText, ClipboardList, Layers, Sparkles, Stethoscope, Trophy, Video } from "lucide-react";
+import {
+  ArrowLeft,
+  BookText,
+  ClipboardList,
+  FileText as FileTextIcon,
+  Layers,
+  Sparkles,
+  Stethoscope,
+  Trophy,
+  Video,
+} from "lucide-react";
 import { EmptyState, Icon } from "@meduni/ui";
 import type { Lesson } from "../api";
 import { Panel } from "./Panel";
 import { firstContentView, nextOpenStage, type ContentView, type LessonView, type StageInfo, type StageKey } from "./stages";
 import { DigestView } from "./DigestView";
 import { SectionReader } from "./SectionReader";
+import { MaterialTextView } from "./MaterialTextView";
 import { NextStageBar } from "./NextStageBar";
 import { VideoTab } from "./VideoTab";
 import { SlidesTab } from "./SlidesTab";
@@ -18,6 +29,7 @@ const SUBTAB_ICON: Record<ContentView, typeof BookText> = {
   konspekt: BookText,
   video: Video,
   slides: Layers,
+  materials: FileTextIcon,
 };
 
 const SURFACE_ICON = {
@@ -56,8 +68,10 @@ export function ContentPanel({
   if (lesson.digest || hasSections) contentTabs.push("konspekt");
   if (lesson.tabs.slides) contentTabs.push("slides");
   if (lesson.tabs.video) contentTabs.push("video");
+  if (lesson.materials.some((m) => m.hasText)) contentTabs.push("materials");
 
-  const isContentView = view === "konspekt" || view === "video" || view === "slides";
+  const isContentView =
+    view === "konspekt" || view === "video" || view === "slides" || view === "materials";
 
   // ---- Baholash / natija yuzasi ----
   if (!isContentView && view !== "overview") {
@@ -143,6 +157,7 @@ export function ContentPanel({
           {studyDone && <NextStageBar stages={stages} currentKey="study" onSelect={onStage} />}
         </>
       )}
+      {active === "materials" && <MaterialTextView materials={lesson.materials} />}
     </Panel>
   );
 }

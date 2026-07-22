@@ -22,7 +22,17 @@ import {
   type StageKey,
 } from "./stages";
 
-const ALL_VIEWS: LessonView[] = ["overview", "konspekt", "video", "slides", "case", "quiz", "flashcards", "result"];
+const ALL_VIEWS: LessonView[] = [
+  "overview",
+  "konspekt",
+  "video",
+  "slides",
+  "materials",
+  "case",
+  "quiz",
+  "flashcards",
+  "result",
+];
 
 /** So'ralgan ko'rinish mavjudmi — bo'lmasa overview'ga tushadi. */
 function viewAvailable(v: LessonView, lesson: Lesson): boolean {
@@ -35,6 +45,8 @@ function viewAvailable(v: LessonView, lesson: Lesson): boolean {
       return !!lesson.tabs.video;
     case "slides":
       return !!lesson.tabs.slides;
+    case "materials":
+      return lesson.materials.some((m) => m.hasText);
     case "case":
       return !!lesson.tabs.case;
     case "quiz":
@@ -119,10 +131,12 @@ export function LessonPage() {
   if (lesson.digest || sections.length > 0) studyBlocks.push("konspekt");
   if (lesson.tabs.slides) studyBlocks.push("slides");
   if (lesson.tabs.video) studyBlocks.push("video");
+  if (lesson.materials.some((m) => m.hasText)) studyBlocks.push("materials");
   const activeBlock: ContentView = studyBlocks.includes(view as ContentView)
     ? (view as ContentView)
     : firstContentView(lesson);
-  const isStudyView = view === "konspekt" || view === "slides" || view === "video";
+  const isStudyView =
+    view === "konspekt" || view === "slides" || view === "video" || view === "materials";
   /** 3 panel FAQAT o'rganishda. Test/keys/kartalar/natija/overview — FOKUSLI
    *  yakka interfeys: chap rail ham, chat ham ko'rsatilmaydi (foydalanuvchi:
    *  "bu interfeys faqat o'rganish uchun; test/natija/keys/flashcard uchun

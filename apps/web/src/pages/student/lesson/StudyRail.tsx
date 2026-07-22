@@ -25,6 +25,7 @@ const BLOCK_ICON: Record<ContentView, typeof BookText> = {
   konspekt: BookText,
   slides: Layers,
   video: Video,
+  materials: FileText,
 };
 
 /** Chap ustun — o'rganish bloklari (konspekt / prezentatsiya / video) + faol
@@ -61,6 +62,10 @@ export function StudyRail({
     if (v === "video") {
       const d = lesson.tabs.video?.durationSec;
       return d ? `${Math.round(d / 60)} ${t("minShort")}` : null;
+    }
+    if (v === "materials") {
+      const n = lesson.materials.filter((m) => m.hasText).length;
+      return n ? t("filesN", { n }) : null;
     }
     return null;
   }

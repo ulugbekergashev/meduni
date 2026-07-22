@@ -231,6 +231,17 @@ export interface LessonMaterial {
   /** null bo'lsa UI ko'rsatmaydi (soxta raqam yo'q). */
   sizeBytes: number | null;
   pageCount: number | null;
+  /** Ajratilgan matn mavjudmi ("Material matni" bloki uchun). */
+  hasText: boolean;
+}
+
+export function useMaterialText(materialId: number | null) {
+  return useQuery({
+    queryKey: ["me-material-text", materialId],
+    queryFn: () => api<{ id: number; fileName: string; text: string }>(`/api/v1/me/materials/${materialId}/text`),
+    enabled: materialId !== null,
+    staleTime: 5 * 60_000,
+  });
 }
 
 /** Mavzuga biriktirilgan tashqi manba (darslik bobi, klinik ma'lumotnoma). */

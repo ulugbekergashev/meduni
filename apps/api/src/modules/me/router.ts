@@ -224,6 +224,12 @@ const MATERIAL_MIME: Record<string, string> = {
   md: "text/plain; charset=utf-8",
 };
 
+// Ajratilgan matn — "Material matni" mini-konspekt bloki.
+meRouter.get(
+  "/materials/:id/text",
+  wrap(async (req, res) => res.json(await lesson.studentMaterialText(req.user!.id, parseId(req.params.id))))
+);
+
 meRouter.get(
   "/materials/:id/file",
   wrap(async (req, res) => {

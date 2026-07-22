@@ -1,6 +1,6 @@
 import { Prisma, prisma } from "../../lib/prisma";
 import { ApiError, badRequest, notFound } from "../../lib/errors";
-import { readFileBuffer } from "../../lib/storage";
+import { readFileBuffer, readText } from "../../lib/storage";
 import { buildPdf } from "../content/presentation";
 import type { CaseJson, DigestJson, Slide } from "../../ai/types";
 import {
@@ -173,6 +173,8 @@ export async function getTopicLesson(studentId: number, topicId: number) {
       fileType: m.fileType,
       sizeBytes: m.sizeBytes,
       pageCount: m.pageCount,
+      /** Ajratilgan matn mavjudmi ("Material matni" mini-konspekt bloki uchun). */
+      hasText: m.parseStatus === "DONE" && !!m.parsedTextUrl,
     })),
     links: topic.links.map((l) => ({ id: l.id, title: l.title, url: l.url, note: l.note })),
     // O'rta panel — AI konspekt (tasdiqlanmagan bo'lsa null → video/slaydlarga fallback).
@@ -544,6 +546,17 @@ export async function studentSlotImage(studentId: number, presentationId: number
 export async function studentPresentationPdf(studentId: number, presentationId: number): Promise<Buffer> {
   const p = await presentationAccess(studentId, presentationId);
   return buildPdf(p.slidesJson as unknown as Slide[]);
+}
+
+/** Materialning AJRATILGAN MATNI — "Material matni" mini-konspekt bloki.
+ *  Xuddi shu himoya: assertTopicOpen. Matn 60k belgi bilan cheklanadi. */
+export async function studentMaterialText(studentId: number, materialId: number) {
+  const m = await prisma.sourceMaterial.findUnique({ where: { id: materialId } });
+  if (!m) throw notFound("Fayl");
+  await assertTopicOpen(studentId, m.topicId);
+  if (m.parseStatus !== "DONE" || !m.parsedTextUrl) throw notFound("Matn");
+  const text = (await readText(m.parsedTextUrl)).slice(0, 60_000);
+  return { id: m.id, fileName: m.fileName, text };
 }
 
 /** O'qituvchi manba materialini talabaga oqim qiladi. Egalik/qulf tekshiruvi
