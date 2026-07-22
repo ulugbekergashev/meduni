@@ -1318,7 +1318,15 @@
     "overviewStart": "Начать",
     "overviewResume": "Продолжить",
     "overviewResultLocked": "Откроется в конце",
-    "overviewResultOpen": "Отчёт готов"
+    "overviewResultOpen": "Отчёт готов",
+    "chatTitle": "ИИ-тьютор",
+    "chatPlaceholder": "Задайте вопрос по теме...",
+    "chatSend": "Отправить",
+    "chatEmptyTitle": "Есть вопрос?",
+    "chatEmptyHint": "ИИ-тьютор отвечает только на основе материалов этого занятия.",
+    "chatSuggest1": "Объясни эту тему проще",
+    "chatSuggest2": "Поясни основные термины",
+    "chatLockedQuiz": "Во время теста чат закрыт — сначала завершите тест."
   },
   "search": {
     "placeholder": "Поиск… (студент, группа, курс)",

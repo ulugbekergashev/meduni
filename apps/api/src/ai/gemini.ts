@@ -4,11 +4,18 @@ import { recordAiUsage } from "./usage";
 
 // `gemini-2.5-flash` is blocked for new API accounts. We try the best flash first
 // for quality, then fall back to the lite alias when the primary is overloaded
-// (503 "high demand"). Both support responseSchema + thinkingBudget:0.
+// (503 "high demand").
 const MODELS = ["gemini-flash-latest", "gemini-flash-lite-latest"];
 const TIMEOUT_MS = 90_000;
 const ATTEMPTS_PER_MODEL = 2;
 const MAX_TTS_ATTEMPTS = 3;
+
+// Minimal thinking budget for extraction tasks. `thinkingBudget: 0` used to mean
+// "thinking off", but the current models REJECT it (400 INVALID_ARGUMENT) — that
+// silently broke every generation (digest/quiz/case/slides/factcheck). Measured
+// 2026-07-22: budget 128 behaves like the old 0 (~1.3s, 0 thinking tokens),
+// while omitting the config costs ~3.6s and ~470 thinking tokens.
+const MIN_THINKING_BUDGET = 128;
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -74,9 +81,9 @@ export async function generateStructured<T>(opts: GenerateOpts): Promise<T> {
               systemInstruction: opts.systemInstruction,
               responseMimeType: "application/json",
               responseSchema: opts.responseSchema as never,
-              // Disable "thinking" for extraction tasks (~5s vs ~40s+, ~2.6x fewer
-              // tokens). Enable it where quality matters most (lecture scripts).
-              ...(opts.thinking ? {} : { thinkingConfig: { thinkingBudget: 0 } }),
+              // Minimise "thinking" for extraction tasks (fast + cheap). Where
+              // quality matters most (lecture scripts) we let the model think.
+              ...(opts.thinking ? {} : { thinkingConfig: { thinkingBudget: MIN_THINKING_BUDGET } }),
             },
           }),
           TIMEOUT_MS

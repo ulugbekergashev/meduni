@@ -130,6 +130,7 @@ model User {
   progress          Progress[]
   overriddenProgress Progress[]      @relation("ProgressOverrider")
   sectionReads      SectionRead[]
+  tutorMessages     TutorMessage[]
   quizAttempts      QuizAttempt[]
   caseAttempts      CaseAttempt[]    @relation("CaseStudent")
   reviewedCases     CaseAttempt[]    @relation("CaseReviewer")
@@ -273,6 +274,7 @@ model Topic {
   contentItems   ContentItem[]
   progress       Progress[]
   sectionReads   SectionRead[]
+  tutorMessages  TutorMessage[]
   sessions       LessonSession[]
 
   @@map("topics")
@@ -529,6 +531,23 @@ model TopicLink {
 
   @@index([topicId])
   @@map("topic_links")
+}
+
+/// Dars ichidagi AI-tutor suhbati — talaba + AI (jonli o'qituvchi EMAS,
+/// foydalanuvchi spetsifikatsiyasi bo'yicha). Suhbat = (studentId, topicId).
+model TutorMessage {
+  id        Int      @id @default(autoincrement())
+  studentId Int
+  student   User     @relation(fields: [studentId], references: [id])
+  topicId   Int
+  topic     Topic    @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  /// "student" | "assistant"
+  role      String
+  text      String
+  createdAt DateTime @default(now())
+
+  @@index([studentId, topicId, createdAt])
+  @@map("tutor_messages")
 }
 
 /// Konspekt bo'limi o'qilganini kuzatish (1a "O'qildi 2/6").

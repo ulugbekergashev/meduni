@@ -337,6 +337,39 @@ function useInvalidateLesson(topicId: number) {
   };
 }
 
+// ---- AI-tutor chat (layout v2, 2C) ----
+
+export interface TutorMsg {
+  id: number;
+  role: "student" | "assistant";
+  text: string;
+  createdAt: string;
+}
+
+export function useTutorChat(topicId: number) {
+  return useQuery({
+    queryKey: ["me-tutor-chat", topicId],
+    queryFn: () => api<{ messages: TutorMsg[] }>(`/api/v1/me/topics/${topicId}/chat`),
+  });
+}
+
+export function useSendTutorMessage(topicId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (text: string) =>
+      api<{ messages: TutorMsg[] }>(`/api/v1/me/topics/${topicId}/chat`, {
+        method: "POST",
+        body: JSON.stringify({ text }),
+      }),
+    onSuccess: (res) => {
+      // Yangi juftlikni keshga qo'shamiz (to'liq refetch shart emas).
+      qc.setQueryData<{ messages: TutorMsg[] }>(["me-tutor-chat", topicId], (old) => ({
+        messages: [...(old?.messages ?? []), ...res.messages],
+      }));
+    },
+  });
+}
+
 /** Konspekt bo'limini o'qildi deb belgilaydi (1a — "O'qildi n/N"). */
 export function useMarkSectionRead(topicId: number) {
   const qc = useQueryClient();
