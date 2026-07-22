@@ -2,7 +2,7 @@ import type { SourceMaterial, Topic } from "../../lib/prisma";
 import { prisma } from "../../lib/prisma";
 import { ApiError, badRequest, notFound } from "../../lib/errors";
 import { deletePath, readText, readFileBuffer, saveMaterialFile, saveParsedText } from "../../lib/storage";
-import { extractText, fileTypeFromName, parseErrorMessages, type ParseErrorCode } from "./parse";
+import { extractText, fileTypeFromName, parseErrorMessages, pdfPageCount, type ParseErrorCode } from "./parse";
 import { generateStructured } from "../../ai/gemini";
 import { assertQuota } from "../../ai/quota";
 import { departmentForTopic } from "../../ai/glossary";
@@ -363,11 +363,13 @@ async function runParse(materialId: number) {
     if (!m) return;
     const buffer = await readFileBuffer(m.fileUrl);
     const outcome = await extractText(buffer, m.fileType);
+    // Talabaga ko'rsatiladigan metama'lumot ("PDF · 24 bet"). Aniqlanmasa null.
+    const pageCount = pdfPageCount(buffer, m.fileType);
     if (outcome.ok) {
       const textUrl = await saveParsedText(m.topicId, m.id, outcome.text);
       await prisma.sourceMaterial.update({
         where: { id: materialId },
-        data: { parseStatus: "DONE", parsedTextUrl: textUrl, parseError: null },
+        data: { parseStatus: "DONE", parsedTextUrl: textUrl, parseError: null, pageCount },
       });
     } else {
       await prisma.sourceMaterial.update({
@@ -398,6 +400,7 @@ export async function uploadMaterial(
       fileUrl: "",
       fileName: file.originalname,
       fileType,
+      sizeBytes: file.buffer.length,
       parseStatus: "PENDING",
       uploadedById: teacherId,
     },

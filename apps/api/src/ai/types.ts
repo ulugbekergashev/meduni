@@ -7,7 +7,34 @@ export const termSchema = z.object({
   lat: z.string(),
 });
 
+// --- Konspekt bloklari (v2 — bo'limli o'qish, "Mavzu ekrani" 1a) ---
+export const digestBlockSchema = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("para"), text: z.string() }),
+  z.object({
+    type: z.literal("callout"),
+    tone: z.enum(["important", "warning"]).default("important"),
+    text: z.string(),
+  }),
+  z.object({
+    type: z.literal("list"),
+    ordered: z.boolean().default(false),
+    items: z.array(z.object({ lead: z.string().optional(), text: z.string() })),
+  }),
+]);
+export type DigestBlock = z.infer<typeof digestBlockSchema>;
+
+export const digestSectionSchema = z.object({
+  title: z.string(),
+  minutes: z.number().int().min(1).max(30).default(3),
+  /** Material ichidagi joy ("Ma'ruza, 6–9-betlar"). Noma'lum bo'lsa bo'sh. */
+  sourceRef: z.string().default(""),
+  blocks: z.array(digestBlockSchema),
+});
+export type DigestSection = z.infer<typeof digestSectionSchema>;
+
 export const digestSchema = z.object({
+  /** v2: bo'limli o'qish. Eski (v1) konspektlarda bo'lmaydi — renderer fallback qiladi. */
+  sections: z.array(digestSectionSchema).default([]),
   objectives: z.array(z.string()),
   concepts: z.array(z.string()),
   terms: z.array(termSchema),
@@ -19,9 +46,44 @@ export const digestSchema = z.object({
 export type DigestJson = z.infer<typeof digestSchema>;
 
 // Gemini responseSchema mirroring digestSchema (structured JSON output).
+// Gemini responseSchema discriminated union'ni qo'llamaydi — shuning uchun blok
+// bitta "keng" obyekt sifatida tavsiflanadi (type maydoni bilan), zod parse
+// paytida to'g'ri variantga tushadi.
+const digestBlockResponseSchema = {
+  type: Type.OBJECT,
+  properties: {
+    type: { type: Type.STRING, enum: ["para", "callout", "list"] },
+    text: { type: Type.STRING },
+    tone: { type: Type.STRING, enum: ["important", "warning"] },
+    ordered: { type: Type.BOOLEAN },
+    items: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: { lead: { type: Type.STRING }, text: { type: Type.STRING } },
+        required: ["text"],
+      },
+    },
+  },
+  required: ["type"],
+};
+
 export const digestResponseSchema = {
   type: Type.OBJECT,
   properties: {
+    sections: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          title: { type: Type.STRING },
+          minutes: { type: Type.INTEGER },
+          sourceRef: { type: Type.STRING },
+          blocks: { type: Type.ARRAY, items: digestBlockResponseSchema },
+        },
+        required: ["title", "minutes", "blocks"],
+      },
+    },
     objectives: { type: Type.ARRAY, items: { type: Type.STRING } },
     concepts: { type: Type.ARRAY, items: { type: Type.STRING } },
     terms: {
@@ -40,10 +102,11 @@ export const digestResponseSchema = {
     dosages: { type: Type.ARRAY, items: { type: Type.STRING } },
     imageIdeas: { type: Type.ARRAY, items: { type: Type.STRING } },
   },
-  required: ["objectives", "concepts", "terms", "facts", "dosages", "imageIdeas"],
+  required: ["sections", "objectives", "concepts", "terms", "facts", "dosages", "imageIdeas"],
 };
 
 export const emptyDigest: DigestJson = {
+  sections: [],
   objectives: [],
   concepts: [],
   terms: [],
