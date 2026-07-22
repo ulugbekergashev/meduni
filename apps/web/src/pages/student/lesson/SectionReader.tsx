@@ -1,17 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { ArrowLeft, ArrowRight, Check, Clock, FileText, LayoutList, Minus, Plus, SquareStack } from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
+import { ArrowRight, Check, Clock, FileText, Minus, Plus } from "lucide-react";
 import { Icon, cls } from "@meduni/ui";
 import type { LessonSection } from "../api";
 import { BlockView } from "./BlockView";
-import { StepCards } from "./StepCards";
 
 /** O'qish shrifti — A−/A+ bilan boshqariladi, tanlov localStorage'da qoladi. */
 const READ_SIZES = [13, 14, 15, 16, 17];
 const SIZE_KEY = "meduni.readSize";
-/** 1a (ro'yxat) ↔ 1b (kartochka) ko'rinishi — tanlov eslab qolinadi. */
-const MODE_KEY = "meduni.readMode";
 
 function useReadSize() {
   const [idx, setIdx] = useState(() => {
@@ -35,96 +32,95 @@ function useReadSize() {
   };
 }
 
+/** Konspekt — BARCHA bo'limlar bitta uzluksiz oqimda (foydalanuvchi talabi:
+ *  "разделы нужно сразу все показать"). Bo'limlar vizual ajratiladi, lekin
+ *  alohida sahifalarga bo'linmaydi. O'qilgani skroll bilan avtomatik belgilanadi. */
 export function SectionReader({
   sections,
-  active,
-  onActive,
+  activeSection,
+  onVisibleSection,
   onMarkRead,
   onFinished,
   finishedLabel,
 }: {
   sections: LessonSection[];
-  active: number;
-  onActive: (index: number) => void;
-  /** Bo'lim o'qildi deb belgilash (aniq harakat: "Keyingi bo'lim"). */
+  /** Chap TOC'dan tanlangan bo'lim — shu yerga skroll qiladi. */
+  activeSection: number | null;
+  /** Skroll paytida ko'rinib turgan bo'lim (TOC'ni yoritish uchun). */
+  onVisibleSection?: (index: number) => void;
   onMarkRead: (index: number) => void;
-  /** Oxirgi bo'lim yakunlangach — keyingi bosqichga o'tish (layout v2). */
   onFinished?: () => void;
-  /** Oxirgi bo'lim tugmasi matni ("Keyingi bosqich: Test" kabi). */
   finishedLabel?: string;
 }) {
   const { t } = useTranslation(undefined, { keyPrefix: "lesson" });
   const reduce = useReducedMotion();
   const size = useReadSize();
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const markedRef = useRef<Set<number>>(new Set());
 
-  const [cards, setCards] = useState(
-    () => typeof window !== "undefined" && window.localStorage.getItem(MODE_KEY) === "cards"
-  );
-  const [step, setStep] = useState(0);
-
-  const idx = Math.max(0, Math.min(sections.length - 1, active));
-  const section = sections[idx];
   const readCount = sections.filter((s) => s.read).length;
+  const allRead = sections.length > 0 && readCount === sections.length;
 
-  // Bo'lim almashsa qadam boshidan.
-  useEffect(() => setStep(0), [idx]);
-
-  // Faol bo'limga skroll (pill bosilganda ko'rinib turishi uchun).
+  // TOC'dan tanlanganda — o'sha bo'limga skroll.
   useEffect(() => {
-    document.getElementById(`sec-pill-${idx}`)?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
-  }, [idx]);
+    if (activeSection === null) return;
+    const el = document.getElementById(`sec-${activeSection}`);
+    el?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+  }, [activeSection, reduce]);
 
-  if (!section) return null;
+  // Bo'lim oxirigacha skroll qilingan bo'lsa — o'qildi deb belgilaymiz.
+  // Bir marta yuboriladi (markedRef), takroriy so'rov yo'q.
+  useEffect(() => {
+    const root = scrollRef.current;
+    if (!root) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (!e.isIntersecting) continue;
+          const i = Number((e.target as HTMLElement).dataset.end);
+          if (Number.isInteger(i) && !markedRef.current.has(i) && !sections[i]?.read) {
+            markedRef.current.add(i);
+            onMarkRead(i);
+          }
+        }
+      },
+      { root, threshold: 0.1 }
+    );
+    root.querySelectorAll("[data-end]").forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  }, [sections, onMarkRead]);
 
-  const last = idx === sections.length - 1;
-  const goNext = () => {
-    onMarkRead(idx);
-    if (!last) onActive(idx + 1);
-    else onFinished?.();
-  };
+  // Ko'rinib turgan bo'limni TOC'ga xabar qilish.
+  useEffect(() => {
+    const root = scrollRef.current;
+    if (!root || !onVisibleSection) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((e) => e.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+        if (visible) {
+          const i = Number((visible.target as HTMLElement).dataset.sec);
+          if (Number.isInteger(i)) onVisibleSection(i);
+        }
+      },
+      { root, rootMargin: "-10% 0px -70% 0px", threshold: [0, 0.5, 1] }
+    );
+    root.querySelectorAll("[data-sec]").forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  }, [sections.length, onVisibleSection]);
 
-  const toggleMode = () =>
-    setCards((c) => {
-      const next = !c;
-      try {
-        window.localStorage.setItem(MODE_KEY, next ? "cards" : "scroll");
-      } catch {}
-      return next;
-    });
+  if (sections.length === 0) return null;
 
   return (
     <div className="flex h-full flex-col">
-      {/* Bo'lim navigatsiyasi + ko'rinish + o'qish shrifti */}
-      <div className="flex shrink-0 items-center gap-2 border-b border-line px-3 py-2">
-        <div className="flex min-w-0 flex-1 gap-1 overflow-x-auto scrollbar-hide">
-          {sections.map((s) => (
-            <button
-              key={s.index}
-              id={`sec-pill-${s.index}`}
-              onClick={() => onActive(s.index)}
-              className={cls(
-                "inline-flex shrink-0 items-center gap-1.5 rounded-control px-2.5 py-1 text-note font-bold transition-colors",
-                s.index === idx ? "bg-brand-soft text-brand-tint" : "text-ink-faint hover:bg-surface-raised hover:text-ink-soft"
-              )}
-            >
-              {s.read && <Icon icon={Check} size={12} className="text-emerald" strokeWidth={3} />}
-              <span className="tabular-nums">{s.index + 1}.</span>
-              <span className="max-w-[150px] truncate">{s.title}</span>
-            </button>
-          ))}
-        </div>
-
-        {/* Ko'rinish almashtirish (1a ↔ 1b) */}
-        <button
-          onClick={toggleMode}
-          title={cards ? t("viewList") : t("viewCards")}
-          className="flex h-6 shrink-0 items-center gap-1 rounded-control border border-line px-2 text-micro font-bold text-ink-soft transition-colors hover:bg-surface-raised hover:text-ink"
-        >
-          <Icon icon={cards ? LayoutList : SquareStack} size={12} />
-          <span className="hidden sm:inline">{cards ? t("viewList") : t("viewCards")}</span>
-        </button>
-
-        <div className="flex shrink-0 items-center gap-0.5 rounded-control border border-line">
+      {/* Ixcham shapka — faqat o'qish shrifti (bo'lim pillari chap ustunda) */}
+      <div className="flex shrink-0 items-center gap-2 border-b border-line px-3 py-1.5">
+        <span className="text-micro font-extrabold uppercase tracking-wider text-ink-dim">{t("tab_konspekt")}</span>
+        <span className="text-micro font-bold tabular-nums text-ink-dim">
+          · {t("readCount", { n: readCount, total: sections.length })}
+        </span>
+        <div className="ml-auto flex shrink-0 items-center gap-0.5 rounded-control border border-line">
           <button
             onClick={size.dec}
             disabled={size.min}
@@ -145,98 +141,73 @@ export function SectionReader({
         </div>
       </div>
 
-      {/* ---- 1b: qadam-kartochkalar ---- */}
-      {cards ? (
-        <StepCards
-          section={section}
-          step={step}
-          onStep={setStep}
-          onSectionDone={goNext}
-          fontPx={size.px}
-        />
-      ) : (
-        <>
-          {/* ---- 1a: bo'limli o'qish ---- */}
-          <div className="min-h-0 flex-1 lg:overflow-y-auto">
-            <AnimatePresence mode="wait">
-              <motion.article
-                key={idx}
-                initial={reduce ? false : { opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={reduce ? undefined : { opacity: 0, y: -8 }}
-                transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-                className="mx-auto max-w-[68ch] px-6 py-7 sm:px-9"
-              >
-                <div className="mb-4">
-                  <div className="mb-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1">
-                    <span className="text-micro font-extrabold uppercase tracking-wider text-brand-tint">
-                      {t("sectionOf", { n: idx + 1, total: sections.length })}
+      {/* Barcha bo'limlar — bitta oqim */}
+      <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto">
+        <div className="mx-auto max-w-[68ch] px-6 py-6 sm:px-9" style={{ fontSize: `${size.px}px` }}>
+          {sections.map((section, si) => (
+            <motion.section
+              key={section.index}
+              id={`sec-${section.index}`}
+              data-sec={section.index}
+              initial={reduce ? false : { opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.05 }}
+              transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+              className={cls("scroll-mt-4", si > 0 && "mt-8 border-t border-line pt-7")}
+            >
+              <div className="mb-3.5">
+                <div className="mb-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1">
+                  <span className="text-micro font-extrabold uppercase tracking-wider text-brand-tint">
+                    {t("sectionOf", { n: section.index + 1, total: sections.length })}
+                  </span>
+                  <span className="inline-flex items-center gap-1 text-micro font-bold text-ink-dim">
+                    <Icon icon={Clock} size={11} />
+                    {t("minutesN", { n: section.minutes })}
+                  </span>
+                  {section.read && (
+                    <span className="inline-flex items-center gap-1 text-micro font-bold text-emerald">
+                      <Icon icon={Check} size={11} strokeWidth={3} />
+                      {t("sectionRead")}
                     </span>
-                    <span className="inline-flex items-center gap-1 text-micro font-bold text-ink-dim">
-                      <Icon icon={Clock} size={11} />
-                      {t("minutesN", { n: section.minutes })}
-                    </span>
-                    {section.read && (
-                      <span className="inline-flex items-center gap-1 text-micro font-bold text-emerald">
-                        <Icon icon={Check} size={11} strokeWidth={3} />
-                        {t("sectionRead")}
-                      </span>
-                    )}
-                  </div>
-                  <h2 className="text-[20px] font-extrabold leading-tight tracking-tight text-ink">{section.title}</h2>
-                  {section.sourceRef && (
-                    <p className="mt-1.5 inline-flex items-center gap-1.5 rounded-control bg-surface-raised px-2 py-1 text-micro font-bold text-ink-faint">
-                      <Icon icon={FileText} size={11} />
-                      {t("sourceRef")}: {section.sourceRef}
-                    </p>
                   )}
                 </div>
+                <h2 className="text-[20px] font-extrabold leading-tight tracking-tight text-ink">{section.title}</h2>
+                {section.sourceRef && (
+                  <p className="mt-1.5 inline-flex items-center gap-1.5 rounded-control bg-surface-raised px-2 py-1 text-micro font-bold text-ink-faint">
+                    <Icon icon={FileText} size={11} />
+                    {t("sourceRef")}: {section.sourceRef}
+                  </p>
+                )}
+              </div>
 
-                <motion.div
-                  className="space-y-4 leading-[1.75]"
-                  style={{ fontSize: `${size.px}px` }}
-                  initial={reduce ? false : "hidden"}
-                  animate="show"
-                  variants={{ show: { transition: { staggerChildren: 0.05 } } }}
-                >
-                  {section.blocks.map((b, i) => (
-                    <motion.div
-                      key={i}
-                      variants={{ hidden: { opacity: 0, y: 8 }, show: { opacity: 1, y: 0 } }}
-                      transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                    >
-                      <BlockView block={b} />
-                    </motion.div>
-                  ))}
-                </motion.div>
-              </motion.article>
-            </AnimatePresence>
-          </div>
+              <div className="space-y-4 leading-[1.75]">
+                {section.blocks.map((b, i) => (
+                  <BlockView key={i} block={b} />
+                ))}
+              </div>
 
-          {/* Pastki amal bari */}
-          <div className="flex shrink-0 items-center gap-3 border-t border-line px-3 py-2">
-            <span className="text-micro font-bold tabular-nums text-ink-faint">
-              {t("readCount", { n: readCount, total: sections.length })}
-            </span>
-            <div className="ml-auto flex items-center gap-1.5">
-              <button
-                onClick={() => onActive(idx - 1)}
-                disabled={idx === 0}
-                className="inline-flex items-center gap-1.5 rounded-control border border-line px-3 py-1.5 text-note font-bold text-ink-soft transition-colors hover:bg-surface-raised hover:text-ink disabled:opacity-30 disabled:hover:bg-transparent"
-              >
-                <Icon icon={ArrowLeft} size={14} />
-                {t("prevSection")}
-              </button>
-              <button
-                onClick={goNext}
-                className="inline-flex items-center gap-1.5 rounded-control bg-brand px-3.5 py-1.5 text-note font-bold text-white transition-colors hover:bg-brand-deep"
-              >
-                {last ? (finishedLabel ?? t("finishReading")) : t("nextSection")}
-                <Icon icon={ArrowRight} size={14} />
-              </button>
-            </div>
-          </div>
-        </>
+              {/* O'qildi sensori — bo'lim oxiri ko'ringanda belgilanadi */}
+              <div data-end={section.index} className="h-px" />
+            </motion.section>
+          ))}
+        </div>
+      </div>
+
+      {/* Pastki bar — hammasi o'qilgach keyingi bosqichga */}
+      {allRead && onFinished && (
+        <div className="flex shrink-0 items-center gap-3 border-t border-line px-3 py-2">
+          <span className="inline-flex items-center gap-1.5 text-micro font-bold text-emerald">
+            <Icon icon={Check} size={12} strokeWidth={3} />
+            {t("readCount", { n: readCount, total: sections.length })}
+          </span>
+          <button
+            onClick={onFinished}
+            className="ml-auto inline-flex items-center gap-1.5 rounded-control bg-brand px-3.5 py-1.5 text-note font-bold text-white transition-colors hover:bg-brand-deep"
+          >
+            {finishedLabel ?? t("finishReading")}
+            <Icon icon={ArrowRight} size={14} />
+          </button>
+        </div>
       )}
     </div>
   );
