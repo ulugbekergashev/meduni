@@ -54,6 +54,7 @@ export function RoleShell({
   headerSlot,
   profileHref,
   fullBleed = false,
+  showTheme = true,
 }: {
   brand: string;
   items: RoleShellItem[];
@@ -63,6 +64,8 @@ export function RoleShell({
   profileHref: string;
   /** Ishchi sahifa (dars paneli) — to'liq ekran, panel ichida skroll. */
   fullBleed?: boolean;
+  /** Talaba tomoni faqat qorong'i — tema tugmasi ko'rsatilmaydi. */
+  showTheme?: boolean;
 }) {
   const { data: me } = useMe();
   const { t } = useTranslation(undefined, { keyPrefix: "nav" });
@@ -94,7 +97,7 @@ export function RoleShell({
         <>
           <span className="hidden whitespace-nowrap text-[13.5px] font-medium text-ink-faint xl:block">{today}</span>
           <LocaleSwitcher />
-          <ThemeButton />
+          {showTheme && <ThemeButton />}
           {/* User bloki — avatar + ism, bosilsa profil/sozlamalar sahifasi */}
           <Link
             to={profileHref}

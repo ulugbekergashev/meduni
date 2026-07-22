@@ -5,16 +5,29 @@ const sharedConfig: Partial<Config> = {
     extend: {
       colors: {
         bg: "var(--bg)",
-        surface: "var(--surface)",
+        surface: {
+          DEFAULT: "var(--surface)",
+          raised: "var(--surface-raised)",
+        },
         "surface-glass": "var(--surface-glass)",
-        ink: "var(--ink)",
+        ink: {
+          DEFAULT: "var(--ink)",
+          strong: "var(--ink-strong)",
+          soft: "var(--ink-soft)",
+          faint: "var(--ink-faint)",
+          dim: "var(--ink-dim)",
+        },
         "ink-soft": "var(--ink-soft)",
         "ink-faint": "var(--ink-faint)",
-        line: "var(--line)",
+        line: {
+          DEFAULT: "var(--line)",
+          raised: "var(--line-raised)",
+        },
         brand: {
           DEFAULT: "var(--brand)",
           soft: "var(--brand-soft)",
           deep: "var(--brand-deep)",
+          tint: "var(--brand-tint)",
         },
         blue: { DEFAULT: "var(--blue)", soft: "var(--blue-soft)" },
         violet: { DEFAULT: "var(--violet)", soft: "var(--violet-soft)" },
@@ -41,15 +54,20 @@ const sharedConfig: Partial<Config> = {
         card: "var(--shadow-card)",
         "card-hover": "var(--shadow-card-hover)",
       },
+      // "Mavzu ekrani" dizayn shkalasi — zich, professional asbob ko'rinishi.
+      // Dizaynda 11–14px ustunlik qiladi, og'irlik 700/800.
       fontSize: {
-        h1: ["30px", { lineHeight: "1.25", letterSpacing: "-0.02em" }],
-        stat: ["38px", { lineHeight: "1.1", letterSpacing: "-0.02em" }],
-        section: ["17px", { lineHeight: "1.4", letterSpacing: "-0.01em" }],
-        body: ["15px", { lineHeight: "1.55" }],
-        note: ["13.5px", { lineHeight: "1.45" }],
+        h1: ["22px", { lineHeight: "1.25", letterSpacing: "-0.02em" }],
+        stat: ["34px", { lineHeight: "1.05", letterSpacing: "-0.02em" }],
+        section: ["15px", { lineHeight: "1.35", letterSpacing: "-0.01em" }],
+        body: ["13px", { lineHeight: "1.6" }],
+        note: ["12px", { lineHeight: "1.45" }],
+        micro: ["11px", { lineHeight: "1.4" }],
+        /** Uzun matn o'qish uchun (konspekt tanasi) — A−/A+ bilan boshqariladi. */
+        read: ["14px", { lineHeight: "1.75" }],
       },
       fontFamily: {
-        sans: ["Inter", "system-ui", "sans-serif"],
+        sans: ["'Manrope Variable'", "Manrope", "Inter", "system-ui", "sans-serif"],
       },
     },
   },

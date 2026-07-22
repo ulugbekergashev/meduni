@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@fontsource-variable/manrope": "^5.3.0",
     "@meduni/ui": "*",
     "@tanstack/react-query": "^5.62.11",
     "framer-motion": "^12.42.2",

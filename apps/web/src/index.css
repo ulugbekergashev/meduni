@@ -1,3 +1,5 @@
+/* Manrope — dizayn shrifti (paketdan, CDN emas: oflayn + CSP uchun). */
+@import "@fontsource-variable/manrope";
 @import "@meduni/ui/tokens.css";
 
 @tailwind base;
