@@ -7,7 +7,8 @@ import type { Lesson } from "../api";
 
 export type StageKey = "study" | "case" | "quiz" | "flashcards" | "result";
 export type StageState = "done" | "open" | "pendingReview" | "soon";
-export type ContentView = "konspekt" | "video" | "slides";
+/** "materials" — material matni mini-konspekti (ajratilgan matn). */
+export type ContentView = "konspekt" | "video" | "slides" | "materials";
 /** "overview" — kirish landing'i: bosqichlar obzori (layout v2). */
 export type LessonView = "overview" | ContentView | "case" | "quiz" | "flashcards" | "result";
 

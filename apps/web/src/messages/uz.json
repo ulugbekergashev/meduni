@@ -1357,7 +1357,11 @@
     "noAnswer": "javob berilmagan",
     "rereadKonspekt": "Konspektni qayta oʻqish",
     "repeatTitle": "Takrorlash tavsiya etiladi",
-    "repeatHint": "{{n}} ta karta hali oʻzlashtirilmagan"
+    "repeatHint": "{{n}} ta karta hali oʻzlashtirilmagan",
+    "tab_materials": "Material matni",
+    "filesN": "{{n}} fayl",
+    "slidesOutline": "Matn",
+    "slidesCarousel": "Slaydlar"
   },
   "search": {
     "placeholder": "Qidirish… (talaba, guruh, kurs)",

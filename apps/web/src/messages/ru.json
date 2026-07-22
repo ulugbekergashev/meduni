@@ -1357,7 +1357,11 @@
     "noAnswer": "нет ответа",
     "rereadKonspekt": "Перечитать конспект",
     "repeatTitle": "Рекомендуем повторить",
-    "repeatHint": "{{n}} карточек ещё не усвоено"
+    "repeatHint": "{{n}} карточек ещё не усвоено",
+    "tab_materials": "Текст материалов",
+    "filesN": "{{n}} файлов",
+    "slidesOutline": "Текст",
+    "slidesCarousel": "Слайды"
   },
   "search": {
     "placeholder": "Поиск… (студент, группа, курс)",
