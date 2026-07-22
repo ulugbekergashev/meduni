@@ -60,7 +60,13 @@ Agar biror band bajarilmagan bo'lsa — MENGA aytmasдан o'zing tuzat. Faqat q
 - Frontend: React + TypeScript + Vite, TailwindCSS
 - Backend: Node.js + Express + TypeScript
 - Baza: PostgreSQL + Prisma ORM
-- AI: Google Gemini (matn: gemini-2.x; rasm: Nano Banana Pro / gemini-3-pro-image; video: slaydlar+TTS+ffmpeg)
+- AI: Google Gemini (matn: `gemini-flash-latest` → `gemini-flash-lite-latest` fallback;
+  rasm: Nano Banana Pro / gemini-3-pro-image; video: slaydlar+TTS+ffmpeg)
+  ⚠️ **`thinkingBudget: 0` ENDI QO'LLANMAYDI** — model 400 INVALID_ARGUMENT qaytaradi va bu
+  BARCHA generatsiyani jimgina buzadi (konspekt/test/keys/slayd/faktcheck). Minimal qiymat
+  **128** ishlatiladi (`ai/gemini.ts::MIN_THINKING_BUDGET`) — o'lchandi (2026-07-22): 0 bergan
+  natijani aynan qaytaradi (~1.3s, 0 fikrlash tokeni), configni butunlay olib tashlash esa
+  ~3.6s va ~470 ortiqcha token turadi.
 - Auth: JWT, argon2, RBAC
 - i18n: uz-lotin / rus
 

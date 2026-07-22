@@ -5,6 +5,7 @@ import { requireRoles } from "../../middleware/rbac";
 import * as svc from "./service";
 import * as lesson from "./lesson";
 import * as profile from "./profile";
+import * as chat from "./chat";
 import { computeStudentAutoTasks, listAssigned } from "../tasks/service";
 import { studentSearch } from "../search/service";
 
@@ -98,6 +99,19 @@ meRouter.post(
   wrap(async (req, res) =>
     res.json(await lesson.markSectionRead(req.user!.id, parseId(req.params.id), Number(req.params.index)))
   )
+);
+
+// ---------- AI-tutor chat (layout v2, 2C) ----------
+
+meRouter.get("/topics/:id/chat", wrap(async (req, res) => res.json(await chat.getChat(req.user!.id, parseId(req.params.id)))));
+
+const chatSchema = z.object({ text: z.string().min(1).max(2000) });
+meRouter.post(
+  "/topics/:id/chat",
+  wrap(async (req, res) => {
+    const b = parseBody(chatSchema, req.body);
+    res.json(await chat.sendChat(req.user!.id, parseId(req.params.id), b.text));
+  })
 );
 
 // ---------- Quiz attempts ----------

@@ -1318,7 +1318,15 @@
     "overviewStart": "Boshlash",
     "overviewResume": "Davom ettirish",
     "overviewResultLocked": "Yakunda ochiladi",
-    "overviewResultOpen": "Hisobot tayyor"
+    "overviewResultOpen": "Hisobot tayyor",
+    "chatTitle": "AI-tutor",
+    "chatPlaceholder": "Mavzu boʻyicha savol yozing...",
+    "chatSend": "Yuborish",
+    "chatEmptyTitle": "Savolingiz bormi?",
+    "chatEmptyHint": "AI-tutor faqat shu dars materiali asosida javob beradi.",
+    "chatSuggest1": "Bu mavzuni soddaroq tushuntirib ber",
+    "chatSuggest2": "Asosiy atamalarni izohlab ber",
+    "chatLockedQuiz": "Test paytida chat yopiq — avval testni yakunlang."
   },
   "search": {
     "placeholder": "Qidirish… (talaba, guruh, kurs)",

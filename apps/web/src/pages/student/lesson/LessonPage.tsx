@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, CheckCircle2, FolderOpen, Sparkles } from "lucide-react";
+import { ArrowLeft, CheckCircle2, FolderOpen } from "lucide-react";
 import { Icon, Spinner, cls } from "@meduni/ui";
 import { apiErrorMessage } from "../../../lib/api";
 import { useLocale } from "../../../lib/useLocale";
@@ -9,6 +9,7 @@ import { useLesson, useMarkSectionRead, type Lesson } from "../api";
 import { Panel } from "./Panel";
 import { MaterialsPanel } from "./MaterialsPanel";
 import { ContentPanel } from "./ContentPanel";
+import { ChatPanel } from "./ChatPanel";
 import { StageStepper } from "./StageStepper";
 import { LessonOverview } from "./LessonOverview";
 import { buildStages, resumeView, stageToView, type LessonView, type StageKey } from "./stages";
@@ -186,11 +187,9 @@ export function LessonPage() {
           )}
         </div>
 
-        {/* O'ng ustun — AI-tutor chat (2C'da to'ldiriladi) */}
+        {/* O'ng ustun — AI-tutor chat (test paytida qulf — halollik) */}
         <div className="order-2 flex min-h-0 flex-col lg:order-3">
-          <Panel title={t("aiChatSoon")} icon={Sparkles} bodyClassName="p-3">
-            <p className="text-note leading-relaxed text-ink-dim">{t("aiChatSoonBody")}</p>
-          </Panel>
+          <ChatPanel topicId={topicId} locked={!!lesson.tabs.quiz?.inProgressId} />
         </div>
       </div>
     </div>
