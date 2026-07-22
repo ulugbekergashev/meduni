@@ -37,13 +37,20 @@ export function buildStages(lesson: Lesson): StageInfo[] {
   const qz = lesson.tabs.quiz;
   const cs = lesson.tabs.case;
 
-  // Konspekt o'qish treklanmaydi — faqat video/slaydlar kuzatiladi. Agar
-  // treklanadigan kontent bo'lmasa (faqat konspekt), study butun mavzu
-  // tugaguncha "open" turadi.
-  const hasTrackable = !!v || !!s;
-  const studyDone = completed || (hasTrackable && (!v || v.done) && (!s || s.viewed));
+  // v2: konspekt bo'limlari ham kuzatiladi (SectionRead). Bo'limlar bo'lsa —
+  // hammasi o'qilgani study'ni yopadi; bo'lmasa eski mantiq (video/slaydlar).
+  const secs = lesson.sections ?? [];
+  const hasSections = secs.length > 0;
+  const allSectionsRead = hasSections && secs.every((x) => x.read);
+  const hasTrackable = hasSections || !!v || !!s;
+  const studyDone =
+    completed ||
+    (hasTrackable && (!hasSections || allSectionsRead) && (!v || v.done) && (!s || s.viewed));
 
-  const stages: StageInfo[] = [{ key: "study", state: studyDone ? "done" : "open" }];
+  const studyHint = hasSections
+    ? `${secs.filter((x) => x.read).length}/${secs.length}`
+    : undefined;
+  const stages: StageInfo[] = [{ key: "study", state: studyDone ? "done" : "open", hint: studyHint }];
 
   if (cs) {
     let state: StageState;
@@ -98,6 +105,35 @@ export function defaultView(lesson: Lesson): LessonView {
   );
   if (firstOpen) return stageToView(firstOpen.key, lesson);
   return firstContentView(lesson);
+}
+
+/** Mavzu jarayoni % (breadcrumb bari). Mavjud bosqichlar teng ulush oladi;
+ *  "O'rganish" ichida bo'limlar qisman hisoblanadi. Fleshkartalar (hali yo'q)
+ *  hisobga olinmaydi — aks holda 100% ga hech qachon yetib bo'lmasdi. */
+export function overallPct(lesson: Lesson): number {
+  const parts: number[] = [];
+
+  const secs = lesson.sections ?? [];
+  const v = lesson.tabs.video;
+  const s = lesson.tabs.slides;
+  if (secs.length || v || s) {
+    const bits: number[] = [];
+    if (secs.length) bits.push(secs.filter((x) => x.read).length / secs.length);
+    if (v) bits.push(Math.min(1, v.watchedPct / 100));
+    if (s) bits.push(s.viewed ? 1 : 0);
+    parts.push(bits.reduce((a, b) => a + b, 0) / bits.length);
+  }
+  if (lesson.tabs.case) {
+    const at = lesson.tabs.case.attempt;
+    parts.push(at ? (at.reviewed ? 1 : 0.5) : 0);
+  }
+  if (lesson.tabs.quiz) {
+    parts.push(lesson.tabs.quiz.attempt?.status === "finished" ? 1 : 0);
+  }
+
+  if (lesson.completed) return 100;
+  if (!parts.length) return 0;
+  return Math.round((parts.reduce((a, b) => a + b, 0) / parts.length) * 100);
 }
 
 export interface FinalScore {

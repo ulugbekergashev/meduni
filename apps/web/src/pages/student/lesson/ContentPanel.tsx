@@ -5,6 +5,7 @@ import type { Lesson } from "../api";
 import { Panel } from "./Panel";
 import { firstContentView, type ContentView, type LessonView } from "./stages";
 import { DigestView } from "./DigestView";
+import { SectionReader } from "./SectionReader";
 import { VideoTab } from "./VideoTab";
 import { SlidesTab } from "./SlidesTab";
 import { QuizTab } from "./QuizTab";
@@ -24,16 +25,24 @@ export function ContentPanel({
   topicId,
   view,
   setView,
+  section,
+  onSection,
+  onMarkRead,
 }: {
   lesson: Lesson;
   topicId: number;
   view: LessonView;
   setView: (v: LessonView) => void;
+  /** 1a — faol konspekt bo'limi. */
+  section: number;
+  onSection: (index: number) => void;
+  onMarkRead: (index: number) => void;
 }) {
   const { t } = useTranslation(undefined, { keyPrefix: "lesson" });
+  const hasSections = (lesson.sections?.length ?? 0) > 0;
 
   const contentTabs: ContentView[] = [];
-  if (lesson.digest) contentTabs.push("konspekt");
+  if (lesson.digest || hasSections) contentTabs.push("konspekt");
   if (lesson.tabs.video) contentTabs.push("video");
   if (lesson.tabs.slides) contentTabs.push("slides");
 
@@ -78,34 +87,48 @@ export function ContentPanel({
   }
 
   const active: ContentView = contentTabs.includes(view as ContentView) ? (view as ContentView) : contentTabs[0];
+  // Bo'limli o'qish o'z layoutini boshqaradi (pillar + skroll + pastki bar).
+  const readerMode = active === "konspekt" && hasSections;
 
   return (
     <Panel
       header={
-        <div className="flex flex-wrap items-center gap-1.5 p-1">
-          {contentTabs.map((c) => {
-            const on = c === active;
-            return (
-              <button
-                key={c}
-                onClick={() => setView(c)}
-                className={cls(
-                  "inline-flex items-center gap-2 rounded-xl px-3 py-1.5 text-[13.5px] font-extrabold transition-all duration-200",
-                  on
-                    ? "bg-gradient-to-r from-brand to-brand-deep text-white shadow-md shadow-brand/20 scale-[1.02]"
-                    : "text-ink-soft hover:bg-bg hover:text-ink"
-                )}
-              >
-                <Icon icon={SUBTAB_ICON[c]} size={15} className={on ? "text-white" : "text-ink-faint"} />
-                {t(`tab_${c}`)}
-              </button>
-            );
-          })}
-        </div>
+        contentTabs.length > 1 ? (
+          <div className="flex flex-wrap items-center gap-1">
+            {contentTabs.map((c) => {
+              const on = c === active;
+              return (
+                <button
+                  key={c}
+                  onClick={() => setView(c)}
+                  className={cls(
+                    "inline-flex items-center gap-1.5 rounded-control px-2.5 py-1 text-note font-extrabold transition-colors",
+                    on ? "bg-brand-soft text-brand-tint" : "text-ink-faint hover:bg-surface-raised hover:text-ink"
+                  )}
+                >
+                  <Icon icon={SUBTAB_ICON[c]} size={14} className={on ? "" : "text-ink-dim"} />
+                  {t(`tab_${c}`)}
+                </button>
+              );
+            })}
+          </div>
+        ) : undefined
       }
-      bodyClassName="p-4"
+      title={contentTabs.length === 1 ? t(`tab_${active}`) : undefined}
+      icon={contentTabs.length === 1 ? SUBTAB_ICON[active] : undefined}
+      bodyClassName={readerMode ? "p-0" : "p-4"}
     >
-      {active === "konspekt" && lesson.digest && <DigestView digest={lesson.digest} />}
+      {active === "konspekt" &&
+        (readerMode ? (
+          <SectionReader
+            sections={lesson.sections}
+            active={section}
+            onActive={onSection}
+            onMarkRead={onMarkRead}
+          />
+        ) : (
+          lesson.digest && <DigestView digest={lesson.digest} />
+        ))}
       {active === "video" && lesson.tabs.video && (
         <VideoTab topicId={topicId} data={lesson.tabs.video} threshold={lesson.thresholds.video} />
       )}

@@ -226,6 +226,32 @@ export interface LessonMaterial {
   id: number;
   fileName: string;
   fileType: MaterialType;
+  /** null bo'lsa UI ko'rsatmaydi (soxta raqam yo'q). */
+  sizeBytes: number | null;
+  pageCount: number | null;
+}
+
+/** Mavzuga biriktirilgan tashqi manba (darslik bobi, klinik ma'lumotnoma). */
+export interface LessonLink {
+  id: number;
+  title: string;
+  url: string;
+  note: string | null;
+}
+
+// --- Bo'limli konspekt (1a) ---
+export type DigestBlock =
+  | { type: "para"; text: string }
+  | { type: "callout"; tone: "important" | "warning"; text: string }
+  | { type: "list"; ordered: boolean; items: { lead?: string; text: string }[] };
+
+export interface LessonSection {
+  index: number;
+  title: string;
+  minutes: number;
+  sourceRef: string | null;
+  blocks: DigestBlock[];
+  read: boolean;
 }
 
 export interface Lesson {
@@ -242,8 +268,14 @@ export interface Lesson {
   elements: TopicElements;
   /** Chap panel — o'qituvchi manba materiallari. */
   materials: LessonMaterial[];
+  /** Chap panel — tashqi manbalar. */
+  links: LessonLink[];
   /** O'rta panel — AI konspekt (tasdiqlanmagan bo'lsa null). */
   digest: DigestJson | null;
+  /** v2 bo'limli o'qish. Bo'sh bo'lsa — eski yassi konspekt renderi. */
+  sections: LessonSection[];
+  /** Mavzuning taxminiy vaqti (daqiqa). */
+  estimatedMinutes: number;
   tabs: {
     video: VideoTabData | null;
     slides: SlidesTabData | null;
@@ -303,6 +335,19 @@ function useInvalidateLesson(topicId: number) {
     qc.invalidateQueries({ queryKey: ["me-course"] });
     qc.invalidateQueries({ queryKey: ["me-dashboard"] });
   };
+}
+
+/** Konspekt bo'limini o'qildi deb belgilaydi (1a — "O'qildi n/N"). */
+export function useMarkSectionRead(topicId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (sectionIndex: number) =>
+      api<{ ok: boolean; readCount: number; total: number }>(
+        `/api/v1/me/topics/${topicId}/sections/${sectionIndex}/read`,
+        { method: "POST" }
+      ),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["me-lesson", topicId] }),
+  });
 }
 
 export function useVideoProgress(topicId: number) {
