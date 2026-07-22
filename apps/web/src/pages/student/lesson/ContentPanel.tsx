@@ -88,7 +88,7 @@ export function ContentPanel({
         {view === "case" && lesson.tabs.case && <CaseTab topicId={topicId} data={lesson.tabs.case} />}
         {view === "quiz" && lesson.tabs.quiz && <QuizTab topicId={topicId} data={lesson.tabs.quiz} />}
         {view === "flashcards" && <FlashcardsTab topicId={topicId} />}
-        {view === "result" && <ResultPanel lesson={lesson} />}
+        {view === "result" && <ResultPanel lesson={lesson} onView={setView} />}
         {terminal && <NextStageBar stages={stages} currentKey={key as StageKey} onSelect={onStage} />}
       </Panel>
     );
