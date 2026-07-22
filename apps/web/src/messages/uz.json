@@ -1352,7 +1352,12 @@
     "flashLockedHint": "Kartalar test savollaridan tuziladi — avval testni yakunlang.",
     "flashLockedShort": "Testdan keyin ochiladi",
     "flashReady": "Takrorlashga tayyor",
-    "flashEmpty": "Bu mavzuda takrorlash uchun karta yoʻq"
+    "flashEmpty": "Bu mavzuda takrorlash uchun karta yoʻq",
+    "errorAnalysis": "Xato javoblar: {{count}} ta",
+    "noAnswer": "javob berilmagan",
+    "rereadKonspekt": "Konspektni qayta oʻqish",
+    "repeatTitle": "Takrorlash tavsiya etiladi",
+    "repeatHint": "{{n}} ta karta hali oʻzlashtirilmagan"
   },
   "search": {
     "placeholder": "Qidirish… (talaba, guruh, kurs)",

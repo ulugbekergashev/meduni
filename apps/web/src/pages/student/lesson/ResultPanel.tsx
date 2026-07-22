@@ -1,113 +1,246 @@
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ArrowRight, ClipboardList, Lock, PartyPopper, Sparkles, Stethoscope, TriangleAlert } from "lucide-react";
-import { Card, Icon, ProgressRing, cls } from "@meduni/ui";
-import type { Lesson } from "../api";
-import { finalScore } from "./stages";
+import {
+  ArrowRight,
+  BookText,
+  Check,
+  ClipboardList,
+  Lock,
+  PartyPopper,
+  Sparkles,
+  Stethoscope,
+  TriangleAlert,
+  X,
+} from "lucide-react";
+import { Icon, ProgressRing, cls } from "@meduni/ui";
+import { useAttempt, useFlashcards, type Lesson } from "../api";
+import { finalScore, type LessonView } from "./stages";
 
-function Breakdown({ icon, tone, label, value }: { icon: typeof ClipboardList; tone: string; label: string; value: string }) {
+function Row({
+  icon,
+  tone,
+  label,
+  value,
+  onClick,
+}: {
+  icon: typeof ClipboardList;
+  tone: string;
+  label: string;
+  value: string;
+  onClick?: () => void;
+}) {
+  const Wrapper = onClick ? "button" : "div";
   return (
-    <div className="flex items-center gap-3 border-b border-line py-2.5 last:border-b-0">
-      <div className={cls("flex h-8 w-8 shrink-0 items-center justify-center rounded-full", tone)}>
-        <Icon icon={icon} size={15} />
+    <Wrapper
+      onClick={onClick}
+      className={cls(
+        "flex w-full items-center gap-2.5 border-b border-line px-3 py-2.5 text-left last:border-b-0",
+        onClick && "transition-colors hover:bg-surface-raised"
+      )}
+    >
+      <div className={cls("flex h-7 w-7 shrink-0 items-center justify-center rounded-control", tone)}>
+        <Icon icon={icon} size={14} />
       </div>
-      <span className="flex-1 text-body font-semibold text-ink">{label}</span>
-      <span className="text-[17px] font-bold tabular-nums text-ink">{value}</span>
-    </div>
+      <span className="min-w-0 flex-1 truncate text-note font-bold text-ink">{label}</span>
+      <span className="shrink-0 text-note font-extrabold tabular-nums text-ink">{value}</span>
+    </Wrapper>
   );
 }
 
-export function ResultPanel({ lesson }: { lesson: Lesson }) {
+/** 1e — shu dars bo'yicha yakuniy natija (foydalanuvchi: "в самом конце все
+ *  результаты именно за этот урок"). */
+export function ResultPanel({ lesson, onView }: { lesson: Lesson; onView?: (v: LessonView) => void }) {
   const { t } = useTranslation(undefined, { keyPrefix: "lesson" });
   const navigate = useNavigate();
   const fs = finalScore(lesson);
   const hasScore = fs.value !== null;
 
+  const quiz = lesson.tabs.quiz;
+  const finishedId = quiz?.attempt?.status === "finished" ? quiz.attempt.id : null;
+  const attemptQ = useAttempt(finishedId);
+  const cardsQ = useFlashcards(lesson.topicId);
+
+  const sections = lesson.sections ?? [];
+  const readCount = sections.filter((s) => s.read).length;
+  const passed = quiz?.attempt?.passed ?? null;
+
+  // Xato javoblar — qayta o'qish uchun (savol manbasi bilan).
+  const wrong = (attemptQ.data?.questions ?? []).filter(
+    (q) => q.correctIndex !== undefined && q.studentAnswer !== q.correctIndex
+  );
+
   const next = lesson.nextTopic;
   const nextOpen = !!next && next.state !== "LOCKED";
+  const cards = cardsQ.data;
 
   return (
-    <div className="space-y-3">
-      <Card className="flex flex-col items-center gap-3 !p-4 text-center">
+    <div className="mx-auto max-w-[520px] space-y-3">
+      {/* Yakuniy ball */}
+      <div className="flex flex-col items-center gap-2 rounded-card border border-line bg-surface-raised p-5 text-center">
         {hasScore ? (
           <>
-            <ProgressRing value={fs.value ?? 0} size={96} stroke={10} tone="brand" />
-            <div>
-              <p className="text-section font-bold text-ink">{t("finalScore")}</p>
-              {fs.pendingCase && (
-                <p className="mt-1 inline-flex items-center gap-1.5 rounded-pill bg-amber-soft px-3 py-1 text-note font-semibold text-amber">
-                  <Icon icon={TriangleAlert} size={13} />
-                  {t("finalPendingCase")}
-                </p>
-              )}
-            </div>
-            <div className="w-full max-w-sm text-left">
-              {fs.quizPart !== null && (
-                <Breakdown
-                  icon={ClipboardList}
-                  tone="bg-blue-soft text-blue"
-                  label={t("finalBreakdownQuiz")}
-                  value={`${fs.quizPart}%`}
-                />
-              )}
-              {fs.casePart !== null && (
-                <Breakdown
-                  icon={Stethoscope}
-                  tone="bg-rose-soft text-rose"
-                  label={t("finalBreakdownCase")}
-                  value={String(fs.casePart)}
-                />
-              )}
-            </div>
+            <ProgressRing value={fs.value ?? 0} size={96} stroke={10} tone={passed === false ? "rose" : "brand"} />
+            <p className="text-section font-extrabold text-ink">{t("finalScore")}</p>
+            {passed !== null && (
+              <span
+                className={cls(
+                  "rounded-pill px-3 py-0.5 text-note font-extrabold",
+                  passed ? "bg-emerald-soft text-emerald" : "bg-rose-soft text-rose"
+                )}
+              >
+                {passed ? t("passedMsg") : t("failedMsg")}
+              </span>
+            )}
+            {fs.pendingCase && (
+              <p className="inline-flex items-center gap-1.5 rounded-control bg-amber-soft px-3 py-1 text-micro font-bold text-amber">
+                <Icon icon={TriangleAlert} size={12} />
+                {t("finalPendingCase")}
+              </p>
+            )}
           </>
         ) : (
           <>
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-soft text-emerald">
-              <Icon icon={PartyPopper} size={30} />
+            <div className="flex h-14 w-14 items-center justify-center rounded-card bg-emerald-soft text-emerald">
+              <Icon icon={PartyPopper} size={26} />
             </div>
-            <p className="text-section font-bold text-ink">{t("contentOnlyDone")}</p>
-            <p className="text-body text-ink-soft">{t("finalNoScore")}</p>
+            <p className="text-section font-extrabold text-ink">{t("contentOnlyDone")}</p>
+            <p className="text-note text-ink-dim">{t("finalNoScore")}</p>
           </>
         )}
+      </div>
 
-        {next ? (
-          nextOpen ? (
-            <button
-              onClick={() => navigate(`/app/topics/${next.id}`)}
-              className="flex items-center gap-2 rounded-control bg-brand px-5 py-2.5 text-body font-bold text-white transition-all hover:bg-brand-deep"
-            >
-              {t("nextTopicBtn")}
-              <Icon icon={ArrowRight} size={16} />
-            </button>
-          ) : (
-            <div className="flex items-center gap-2 rounded-control bg-bg px-5 py-2.5 text-body font-semibold text-ink-faint">
-              <Icon icon={Lock} size={15} />
-              {next.title}
-            </div>
-          )
-        ) : (
-          <button
-            onClick={() => navigate(`/app/courses/${lesson.courseId}`)}
-            className="rounded-control border border-line bg-surface px-5 py-2.5 text-body font-bold text-brand-deep transition-colors hover:bg-bg"
-          >
-            {t("backToPath")}
-          </button>
+      {/* Dars bo'yicha yakun */}
+      <div className="overflow-hidden rounded-card border border-line">
+        {sections.length > 0 && (
+          <Row
+            icon={BookText}
+            tone="bg-brand-soft text-brand-tint"
+            label={t("stage_study")}
+            value={`${readCount}/${sections.length}`}
+            onClick={onView ? () => onView("konspekt") : undefined}
+          />
         )}
-      </Card>
+        {quiz?.attempt?.status === "finished" && (
+          <Row
+            icon={ClipboardList}
+            tone="bg-blue-soft text-blue"
+            label={t("stage_quiz")}
+            value={`${attemptQ.data?.correctCount ?? "—"}/${attemptQ.data?.total ?? quiz.questionCount} · ${quiz.attempt.scorePct}%`}
+            onClick={onView ? () => onView("quiz") : undefined}
+          />
+        )}
+        {lesson.tabs.case?.attempt && (
+          <Row
+            icon={Stethoscope}
+            tone="bg-rose-soft text-rose"
+            label={t("stage_case")}
+            value={
+              lesson.tabs.case.attempt.reviewed
+                ? String(lesson.tabs.case.attempt.score ?? "—")
+                : t("stagePending")
+            }
+            onClick={onView ? () => onView("case") : undefined}
+          />
+        )}
+        {cards && !cards.locked && cards.total > 0 && (
+          <Row
+            icon={Sparkles}
+            tone="bg-violet-soft text-violet"
+            label={t("stage_flashcards")}
+            value={`${cards.knownCount}/${cards.total}`}
+            onClick={onView ? () => onView("flashcards") : undefined}
+          />
+        )}
+      </div>
 
-      {/* AI-yordamchi — keyingi sessiya */}
-      <Card className="flex items-start gap-2.5 !p-3 opacity-90">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-violet-soft text-violet">
-          <Icon icon={Sparkles} size={18} />
-        </div>
-        <div className="min-w-0">
-          <p className="flex items-center gap-2 text-body font-bold text-ink">
-            {t("aiChatSoon")}
-            <span className="rounded-pill bg-bg px-2 py-0.5 text-note font-bold text-ink-faint">{t("stageSoon")}</span>
+      {/* Xato javoblar tahlili */}
+      {wrong.length > 0 && (
+        <div className="rounded-card border border-line p-3">
+          <p className="mb-2 flex items-center gap-1.5 text-micro font-extrabold uppercase tracking-wider text-ink-dim">
+            <Icon icon={X} size={12} className="text-rose" strokeWidth={3} />
+            {t("errorAnalysis", { count: wrong.length })}
           </p>
-          <p className="mt-0.5 text-note text-ink-soft">{t("aiChatSoonBody")}</p>
+          <div className="space-y-2">
+            {wrong.map((q) => (
+              <div key={q.id} className="rounded-control bg-surface-raised p-2.5">
+                <p className="text-note font-bold leading-snug text-ink">{q.text}</p>
+                <p className="mt-1 text-micro text-ink-dim">
+                  <span className="text-rose">{q.options[q.studentAnswer ?? -1] ?? t("noAnswer")}</span>
+                  {" · "}
+                  <span className="font-bold text-emerald">{q.options[q.correctIndex ?? 0]}</span>
+                </p>
+                {q.sourceFragment && (
+                  <p className="mt-1 border-l-2 border-line pl-2 text-micro italic text-ink-dim">{q.sourceFragment}</p>
+                )}
+              </div>
+            ))}
+          </div>
+          {onView && (
+            <button
+              onClick={() => onView("konspekt")}
+              className="mt-2 inline-flex items-center gap-1.5 text-micro font-bold text-brand-tint hover:underline"
+            >
+              {t("rereadKonspekt")}
+              <Icon icon={ArrowRight} size={12} />
+            </button>
+          )}
         </div>
-      </Card>
+      )}
+
+      {/* Takrorlash taklifi */}
+      {cards && !cards.locked && cards.knownCount < cards.total && onView && (
+        <button
+          onClick={() => onView("flashcards")}
+          className="flex w-full items-center gap-2.5 rounded-card border border-line bg-surface-raised p-3 text-left transition-colors hover:border-brand-soft"
+        >
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-control bg-violet-soft text-violet">
+            <Icon icon={Sparkles} size={15} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-note font-bold text-ink">{t("repeatTitle")}</p>
+            <p className="text-micro text-ink-dim">
+              {t("repeatHint", { n: cards.total - cards.knownCount })}
+            </p>
+          </div>
+          <Icon icon={ArrowRight} size={14} className="shrink-0 text-ink-dim" />
+        </button>
+      )}
+
+      {/* Keyingi mavzu */}
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => navigate(`/app/courses/${lesson.courseId}`)}
+          className="rounded-control border border-line px-3 py-2 text-note font-bold text-ink-soft transition-colors hover:bg-surface-raised hover:text-ink"
+        >
+          {t("backToPath")}
+        </button>
+        {next && (
+          <div className="ml-auto">
+            {nextOpen ? (
+              <button
+                onClick={() => navigate(`/app/topics/${next.id}`)}
+                className="inline-flex items-center gap-2 rounded-control bg-brand px-4 py-2 text-note font-extrabold text-white transition-colors hover:bg-brand-deep"
+              >
+                {t("nextTopicBtn")}
+                <Icon icon={ArrowRight} size={14} />
+              </button>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 rounded-control bg-surface-raised px-3 py-2 text-note font-bold text-ink-dim">
+                <Icon icon={Lock} size={13} />
+                {next.title}
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Mavzu tugagani */}
+      {lesson.completed && (
+        <p className="flex items-center justify-center gap-1.5 text-micro font-bold text-emerald">
+          <Icon icon={Check} size={12} strokeWidth={3} />
+          {t("topicDone")}
+        </p>
+      )}
     </div>
   );
 }
