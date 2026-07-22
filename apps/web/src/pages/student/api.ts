@@ -196,14 +196,42 @@ export interface CaseAttemptData {
   referenceAnswer: string[];
   submittedAt: string;
   score: number | null;
+  /** v2 — qadam qarorlari bo'yicha avto-baho (0-100). */
+  autoScore: number | null;
   teacherFeedback: string | null;
   reviewed: boolean;
+}
+
+/** v2 — qadam varianti. `correct`/`feedback` faqat tanlangach/topshirgach keladi. */
+export interface CaseOption {
+  index: number;
+  text: string;
+  correct?: boolean;
+  feedback?: string;
+}
+
+export interface CaseStep {
+  index: number;
+  title: string;
+  prompt: string;
+  chosen: number | null;
+  options: CaseOption[];
+}
+
+export interface CasePatient {
+  name: string;
+  info: string;
+  vitals: { bp: string; pulse: string; spo2: string; temp: string } | null;
 }
 
 export interface CaseTabData {
   present: true;
   caseId: number;
   blocks: { complaints: string; anamnesis: string; objectiveStatus: string; labData: string };
+  /** v2 — bemor kartasi (bo'sh bo'lsa ko'rsatilmaydi). */
+  patient: CasePatient;
+  /** v2 — bosqichma-bosqich qarorlar. Bo'sh bo'lsa eski erkin-matnli format. */
+  steps: CaseStep[];
   questions: string[];
   attempt: CaseAttemptData | null;
 }
@@ -519,8 +547,11 @@ export function useAttempt(attemptId: number | null) {
 export function useSubmitCase(topicId: number) {
   const invalidate = useInvalidateLesson(topicId);
   return useMutation({
-    mutationFn: (b: { caseId: number; answers: string[] }) =>
-      api<CaseAttemptView>(`/api/v1/me/cases/${b.caseId}/attempts`, { method: "POST", body: JSON.stringify({ answers: b.answers }) }),
+    mutationFn: (b: { caseId: number; answers: string[]; steps?: Record<string, number> }) =>
+      api<CaseAttemptView>(`/api/v1/me/cases/${b.caseId}/attempts`, {
+        method: "POST",
+        body: JSON.stringify({ answers: b.answers, steps: b.steps }),
+      }),
     onSuccess: invalidate,
   });
 }

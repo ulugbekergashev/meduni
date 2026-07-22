@@ -127,6 +127,10 @@ export async function getTopicLesson(studentId: number, topicId: number) {
     const attempt = await prisma.caseAttempt.findUnique({
       where: { studentId_caseId: { studentId, caseId: cc.id } },
     });
+    const steps = caseJson.steps ?? [];
+    const picked = (attempt?.stepsJson as Record<string, number>) ?? {};
+    const submitted = !!attempt;
+
     caseTab = {
       present: true,
       caseId: cc.id,
@@ -136,6 +140,29 @@ export async function getTopicLesson(studentId: number, topicId: number) {
         objectiveStatus: caseJson.objectiveStatus,
         labData: caseJson.labData,
       },
+      /** v2 — bemor kartasi (bo'sh bo'lsa UI ko'rsatmaydi). */
+      patient: {
+        name: caseJson.patientName ?? "",
+        info: caseJson.patientInfo ?? "",
+        vitals: caseJson.vitals ?? null,
+      },
+      /** v2 — qadamlar. ⚠️ `correct`/`feedback` FAQAT talaba tanlagach yoki
+       *  topshirgach ochiladi — aks holda javob oshkor bo'lardi. */
+      steps: steps.map((s, si) => {
+        const chosen = picked[String(si)];
+        const reveal = submitted || chosen !== undefined;
+        return {
+          index: si,
+          title: s.title,
+          prompt: s.prompt,
+          chosen: chosen ?? null,
+          options: s.options.map((o, oi) => ({
+            index: oi,
+            text: o.text,
+            ...(reveal ? { correct: o.correct, feedback: o.feedback } : {}),
+          })),
+        };
+      }),
       questions: caseJson.questions,
       attempt: attempt
         ? {
@@ -144,6 +171,7 @@ export async function getTopicLesson(studentId: number, topicId: number) {
             referenceAnswer: caseJson.referenceAnswer, // revealed after submission
             submittedAt: attempt.submittedAt,
             score: attempt.score,
+            autoScore: attempt.autoScore,
             teacherFeedback: attempt.teacherFeedback,
             reviewed: attempt.reviewedAt !== null,
           }
@@ -467,7 +495,15 @@ async function caseWithTopic(caseId: number) {
 }
 
 function serializeCaseAttempt(
-  attempt: { id: number; answersJson: unknown; submittedAt: Date; score: number | null; teacherFeedback: string | null; reviewedAt: Date | null },
+  attempt: {
+    id: number;
+    answersJson: unknown;
+    submittedAt: Date;
+    score: number | null;
+    autoScore: number | null;
+    teacherFeedback: string | null;
+    reviewedAt: Date | null;
+  },
   caseJson: CaseJson
 ) {
   return {
@@ -477,12 +513,19 @@ function serializeCaseAttempt(
     questions: caseJson.questions,
     submittedAt: attempt.submittedAt,
     score: attempt.score,
+    // v2 — qadamlar bo'yicha avto-baho (eski urinishlarda null).
+    autoScore: attempt.autoScore,
     teacherFeedback: attempt.teacherFeedback,
     reviewed: attempt.reviewedAt !== null,
   };
 }
 
-export async function submitCase(studentId: number, caseId: number, answers: string[]) {
+export async function submitCase(
+  studentId: number,
+  caseId: number,
+  answers: string[],
+  steps?: Record<string, number>
+) {
   const cc = await caseWithTopic(caseId);
   await assertTopicOpen(studentId, cc.contentItem.topicId);
   const caseJson = cc.caseJson as unknown as CaseJson;
@@ -494,8 +537,32 @@ export async function submitCase(studentId: number, caseId: number, answers: str
     throw badRequest("Barcha savolga javob bering", "Ответьте на все вопросы");
   }
 
+  // v2 — qadam qarorlari: hammasi tanlangan bo'lishi shart, avto-baho hisoblanadi.
+  const defs = caseJson.steps ?? [];
+  const picked: Record<string, number> = {};
+  let autoScore: number | null = null;
+  if (defs.length > 0) {
+    let correct = 0;
+    for (let i = 0; i < defs.length; i++) {
+      const idx = steps?.[String(i)];
+      const optCount = defs[i].options.length;
+      if (!Number.isInteger(idx) || idx! < 0 || idx! >= optCount) {
+        throw badRequest("Barcha qadamda qaror qabul qiling", "Примите решение на всех шагах");
+      }
+      picked[String(i)] = idx!;
+      if (defs[i].options[idx!].correct) correct++;
+    }
+    autoScore = Math.round((correct / defs.length) * 100);
+  }
+
   const created = await prisma.caseAttempt.create({
-    data: { caseId, studentId, answersJson: answers.map((a) => a.trim()) },
+    data: {
+      caseId,
+      studentId,
+      answersJson: answers.map((a) => a.trim()),
+      stepsJson: picked,
+      autoScore,
+    },
   });
   await persistAndReport(studentId, cc.contentItem.topicId);
   return serializeCaseAttempt(created, caseJson);

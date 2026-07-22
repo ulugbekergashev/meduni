@@ -153,15 +153,45 @@ export const quizResponseSchema = {
 
 // ---------- Clinical case ----------
 
+// --- Klinik keys v2: bosqichma-bosqich qaror qabul qilish ---
+// Eski (v1) erkin-matnli keyslar SAQLANADI: `steps` bo'sh bo'lsa UI va backend
+// eski formatда ishlaydi (formatVersion 1). Yangi generatsiya v2 beradi.
+export const caseVitalsSchema = z.object({
+  bp: z.string().default(""), // AB 150/95
+  pulse: z.string().default(""),
+  spo2: z.string().default(""),
+  temp: z.string().default(""),
+});
+
+export const caseOptionSchema = z.object({
+  text: z.string(),
+  correct: z.boolean().default(false),
+  /** Tanlangach darhol ko'rsatiladigan izoh (nega to'g'ri / nega xato). */
+  feedback: z.string().default(""),
+});
+
+export const caseStepSchema = z.object({
+  title: z.string(), // "Tekshiruv tanlash"
+  prompt: z.string(), // "Birinchi navbatda qaysi tekshiruvni buyurasiz?"
+  options: z.array(caseOptionSchema),
+});
+
 export const caseSchema = z.object({
   complaints: z.string(),
   anamnesis: z.string(),
   objectiveStatus: z.string(),
   labData: z.string(),
+  /** v2 — bemor kartasi (ixtiyoriy, faqat materialda bo'lsa). */
+  patientName: z.string().default(""),
+  patientInfo: z.string().default(""), // "58 yosh, erkak"
+  vitals: caseVitalsSchema.optional(),
+  /** v2 — qadamlar. Bo'sh bo'lsa eski erkin-matnli format ishlaydi. */
+  steps: z.array(caseStepSchema).default([]),
   questions: z.array(z.string()),
   referenceAnswer: z.array(z.string()),
 });
 export type CaseJson = z.infer<typeof caseSchema>;
+export type CaseStep = z.infer<typeof caseStepSchema>;
 
 export const caseResponseSchema = {
   type: Type.OBJECT,
@@ -170,10 +200,52 @@ export const caseResponseSchema = {
     anamnesis: { type: Type.STRING },
     objectiveStatus: { type: Type.STRING },
     labData: { type: Type.STRING },
+    patientName: { type: Type.STRING },
+    patientInfo: { type: Type.STRING },
+    vitals: {
+      type: Type.OBJECT,
+      properties: {
+        bp: { type: Type.STRING },
+        pulse: { type: Type.STRING },
+        spo2: { type: Type.STRING },
+        temp: { type: Type.STRING },
+      },
+    },
+    steps: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          title: { type: Type.STRING },
+          prompt: { type: Type.STRING },
+          options: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                text: { type: Type.STRING },
+                correct: { type: Type.BOOLEAN },
+                feedback: { type: Type.STRING },
+              },
+              required: ["text", "correct", "feedback"],
+            },
+          },
+        },
+        required: ["title", "prompt", "options"],
+      },
+    },
     questions: { type: Type.ARRAY, items: { type: Type.STRING } },
     referenceAnswer: { type: Type.ARRAY, items: { type: Type.STRING } },
   },
-  required: ["complaints", "anamnesis", "objectiveStatus", "labData", "questions", "referenceAnswer"],
+  required: [
+    "complaints",
+    "anamnesis",
+    "objectiveStatus",
+    "labData",
+    "steps",
+    "questions",
+    "referenceAnswer",
+  ],
 };
 
 // ---------- Presentation slides ----------

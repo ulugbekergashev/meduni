@@ -164,12 +164,16 @@ meRouter.get("/attempts/:id", wrap(async (req, res) => res.json(await lesson.get
 
 // ---------- Case attempts ----------
 
-const caseAnswersSchema = z.object({ answers: z.array(z.string()) });
+const caseAnswersSchema = z.object({
+  answers: z.array(z.string()),
+  /** v2 — qadam qarorlari: { "0": 1, "1": 0, ... } */
+  steps: z.record(z.string(), z.number().int().min(0)).optional(),
+});
 meRouter.post(
   "/cases/:id/attempts",
   wrap(async (req, res) => {
     const b = parseBody(caseAnswersSchema, req.body);
-    res.json(await lesson.submitCase(req.user!.id, parseId(req.params.id), b.answers));
+    res.json(await lesson.submitCase(req.user!.id, parseId(req.params.id), b.answers, b.steps));
   })
 );
 

@@ -447,7 +447,13 @@ model CaseAttempt {
   clinicalCase    ClinicalCase @relation(fields: [caseId], references: [id])
   studentId       Int
   student         User         @relation("CaseStudent", fields: [studentId], references: [id])
-  answersJson     Json // string[] paired with case questions
+  answersJson     Json // string[] paired with case questions (v1 erkin matn)
+  /// v2 — qadam-qadam tanlangan variantlar: { [stepIndex]: optionIndex }.
+  /// Bo'sh bo'lsa keys eski (erkin matnli) formatда topshirilgan.
+  stepsJson       Json         @default("{}")
+  /// v2 — qadamlar bo'yicha avto-baho (to'g'ri qarorlar ulushi, 0-100).
+  /// Erkin matnli qismni baribir o'qituvchi baholaydi (gibrid baholash).
+  autoScore       Int?
   submittedAt     DateTime     @default(now())
   teacherFeedback String?
   score           Int?
