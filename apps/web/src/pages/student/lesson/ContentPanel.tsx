@@ -83,13 +83,16 @@ export function ContentPanel({
             </span>
           </div>
         }
-        bodyClassName="p-3"
+        bodyClassName="p-4"
       >
-        {view === "case" && lesson.tabs.case && <CaseTab topicId={topicId} data={lesson.tabs.case} />}
-        {view === "quiz" && lesson.tabs.quiz && <QuizTab topicId={topicId} data={lesson.tabs.quiz} />}
-        {view === "flashcards" && <FlashcardsTab topicId={topicId} />}
-        {view === "result" && <ResultPanel lesson={lesson} onView={setView} />}
-        {terminal && <NextStageBar stages={stages} currentKey={key as StageKey} onSelect={onStage} />}
+        {/* Fokusli yakka interfeys — markazlashgan, chalg'ituvchi yon panellar yo'q */}
+        <div className="mx-auto w-full max-w-[720px]">
+          {view === "case" && lesson.tabs.case && <CaseTab topicId={topicId} data={lesson.tabs.case} />}
+          {view === "quiz" && lesson.tabs.quiz && <QuizTab topicId={topicId} data={lesson.tabs.quiz} />}
+          {view === "flashcards" && <FlashcardsTab topicId={topicId} />}
+          {view === "result" && <ResultPanel lesson={lesson} onView={setView} />}
+          {terminal && <NextStageBar stages={stages} currentKey={key as StageKey} onSelect={onStage} />}
+        </div>
       </Panel>
     );
   }

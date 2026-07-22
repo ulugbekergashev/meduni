@@ -123,9 +123,16 @@ export function LessonPage() {
     ? (view as ContentView)
     : firstContentView(lesson);
   const isStudyView = view === "konspekt" || view === "slides" || view === "video";
+  /** 3 panel FAQAT o'rganishda. Test/keys/kartalar/natija/overview — FOKUSLI
+   *  yakka interfeys: chap rail ham, chat ham ko'rsatilmaydi (foydalanuvchi:
+   *  "bu interfeys faqat o'rganish uchun; test/natija/keys/flashcard uchun
+   *  alohida interfeys"). Halollik ham shu bilan hal: test paytida material/chat
+   *  umuman yo'q. */
+  const focusMode = !isStudyView;
 
   const materialsCount = lesson.materials.length + (lesson.links?.length ?? 0);
-  /** Test jarayonida (tugallanmagan urinish) — halollik rejimi. */
+  /** Test jarayonida (tugallanmagan urinish) — halollik rejimi (o'rganish
+   *  ko'rinishiga qaytilganda material/chat qulflanadi). */
   const quizRunning = !!lesson.tabs.quiz?.inProgressId;
 
   return (
@@ -152,58 +159,29 @@ export function LessonPage() {
           </span>
         )}
 
-        {/* Chap ustun toggle (default ochiq — u asosiy navigatsiya) */}
-        <button
-          onClick={toggleRail}
-          title={t("stage_study")}
-          className={cls(
-            "inline-flex shrink-0 items-center gap-1.5 rounded-control border border-line px-2 py-1 text-note font-bold transition-colors",
-            railOpen ? "bg-brand-soft text-brand-tint" : "text-ink-soft hover:bg-surface-raised"
-          )}
-        >
-          <Icon icon={PanelLeft} size={13} />
-          <span className="tabular-nums">{materialsCount}</span>
-        </button>
+        {/* Chap ustun toggle — faqat o'rganish rejimida ma'noli */}
+        {!focusMode && (
+          <button
+            onClick={toggleRail}
+            title={t("stage_study")}
+            className={cls(
+              "inline-flex shrink-0 items-center gap-1.5 rounded-control border border-line px-2 py-1 text-note font-bold transition-colors",
+              railOpen ? "bg-brand-soft text-brand-tint" : "text-ink-soft hover:bg-surface-raised"
+            )}
+          >
+            <Icon icon={PanelLeft} size={13} />
+            <span className="tabular-nums">{materialsCount}</span>
+          </button>
+        )}
       </div>
 
       {/* Bosqichlar — yuqori gorizontal stepper (layout v2) */}
       <StageStepper lesson={lesson} stages={stages} view={view} onSelect={onStage} onOverview={() => setView("overview")} />
 
-      {/* Panellar: [o'rganish bloklari] | KONTENT (fokus) | chat */}
-      <div
-        className={cls(
-          "grid gap-2 p-2 lg:min-h-0 lg:flex-1",
-          railOpen && view !== "overview"
-            ? "lg:grid-cols-[280px_minmax(0,1fr)_340px]"
-            : "lg:grid-cols-[minmax(0,1fr)_340px]"
-        )}
-      >
-        {railOpen && view !== "overview" && (
-          <div className="order-3 flex min-h-0 flex-col lg:order-1">
-            {/* O'rganish bloklari + bo'limlar TOC + materiallar.
-                Halollik rejimi: test jarayonida materiallar yopiq. */}
-            <StudyRail
-              lesson={lesson}
-              blocks={studyBlocks}
-              active={activeBlock}
-              onBlock={(v) => {
-                setJumpTo(null);
-                setView(v);
-              }}
-              sectionActive={isStudyView ? visibleSection : null}
-              onSection={(i) => {
-                if (view !== "konspekt") setView("konspekt");
-                setJumpTo(i);
-                // Bir xil bo'limni qayta bosish ham ishlashi uchun darhol tozalanadi.
-                setTimeout(() => setJumpTo(null), 600);
-              }}
-              locked={quizRunning}
-              lockedNote={t("materialsLockedQuiz")}
-            />
-          </div>
-        )}
-
-        <div className="order-1 flex min-h-0 min-w-0 flex-col lg:order-2">
+      {focusMode ? (
+        /* FOKUS REJIMI — test/keys/kartalar/natija/overview: yakka interfeys,
+           rail ham chat ham YO'Q. */
+        <div className="flex min-h-0 flex-1 flex-col p-2">
           {view === "overview" ? (
             <Panel bodyClassName="lg:overflow-y-auto">
               <LessonOverview
@@ -227,12 +205,59 @@ export function LessonPage() {
             />
           )}
         </div>
+      ) : (
+        /* O'RGANISH REJIMI — 3 panel: bloklar | kontent | AI-tutor */
+        <div
+          className={cls(
+            "grid gap-2 p-2 lg:min-h-0 lg:flex-1",
+            railOpen ? "lg:grid-cols-[280px_minmax(0,1fr)_340px]" : "lg:grid-cols-[minmax(0,1fr)_340px]"
+          )}
+        >
+          {railOpen && (
+            <div className="order-3 flex min-h-0 flex-col lg:order-1">
+              {/* O'rganish bloklari + bo'limlar TOC + materiallar.
+                  Halollik: test tugallanmagan bo'lsa materiallar qulf. */}
+              <StudyRail
+                lesson={lesson}
+                blocks={studyBlocks}
+                active={activeBlock}
+                onBlock={(v) => {
+                  setJumpTo(null);
+                  setView(v);
+                }}
+                sectionActive={visibleSection}
+                onSection={(i) => {
+                  if (view !== "konspekt") setView("konspekt");
+                  setJumpTo(i);
+                  // Bir xil bo'limni qayta bosish ham ishlashi uchun darhol tozalanadi.
+                  setTimeout(() => setJumpTo(null), 600);
+                }}
+                locked={quizRunning}
+                lockedNote={t("materialsLockedQuiz")}
+              />
+            </div>
+          )}
 
-        {/* O'ng ustun — AI-tutor chat (test paytida qulf — halollik) */}
-        <div className="order-2 flex min-h-0 flex-col lg:order-3">
-          <ChatPanel topicId={topicId} locked={quizRunning} />
+          <div className="order-1 flex min-h-0 min-w-0 flex-col lg:order-2">
+            <ContentPanel
+              lesson={lesson}
+              topicId={topicId}
+              view={view}
+              setView={setView}
+              stages={stages}
+              onStage={onStage}
+              section={jumpTo}
+              onVisibleSection={setVisibleSection}
+              onMarkRead={(i) => markRead.mutate(i)}
+            />
+          </div>
+
+          {/* AI-tutor — faqat o'rganishda (test paytida qulf) */}
+          <div className="order-2 flex min-h-0 flex-col lg:order-3">
+            <ChatPanel topicId={topicId} locked={quizRunning} />
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
