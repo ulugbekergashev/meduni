@@ -105,6 +105,8 @@ export async function getTopicLesson(studentId: number, topicId: number) {
       maxAttempts: q.maxAttempts,
       canStart: !inProgress && finishedCount < q.maxAttempts,
       inProgressId: inProgress?.id ?? null,
+      /** Vaqt chegarasi (daqiqa); 0 = cheklanmagan. */
+      timeLimitMin: q.timeLimitMin,
       attempt: latest
         ? {
             id: latest.id,
@@ -277,11 +279,32 @@ async function quizWithTopic(quizId: number) {
   return quiz;
 }
 
+interface AttemptRow {
+  id: number;
+  quizId: number;
+  answersJson: unknown;
+  flaggedJson: unknown;
+  scorePct: number;
+  passed: boolean;
+  attemptNo: number;
+  expiresAt: Date | null;
+  finishedAt: Date | null;
+}
+interface QuizRow {
+  passThreshold: number;
+  questions: {
+    id: number;
+    text: string;
+    optionsJson: unknown;
+    correctIndex: number;
+    explanationJson: unknown;
+    difficulty: string;
+    sourceFragment: string | null;
+  }[];
+}
+
 /** Serialize an attempt: public (no answers/explanations) while running; full analysis once finished. */
-function serializeAttempt(
-  attempt: { id: number; quizId: number; answersJson: unknown; scorePct: number; passed: boolean; attemptNo: number; finishedAt: Date | null },
-  quiz: { passThreshold: number; questions: { id: number; text: string; optionsJson: unknown; correctIndex: number; explanationJson: unknown; difficulty: string; sourceFragment: string | null }[] }
-) {
+function serializeAttempt(attempt: AttemptRow, quiz: QuizRow) {
   const answers = (attempt.answersJson as Record<string, number>) ?? {};
   const finished = attempt.finishedAt !== null;
   const total = quiz.questions.length;
@@ -295,6 +318,10 @@ function serializeAttempt(
     passThreshold: quiz.passThreshold,
     total,
     answers,
+    /** Belgilangan savollar (keyin qaytish uchun). */
+    flagged: ((attempt.flaggedJson as number[]) ?? []).filter((n) => Number.isInteger(n)),
+    /** Vaqt tugash momenti (ISO) yoki null — cheklanmagan. Timer shundan hisoblanadi. */
+    expiresAt: attempt.expiresAt ? attempt.expiresAt.toISOString() : null,
     scorePct: finished ? attempt.scorePct : null,
     passed: finished ? attempt.passed : null,
     correctCount: finished ? correctCount : null,
@@ -329,10 +356,31 @@ export async function startQuizAttempt(studentId: number, quizId: number) {
     throw new ApiError(403, "quiz_max_attempts", "Test allaqachon ishlangan", "Тест уже пройден");
   }
 
+  // Vaqt chegarasi bo'lsa — tugash momentini SERVER belgilaydi (klient soatiga
+  // ishonilmaydi); vaqt tugagach har qanday so'rovda avtomatik yakunlanadi.
+  const expiresAt =
+    quiz.timeLimitMin > 0 ? new Date(Date.now() + quiz.timeLimitMin * 60_000) : null;
+
   const created = await prisma.quizAttempt.create({
-    data: { quizId, studentId, answersJson: {}, attemptNo: finishedCount + 1 },
+    data: { quizId, studentId, answersJson: {}, attemptNo: finishedCount + 1, expiresAt },
   });
   return serializeAttempt(created, quiz);
+}
+
+/** Urinishni baholab yakunlaydi (finish va vaqt tugaganda ishlatiladi). */
+async function gradeAndFinish(studentId: number, attempt: AttemptRow, quiz: QuizRow & { contentItem: { topicId: number } }) {
+  const answers = (attempt.answersJson as Record<string, number>) ?? {};
+  const total = quiz.questions.length;
+  const correct = quiz.questions.filter((q) => answers[String(q.id)] === q.correctIndex).length;
+  const scorePct = total === 0 ? 0 : Math.round((correct / total) * 100);
+  const passed = scorePct >= quiz.passThreshold;
+
+  const finished = await prisma.quizAttempt.update({
+    where: { id: attempt.id },
+    data: { scorePct, passed, finishedAt: new Date() },
+  });
+  const topic = await persistAndReport(studentId, quiz.contentItem.topicId);
+  return { attempt: serializeAttempt(finished, quiz), topic };
 }
 
 async function ownAttempt(studentId: number, attemptId: number) {
@@ -344,8 +392,42 @@ async function ownAttempt(studentId: number, attemptId: number) {
   return { attempt, quiz };
 }
 
+/** Vaqti tugagan urinishni avtomatik yakunlaydi. Har o'qish/yozish yo'lida
+ *  chaqiriladi — klient timerni chetlab o'ta olmaydi. */
+async function autoFinishIfExpired(
+  studentId: number,
+  attempt: AttemptRow,
+  quiz: QuizRow & { contentItem: { topicId: number } }
+) {
+  if (attempt.finishedAt || !attempt.expiresAt) return null;
+  if (attempt.expiresAt.getTime() > Date.now()) return null;
+  return gradeAndFinish(studentId, attempt, quiz);
+}
+
+export async function setQuizFlag(studentId: number, attemptId: number, questionId: number, flagged: boolean) {
+  const { attempt, quiz } = await ownAttempt(studentId, attemptId);
+  const expired = await autoFinishIfExpired(studentId, attempt, quiz);
+  if (expired) return expired.attempt;
+  if (attempt.finishedAt) throw new ApiError(403, "attempt_finished", "Urinish yakunlangan", "Попытка завершена");
+
+  const exists = quiz.questions.some((q) => q.id === questionId);
+  if (!exists) throw notFound("Savol");
+
+  const cur = new Set(((attempt.flaggedJson as number[]) ?? []).filter((n) => Number.isInteger(n)));
+  if (flagged) cur.add(questionId);
+  else cur.delete(questionId);
+
+  const updated = await prisma.quizAttempt.update({
+    where: { id: attemptId },
+    data: { flaggedJson: [...cur] },
+  });
+  return serializeAttempt(updated, quiz);
+}
+
 export async function saveQuizAnswers(studentId: number, attemptId: number, answers: Record<string, number>) {
   const { attempt, quiz } = await ownAttempt(studentId, attemptId);
+  const expired = await autoFinishIfExpired(studentId, attempt, quiz);
+  if (expired) return expired.attempt; // vaqt tugagan — javob qabul qilinmaydi
   if (attempt.finishedAt) throw new ApiError(403, "attempt_finished", "Urinish yakunlangan", "Попытка завершена");
 
   // Keep only valid question ids / option indexes.
@@ -361,24 +443,15 @@ export async function saveQuizAnswers(studentId: number, attemptId: number, answ
 
 export async function finishQuizAttempt(studentId: number, attemptId: number) {
   const { attempt, quiz } = await ownAttempt(studentId, attemptId);
-  if (attempt.finishedAt) return { attempt: serializeAttempt(attempt, quiz), topic: await recomputeTopic(studentId, quiz.contentItem.topicId) };
-
-  const answers = (attempt.answersJson as Record<string, number>) ?? {};
-  const total = quiz.questions.length;
-  const correct = quiz.questions.filter((q) => answers[String(q.id)] === q.correctIndex).length;
-  const scorePct = total === 0 ? 0 : Math.round((correct / total) * 100);
-  const passed = scorePct >= quiz.passThreshold;
-
-  const finished = await prisma.quizAttempt.update({
-    where: { id: attemptId },
-    data: { scorePct, passed, finishedAt: new Date() },
-  });
-  const topic = await persistAndReport(studentId, quiz.contentItem.topicId);
-  return { attempt: serializeAttempt(finished, quiz), topic };
+  if (attempt.finishedAt)
+    return { attempt: serializeAttempt(attempt, quiz), topic: await recomputeTopic(studentId, quiz.contentItem.topicId) };
+  return gradeAndFinish(studentId, attempt, quiz);
 }
 
 export async function getQuizAttempt(studentId: number, attemptId: number) {
   const { attempt, quiz } = await ownAttempt(studentId, attemptId);
+  const expired = await autoFinishIfExpired(studentId, attempt, quiz);
+  if (expired) return expired.attempt;
   return serializeAttempt(attempt, quiz);
 }
 

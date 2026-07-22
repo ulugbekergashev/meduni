@@ -185,6 +185,8 @@ export interface QuizTabData {
   maxAttempts: number;
   canStart: boolean;
   inProgressId: number | null;
+  /** Vaqt chegarasi (daqiqa); 0 = cheklanmagan. */
+  timeLimitMin: number;
   attempt: QuizAttemptSummary | null;
 }
 
@@ -303,6 +305,10 @@ export interface QuizAttemptView {
   passThreshold: number;
   total: number;
   answers: Record<string, number>;
+  /** Belgilangan savol id'lari (keyin qaytish uchun). */
+  flagged: number[];
+  /** Vaqt tugash momenti (ISO) yoki null — cheklanmagan. */
+  expiresAt: string | null;
   scorePct: number | null;
   passed: boolean | null;
   correctCount: number | null;
@@ -416,6 +422,19 @@ export function useFinishAttempt(topicId: number) {
   return useMutation({
     mutationFn: (attemptId: number) => api<{ attempt: QuizAttemptView; topic: unknown }>(`/api/v1/me/attempts/${attemptId}/finish`, { method: "POST" }),
     onSuccess: invalidate,
+  });
+}
+
+/** Savolni belgilash / belgini olib tashlash (1c). */
+export function useFlagQuestion(attemptId: number | null) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (b: { questionId: number; flagged: boolean }) =>
+      api<QuizAttemptView>(`/api/v1/me/attempts/${attemptId}/flag`, {
+        method: "POST",
+        body: JSON.stringify(b),
+      }),
+    onSuccess: (view) => qc.setQueryData(["me-attempt", attemptId], view),
   });
 }
 

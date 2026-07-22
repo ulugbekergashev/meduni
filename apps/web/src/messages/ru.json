@@ -1333,7 +1333,10 @@
     "prevStep": "Назад",
     "nextStep": "Далее",
     "sectionFinish": "Раздел пройден",
-    "keyboardHint": "Переключайтесь клавишами ← →"
+    "keyboardHint": "Переключайтесь клавишами ← →",
+    "timeLimitN": "{{n}} мин",
+    "flagQuestion": "Отметить",
+    "materialsLockedQuiz": "Во время теста материалы временно закрыты — режим честности."
   },
   "search": {
     "placeholder": "Поиск… (студент, группа, курс)",
