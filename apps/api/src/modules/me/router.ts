@@ -128,6 +128,16 @@ meRouter.put(
 );
 
 meRouter.post("/attempts/:id/finish", wrap(async (req, res) => res.json(await lesson.finishQuizAttempt(req.user!.id, parseId(req.params.id)))));
+
+// Savolni belgilash / belgini olib tashlash (1c — "Belgilash").
+const flagSchema = z.object({ questionId: z.number().int().positive(), flagged: z.boolean() });
+meRouter.post(
+  "/attempts/:id/flag",
+  wrap(async (req, res) => {
+    const b = parseBody(flagSchema, req.body);
+    res.json(await lesson.setQuizFlag(req.user!.id, parseId(req.params.id), b.questionId, b.flagged));
+  })
+);
 meRouter.get("/attempts/:id", wrap(async (req, res) => res.json(await lesson.getQuizAttempt(req.user!.id, parseId(req.params.id)))));
 
 // ---------- Case attempts ----------

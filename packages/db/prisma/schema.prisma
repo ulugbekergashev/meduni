@@ -382,6 +382,9 @@ model Quiz {
   contentItem   ContentItem @relation(fields: [contentItemId], references: [id])
   passThreshold Int         @default(70)
   maxAttempts   Int         @default(1)
+  /// Vaqt chegarasi (daqiqa). 0 = cheklanmagan. Test boshlanganda
+  /// QuizAttempt.expiresAt shunga qarab hisoblanadi.
+  timeLimitMin  Int         @default(0)
   settingsJson  Json?
   questions     Question[]
   attempts      QuizAttempt[]
@@ -396,10 +399,15 @@ model QuizAttempt {
   studentId   Int
   student     User      @relation(fields: [studentId], references: [id])
   answersJson Json      @default("{}") // { [questionId]: selectedIndex }
+  /// Talaba "belgilab qo'ygan" savollar (keyin qaytish uchun): questionId[].
+  flaggedJson Json      @default("[]")
   scorePct    Int       @default(0)
   passed      Boolean   @default(false)
   attemptNo   Int       @default(1)
   startedAt   DateTime  @default(now())
+  /// Vaqt tugash momenti (timeLimitMin > 0 bo'lsa). Server shu vaqtdan keyin
+  /// urinishni avtomatik yakunlaydi — klient soatiga ishonilmaydi.
+  expiresAt   DateTime?
   finishedAt  DateTime?
 
   @@map("quiz_attempts")

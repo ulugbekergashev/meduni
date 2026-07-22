@@ -1,76 +1,88 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { AlertTriangle, Check, ChevronLeft, ChevronRight, ClipboardList, X } from "lucide-react";
-import { Card, Icon, Spinner, cls, useToast } from "@meduni/ui";
+import { ArrowLeft, ArrowRight, Check, ClipboardList, Clock, Flag, TriangleAlert, X } from "lucide-react";
+import { Icon, Spinner, cls, useToast } from "@meduni/ui";
 import { ConfirmDialog } from "../../../components/ConfirmDialog";
 import {
   useAttempt,
   useFinishAttempt,
+  useFlagQuestion,
   useSaveAnswers,
   useStartAttempt,
   type QuizAttemptView,
   type QuizTabData,
 } from "../api";
 
+/** mm:ss */
+function mmss(ms: number): string {
+  const s = Math.max(0, Math.floor(ms / 1000));
+  return `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
+}
+
+/** Server bergan expiresAt'dan qolgan vaqt. Server baribir avtomatik yakunlaydi —
+ *  bu faqat ko'rsatkich va o'z vaqtida finish chaqirish uchun. */
+function useCountdown(expiresAt: string | null, onExpire: () => void) {
+  const [left, setLeft] = useState(() => (expiresAt ? new Date(expiresAt).getTime() - Date.now() : 0));
+  useEffect(() => {
+    if (!expiresAt) return;
+    const tick = () => {
+      const ms = new Date(expiresAt).getTime() - Date.now();
+      setLeft(ms);
+      if (ms <= 0) onExpire();
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [expiresAt]);
+  return left;
+}
+
 function Intro({ data, onStart, starting }: { data: QuizTabData; onStart: () => void; starting: boolean }) {
   const { t } = useTranslation(undefined, { keyPrefix: "lesson" });
   return (
-    <div className="relative overflow-hidden rounded-[20px] border border-line/80 bg-gradient-to-b from-surface via-surface to-bg/50 p-6 sm:p-8 shadow-[0_10px_30px_rgba(0,0,0,0.06)] text-center">
-      {/* Background ambient glow */}
-      <div className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-brand/10 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-12 -left-12 h-40 w-40 rounded-full bg-blue/10 blur-3xl" />
-
-      <div className="relative z-10 flex flex-col items-center">
-        <div className="relative mb-5 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-tr from-brand/20 via-blue/20 to-indigo-500/20 p-0.5 shadow-inner">
-          <div className="flex h-full w-full items-center justify-center rounded-[14px] bg-surface text-brand shadow-card">
-            <Icon icon={ClipboardList} size={36} className="text-brand-deep" />
-          </div>
-        </div>
-
-        <h2 className="text-[20px] font-extrabold tracking-tight text-ink sm:text-[22px]">
-          {t("stage_quiz")}
-        </h2>
-
-        <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
-          <div className="flex items-center gap-2 rounded-full border border-line bg-surface/80 px-4 py-2 text-[14px] font-bold text-ink shadow-sm backdrop-blur-md">
-            <span className="h-2 w-2 rounded-full bg-blue" />
-            <span className="text-ink-soft">{t("questions")}:</span>
-            <span className="text-[16px] font-extrabold text-brand-deep">{data.questionCount}</span>
-          </div>
-          <div className="flex items-center gap-2 rounded-full border border-line bg-surface/80 px-4 py-2 text-[14px] font-bold text-ink shadow-sm backdrop-blur-md">
-            <span className="h-2 w-2 rounded-full bg-emerald" />
-            <span className="text-ink-soft">{t("passIs")}</span>
-            <span className="text-[16px] font-extrabold text-emerald">{data.passThreshold}%</span>
-          </div>
-        </div>
-
-        <div className="mt-6 flex w-full max-w-lg items-start gap-3 rounded-xl border border-amber/30 bg-amber-soft/60 p-4 text-left backdrop-blur-sm">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber/20 text-amber-deep">
-            <Icon icon={AlertTriangle} size={18} />
-          </div>
-          <p className="text-[13.5px] font-medium leading-relaxed text-ink-soft">
-            {t("quizWarning")}
-          </p>
-        </div>
-
-        <button
-          onClick={onStart}
-          disabled={starting}
-          className="group relative mt-6 flex w-full max-w-md items-center justify-center gap-2 overflow-hidden rounded-xl bg-gradient-to-r from-brand via-brand-deep to-indigo-600 px-6 py-4 text-[16px] font-extrabold text-white shadow-[0_8px_25px_rgba(37,99,235,0.3)] transition-all hover:scale-[1.01] hover:shadow-[0_12px_35px_rgba(37,99,235,0.4)] active:scale-[0.99] disabled:opacity-60"
-        >
-          {starting ? (
-            <span className="flex items-center justify-center gap-2">
-              <Spinner size={20} className="text-white" /> {t("starting")}
-            </span>
-          ) : (
-            <>
-              <span>{t("startQuiz")}</span>
-              <Icon icon={ChevronRight} size={18} className="transition-transform group-hover:translate-x-1" />
-            </>
-          )}
-        </button>
+    <div className="mx-auto max-w-[480px] py-6 text-center">
+      <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-card bg-blue-soft text-blue">
+        <Icon icon={ClipboardList} size={22} />
       </div>
+      <h2 className="text-section font-extrabold tracking-tight text-ink">{t("stage_quiz")}</h2>
+
+      <div className="mt-3 flex flex-wrap items-center justify-center gap-1.5">
+        <span className="rounded-control bg-surface-raised px-2.5 py-1 text-note font-bold text-ink-soft">
+          {t("questionsN", { n: data.questionCount })}
+        </span>
+        <span className="rounded-control bg-surface-raised px-2.5 py-1 text-note font-bold text-ink-soft">
+          {t("passIsN", { n: data.passThreshold })}
+        </span>
+        {data.timeLimitMin > 0 && (
+          <span className="inline-flex items-center gap-1 rounded-control bg-amber-soft px-2.5 py-1 text-note font-bold text-amber">
+            <Icon icon={Clock} size={12} />
+            {t("timeLimitN", { n: data.timeLimitMin })}
+          </span>
+        )}
+      </div>
+
+      <div className="mt-4 flex gap-2.5 rounded-control border-l-2 border-amber bg-amber-soft px-3.5 py-3 text-left">
+        <Icon icon={TriangleAlert} size={15} className="mt-0.5 shrink-0 text-amber" />
+        <p className="text-note leading-relaxed text-ink-strong">{t("quizWarning")}</p>
+      </div>
+
+      <button
+        onClick={onStart}
+        disabled={starting}
+        className="mt-4 flex w-full items-center justify-center gap-2 rounded-control bg-brand px-4 py-2.5 text-body font-extrabold text-white transition-colors hover:bg-brand-deep disabled:opacity-50"
+      >
+        {starting ? (
+          <>
+            <Spinner size={16} className="text-white" /> {t("starting")}
+          </>
+        ) : (
+          <>
+            {t("startQuiz")}
+            <Icon icon={ArrowRight} size={15} />
+          </>
+        )}
+      </button>
     </div>
   );
 }
@@ -81,19 +93,17 @@ function Running({ attempt, topicId }: { attempt: QuizAttemptView; topicId: numb
   const qc = useQueryClient();
   const save = useSaveAnswers();
   const finish = useFinishAttempt(topicId);
+  const flag = useFlagQuestion(attempt.id);
   const [qi, setQi] = useState(0);
   const [answers, setAnswers] = useState<Record<string, number>>(attempt.answers);
   const [confirm, setConfirm] = useState(false);
+  const [expired, setExpired] = useState(false);
 
   const q = attempt.questions[qi];
   const total = attempt.questions.length;
   const answeredCount = Object.keys(answers).length;
   const unanswered = total - answeredCount;
-
-  const pick = (idx: number) => {
-    setAnswers((a) => ({ ...a, [q.id]: idx }));
-    save.mutate({ attemptId: attempt.id, answers: { [q.id]: idx } }, { onSuccess: () => show(t("saved")) });
-  };
+  const flagged = new Set(attempt.flagged ?? []);
 
   const doFinish = () =>
     finish.mutate(attempt.id, {
@@ -103,35 +113,87 @@ function Running({ attempt, topicId }: { attempt: QuizAttemptView; topicId: numb
       },
     });
 
+  // Vaqt tugaganda — bir marta avtomatik yakunlash.
+  const left = useCountdown(attempt.expiresAt, () => {
+    if (!expired) {
+      setExpired(true);
+      doFinish();
+    }
+  });
+  const lowTime = attempt.expiresAt !== null && left <= 60_000;
+
+  const pick = (idx: number) => {
+    setAnswers((a) => ({ ...a, [q.id]: idx }));
+    save.mutate({ attemptId: attempt.id, answers: { [q.id]: idx } }, { onSuccess: () => show(t("saved")) });
+  };
+
   return (
-    <div className="space-y-5">
-      {/* Header & Progress Bar */}
-      <div className="rounded-xl border border-line bg-surface p-4 shadow-sm">
-        <div className="mb-2 flex items-center justify-between text-[14px] font-bold text-ink">
-          <span className="flex items-center gap-2">
-            <span className="flex h-6 w-6 items-center justify-center rounded-md bg-brand-soft text-[12px] font-black text-brand-deep">
-              {qi + 1}
-            </span>
-            {t("question")} {qi + 1} / {total}
+    <div className="space-y-3">
+      {/* Yuqori bar: savol raqami · timer · belgilash */}
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-micro font-extrabold uppercase tracking-wider text-ink-dim">
+          {t("question")} {qi + 1}/{total}
+        </span>
+        <span className="text-micro font-bold tabular-nums text-ink-dim">
+          · {answeredCount}/{total}
+        </span>
+
+        {attempt.expiresAt && (
+          <span
+            className={cls(
+              "inline-flex items-center gap-1 rounded-control px-2 py-0.5 text-note font-extrabold tabular-nums",
+              lowTime ? "bg-rose-soft text-rose" : "bg-surface-raised text-ink-soft"
+            )}
+          >
+            <Icon icon={Clock} size={12} />
+            {mmss(left)}
           </span>
-          <span className="rounded-full bg-bg px-3 py-1 text-[12.5px] font-semibold text-ink-soft border border-line">
-            {answeredCount} / {total} {t("saved")}
-          </span>
-        </div>
-        <div className="h-2 w-full overflow-hidden rounded-full bg-bg">
-          <div
-            className="h-full rounded-full bg-gradient-to-r from-brand to-indigo-500 transition-all duration-300"
-            style={{ width: `${((qi + 1) / total) * 100}%` }}
-          />
-        </div>
+        )}
+
+        <button
+          onClick={() => flag.mutate({ questionId: q.id, flagged: !flagged.has(q.id) })}
+          className={cls(
+            "ml-auto inline-flex items-center gap-1.5 rounded-control border px-2.5 py-1 text-note font-bold transition-colors",
+            flagged.has(q.id)
+              ? "border-amber bg-amber-soft text-amber"
+              : "border-line text-ink-soft hover:bg-surface-raised hover:text-ink"
+          )}
+        >
+          <Icon icon={Flag} size={12} />
+          {t("flagQuestion")}
+        </button>
       </div>
 
-      {/* Question Card */}
-      <Card className="space-y-5 p-6 shadow-md border-line/80">
-        <p className="text-[17px] font-bold leading-relaxed text-ink sm:text-[18px]">
-          {q.text}
-        </p>
-        <div className="space-y-2.5">
+      {/* Savol navigatori */}
+      <div className="flex flex-wrap gap-1">
+        {attempt.questions.map((qq, i) => {
+          const done = answers[qq.id] !== undefined;
+          const isFlagged = flagged.has(qq.id);
+          return (
+            <button
+              key={qq.id}
+              onClick={() => setQi(i)}
+              className={cls(
+                "flex h-6 w-6 items-center justify-center rounded-control text-micro font-extrabold tabular-nums transition-colors",
+                i === qi
+                  ? "bg-brand text-white"
+                  : isFlagged
+                    ? "bg-amber-soft text-amber"
+                    : done
+                      ? "bg-emerald-soft text-emerald"
+                      : "bg-surface-raised text-ink-dim hover:text-ink"
+              )}
+            >
+              {i + 1}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Savol */}
+      <div className="rounded-card border border-line bg-surface-raised p-4">
+        <p className="text-body font-bold leading-relaxed text-ink">{q.text}</p>
+        <div className="mt-3 space-y-1.5">
           {q.options.map((opt, oi) => {
             const selected = answers[q.id] === oi;
             return (
@@ -139,54 +201,54 @@ function Running({ attempt, topicId }: { attempt: QuizAttemptView; topicId: numb
                 key={oi}
                 onClick={() => pick(oi)}
                 className={cls(
-                  "group flex w-full items-center gap-3.5 rounded-xl border p-4 text-left transition-all duration-200",
+                  "flex w-full items-center gap-2.5 rounded-control border px-3 py-2.5 text-left transition-colors",
                   selected
-                    ? "border-brand bg-brand-soft/70 shadow-sm text-ink font-bold"
-                    : "border-line bg-surface/50 text-ink-soft hover:border-brand/40 hover:bg-bg hover:text-ink"
+                    ? "border-brand bg-brand-soft text-ink"
+                    : "border-line text-ink-soft hover:bg-surface hover:text-ink"
                 )}
               >
                 <span
                   className={cls(
-                    "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border text-[14px] font-black transition-all",
-                    selected
-                      ? "border-brand bg-brand text-white shadow-md shadow-brand/30"
-                      : "border-line bg-bg text-ink-faint group-hover:border-brand/40 group-hover:text-brand-deep"
+                    "flex h-6 w-6 shrink-0 items-center justify-center rounded-control text-micro font-extrabold",
+                    selected ? "bg-brand text-white" : "bg-surface text-ink-dim"
                   )}
                 >
                   {String.fromCharCode(65 + oi)}
                 </span>
-                <span className="min-w-0 flex-1 text-[15px] sm:text-[16px]">{opt}</span>
+                <span className="min-w-0 flex-1 text-note">{opt}</span>
               </button>
             );
           })}
         </div>
-      </Card>
+      </div>
 
-      {/* Footer Nav Controls */}
-      <div className="flex items-center justify-between gap-3 pt-2">
+      {/* Navigatsiya */}
+      <div className="flex items-center gap-2">
         <button
           onClick={() => setQi((p) => Math.max(p - 1, 0))}
           disabled={qi === 0}
-          className="flex items-center gap-1.5 rounded-xl border border-line bg-surface px-4 py-2.5 text-[14px] font-bold text-ink-soft transition-all hover:bg-bg disabled:opacity-40"
+          className="inline-flex items-center gap-1.5 rounded-control border border-line px-3 py-1.5 text-note font-bold text-ink-soft transition-colors hover:bg-surface-raised hover:text-ink disabled:opacity-30"
         >
-          <Icon icon={ChevronLeft} size={18} /> {t("prev")}
+          <Icon icon={ArrowLeft} size={14} /> {t("prev")}
         </button>
-        {qi < total - 1 ? (
-          <button
-            onClick={() => setQi((p) => Math.min(p + 1, total - 1))}
-            className="flex items-center gap-1.5 rounded-xl bg-ink px-5 py-2.5 text-[14.5px] font-bold text-white shadow-md transition-all hover:bg-ink/90 active:scale-95"
-          >
-            {t("next")} <Icon icon={ChevronRight} size={18} />
-          </button>
-        ) : (
-          <button
-            onClick={() => setConfirm(true)}
-            className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald to-emerald-deep px-6 py-2.5 text-[14.5px] font-extrabold text-white shadow-lg shadow-emerald/20 transition-all hover:scale-105 active:scale-95"
-          >
-            <Icon icon={Check} size={18} />
-            {t("finishQuiz")}
-          </button>
-        )}
+        <div className="ml-auto">
+          {qi < total - 1 ? (
+            <button
+              onClick={() => setQi((p) => Math.min(p + 1, total - 1))}
+              className="inline-flex items-center gap-1.5 rounded-control bg-brand px-3.5 py-1.5 text-note font-bold text-white transition-colors hover:bg-brand-deep"
+            >
+              {t("next")} <Icon icon={ArrowRight} size={14} />
+            </button>
+          ) : (
+            <button
+              onClick={() => setConfirm(true)}
+              className="inline-flex items-center gap-1.5 rounded-control bg-emerald px-3.5 py-1.5 text-note font-extrabold text-white transition-opacity hover:opacity-90"
+            >
+              <Icon icon={Check} size={14} strokeWidth={3} />
+              {t("finishQuiz")}
+            </button>
+          )}
+        </div>
       </div>
 
       <ConfirmDialog
@@ -206,59 +268,52 @@ function Running({ attempt, topicId }: { attempt: QuizAttemptView; topicId: numb
 function Result({ attempt }: { attempt: QuizAttemptView }) {
   const { t } = useTranslation(undefined, { keyPrefix: "lesson" });
   const passed = attempt.passed;
+
   return (
-    <div className="space-y-6">
-      {/* Result Hero Banner */}
-      <div
-        className={cls(
-          "relative overflow-hidden rounded-[20px] border p-6 text-center shadow-lg sm:p-8 backdrop-blur-md",
-          passed
-            ? "border-emerald/40 bg-gradient-to-b from-emerald-soft/80 via-surface to-surface"
-            : "border-rose/40 bg-gradient-to-b from-rose-soft/80 via-surface to-surface"
-        )}
-      >
-        <div className="relative z-10 flex flex-col items-center">
-          <div
-            className={cls(
-              "mb-4 flex h-16 w-16 items-center justify-center rounded-2xl shadow-inner",
-              passed ? "bg-emerald/20 text-emerald" : "bg-rose/20 text-rose"
-            )}
-          >
-            <Icon icon={passed ? Check : X} size={36} strokeWidth={3} />
-          </div>
-          <p className={cls("text-[42px] font-black tracking-tight tabular-nums sm:text-[48px]", passed ? "text-emerald" : "text-rose")}>
-            {attempt.scorePct}%
-          </p>
-          <p className={cls("mt-1 text-[18px] font-extrabold sm:text-[20px]", passed ? "text-emerald" : "text-rose")}>
-            {passed ? t("passedMsg") : t("failedMsg")}
-          </p>
-          <p className="mt-2 inline-flex items-center gap-2 rounded-full border border-line bg-surface/80 px-4 py-1.5 text-[14px] font-semibold text-ink-soft">
-            <span className="font-bold text-ink">{attempt.correctCount}</span> / {attempt.total} {t("correctAnswers")}
-          </p>
+    <div className="space-y-4">
+      {/* Ball */}
+      <div className="rounded-card border border-line bg-surface-raised p-5 text-center">
+        <div
+          className={cls(
+            "mx-auto mb-2 flex h-11 w-11 items-center justify-center rounded-card",
+            passed ? "bg-emerald-soft text-emerald" : "bg-rose-soft text-rose"
+          )}
+        >
+          <Icon icon={passed ? Check : X} size={22} strokeWidth={3} />
         </div>
+        <p className={cls("text-stat font-extrabold tabular-nums", passed ? "text-emerald" : "text-rose")}>
+          {attempt.scorePct}%
+        </p>
+        <p className={cls("text-body font-extrabold", passed ? "text-emerald" : "text-rose")}>
+          {passed ? t("passedMsg") : t("failedMsg")}
+        </p>
+        <p className="mt-1 text-note text-ink-dim">
+          <span className="font-bold tabular-nums text-ink">{attempt.correctCount}</span> / {attempt.total}{" "}
+          {t("correctAnswers")}
+        </p>
       </div>
 
       {!passed && (
-        <div className="flex items-center gap-3 rounded-xl border border-amber/30 bg-amber-soft/80 p-4 text-[14px] font-medium text-amber-deep">
-          <Icon icon={AlertTriangle} size={20} className="shrink-0" />
-          {t("cannotRetake")}
+        <div className="flex gap-2.5 rounded-control border-l-2 border-amber bg-amber-soft px-3.5 py-2.5">
+          <Icon icon={TriangleAlert} size={15} className="mt-0.5 shrink-0 text-amber" />
+          <p className="text-note text-ink-strong">{t("cannotRetake")}</p>
         </div>
       )}
 
-      {/* Question Breakdown Analysis */}
-      <div className="space-y-4">
-        <h3 className="text-[18px] font-extrabold tracking-tight text-ink">{t("analysis")}</h3>
-        <div className="space-y-4">
+      {/* Javoblar tahlili */}
+      <div>
+        <h3 className="mb-2 text-micro font-extrabold uppercase tracking-wider text-ink-dim">{t("analysis")}</h3>
+        <div className="space-y-2.5">
           {attempt.questions.map((q, i) => {
             const studentIdx = q.studentAnswer;
             const wrong = studentIdx !== q.correctIndex;
             return (
-              <Card key={q.id} className="space-y-3.5 p-5 shadow-sm border-line">
-                <p className="text-[16px] font-bold leading-snug text-ink">
-                  <span className="mr-2 text-ink-faint">{i + 1}.</span>
+              <div key={q.id} className="rounded-card border border-line bg-surface-raised p-3.5">
+                <p className="text-note font-bold leading-snug text-ink">
+                  <span className="mr-1.5 tabular-nums text-ink-dim">{i + 1}.</span>
                   {q.text}
                 </p>
-                <div className="space-y-2">
+                <div className="mt-2 space-y-1">
                   {q.options.map((opt, oi) => {
                     const isCorrect = oi === q.correctIndex;
                     const isStudentWrong = oi === studentIdx && wrong;
@@ -266,40 +321,33 @@ function Result({ attempt }: { attempt: QuizAttemptView }) {
                       <div
                         key={oi}
                         className={cls(
-                          "flex items-center gap-3 rounded-xl border p-3.5 text-[14.5px] transition-all",
-                          isCorrect && "border-emerald/40 bg-emerald-soft/60 font-semibold text-ink",
-                          isStudentWrong && "border-rose/40 bg-rose-soft/60 font-semibold text-ink",
-                          !isCorrect && !isStudentWrong && "border-line bg-surface/40 text-ink-soft opacity-70"
+                          "flex items-center gap-2 rounded-control px-2.5 py-1.5 text-note",
+                          isCorrect && "bg-emerald-soft font-bold text-ink",
+                          isStudentWrong && "bg-rose-soft font-bold text-ink",
+                          !isCorrect && !isStudentWrong && "text-ink-dim"
                         )}
                       >
                         {isCorrect ? (
-                          <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald text-white">
-                            <Icon icon={Check} size={14} strokeWidth={3} />
-                          </div>
+                          <Icon icon={Check} size={13} className="shrink-0 text-emerald" strokeWidth={3} />
                         ) : isStudentWrong ? (
-                          <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-rose text-white">
-                            <Icon icon={X} size={14} strokeWidth={3} />
-                          </div>
+                          <Icon icon={X} size={13} className="shrink-0 text-rose" strokeWidth={3} />
                         ) : (
-                          <span className="h-6 w-6 shrink-0 rounded-full border border-line bg-bg" />
+                          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-line" />
                         )}
                         <span className="min-w-0 flex-1">{opt}</span>
                         {studentIdx === oi && (
-                          <span className="shrink-0 rounded-md bg-bg border border-line px-2 py-1 text-[12px] font-bold text-ink-soft">
-                            {t("yourAnswer")}
-                          </span>
+                          <span className="shrink-0 text-micro font-bold text-ink-dim">{t("yourAnswer")}</span>
                         )}
                       </div>
                     );
                   })}
                 </div>
                 {q.explanations?.[q.correctIndex ?? 0] && (
-                  <div className="rounded-xl border border-blue/20 bg-blue-soft/60 p-3.5 text-[14px] text-ink leading-relaxed">
-                    <span className="font-bold text-blue-deep mr-1">Izoh:</span>
+                  <p className="mt-2 rounded-control border-l-2 border-blue bg-blue-soft px-3 py-2 text-note leading-relaxed text-ink-strong">
                     {q.explanations[q.correctIndex ?? 0]}
-                  </div>
+                  </p>
                 )}
-              </Card>
+              </div>
             );
           })}
         </div>
@@ -312,6 +360,7 @@ export function QuizTab({ topicId, data }: { topicId: number; data: QuizTabData 
   const start = useStartAttempt();
   const [startedId, setStartedId] = useState<number | null>(null);
 
+  // Which attempt is active: a freshly started one, else in-progress, else a finished one.
   const finishedId = data.attempt?.status === "finished" ? data.attempt.id : null;
   const attemptId = startedId ?? data.inProgressId ?? finishedId;
   const attemptQ = useAttempt(attemptId);
@@ -319,8 +368,17 @@ export function QuizTab({ topicId, data }: { topicId: number; data: QuizTabData 
   const onStart = () => start.mutate(data.quizId, { onSuccess: (a) => setStartedId(a.id) });
 
   if (attemptId === null) return <Intro data={data} onStart={onStart} starting={start.isPending} />;
-  if (attemptQ.isLoading) return <div className="flex justify-center py-10"><Spinner size={28} /></div>;
+  if (attemptQ.isLoading)
+    return (
+      <div className="flex justify-center py-10">
+        <Spinner size={24} />
+      </div>
+    );
   if (!attemptQ.data) return <Intro data={data} onStart={onStart} starting={start.isPending} />;
 
-  return attemptQ.data.status === "finished" ? <Result attempt={attemptQ.data} /> : <Running attempt={attemptQ.data} topicId={topicId} />;
+  return attemptQ.data.status === "finished" ? (
+    <Result attempt={attemptQ.data} />
+  ) : (
+    <Running attempt={attemptQ.data} topicId={topicId} />
+  );
 }

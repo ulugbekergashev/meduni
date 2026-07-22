@@ -105,6 +105,8 @@ export function LessonPage() {
   const activeSection = section ?? (firstUnread === -1 ? 0 : firstUnread);
 
   const materialsCount = lesson.materials.length + (lesson.links?.length ?? 0);
+  /** Test jarayonida (tugallanmagan urinish) — halollik rejimi. */
+  const quizRunning = !!lesson.tabs.quiz?.inProgressId;
 
   return (
     <div className="flex flex-col lg:h-full">
@@ -158,7 +160,13 @@ export function LessonPage() {
       >
         {materialsOpen && (
           <div className="order-3 flex min-h-0 flex-col lg:order-1">
-            <MaterialsPanel materials={lesson.materials} links={lesson.links ?? []} />
+            {/* Halollik rejimi: test jarayonida materiallar ham, chat ham yopiq. */}
+            <MaterialsPanel
+              materials={lesson.materials}
+              links={lesson.links ?? []}
+              locked={quizRunning}
+              lockedNote={t("materialsLockedQuiz")}
+            />
           </div>
         )}
 
@@ -189,7 +197,7 @@ export function LessonPage() {
 
         {/* O'ng ustun — AI-tutor chat (test paytida qulf — halollik) */}
         <div className="order-2 flex min-h-0 flex-col lg:order-3">
-          <ChatPanel topicId={topicId} locked={!!lesson.tabs.quiz?.inProgressId} />
+          <ChatPanel topicId={topicId} locked={quizRunning} />
         </div>
       </div>
     </div>

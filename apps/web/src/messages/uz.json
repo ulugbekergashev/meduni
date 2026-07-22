@@ -1333,7 +1333,10 @@
     "prevStep": "Orqaga",
     "nextStep": "Keyingi",
     "sectionFinish": "Boʻlim tugadi",
-    "keyboardHint": "← → tugmalari bilan oʻtishingiz mumkin"
+    "keyboardHint": "← → tugmalari bilan oʻtishingiz mumkin",
+    "timeLimitN": "{{n}} daqiqa",
+    "flagQuestion": "Belgilash",
+    "materialsLockedQuiz": "Test davomida materiallar vaqtincha yopiq — halollik rejimi."
   },
   "search": {
     "placeholder": "Qidirish… (talaba, guruh, kurs)",
