@@ -27,6 +27,21 @@ export const parseErrorMessages: Record<ParseErrorCode, { uz: string; ru: string
   READ_FAILED: { uz: "Faylni oʻqib boʻlmadi", ru: "Не удалось прочитать файл" },
 };
 
+/** PDF bet soni — xom fayldagi `/Type /Page` obyektlarini sanaydi.
+ *  Ishonchli aniqlay olmasa `null` qaytaradi: UI soxta raqam ko'rsatmasligi
+ *  kerak (reja, Xavf #3). Faqat pdf uchun; boshqa turlarda null. */
+export function pdfPageCount(buffer: Buffer, fileType: string): number | null {
+  if (fileType.toLowerCase() !== "pdf") return null;
+  try {
+    // "/Type /Page" — sahifa obyekti; "/Pages" (daraxt tuguni) hisobga olinmaydi.
+    const matches = buffer.toString("latin1").match(/\/Type\s*\/Page(?![sA-Za-z])/g);
+    const n = matches?.length ?? 0;
+    return n > 0 && n < 10000 ? n : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function extractText(buffer: Buffer, fileType: string): Promise<ParseOutcome> {
   const ext = fileType.toLowerCase();
 

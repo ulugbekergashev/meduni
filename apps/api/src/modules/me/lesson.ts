@@ -50,11 +50,34 @@ export async function getTopicLesson(studentId: number, topicId: number) {
       // O'qituvchi manba materiallari (talaba faqat asl faylni ko'radi/yuklab
       // oladi — parse ichki maydonlari sizib chiqmaydi).
       materials: { orderBy: { createdAt: "asc" } },
+      // Tashqi manbalar (darslik boblari, klinik ma'lumotnomalar).
+      links: { orderBy: [{ orderIndex: "asc" }, { id: "asc" }] },
       // AI konspekt — FAQAT o'qituvchi tasdiqlagan bo'lsa ko'rsatiladi.
       digest: true,
     },
   });
   if (!topic) throw notFound("Mavzu");
+
+  // Konspekt bo'limlari + shu talaba qaysilarini o'qigani (1a "O'qildi n/N").
+  const digestJson = topic.digest?.approvedByTeacher
+    ? (topic.digest.digestJson as unknown as DigestJson)
+    : null;
+  const sectionsRaw = digestJson?.sections ?? [];
+  const reads = sectionsRaw.length
+    ? await prisma.sectionRead.findMany({
+        where: { studentId, topicId },
+        select: { sectionIndex: true },
+      })
+    : [];
+  const readSet = new Set(reads.map((r) => r.sectionIndex));
+  const sections = sectionsRaw.map((s, i) => ({
+    index: i,
+    title: s.title,
+    minutes: s.minutes,
+    sourceRef: s.sourceRef || null,
+    blocks: s.blocks,
+    read: readSet.has(i),
+  }));
 
   const rule = state; // TopicOut carries elements; thresholds come from the course rule below
   const progress = await prisma.progress.findUnique({ where: { studentId_topicId: { studentId, topicId } } });
@@ -141,10 +164,24 @@ export async function getTopicLesson(studentId: number, topicId: number) {
     completed: state.state === "COMPLETED",
     thresholds: { video: videoThreshold, quizPass: quizItem?.quiz?.passThreshold ?? 70 },
     elements: rule.elements,
-    // Chap panel — o'qituvchi materiallari (faqat asl fayl metama'lumoti).
-    materials: topic.materials.map((m) => ({ id: m.id, fileName: m.fileName, fileType: m.fileType })),
+    // Chap panel — o'qituvchi materiallari ("PDF · 24 bet · 2.1 MB").
+    materials: topic.materials.map((m) => ({
+      id: m.id,
+      fileName: m.fileName,
+      fileType: m.fileType,
+      sizeBytes: m.sizeBytes,
+      pageCount: m.pageCount,
+    })),
+    links: topic.links.map((l) => ({ id: l.id, title: l.title, url: l.url, note: l.note })),
     // O'rta panel — AI konspekt (tasdiqlanmagan bo'lsa null → video/slaydlarga fallback).
-    digest: topic.digest?.approvedByTeacher ? (topic.digest.digestJson as unknown as DigestJson) : null,
+    digest: digestJson,
+    /** v2 bo'limli o'qish (bo'sh bo'lsa — eski yassi konspekt renderi). */
+    sections,
+    /** Mavzuning taxminiy vaqti (bo'limlar + test + keys). */
+    estimatedMinutes:
+      sectionsRaw.reduce((n, s) => n + (s.minutes || 0), 0) +
+      (quizItem?.quiz ? quizItem.quiz.questions.length : 0) +
+      (caseItem ? 10 : 0),
     tabs: {
       video: videoItem?.video
         ? {
@@ -178,6 +215,29 @@ export async function getTopicLesson(studentId: number, topicId: number) {
       case: caseTab,
     },
   };
+}
+
+// ---------- Konspekt bo'limi o'qildi (1a) ----------
+
+/** Bo'limni o'qilgan deb belgilaydi (idempotent). Mavzu qulflangan bo'lsa 403. */
+export async function markSectionRead(studentId: number, topicId: number, sectionIndex: number) {
+  await assertTopicOpen(studentId, topicId);
+  if (!Number.isInteger(sectionIndex) || sectionIndex < 0) throw badRequest("Boʻlim notoʻgʻri", "Неверный раздел");
+
+  // Bo'lim haqiqatan mavjudmi (tasdiqlangan konspektda) — aks holda yozmaymiz.
+  const digest = await prisma.topicDigest.findUnique({ where: { topicId } });
+  const sections = digest?.approvedByTeacher
+    ? ((digest.digestJson as unknown as DigestJson).sections ?? [])
+    : [];
+  if (sectionIndex >= sections.length) throw notFound("Boʻlim");
+
+  await prisma.sectionRead.upsert({
+    where: { studentId_topicId_sectionIndex: { studentId, topicId, sectionIndex } },
+    create: { studentId, topicId, sectionIndex },
+    update: {},
+  });
+  const readCount = await prisma.sectionRead.count({ where: { studentId, topicId } });
+  return { ok: true, readCount, total: sections.length };
 }
 
 // ---------- Video / slides progress ----------

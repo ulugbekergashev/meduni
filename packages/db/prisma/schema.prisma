@@ -129,6 +129,7 @@ model User {
   auditLogs         AuditLog[]
   progress          Progress[]
   overriddenProgress Progress[]      @relation("ProgressOverrider")
+  sectionReads      SectionRead[]
   quizAttempts      QuizAttempt[]
   caseAttempts      CaseAttempt[]    @relation("CaseStudent")
   reviewedCases     CaseAttempt[]    @relation("CaseReviewer")
@@ -267,9 +268,11 @@ model Topic {
   syllabusNote   String?
   createdAt      DateTime         @default(now())
   materials      SourceMaterial[]
+  links          TopicLink[]
   digest         TopicDigest?
   contentItems   ContentItem[]
   progress       Progress[]
+  sectionReads   SectionRead[]
   sessions       LessonSession[]
 
   @@map("topics")
@@ -496,6 +499,11 @@ model SourceMaterial {
   fileUrl       String
   fileName      String
   fileType      String
+  /// Talabaga ko'rsatiladigan metama'lumot ("PDF · 24 bet · 2.1 MB").
+  /// pageCount faqat parse aniqlay olsa to'ladi — aks holda UI uni yashiradi
+  /// (soxta raqam ko'rsatilmaydi).
+  sizeBytes     Int?
+  pageCount     Int?
   parsedTextUrl String?
   parseStatus   ParseStatus @default(PENDING)
   parseError    String?
@@ -504,6 +512,39 @@ model SourceMaterial {
   createdAt     DateTime    @default(now())
 
   @@map("source_materials")
+}
+
+/// Mavzuga biriktirilgan tashqi manba (darslik bobi, klinik ma'lumotnoma).
+/// O'qituvchi qo'shadi; talaba chap panelda "Tashqi havola" sifatida ko'radi.
+model TopicLink {
+  id        Int      @id @default(autoincrement())
+  topicId   Int
+  topic     Topic    @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  title     String
+  url       String
+  /// Ixtiyoriy izoh ("Guyton & Hall, 11-bob").
+  note      String?
+  orderIndex Int     @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([topicId])
+  @@map("topic_links")
+}
+
+/// Konspekt bo'limi o'qilganini kuzatish (1a "O'qildi 2/6").
+/// Progress'dan alohida: Progress mavzu darajasida, bu bo'lim darajasida.
+model SectionRead {
+  id           Int      @id @default(autoincrement())
+  studentId    Int
+  student      User     @relation(fields: [studentId], references: [id])
+  topicId      Int
+  topic        Topic    @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  sectionIndex Int
+  readAt       DateTime @default(now())
+
+  @@unique([studentId, topicId, sectionIndex])
+  @@index([studentId, topicId])
+  @@map("section_reads")
 }
 
 model CourseGroup {

@@ -92,6 +92,14 @@ meRouter.post(
 
 meRouter.post("/topics/:id/slides-viewed", wrap(async (req, res) => res.json(await lesson.setSlidesViewed(req.user!.id, parseId(req.params.id)))));
 
+// Konspekt bo'limi o'qildi (1a — "O'qildi n/N").
+meRouter.post(
+  "/topics/:id/sections/:index/read",
+  wrap(async (req, res) =>
+    res.json(await lesson.markSectionRead(req.user!.id, parseId(req.params.id), Number(req.params.index)))
+  )
+);
+
 // ---------- Quiz attempts ----------
 
 meRouter.post("/quizzes/:id/attempts", wrap(async (req, res) => res.json(await lesson.startQuizAttempt(req.user!.id, parseId(req.params.id)))));

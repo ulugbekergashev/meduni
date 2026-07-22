@@ -11,7 +11,126 @@
 import { prisma } from "../lib/prisma";
 import { saveMaterialFile, saveParsedText } from "../lib/storage";
 
+/** v2 — bo'limli konspekt ("Mavzu ekrani" 1a). Har bo'limda vaqt + manba bet. */
+const SECTIONS = [
+  {
+    title: "Kirish — yurakning asosiy xossalari",
+    minutes: 3,
+    sourceRef: "Ma'ruza, 1–3-betlar",
+    blocks: [
+      {
+        type: "para",
+        text: "Yurak to'rtta asosiy fiziologik xossaga ega: avtomatizm, qo'zg'aluvchanlik, o'tkazuvchanlik va qisqaruvchanlik. Shu xossalar birgalikda yurakning uzluksiz nasos vazifasini ta'minlaydi.",
+      },
+      {
+        type: "list",
+        ordered: false,
+        items: [
+          { lead: "Avtomatizm", text: "tashqi qo'zg'atuvchisiz o'zidan impuls hosil qilish." },
+          { lead: "Qo'zg'aluvchanlik", text: "qo'zg'atuvchiga javob berish qobiliyati." },
+          { lead: "O'tkazuvchanlik", text: "impulsni miokard bo'ylab tarqatish." },
+          { lead: "Qisqaruvchanlik", text: "mexanik ish bajarish — qonni haydash." },
+        ],
+      },
+      {
+        type: "callout",
+        tone: "important",
+        text: "Miokard 'hammasi yoki hech narsa' qonuniga bo'ysunadi va uzoq refrakter davrga ega — shuning uchun skelet mushagidan farqli o'laroq tetanik qisqarmaydi.",
+      },
+    ],
+  },
+  {
+    title: "Yurak sikli",
+    minutes: 4,
+    sourceRef: "Ma'ruza, 6–9-betlar",
+    blocks: [
+      {
+        type: "para",
+        text: "Yurak sikli — bitta yurak urishi davomida sodir bo'ladigan elektrik va mexanik hodisalar ketma-ketligi. U ikki asosiy fazadan iborat: sistola (qisqarish) va diastola (bo'shashish).",
+      },
+      {
+        type: "callout",
+        tone: "important",
+        text: "Normal sharoitda sikl davomiyligi ~0,8 s: bo'lmacha sistolasi ~0,1 s, qorincha sistolasi ~0,3 s, umumiy pauza ~0,4 s. Taxikardiyada asosan diastola qisqaradi.",
+      },
+      {
+        type: "list",
+        ordered: true,
+        items: [
+          { lead: "Atriyal sistola", text: "bo'lmachalar qisqarib, qorinchalarni to'ldiradi." },
+          { lead: "Izovolumetrik qisqarish", text: "barcha klapanlar yopiq, bosim keskin ortadi." },
+          { lead: "Ejeksiya", text: "qon aorta va o'pka arteriyasiga otiladi." },
+          { lead: "Izovolumetrik bo'shashish", text: "klapanlar yopiq, bosim tushadi." },
+        ],
+      },
+    ],
+  },
+  {
+    title: "O'tkazuvchi tizim",
+    minutes: 4,
+    sourceRef: "Ma'ruza, 10–14-betlar",
+    blocks: [
+      {
+        type: "para",
+        text: "Impuls sinoatrial tugunda hosil bo'lib, bo'lmachalar miokardi orqali atrioventrikulyar tugunga yetadi, so'ng Giss tutami va Purkinye tolalari orqali qorinchalarga tarqaladi.",
+      },
+      {
+        type: "list",
+        ordered: true,
+        items: [
+          { lead: "SA tugun", text: "o'ng bo'lmachada, 60–100 imp/daq — birlamchi vodiy ritm." },
+          { lead: "AV tugun", text: "impulsni ~0,1 s ushlaydi; o'z chastotasi 40–60 imp/daq." },
+          { lead: "Giss tutami", text: "impulsni qorinchalararo to'siq bo'ylab o'tkazadi." },
+          { lead: "Purkinye tolalari", text: "20–40 imp/daq; qorinchalarni deyarli bir vaqtda qo'zg'atadi." },
+        ],
+      },
+      {
+        type: "callout",
+        tone: "warning",
+        text: "Yuqori vodiy ritm markazi ishdan chiqsa, quyi markaz o'z chastotasida ishga tushadi — shuning uchun yurak butunlay to'xtab qolmaydi.",
+      },
+    ],
+  },
+  {
+    title: "Gemodinamika ko'rsatkichlari",
+    minutes: 3,
+    sourceRef: "Ma'ruza, 15–18-betlar",
+    blocks: [
+      {
+        type: "para",
+        text: "Yurakning nasos funksiyasi zarba hajmi va yurak chiqishi bilan baholanadi. Bu ko'rsatkichlar organizm ehtiyojiga qarab keng diapazonda o'zgaradi.",
+      },
+      {
+        type: "list",
+        ordered: false,
+        items: [
+          { lead: "Zarba hajmi", text: "tinch holatda ~70 ml." },
+          { lead: "Yurak chiqishi", text: "zarba hajmi × yurak urishi soni ≈ 5 l/daq." },
+          { lead: "Ejeksiya fraksiyasi", text: "normada 55–70%." },
+        ],
+      },
+      {
+        type: "callout",
+        tone: "important",
+        text: "Frank–Starling qonuni: diastolada miokard tolalari qancha ko'p cho'zilsa, keyingi qisqarish kuchi shuncha katta bo'ladi.",
+      },
+    ],
+  },
+  {
+    title: "Xulosa",
+    minutes: 2,
+    sourceRef: "Ma'ruza, 19-bet",
+    blocks: [
+      {
+        type: "para",
+        text: "Yurak avtomatizmi SA tugun bilan boshlanadi, o'tkazuvchi tizim orqali tarqaladi va yurak siklining aniq fazalarida mexanik ishga aylanadi. Gemodinamika ko'rsatkichlari shu jarayonning samaradorligini aks ettiradi.",
+      },
+    ],
+  },
+];
+
 const DIGEST = {
+  sections: SECTIONS,
   objectives: [
     "Yurak avtomatizmi va uni ta'minlovchi tuzilmalarni tushuntirish",
     "Yurak o'tkazuvchi tizimining bo'limlarini va impuls tarqalish yo'lini izohlash",
@@ -131,24 +250,57 @@ async function main() {
   for (const m of MATERIALS) {
     const exists = await prisma.sourceMaterial.findFirst({ where: { topicId, fileName: m.fileName } });
     if (exists) {
-      console.log(`· mavjud: ${m.fileName}`);
+      // Eski yozuvlarda metama'lumot yo'q — to'ldiramiz.
+      if (exists.sizeBytes === null) {
+        await prisma.sourceMaterial.update({
+          where: { id: exists.id },
+          data: { sizeBytes: Buffer.byteLength(m.body, "utf8") },
+        });
+        console.log(`· yangilandi (hajm): ${m.fileName}`);
+      } else {
+        console.log(`· mavjud: ${m.fileName}`);
+      }
       continue;
     }
+    const buf = Buffer.from(m.body, "utf8");
     const row = await prisma.sourceMaterial.create({
       data: {
         topicId,
         fileUrl: "",
         fileName: m.fileName,
         fileType: m.fileType,
+        sizeBytes: buf.length,
         parseStatus: "DONE",
         uploadedById: teacher.id,
       },
     });
-    const buf = Buffer.from(m.body, "utf8");
     const fileUrl = await saveMaterialFile(topicId, row.id, m.fileName, buf);
     const parsedTextUrl = await saveParsedText(topicId, row.id, m.body);
     await prisma.sourceMaterial.update({ where: { id: row.id }, data: { fileUrl, parsedTextUrl } });
     console.log(`✓ Material: ${m.fileName}`);
+  }
+
+  // 3) Tashqi manbalar (chap panel, "Tashqi havola").
+  const LINKS = [
+    {
+      title: "Guyton & Hall — Textbook of Medical Physiology",
+      url: "https://www.sciencedirect.com/book/9780323597128/guyton-and-hall-textbook-of-medical-physiology",
+      note: "9-bo'lim: Yurak mushagi va qon aylanishi",
+    },
+    {
+      title: "AMBOSS — Cardiac physiology",
+      url: "https://www.amboss.com/us/knowledge/cardiac-physiology",
+      note: "Klinik ma'lumotnoma",
+    },
+  ];
+  for (const [i, l] of LINKS.entries()) {
+    const exists = await prisma.topicLink.findFirst({ where: { topicId, url: l.url } });
+    if (exists) {
+      console.log(`· mavjud havola: ${l.title}`);
+      continue;
+    }
+    await prisma.topicLink.create({ data: { topicId, ...l, orderIndex: i } });
+    console.log(`✓ Havola: ${l.title}`);
   }
 
   console.log("\nTayyor. Dars sahifasini oching: /app/topics/" + topicId);
