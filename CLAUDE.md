@@ -89,11 +89,15 @@ brand, emerald, amber, blue, rose (amber↔emerald yonma-yon faqat 2px oraliq/yo
 
 ### O'lchamlar
 - Karta radius 16px, tugma/input 10px, badge/pill 20px (dumaloq)
-- Sarlavha h1: 28px/700, katta raqam: 36px/700 tabular-nums, bo'lim: 16px/700, matn: 14px, izoh: 12.5px/ink-faint (2026-07 scale-up: hammasi kattalashtirildi)
+- **Shrift shkalasi — `packages/ui/tailwind.config.ts` tokenlari** (2026-07-23 +1 pog'ona):
+  `h1` 22 · `stat` 34 · `section` 16 · `body` 14 · `note` 12.5 · `micro` 11.5 · `read` 16/1.75.
+  **`micro` (11.5px) — MUTLAQ MINIMUM.** `text-[10px]`/`text-[11px]` kabi arbitrary
+  qiymatlar TAQIQ. O'qish ustunida sarlavha/marker o'lchamlari **em** da beriladi
+  (A−/A+ bilan birga masshtablansin), px da EMAS.
 - Soyalar tokenli: `--shadow-card` / `--shadow-card-hover` (ink-tinted, dark'da o'z varianti); Tailwind `shadow-card`/`shadow-card-hover`
 - Sana formati: `lib/date.ts::formatDate(locale, date, "long|short|shortYear")` — uz oy nomlari qo'lda ("15-iyul, 2026-yil"; uz-UZ ICU "M07" buzuq), toLocaleDateString'ni oy-nomli formatda ISHLATMA
 - Panel padding 12-16px (`p-3`/`p-4`), kartalar orasi **8-12px** (`gap-2`/`gap-3`) — ZICHLIK QOIDASIga qarang
-- Shrift: Inter / system-ui
+- Shrift: **Manrope** (`@fontsource-variable/manrope`) → Inter → system-ui
 
 ### Umumiy komponentlar (packages/ui da)
 Button (primary/deep/ghost/soft/danger, sm/md/lg, ikonka, hoverда brand→brand-deep, active:scale-98), StatusPill (draft/review/published), Card (p-6, shadow-card, hoverда ko'tariladi), **StatCard (ikonka-chip + katta raqam + label/hint; tone=class string; selected=filtr holati; compact)**, Icon (SVG, stroke 1.7 yoki lucide-react), Input/Textarea (focusда brand chegara+ring), Modal (markazда, Escape+tashqi bosishда yopiladi), Toast (pastда, 2.6s, ok/warn), Spinner, EmptyState (text+hint+action, dashed karta), **Sidebar layout (272px, YORUG' — oq surface, border-r, faol=brand-soft chip + chap indigo indikator; `--side-*` tokenlar, dark'da o'z varianti)**, Charts (ProgressRing def 116/11, **Donut (segmentli, 2px oraliq, markazda qiymat) + LegendRow**, BarRow, MiniBars, StackedBar 2px-gap segmentlar). Kontent max-w 1280px. Tablar: segmented uslub (bordered surface track p-1, faol=brand-soft chip) — TabNav/GroupProfile/LessonPage bir xil.
@@ -117,6 +121,43 @@ bo'sh ekran qolmaydi.
 - Panel ichi padding: `p-3`/`p-4` (ixcham), panel shapkasi `px-3 py-2`.
 - Har yangi sahifadan keyin savol: *"ekranda ma'nosiz bo'sh joy bormi?"* — bo'lsa
   qayta ishla.
+
+### ⛔ OVOZ IERARXIYASI QOIDASI (2026-07-23 — "samolyot boshqaruvi" muammosi)
+
+Buyurtmachi shikoyati: *"joylashuvlar norm, lekin huddi samolyot boshqaruviga
+o'xshaydi, qiyinligidan"*. Sabab **layout emas** edi — uchala ustun bir xil
+"baland ovozda" turardi va bitta holat 4-5 joyda takrorlanardi.
+
+1. **Bir ekranda faqat BITTA yoritilgan yuza.** Asosiy (o'qiladigan) panel —
+   `bg-surface` + `border` + `rounded-card`. Xizmatchi ustunlar (rail, chat)
+   kartaga O'RALMAYDI: sahifa fonida, chegarasiz turadi.
+   `lesson/Panel.tsx::tone` — `"content"` va `"chrome"`. Yangi ish sahifasi
+   qursang shu naqshni takrorla.
+2. **Bitta fakt — bitta joy.** "O'qildi 5/5" tipidagi holat ekranda BIR marta
+   ko'rinadi. Yangi indikator qo'shishdan oldin: *"bu ma'lumot allaqachon
+   qayerdadir bormi?"* Agar bor bo'lsa — qo'shma yoki eskisini olib tashla.
+3. **"Tugadi" holati yorqin rang EMAS.** To'ldirilgan emerald chip faqat
+   yakuniy bosqich markerida. Ro'yxatlarda tugagan element = kontur belgi
+   (`text-emerald` + check), fon yo'q. Ekranda 10 ta yashil doira — shovqin.
+4. **UPPERCASE dietasi.** `uppercase tracking-wider` faqat: bo'lim eyebrow'i,
+   guruh ajratgichi, callout yorlig'i (MUHIM/OGOHLANTIRISH). Panel sarlavhasi
+   oddiy registrda.
+5. **font-extrabold (800) — faqat sarlavhalarga.** Ro'yxat qatorlari, chiplar,
+   yon panel matni `font-semibold`/`font-bold`.
+
+### Motion qoidasi (2026-07-23)
+- Kutubxona: **motion.dev** — loyihada `framer-motion` 12 paketi sifatida
+  (API aynan bir xil; yangi kod `motion/react` import yo'liga o'tishi mumkin).
+- **anime.js v4** — faqat imperativ TIMELINE kerak bo'lganda (bir nechta turli
+  nishonni ketma-ket boshqarish). Namuna: `ResultPanel::useResultIntro`
+  (`createScope({root})` + `createTimeline()`, unmount'da `scope.revert()`).
+  U ~18kB — shuning uchun ishlatgan komponent **`React.lazy` bilan alohida
+  chunkka** chiqariladi.
+- Faol holat indikatorlari `layoutId` bilan "suzadi" (stepper, rail, TOC).
+- **Har animatsiya `useReducedMotion()` bilan o'chadi.** Loop/pulse/glow YO'Q.
+- Barcha bosiladigan elementda `focus-visible:ring-2 focus-visible:ring-brand`.
+- kokonut ui / bklit ui — shadcn *registry* (copy-paste), loyihaga o'rnatilmaydi:
+  naqsh olinadi, style qatlami o'z tokenlarimizda qayta yoziladi.
 
 ### Tamoyillar
 - Har statistika o'z rangida (talaba=ko'k, o'qituvchi=violet, kurs=brand/indigo, ...)
