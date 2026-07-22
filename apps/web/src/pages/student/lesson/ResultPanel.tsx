@@ -1,5 +1,8 @@
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { useReducedMotion } from "framer-motion";
+import { createScope, createTimeline, stagger, type Scope } from "animejs";
 import {
   ArrowRight,
   BookText,
@@ -33,9 +36,11 @@ function Row({
   return (
     <Wrapper
       onClick={onClick}
+      data-anim="row"
       className={cls(
         "flex w-full items-center gap-2.5 border-b border-line px-3 py-2.5 text-left last:border-b-0",
-        onClick && "transition-colors hover:bg-surface-raised"
+        onClick &&
+          "transition-colors hover:bg-surface-raised focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
       )}
     >
       <div className={cls("flex h-7 w-7 shrink-0 items-center justify-center rounded-control", tone)}>
@@ -45,6 +50,48 @@ function Row({
       <span className="shrink-0 text-note font-extrabold tabular-nums text-ink">{value}</span>
     </Wrapper>
   );
+}
+
+/** Natija ekranining kirish xoreografiyasi — anime.js timeline (v4 `createScope`).
+ *  Bitta timeline bir nechta TURLI nishonni ketma-ket boshqaradi: halqa qiymati
+ *  (React state orqali), so'ng yakun qatorlari stagger bilan. Shu sababdan
+ *  bu yerda deklarativ per-komponent animatsiya emas, imperativ timeline. */
+function useResultIntro(target: number, enabled: boolean) {
+  const root = useRef<HTMLDivElement>(null);
+  const scope = useRef<Scope | null>(null);
+  const reduce = useReducedMotion();
+  const [ringValue, setRingValue] = useState(reduce || !enabled ? target : 0);
+
+  useEffect(() => {
+    if (reduce || !enabled) {
+      setRingValue(target);
+      return;
+    }
+    if (!root.current) return;
+
+    const counter = { v: 0 };
+    scope.current = createScope({ root }).add(() => {
+      createTimeline()
+        // Halqa 0 dan yakuniy ballgacha "o'sadi" (raqam ham u bilan sanaladi).
+        .add(
+          counter,
+          {
+            v: target,
+            duration: 900,
+            ease: "outExpo",
+            onUpdate: () => setRingValue(Math.round(counter.v)),
+          },
+          150
+        )
+        .add('[data-anim="row"]', { opacity: [0, 1], y: [10, 0], duration: 380, ease: "outQuad", delay: stagger(60) }, 300);
+    });
+
+    return () => {
+      scope.current?.revert();
+    };
+  }, [target, enabled, reduce]);
+
+  return { root, ringValue };
 }
 
 /** 1e — shu dars bo'yicha yakuniy natija (foydalanuvchi: "в самом конце все
@@ -73,13 +120,15 @@ export function ResultPanel({ lesson, onView }: { lesson: Lesson; onView?: (v: L
   const nextOpen = !!next && next.state !== "LOCKED";
   const cards = cardsQ.data;
 
+  const { root, ringValue } = useResultIntro(fs.value ?? 0, hasScore);
+
   return (
-    <div className="mx-auto max-w-[520px] space-y-3">
+    <div ref={root} className="mx-auto max-w-[520px] space-y-3">
       {/* Yakuniy ball */}
       <div className="flex flex-col items-center gap-2 rounded-card border border-line bg-surface-raised p-5 text-center">
         {hasScore ? (
           <>
-            <ProgressRing value={fs.value ?? 0} size={96} stroke={10} tone={passed === false ? "rose" : "brand"} />
+            <ProgressRing value={ringValue} size={96} stroke={10} tone={passed === false ? "rose" : "brand"} />
             <p className="text-section font-extrabold text-ink">{t("finalScore")}</p>
             {passed !== null && (
               <span

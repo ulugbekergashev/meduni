@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, CheckCircle2, PanelLeft } from "lucide-react";
+import { ArrowLeft, PanelLeft } from "lucide-react";
 import { Icon, Spinner, cls } from "@meduni/ui";
 import { apiErrorMessage } from "../../../lib/api";
 import { useLocale } from "../../../lib/useLocale";
@@ -46,7 +46,7 @@ function viewAvailable(v: LessonView, lesson: Lesson): boolean {
     case "slides":
       return !!lesson.tabs.slides;
     case "materials":
-      return lesson.materials.some((m) => m.hasText);
+      return lesson.materials.length > 0 || (lesson.links?.length ?? 0) > 0;
     case "case":
       return !!lesson.tabs.case;
     case "quiz":
@@ -131,7 +131,9 @@ export function LessonPage() {
   if (lesson.digest || sections.length > 0) studyBlocks.push("konspekt");
   if (lesson.tabs.slides) studyBlocks.push("slides");
   if (lesson.tabs.video) studyBlocks.push("video");
-  if (lesson.materials.some((m) => m.hasText)) studyBlocks.push("materials");
+  // Materiallar bloki fayl YOKI havola bo'lsa turadi (matn ajratilmagan bo'lsa
+  // ham — u holda blok ichida faqat yuklab olish ro'yxati ochiladi).
+  if (lesson.materials.length > 0 || (lesson.links?.length ?? 0) > 0) studyBlocks.push("materials");
   const activeBlock: ContentView = studyBlocks.includes(view as ContentView)
     ? (view as ContentView)
     : firstContentView(lesson);
@@ -144,7 +146,6 @@ export function LessonPage() {
    *  umuman yo'q. */
   const focusMode = !isStudyView;
 
-  const materialsCount = lesson.materials.length + (lesson.links?.length ?? 0);
   /** Test jarayonida (tugallanmagan urinish) — halollik rejimi (o'rganish
    *  ko'rinishiga qaytilganda material/chat qulflanadi). */
   const quizRunning = !!lesson.tabs.quiz?.inProgressId;
@@ -161,36 +162,32 @@ export function LessonPage() {
           {lesson.subjectName}
         </button>
         <span className="text-line">/</span>
-        <span className="text-micro font-extrabold uppercase tracking-wider text-ink-dim">
+        <span className="text-note font-semibold text-ink-dim">
           {t("topic")} {lesson.orderIndex}
         </span>
         <h1 className="min-w-0 flex-1 truncate text-section font-extrabold tracking-tight text-ink">{lesson.title}</h1>
 
-        {lesson.completed && (
-          <span className="inline-flex shrink-0 items-center gap-1 rounded-pill bg-emerald-soft px-2 py-0.5 text-micro font-extrabold text-emerald">
-            <Icon icon={CheckCircle2} size={12} />
-            {t("topicDone")}
-          </span>
-        )}
-
-        {/* Chap ustun toggle — faqat o'rganish rejimida ma'noli */}
+        {/* Chap ustun toggle — faqat o'rganish rejimida ma'noli. Raqam yo'q:
+            rail ochilganda tarkib baribir ko'rinadi. */}
         {!focusMode && (
           <button
             onClick={toggleRail}
             title={t("stage_study")}
             className={cls(
-              "inline-flex shrink-0 items-center gap-1.5 rounded-control border border-line px-2 py-1 text-note font-bold transition-colors",
-              railOpen ? "bg-brand-soft text-brand-tint" : "text-ink-soft hover:bg-surface-raised"
+              "inline-flex shrink-0 items-center rounded-control p-1.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
+              railOpen ? "text-brand-tint" : "text-ink-faint hover:bg-surface-raised hover:text-ink"
             )}
           >
-            <Icon icon={PanelLeft} size={13} />
-            <span className="tabular-nums">{materialsCount}</span>
+            <Icon icon={PanelLeft} size={15} />
           </button>
         )}
       </div>
 
-      {/* Bosqichlar — yuqori gorizontal stepper (layout v2) */}
-      <StageStepper lesson={lesson} stages={stages} view={view} onSelect={onStage} onOverview={() => setView("overview")} />
+      {/* Bosqichlar — obzor ekranida ko'rsatilmaydi (u yerda bosqichlar
+          allaqachon katta ro'yxatda; ikki marta chizish shovqin edi). */}
+      {view !== "overview" && (
+        <StageStepper lesson={lesson} stages={stages} view={view} onSelect={onStage} onOverview={() => setView("overview")} />
+      )}
 
       {focusMode ? (
         /* FOKUS REJIMI — test/keys/kartalar/natija/overview: yakka interfeys,
@@ -223,12 +220,12 @@ export function LessonPage() {
         /* O'RGANISH REJIMI — 3 panel: bloklar | kontent | AI-tutor */
         <div
           className={cls(
-            "grid gap-2 p-2 lg:min-h-0 lg:flex-1",
-            railOpen ? "lg:grid-cols-[280px_minmax(0,1fr)_340px]" : "lg:grid-cols-[minmax(0,1fr)_340px]"
+            "grid gap-2 p-2 transition-[grid-template-columns] duration-200 ease-out lg:min-h-0 lg:flex-1",
+            railOpen ? "lg:grid-cols-[264px_minmax(0,1fr)_320px]" : "lg:grid-cols-[0px_minmax(0,1fr)_320px]"
           )}
         >
           {railOpen && (
-            <div className="order-3 flex min-h-0 flex-col lg:order-1">
+            <div className="order-3 flex min-h-0 flex-col overflow-hidden lg:order-1">
               {/* O'rganish bloklari + bo'limlar TOC + materiallar.
                   Halollik: test tugallanmagan bo'lsa materiallar qulf. */}
               <StudyRail

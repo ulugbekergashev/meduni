@@ -17,7 +17,7 @@ function MaterialBlock({ material, defaultOpen }: { material: LessonMaterial; de
         <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-control bg-surface-raised text-ink-soft">
           <Icon icon={FileText} size={14} />
         </div>
-        <span className="min-w-0 flex-1 truncate text-note font-extrabold text-ink">{material.fileName}</span>
+        <span className="min-w-0 flex-1 truncate text-note font-bold text-ink">{material.fileName}</span>
         <Icon
           icon={ChevronDown}
           size={15}
@@ -32,7 +32,8 @@ function MaterialBlock({ material, defaultOpen }: { material: LessonMaterial; de
               <Spinner size={18} />
             </div>
           ) : (
-            <pre className="whitespace-pre-wrap break-words font-sans text-note leading-[1.75] text-ink-strong">
+            /* Mini-konspekt — bu o'qiladigan matn, UI yorlig'i emas */
+            <pre className="whitespace-pre-wrap break-words font-sans text-read text-ink-strong">
               {text.data?.text}
             </pre>
           )}
