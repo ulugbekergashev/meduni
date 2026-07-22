@@ -5,33 +5,51 @@ import { ArrowLeft, ArrowRight, Check, Lock, RotateCcw, Sparkles, X } from "luci
 import { EmptyState, Icon, Spinner, cls } from "@meduni/ui";
 import { useFlashcards, useResetFlashcards, useReviewFlashcard, type Flashcard } from "../api";
 
+const FACE =
+  "absolute inset-0 flex flex-col items-center justify-center gap-2.5 rounded-card border border-line bg-surface-raised p-5 text-center [backface-visibility:hidden]";
+
+function KindBadge({ kind }: { kind: Flashcard["kind"] }) {
+  const { t } = useTranslation(undefined, { keyPrefix: "lesson" });
+  return (
+    <span
+      className={cls(
+        "rounded-pill px-2 py-0.5 text-micro font-extrabold uppercase tracking-wider",
+        kind === "quiz" ? "bg-blue-soft text-blue" : "bg-violet-soft text-violet"
+      )}
+    >
+      {kind === "quiz" ? t("cardFromQuiz") : t("cardFromTerm")}
+    </span>
+  );
+}
+
+/** Fleshkarta — haqiqiy 3D ag'darish (fleshkartaning kanonik jesti).
+ *  Ikkala yuza ham DOM'da turadi, `backface-visibility` bilan yashiriladi. */
 function Card({ card, flipped, onFlip }: { card: Flashcard; flipped: boolean; onFlip: () => void }) {
   const { t } = useTranslation(undefined, { keyPrefix: "lesson" });
+  const reduce = useReducedMotion();
+
   return (
     <button
       onClick={onFlip}
-      className="flex min-h-[190px] w-full flex-col items-center justify-center gap-2.5 rounded-card border border-line bg-surface-raised p-5 text-center transition-colors hover:border-brand-soft"
+      aria-label={t("cardTapToFlip")}
+      className="block min-h-[190px] w-full [perspective:1200px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
     >
-      <span
-        className={cls(
-          "rounded-pill px-2 py-0.5 text-micro font-extrabold uppercase tracking-wider",
-          card.kind === "quiz" ? "bg-blue-soft text-blue" : "bg-violet-soft text-violet"
-        )}
+      <motion.div
+        animate={{ rotateY: flipped ? 180 : 0 }}
+        transition={reduce ? { duration: 0 } : { type: "spring", stiffness: 260, damping: 26 }}
+        className="relative min-h-[190px] w-full [transform-style:preserve-3d]"
       >
-        {card.kind === "quiz" ? t("cardFromQuiz") : t("cardFromTerm")}
-      </span>
-
-      {!flipped ? (
-        <>
+        <div className={FACE}>
+          <KindBadge kind={card.kind} />
           <p className="text-body font-bold leading-snug text-ink">{card.front}</p>
           <p className="text-micro text-ink-dim">{t("cardTapToFlip")}</p>
-        </>
-      ) : (
-        <>
+        </div>
+        <div className={cls(FACE, "[transform:rotateY(180deg)]")}>
+          <KindBadge kind={card.kind} />
           <p className="text-body font-extrabold leading-snug text-emerald">{card.back}</p>
           {card.note && <p className="text-note leading-relaxed text-ink-soft">{card.note}</p>}
-        </>
-      )}
+        </div>
+      </motion.div>
     </button>
   );
 }
@@ -141,14 +159,14 @@ export function FlashcardsTab({ topicId }: { topicId: number }) {
         ))}
       </div>
 
-      {/* Karta */}
+      {/* Karta — almashuvda siljish, ag'darishda 3D burilish (Card ichida) */}
       <AnimatePresence mode="wait">
         <motion.div
-          key={card.key + (flipped ? "-b" : "-f")}
-          initial={reduce ? false : { opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={reduce ? undefined : { opacity: 0, y: -8 }}
-          transition={{ duration: 0.18 }}
+          key={card.key}
+          initial={reduce ? false : { opacity: 0, x: 24 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={reduce ? undefined : { opacity: 0, x: -24 }}
+          transition={{ duration: 0.18, ease: "easeOut" }}
         >
           <Card card={card} flipped={flipped} onFlip={() => setFlipped((f) => !f)} />
         </motion.div>

@@ -1,5 +1,7 @@
+import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { Check, ChevronRight, Clock, Lock } from "lucide-react";
+import { motion, useMotionValue, useReducedMotion, useSpring, useTransform } from "framer-motion";
+import { Check, Clock, LayoutGrid, Lock } from "lucide-react";
 import { Icon, cls } from "@meduni/ui";
 import type { Lesson } from "../api";
 import { overallPct, type LessonView, type StageInfo, type StageKey } from "./stages";
@@ -13,30 +15,62 @@ function activeStageKey(view: LessonView): StageKey | null {
 }
 
 function Marker({ n, state, active }: { n: number; state: StageInfo["state"]; active: boolean }) {
-  const base = "flex h-5 w-5 shrink-0 items-center justify-center rounded-pill text-micro font-extrabold tabular-nums";
-  if (state === "done")
-    return (
+  const reduce = useReducedMotion();
+  const base =
+    "flex h-5 w-5 shrink-0 items-center justify-center rounded-pill text-micro font-extrabold tabular-nums";
+
+  const inner =
+    state === "done" ? (
       <span className={cls(base, "bg-emerald text-white")}>
         <Icon icon={Check} size={11} strokeWidth={3.5} />
       </span>
-    );
-  if (state === "pendingReview")
-    return (
+    ) : state === "pendingReview" ? (
       <span className={cls(base, "bg-amber-soft text-amber")}>
         <Icon icon={Clock} size={10} />
       </span>
-    );
-  if (state === "soon")
-    return (
+    ) : state === "soon" ? (
       <span className={cls(base, "bg-surface-raised text-ink-dim")}>
         <Icon icon={Lock} size={9} />
       </span>
+    ) : (
+      <span className={cls(base, active ? "bg-brand text-white" : "bg-surface-raised text-ink-soft")}>{n}</span>
     );
-  return <span className={cls(base, active ? "bg-brand text-white" : "bg-surface-raised text-ink-soft")}>{n}</span>;
+
+  // Holat o'zgarganda (masalan test topshirilgach ✓ tug'ilganda) mikro-pop.
+  return (
+    <motion.span
+      key={state}
+      initial={reduce ? false : { scale: 0.6 }}
+      animate={{ scale: 1 }}
+      transition={{ type: "spring", stiffness: 460, damping: 24 }}
+      className="flex shrink-0"
+    >
+      {inner}
+    </motion.span>
+  );
 }
 
-/** Yuqori gorizontal bosqichlar bari (layout v2 — foydalanuvchi: "bosqichlar
- *  tepada bo'lsin"). Bitta ingichka qator; mobil'da gorizontal skroll. */
+/** Foiz — sakramasdan yuradigan hisoblagich. */
+function PctCounter({ pct }: { pct: number }) {
+  const reduce = useReducedMotion();
+  const mv = useMotionValue(pct);
+  const spring = useSpring(mv, { stiffness: 90, damping: 22 });
+  const rounded = useTransform(spring, (v) => Math.round(v));
+  useEffect(() => {
+    mv.set(pct);
+  }, [pct, mv]);
+
+  if (reduce) return <span className="text-note font-bold tabular-nums text-ink">{pct}%</span>;
+  return (
+    <span className="text-note font-bold tabular-nums text-ink">
+      <motion.span>{rounded}</motion.span>%
+    </span>
+  );
+}
+
+/** Yuqori gorizontal bosqichlar bari. 2026-07-23 soddalashtirildi: har bosqich =
+ *  marker + nom, xolos. Raqamli tafsilot (5/5, 67%) endi FAQAT o'z joyida —
+ *  o'qilganlik chap TOC'da, test bali natija ekranida (takror signal yo'q). */
 export function StageStepper({
   lesson,
   stages,
@@ -51,52 +85,60 @@ export function StageStepper({
   onOverview: () => void;
 }) {
   const { t } = useTranslation(undefined, { keyPrefix: "lesson" });
+  const reduce = useReducedMotion();
   const current = activeStageKey(view);
   const pct = overallPct(lesson);
 
   return (
     <div className="flex shrink-0 items-center gap-2 border-b border-line bg-surface px-3 py-1.5">
-      <div className="flex min-w-0 flex-1 items-center gap-0.5 overflow-x-auto scrollbar-hide">
+      <div className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto scrollbar-hide">
         {stages.map((st, i) => {
           const active = current === st.key;
           const clickable = st.state !== "soon";
           return (
-            <div key={st.key} className="flex shrink-0 items-center">
-              {i > 0 && <Icon icon={ChevronRight} size={12} className="mx-0.5 shrink-0 text-ink-dim" />}
-              <button
-                onClick={clickable ? () => onSelect(st.key) : undefined}
-                disabled={!clickable}
-                className={cls(
-                  "inline-flex items-center gap-1.5 rounded-control px-2 py-1 transition-colors",
-                  active && "bg-brand-soft",
-                  clickable && !active && "hover:bg-surface-raised",
-                  !clickable && "cursor-default opacity-55"
-                )}
-              >
+            <button
+              key={st.key}
+              onClick={clickable ? () => onSelect(st.key) : undefined}
+              disabled={!clickable}
+              className={cls(
+                "relative inline-flex shrink-0 items-center gap-1.5 rounded-control px-2 py-1 transition-colors",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
+                clickable && !active && "hover:bg-surface-raised",
+                !clickable && "cursor-default opacity-55",
+                active && reduce && "bg-brand-soft"
+              )}
+            >
+              {/* Faol chip fondan fonga "suzib" o'tadi — bosqich almashuvi seziladi */}
+              {active && !reduce && (
+                <motion.span
+                  layoutId="stage-active"
+                  className="absolute inset-0 rounded-control bg-brand-soft"
+                  transition={{ type: "spring", stiffness: 500, damping: 42 }}
+                />
+              )}
+              <span className="relative z-[1] flex items-center gap-1.5">
                 <Marker n={i + 1} state={st.state} active={active} />
-                <span className={cls("text-note font-extrabold", active ? "text-brand-tint" : "text-ink-soft")}>
+                <span className={cls("text-note", active ? "font-bold text-brand-tint" : "font-semibold text-ink-soft")}>
                   {t(`stage_${st.key}`)}
                 </span>
-                {st.hint && <span className="text-micro font-bold tabular-nums text-ink-dim">{st.hint}</span>}
-              </button>
-            </div>
+              </span>
+            </button>
           );
         })}
       </div>
 
-      {/* Mavzu jarayoni — bosilsa obzorga qaytadi */}
+      {/* Mavzu jarayoni — bitta agregat raqam, bosilsa obzorga qaytadi */}
       <button
         onClick={onOverview}
         title={t("backToOverview")}
         className={cls(
-          "flex shrink-0 items-center gap-2 rounded-control px-2 py-1 transition-colors hover:bg-surface-raised",
+          "flex shrink-0 items-center gap-1.5 rounded-control px-2 py-1 transition-colors hover:bg-surface-raised",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
           view === "overview" && "bg-brand-soft"
         )}
       >
-        <div className="h-1.5 w-[90px] overflow-hidden rounded-pill bg-line">
-          <div className="h-full rounded-pill bg-brand transition-[width] duration-500" style={{ width: `${pct}%` }} />
-        </div>
-        <span className="text-note font-extrabold tabular-nums text-ink">{pct}%</span>
+        <Icon icon={LayoutGrid} size={13} className="text-ink-faint" />
+        <PctCounter pct={pct} />
       </button>
     </div>
   );

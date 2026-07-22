@@ -60,7 +60,7 @@ export function LessonOverview({
       case "quiz": {
         const q = lesson.tabs.quiz;
         if (!q) return null;
-        if (st.hint) return `${t("bestScore")}: ${st.hint}`;
+        // Ball o'ng chetdagi katta raqamda — bu yerda takrorlanmaydi.
         return `${t("questionsN", { n: q.questionCount })} · ${t("passIsN", { n: q.passThreshold })}`;
       }
       case "case": {
@@ -86,7 +86,7 @@ export function LessonOverview({
         <p className="text-micro font-extrabold uppercase tracking-wider text-brand-tint">
           {t("topic")} {lesson.orderIndex} · {lesson.subjectName}
         </p>
-        <h2 className="mt-1 text-[22px] font-extrabold leading-tight tracking-tight text-ink">{lesson.title}</h2>
+        <h2 className="mt-1 text-h1 font-extrabold text-ink">{lesson.title}</h2>
         <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-note text-ink-dim">
           {lesson.estimatedMinutes > 0 && (
             <span className="inline-flex items-center gap-1">
@@ -121,19 +121,25 @@ export function LessonOverview({
               <Wrapper
                 onClick={clickable ? () => onStage(st.key) : undefined}
                 className={cls(
-                  "flex w-full items-center gap-3 px-3.5 py-3 text-left transition-colors",
+                  "group flex w-full items-center gap-3 px-3.5 py-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
                   clickable ? "hover:bg-surface-raised" : "cursor-default opacity-55"
                 )}
               >
                 <Marker n={i + 1} state={st.state} />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-body font-extrabold text-ink">{t(`stage_${st.key}`)}</p>
+                  <p className="truncate text-body font-bold text-ink">{t(`stage_${st.key}`)}</p>
                   {subLine && <p className="truncate text-micro text-ink-dim">{subLine}</p>}
                 </div>
                 {st.key === "quiz" && st.hint && (
                   <span className="shrink-0 text-body font-extrabold tabular-nums text-ink">{st.hint}</span>
                 )}
-                {clickable && <Icon icon={ChevronRight} size={15} className="shrink-0 text-ink-dim" />}
+                {clickable && (
+                  <Icon
+                    icon={ChevronRight}
+                    size={15}
+                    className="shrink-0 text-ink-dim transition-transform duration-150 group-hover:translate-x-0.5"
+                  />
+                )}
               </Wrapper>
             </motion.li>
           );
@@ -145,8 +151,9 @@ export function LessonOverview({
         onClick={onResume}
         initial={reduce ? false : { opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
+        whileTap={reduce ? undefined : { scale: 0.98 }}
         transition={{ delay: 0.15, duration: 0.25 }}
-        className="mt-4 flex w-full items-center justify-center gap-2 rounded-control bg-brand px-4 py-2.5 text-body font-extrabold text-white transition-colors hover:bg-brand-deep"
+        className="mt-4 flex w-full items-center justify-center gap-2 rounded-control bg-brand px-4 py-2.5 text-body font-extrabold text-white transition-colors hover:bg-brand-deep focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
       >
         <Icon icon={PlayCircle} size={17} />
         {started ? t("overviewResume") : t("overviewStart")}

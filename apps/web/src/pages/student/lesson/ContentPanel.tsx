@@ -1,16 +1,7 @@
+import { Suspense, lazy } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  ArrowLeft,
-  BookText,
-  ClipboardList,
-  FileText as FileTextIcon,
-  Layers,
-  Sparkles,
-  Stethoscope,
-  Trophy,
-  Video,
-} from "lucide-react";
-import { EmptyState, Icon } from "@meduni/ui";
+import { ArrowLeft, BookText, ClipboardList, Sparkles, Stethoscope, Trophy } from "lucide-react";
+import { EmptyState, Icon, Spinner } from "@meduni/ui";
 import type { Lesson } from "../api";
 import { Panel } from "./Panel";
 import { firstContentView, nextOpenStage, type ContentView, type LessonView, type StageInfo, type StageKey } from "./stages";
@@ -23,14 +14,10 @@ import { SlidesTab } from "./SlidesTab";
 import { QuizTab } from "./QuizTab";
 import { CaseTab } from "./CaseTab";
 import { FlashcardsTab } from "./FlashcardsTab";
-import { ResultPanel } from "./ResultPanel";
 
-const SUBTAB_ICON: Record<ContentView, typeof BookText> = {
-  konspekt: BookText,
-  video: Video,
-  slides: Layers,
-  materials: FileTextIcon,
-};
+// Natija ekrani anime.js timeline'ini olib keladi (~22kb gzip) — u faqat shu
+// yuza ochilganda kerak, shuning uchun alohida chunk.
+const ResultPanel = lazy(() => import("./ResultPanel").then((m) => ({ default: m.ResultPanel })));
 
 const SURFACE_ICON = {
   case: Stethoscope,
@@ -104,7 +91,17 @@ export function ContentPanel({
           {view === "case" && lesson.tabs.case && <CaseTab topicId={topicId} data={lesson.tabs.case} />}
           {view === "quiz" && lesson.tabs.quiz && <QuizTab topicId={topicId} data={lesson.tabs.quiz} />}
           {view === "flashcards" && <FlashcardsTab topicId={topicId} />}
-          {view === "result" && <ResultPanel lesson={lesson} onView={setView} />}
+          {view === "result" && (
+            <Suspense
+              fallback={
+                <div className="flex justify-center py-10">
+                  <Spinner size={22} />
+                </div>
+              }
+            >
+              <ResultPanel lesson={lesson} onView={setView} />
+            </Suspense>
+          )}
           {terminal && <NextStageBar stages={stages} currentKey={key as StageKey} onSelect={onStage} />}
         </div>
       </Panel>
@@ -125,13 +122,11 @@ export function ContentPanel({
   const studyDone = stages.find((s) => s.key === "study")?.state === "done";
   const readerMode = active === "konspekt" && hasSections;
 
-  // Bloklar chap ustunda tanlanadi — bu panelда faqat kontent.
+  // Bloklar chap ustunda tanlanadi — bu panelда faqat kontent. Shapka YO'Q:
+  // faol blok nomi chap railda brand chip bilan allaqachon belgilangan
+  // (ilgari bir tushuncha 3 ta shapkada takrorlanardi).
   return (
-    <Panel
-      title={readerMode ? undefined : t(`tab_${active}`)}
-      icon={readerMode ? undefined : SUBTAB_ICON[active]}
-      bodyClassName={readerMode ? "p-0" : "p-4"}
-    >
+    <Panel bodyClassName={readerMode ? "p-0" : "p-4"}>
       {active === "konspekt" &&
         (readerMode ? (
           <SectionReader

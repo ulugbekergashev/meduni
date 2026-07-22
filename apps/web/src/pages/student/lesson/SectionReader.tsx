@@ -1,20 +1,22 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { motion, useReducedMotion } from "framer-motion";
-import { ArrowRight, Check, Clock, FileText, Minus, Plus } from "lucide-react";
+import { motion, useReducedMotion, useScroll, useSpring } from "framer-motion";
+import { ArrowRight, Clock, FileText, Minus, Plus } from "lucide-react";
 import { Icon, cls } from "@meduni/ui";
 import type { LessonSection } from "../api";
 import { BlockView } from "./BlockView";
 
-/** O'qish shrifti — A−/A+ bilan boshqariladi, tanlov localStorage'da qoladi. */
-const READ_SIZES = [13, 14, 15, 16, 17];
-const SIZE_KEY = "meduni.readSize";
+/** O'qish shrifti — A−/A+ bilan boshqariladi, tanlov localStorage'da qoladi.
+ *  2026-07-23: shkala ko'tarildi (14→18, default 16px). Kalit ham versiyalandi —
+ *  eski saqlangan indeks yangi massivda boshqa o'lchamni bildirardi. */
+const READ_SIZES = [14, 15, 16, 17, 18];
+const SIZE_KEY = "meduni.readSize2";
 
 function useReadSize() {
   const [idx, setIdx] = useState(() => {
     const raw = typeof window !== "undefined" ? window.localStorage.getItem(SIZE_KEY) : null;
-    const n = raw ? Number(raw) : 1;
-    return Number.isInteger(n) && n >= 0 && n < READ_SIZES.length ? n : 1;
+    const n = raw ? Number(raw) : 2;
+    return Number.isInteger(n) && n >= 0 && n < READ_SIZES.length ? n : 2;
   });
   const set = (next: number) => {
     const clamped = Math.max(0, Math.min(READ_SIZES.length - 1, next));
@@ -33,8 +35,9 @@ function useReadSize() {
 }
 
 /** Konspekt — BARCHA bo'limlar bitta uzluksiz oqimda (foydalanuvchi talabi:
- *  "разделы нужно сразу все показать"). Bo'limlar vizual ajratiladi, lekin
- *  alohida sahifalarga bo'linmaydi. O'qilgani skroll bilan avtomatik belgilanadi. */
+ *  "разделы нужно сразу все показать"). O'qilgani skroll bilan avtomatik
+ *  belgilanadi; o'qilganlik BELGISI faqat chap TOC'da (bu yerda takrorlanmaydi —
+ *  o'qish ustunida 5 ta yashil belgi matnni kesib tashlardi). */
 export function SectionReader({
   sections,
   activeSection,
@@ -60,6 +63,10 @@ export function SectionReader({
 
   const readCount = sections.filter((s) => s.read).length;
   const allRead = sections.length > 0 && readCount === sections.length;
+
+  // O'qish jarayoni — yupqa chiziq. Uzun konspektda "qayerdaman" hissi.
+  const { scrollYProgress } = useScroll({ container: scrollRef });
+  const progress = useSpring(scrollYProgress, { stiffness: 120, damping: 30, restDelta: 0.001 });
 
   // TOC'dan tanlanganda — o'sha bo'limga skroll.
   useEffect(() => {
@@ -114,18 +121,15 @@ export function SectionReader({
 
   return (
     <div className="flex h-full flex-col">
-      {/* Ixcham shapka — faqat o'qish shrifti (bo'lim pillari chap ustunda) */}
-      <div className="flex shrink-0 items-center gap-2 border-b border-line px-3 py-1.5">
-        <span className="text-micro font-extrabold uppercase tracking-wider text-ink-dim">{t("tab_konspekt")}</span>
-        <span className="text-micro font-bold tabular-nums text-ink-dim">
-          · {t("readCount", { n: readCount, total: sections.length })}
-        </span>
-        <div className="ml-auto flex shrink-0 items-center gap-0.5 rounded-control border border-line">
+      {/* Ixcham shapka — faqat o'qish o'lchami. Hisoblagich/nom yo'q:
+          bo'lim nomi TOC'da, bosqich nomi stepper'da turibdi. */}
+      <div className="flex shrink-0 items-center justify-end px-3 py-1.5">
+        <div className="flex shrink-0 items-center gap-0.5 rounded-control border border-line">
           <button
             onClick={size.dec}
             disabled={size.min}
             aria-label={t("readSmaller")}
-            className="flex h-6 w-6 items-center justify-center rounded-l-control text-ink-faint transition-colors hover:bg-surface-raised hover:text-ink disabled:opacity-30"
+            className="flex h-6 w-6 items-center justify-center rounded-l-control text-ink-faint transition-colors hover:bg-surface-raised hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:opacity-30"
           >
             <Icon icon={Minus} size={12} />
           </button>
@@ -134,16 +138,22 @@ export function SectionReader({
             onClick={size.inc}
             disabled={size.max}
             aria-label={t("readBigger")}
-            className="flex h-6 w-6 items-center justify-center rounded-r-control text-ink-faint transition-colors hover:bg-surface-raised hover:text-ink disabled:opacity-30"
+            className="flex h-6 w-6 items-center justify-center rounded-r-control text-ink-faint transition-colors hover:bg-surface-raised hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:opacity-30"
           >
             <Icon icon={Plus} size={12} />
           </button>
         </div>
       </div>
 
+      {/* O'qish jarayoni chizig'i */}
+      <motion.div
+        style={{ scaleX: reduce ? scrollYProgress : progress }}
+        className="h-0.5 shrink-0 origin-left bg-brand"
+      />
+
       {/* Barcha bo'limlar — bitta oqim */}
       <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-[68ch] px-6 py-6 sm:px-9" style={{ fontSize: `${size.px}px` }}>
+        <div className="mx-auto max-w-[68ch] px-6 py-8 sm:px-10" style={{ fontSize: `${size.px}px` }}>
           {sections.map((section, si) => (
             <motion.section
               key={section.index}
@@ -164,16 +174,11 @@ export function SectionReader({
                     <Icon icon={Clock} size={11} />
                     {t("minutesN", { n: section.minutes })}
                   </span>
-                  {section.read && (
-                    <span className="inline-flex items-center gap-1 text-micro font-bold text-emerald">
-                      <Icon icon={Check} size={11} strokeWidth={3} />
-                      {t("sectionRead")}
-                    </span>
-                  )}
                 </div>
-                <h2 className="text-[20px] font-extrabold leading-tight tracking-tight text-ink">{section.title}</h2>
+                {/* em — sarlavha o'qish o'lchami bilan birga masshtablanadi */}
+                <h2 className="text-[1.3em] font-extrabold leading-tight tracking-tight text-ink">{section.title}</h2>
                 {section.sourceRef && (
-                  <p className="mt-1.5 inline-flex items-center gap-1.5 rounded-control bg-surface-raised px-2 py-1 text-micro font-bold text-ink-faint">
+                  <p className="mt-1.5 inline-flex items-center gap-1.5 text-micro text-ink-dim">
                     <Icon icon={FileText} size={11} />
                     {t("sourceRef")}: {section.sourceRef}
                   </p>
@@ -195,19 +200,20 @@ export function SectionReader({
 
       {/* Pastki bar — hammasi o'qilgach keyingi bosqichga */}
       {allRead && onFinished && (
-        <div className="flex shrink-0 items-center gap-3 border-t border-line px-3 py-2">
-          <span className="inline-flex items-center gap-1.5 text-micro font-bold text-emerald">
-            <Icon icon={Check} size={12} strokeWidth={3} />
-            {t("readCount", { n: readCount, total: sections.length })}
-          </span>
+        <motion.div
+          initial={reduce ? false : { y: 28, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ type: "spring", stiffness: 300, damping: 30 }}
+          className="flex shrink-0 items-center justify-end border-t border-line px-3 py-2"
+        >
           <button
             onClick={onFinished}
-            className="ml-auto inline-flex items-center gap-1.5 rounded-control bg-brand px-3.5 py-1.5 text-note font-bold text-white transition-colors hover:bg-brand-deep"
+            className="group inline-flex items-center gap-1.5 rounded-control bg-brand px-3.5 py-1.5 text-note font-bold text-white transition-[background-color,transform] hover:bg-brand-deep focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand active:scale-[0.98]"
           >
             {finishedLabel ?? t("finishReading")}
-            <Icon icon={ArrowRight} size={14} />
+            <Icon icon={ArrowRight} size={14} className="transition-transform duration-150 group-hover:translate-x-0.5" />
           </button>
-        </div>
+        </motion.div>
       )}
     </div>
   );

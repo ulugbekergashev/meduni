@@ -40,18 +40,19 @@ export function BlockView({ block }: { block: DigestBlock }) {
     <Tag className="space-y-2">
       {block.items.map((it, i) => (
         <li key={i} className="flex gap-2.5">
+          {/* em — markerlar A−/A+ bilan matn bilan birga masshtablanadi */}
           <span
             className={cls(
-              "mt-[7px] shrink-0",
+              "mt-[0.55em] shrink-0",
               block.ordered
-                ? "mt-0 flex h-[22px] w-[22px] items-center justify-center rounded-full bg-surface text-micro font-extrabold tabular-nums text-ink-soft"
+                ? "mt-0 flex h-[1.5em] w-[1.5em] items-center justify-center rounded-full bg-surface-raised text-[0.72em] font-bold tabular-nums text-ink-soft"
                 : "h-1.5 w-1.5 rounded-full bg-brand"
             )}
           >
             {block.ordered ? i + 1 : null}
           </span>
           <span className="min-w-0 text-ink-strong">
-            {it.lead && <strong className="font-extrabold text-ink">{it.lead}</strong>}
+            {it.lead && <strong className="font-bold text-ink">{it.lead}</strong>}
             {it.lead ? " — " : ""}
             {it.text}
           </span>

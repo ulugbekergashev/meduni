@@ -54,17 +54,18 @@ const sharedConfig: Partial<Config> = {
         card: "var(--shadow-card)",
         "card-hover": "var(--shadow-card-hover)",
       },
-      // "Mavzu ekrani" dizayn shkalasi — zich, professional asbob ko'rinishi.
-      // Dizaynda 11–14px ustunlik qiladi, og'irlik 700/800.
+      // Shkala 2026-07-23: bir pog'ona ko'tarildi (buyurtmachi: "sal textini
+      // kattalashtir"). micro=11.5px — MUTLAQ minimum; text-[10px] kabi
+      // arbitrary qiymatlar TAQIQ (dostupnost poli).
       fontSize: {
         h1: ["22px", { lineHeight: "1.25", letterSpacing: "-0.02em" }],
         stat: ["34px", { lineHeight: "1.05", letterSpacing: "-0.02em" }],
-        section: ["15px", { lineHeight: "1.35", letterSpacing: "-0.01em" }],
-        body: ["13px", { lineHeight: "1.6" }],
-        note: ["12px", { lineHeight: "1.45" }],
-        micro: ["11px", { lineHeight: "1.4" }],
+        section: ["16px", { lineHeight: "1.35", letterSpacing: "-0.01em" }],
+        body: ["14px", { lineHeight: "1.55" }],
+        note: ["12.5px", { lineHeight: "1.45" }],
+        micro: ["11.5px", { lineHeight: "1.35" }],
         /** Uzun matn o'qish uchun (konspekt tanasi) — A−/A+ bilan boshqariladi. */
-        read: ["14px", { lineHeight: "1.75" }],
+        read: ["16px", { lineHeight: "1.75" }],
       },
       fontFamily: {
         sans: ["'Manrope Variable'", "Manrope", "Inter", "system-ui", "sans-serif"],
