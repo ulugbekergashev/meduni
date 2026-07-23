@@ -60,15 +60,15 @@ export function HeroTile({
       <Card
         interactive={!!onClick}
         onClick={onClick}
-        className="flex flex-col gap-4 border-0 !bg-gradient-to-br from-brand-deep to-brand !p-6 text-white"
+        className="group flex flex-col gap-5 border-0 !bg-gradient-to-br from-brand-deep via-brand to-violet !p-7 text-white shadow-card transition-all duration-300 hover:-translate-y-1 hover:shadow-card-hover"
       >
-        <span className="flex h-12 w-12 items-center justify-center rounded-control bg-white/15 text-white">
+        <span className="flex h-12 w-12 items-center justify-center rounded-control bg-white/20 text-white shadow-inner backdrop-blur-md transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
           <Icon icon={icon} size={23} />
         </span>
         <div>
-          <p className="text-note font-extrabold uppercase tracking-wider text-white/75">{label}</p>
-          <p className="mt-1.5 text-stat font-extrabold leading-none tabular-nums">{value}</p>
-          {hint && <p className="mt-1.5 text-note text-white/85">{hint}</p>}
+          <p className="text-note font-extrabold uppercase tracking-wider text-white/80">{label}</p>
+          <p className="mt-1.5 text-stat font-extrabold leading-none tabular-nums drop-shadow-md">{value}</p>
+          {hint && <p className="mt-1.5 text-note text-white/90">{hint}</p>}
         </div>
       </Card>
     );
@@ -77,19 +77,25 @@ export function HeroTile({
     <Card
       interactive={!!onClick}
       onClick={onClick}
-      className={cls("flex flex-col gap-4 !p-6", selected && "border-brand ring-2 ring-brand/25")}
+      className={cls(
+        "group relative overflow-hidden flex flex-col gap-5 !p-6 transition-all duration-300 hover:-translate-y-1.5",
+        selected ? "border-brand ring-2 ring-brand/30 shadow-[0_0_20px_rgba(79,70,229,0.15)]" : "border border-line shadow-card hover:shadow-card-hover"
+      )}
     >
-      <span className={cls("flex h-12 w-12 items-center justify-center rounded-control", tone)}>
-        <Icon icon={icon} size={23} />
+      {/* Subtle glow effect behind the icon */}
+      <div className={cls("absolute -top-10 -left-10 h-32 w-32 rounded-full blur-3xl opacity-20 transition-opacity duration-300 group-hover:opacity-40", tone.replace("text-", "bg-"))} />
+      
+      <span className={cls("relative flex h-14 w-14 items-center justify-center rounded-2xl transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6", tone)}>
+        <Icon icon={icon} size={26} />
       </span>
-      <div>
-        <p className={cls("text-note font-extrabold uppercase tracking-wider", selected ? "text-brand-tint" : "text-ink-faint")}>
+      <div className="relative z-10">
+        <p className={cls("text-[13px] font-bold uppercase tracking-widest", selected ? "text-brand-tint" : "text-ink-soft")}>
           {label}
         </p>
-        <p className={cls("mt-1.5 text-stat font-extrabold leading-none tabular-nums", selected ? "text-brand-tint" : "text-ink")}>
+        <p className={cls("mt-2 text-[32px] font-black leading-none tabular-nums tracking-tight", selected ? "text-brand-tint" : "text-ink")}>
           {value}
         </p>
-        {hint && <p className="mt-1.5 text-note text-ink-faint">{hint}</p>}
+        {hint && <p className="mt-1.5 text-[14px] font-medium text-ink-faint">{hint}</p>}
       </div>
     </Card>
   );

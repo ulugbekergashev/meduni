@@ -50,10 +50,10 @@ function QuizRow({ q, onOpen }: { q: GradeQuiz; onOpen: () => void }) {
     <div className="border-b border-line last:border-b-0 group">
       <div
         onClick={() => setOpen((o) => !o)}
-        className="flex w-full cursor-pointer items-center gap-4 px-5 py-3.5 text-left transition-colors hover:bg-surface-raised"
+        className="flex w-full cursor-pointer items-center gap-5 px-5 py-4 text-left transition-all duration-300 hover:bg-surface-raised hover:pl-6"
       >
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-soft text-blue shadow-sm">
-          <Icon icon={ClipboardList} size={18} />
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-blue-soft text-blue shadow-sm transition-transform duration-300 group-hover:scale-110">
+          <Icon icon={ClipboardList} size={20} />
         </div>
         <div className="min-w-0 flex-1">
           <p className="truncate text-body font-bold text-ink transition-colors group-hover:text-brand-tint">{q.topicTitle}</p>
@@ -119,10 +119,10 @@ function CaseRow({ c, onOpen }: { c: GradeCase; onOpen: () => void }) {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="border-b border-line last:border-b-0 px-5 py-4 group hover:bg-surface-raised transition-colors">
-      <div className="flex items-center gap-4">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-rose-soft text-rose shadow-sm">
-          <Icon icon={Stethoscope} size={18} />
+    <div className="group border-b border-line last:border-b-0 px-5 py-4 transition-all duration-300 hover:bg-surface-raised hover:pl-6">
+      <div className="flex items-center gap-5">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-rose-soft text-rose shadow-sm transition-transform duration-300 group-hover:scale-110">
+          <Icon icon={Stethoscope} size={20} />
         </div>
         <button onClick={onOpen} className="min-w-0 flex-1 text-left">
           <p className="truncate text-body font-bold text-ink transition-colors group-hover:text-brand-tint">{c.topicTitle}</p>
@@ -164,16 +164,16 @@ function CourseBlock({ c, filter }: { c: GradesCourse; filter: Filter }) {
 
   return (
     <motion.section variants={itemVariants} className="mt-3 first:mt-0">
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2 px-1">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2 px-1">
         <div className="flex items-center gap-3">
-          <h2 className="text-[17px] font-bold tracking-tight text-ink">{c.subjectName}</h2>
-          <span className="rounded-pill bg-surface border border-line px-2.5 py-0.5 text-note font-bold text-ink-soft shadow-sm">
+          <h2 className="text-[20px] font-black tracking-tight bg-gradient-to-br from-ink to-ink-soft bg-clip-text text-transparent drop-shadow-sm">{c.subjectName}</h2>
+          <span className="rounded-full bg-surface-glass backdrop-blur-md border border-line px-3 py-1 text-note font-bold text-ink-soft shadow-sm">
             {c.academicYear} · {tp("semester", { n: c.semester })}
           </span>
         </div>
         {c.avgQuiz !== null && (
-          <span className="text-body font-bold text-ink-soft">
-            {t("avgQuizShort")}: <span className={scoreTone(c.avgQuiz)}>{c.avgQuiz}%</span>
+          <span className="rounded-full bg-surface border border-line px-3 py-1 text-[15px] font-bold text-ink-soft shadow-sm">
+            {t("avgQuizShort")}: <span className={cls(scoreTone(c.avgQuiz), "ml-1")}>{c.avgQuiz}%</span>
           </span>
         )}
       </div>
@@ -327,14 +327,14 @@ function GradesHome() {
 
       {/* Tur filtri — segmented */}
       {withGradesAny && (
-        <motion.div variants={itemVariants} className="inline-flex gap-1.5 rounded-[12px] border border-line bg-surface p-1 shadow-sm">
+        <motion.div variants={itemVariants} className="inline-flex gap-1.5 rounded-full border border-line bg-surface/80 backdrop-blur-md p-1.5 shadow-sm">
           {(["all", "quiz", "case"] as Filter[]).map((f) => (
             <button
               key={f}
               onClick={() => setFilter(f)}
               className={cls(
-                "rounded-[8px] px-4 py-1.5 text-body font-bold transition-all",
-                filter === f ? "bg-brand-soft text-brand-tint shadow-sm" : "text-ink-soft hover:bg-surface-raised hover:text-ink"
+                "rounded-full px-5 py-2 text-[15px] font-bold transition-all duration-300",
+                filter === f ? "bg-brand text-white shadow-md scale-105" : "text-ink-soft hover:bg-surface-raised hover:text-ink"
               )}
             >
               {t(`filter.${f}`)}
@@ -373,10 +373,10 @@ function GradesHome() {
                     <button
                       key={r.key}
                       onClick={() => navigateTo(`/app/topics/${r.topicId}?tab=${r.tab}`)}
-                      className="flex w-full items-center gap-3 px-5 py-3 text-left transition-colors hover:bg-surface-raised"
+                      className="group flex w-full items-center gap-3 px-5 py-4 text-left transition-all duration-300 hover:bg-surface-raised hover:pl-6"
                     >
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-body font-bold text-ink">{r.title}</p>
+                        <p className="truncate text-body font-bold text-ink transition-colors group-hover:text-brand-tint">{r.title}</p>
                         <p className="truncate text-note font-medium text-ink-faint mt-0.5">{r.subject}</p>
                       </div>
                       <span className="shrink-0 text-[16px] font-bold tabular-nums text-ink">{r.score}</span>
@@ -395,13 +395,13 @@ function GradesHome() {
                     <button
                       key={`p${k.topicId}`}
                       onClick={() => navigateTo(`/app/topics/${k.topicId}?tab=case`)}
-                      className="flex w-full items-center gap-3 px-5 py-3 text-left transition-colors hover:bg-surface-raised"
+                      className="group flex w-full items-center gap-3 px-5 py-4 text-left transition-all duration-300 hover:bg-surface-raised hover:pl-6"
                     >
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-soft text-amber">
-                        <Icon icon={Stethoscope} size={15} />
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-soft text-amber transition-transform duration-300 group-hover:scale-110">
+                        <Icon icon={Stethoscope} size={16} />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-body font-bold text-ink">{k.topicTitle}</p>
+                        <p className="truncate text-body font-bold text-ink transition-colors group-hover:text-brand-tint">{k.topicTitle}</p>
                         <p className="truncate text-note font-medium text-ink-faint mt-0.5">{k.subjectName}</p>
                       </div>
                       <Badge tone="amber">{t("underReview")}</Badge>

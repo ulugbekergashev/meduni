@@ -111,17 +111,17 @@ function ActionRow({
   return (
     <Wrapper
       onClick={onClick}
-      className={cls("flex w-full items-center gap-3 px-4 py-3 text-left transition-colors", onClick && "hover:bg-surface-raised")}
+      className={cls("group flex w-full items-center gap-3 px-4 py-3.5 text-left transition-all duration-300", onClick && "hover:bg-surface-raised hover:pl-5")}
     >
-      <div className={cls("flex h-8 w-8 shrink-0 items-center justify-center rounded-full", tone)}>
-        <Icon icon={icon} size={15} />
+      <div className={cls("flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-transform duration-300 group-hover:scale-110", tone)}>
+        <Icon icon={icon} size={16} />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-body font-semibold text-ink">{title}</p>
+        <p className="truncate text-body font-semibold text-ink transition-colors group-hover:text-brand-tint">{title}</p>
         {sub && <p className="truncate text-note text-ink-faint">{sub}</p>}
       </div>
       {right && <span className="shrink-0 text-note font-semibold text-ink-soft">{right}</span>}
-      {onClick && <Icon icon={ArrowRight} size={15} className="shrink-0 text-ink-faint" />}
+      {onClick && <Icon icon={ArrowRight} size={16} className="shrink-0 text-ink-faint transition-transform duration-300 group-hover:translate-x-1" />}
     </Wrapper>
   );
 }
@@ -275,25 +275,27 @@ export function StudentDashboard() {
                 {d.resume && (
                   <motion.div
                     variants={itemVariants}
-                    className="flex flex-wrap items-center gap-4 rounded-card bg-gradient-to-br from-brand-deep to-brand p-5 text-white shadow-card"
+                    className="relative overflow-hidden flex flex-wrap items-center gap-5 rounded-card bg-gradient-to-br from-brand-deep via-brand to-violet p-6 text-white shadow-card transition-all duration-300 hover:-translate-y-1 hover:shadow-card-hover"
                   >
-                    <div className="min-w-0 flex-1">
-                      <p className="text-note font-bold uppercase tracking-wide text-white/70">{t("continueLabel")}</p>
-                      <h2 className="mt-0.5 truncate text-[21px] font-bold leading-tight">{d.resume.topic}</h2>
-                      <p className="truncate text-note text-white/85">{d.resume.subjectName}</p>
-                      <div className="mt-2 flex items-center gap-2">
-                        <span className="h-1.5 w-full max-w-[220px] overflow-hidden rounded-pill bg-white/25">
+                    <div className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-white/10 blur-3xl"></div>
+                    <div className="pointer-events-none absolute -bottom-10 -left-10 h-32 w-32 rounded-full bg-white/5 blur-2xl"></div>
+                    <div className="relative min-w-0 flex-1">
+                      <p className="text-note font-extrabold uppercase tracking-widest text-white/70 drop-shadow-sm">{t("continueLabel")}</p>
+                      <h2 className="mt-1 truncate text-[22px] font-bold leading-tight drop-shadow-md">{d.resume.topic}</h2>
+                      <p className="mt-0.5 truncate text-note text-white/90">{d.resume.subjectName}</p>
+                      <div className="mt-3 flex items-center gap-3">
+                        <span className="h-2 w-full max-w-[240px] overflow-hidden rounded-pill bg-white/20 shadow-inner">
                           <span
-                            className="block h-full rounded-pill bg-white"
+                            className="block h-full rounded-pill bg-white shadow-[0_0_8px_rgba(255,255,255,0.6)]"
                             style={{ width: `${Math.max(d.resume.pct, 3)}%` }}
                           />
                         </span>
-                        <span className="text-note text-white/85">{d.resume.pct}%</span>
+                        <span className="text-note font-bold text-white/95">{d.resume.pct}%</span>
                       </div>
                     </div>
-                    <Link to={`/app/topics/${d.resume.topicId}`} className="shrink-0">
-                      <button className="flex items-center gap-2 rounded-control bg-white px-4 py-2.5 text-body font-bold text-brand-tint transition-all hover:bg-white/90">
-                        <Icon icon={PlayCircle} size={17} />
+                    <Link to={`/app/topics/${d.resume.topicId}`} className="relative shrink-0">
+                      <button className="flex items-center gap-2 rounded-control bg-white/95 px-5 py-3 text-body font-bold text-brand-tint shadow-sm backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:bg-white hover:shadow-md">
+                        <Icon icon={PlayCircle} size={18} />
                         {t("continue")}
                       </button>
                     </Link>
@@ -324,12 +326,12 @@ export function StudentDashboard() {
                             key={s.id}
                             onClick={() => navigate("/app/schedule")}
                             className={cls(
-                              "flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-surface-raised",
+                              "group flex w-full items-center gap-3 px-4 py-3.5 text-left transition-all duration-200 hover:bg-surface-raised hover:pl-5",
                               s.isPast && "opacity-55"
                             )}
                           >
                             <div className="w-12 shrink-0 text-center">
-                              <p className="text-body font-bold leading-none tabular-nums text-brand-tint">{hhmm(s.date)}</p>
+                              <p className="text-body font-bold leading-none tabular-nums text-brand-tint transition-transform group-hover:scale-110">{hhmm(s.date)}</p>
                             </div>
                             <div className="min-w-0 flex-1 border-l border-line pl-3">
                               <p className="truncate text-body font-semibold text-ink">{s.title ?? s.courseName}</p>
@@ -425,7 +427,7 @@ export function StudentDashboard() {
                   {/* Davomat */}
                   <button
                     onClick={() => navigate("/app/attendance")}
-                    className="flex flex-col rounded-card border border-line bg-surface p-5 text-left shadow-card transition-all hover:-translate-y-0.5 hover:shadow-card-hover"
+                    className="group flex flex-col rounded-card border border-line bg-surface p-6 text-left shadow-card transition-all duration-300 hover:-translate-y-1 hover:border-brand/30 hover:shadow-card-hover"
                   >
                     <div className="flex items-center gap-2">
                       <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-soft text-blue">
@@ -448,7 +450,7 @@ export function StudentDashboard() {
                   {/* O'zlashtirish */}
                   <button
                     onClick={() => navigate("/app/grades")}
-                    className="flex flex-col rounded-card border border-line bg-surface p-5 text-left shadow-card transition-all hover:-translate-y-0.5 hover:shadow-card-hover"
+                    className="group flex flex-col rounded-card border border-line bg-surface p-6 text-left shadow-card transition-all duration-300 hover:-translate-y-1 hover:border-brand/30 hover:shadow-card-hover"
                   >
                     <div className="flex items-center gap-2">
                       <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-soft text-brand-tint">
@@ -498,13 +500,13 @@ export function StudentDashboard() {
                           <button
                             key={tp.topicId}
                             onClick={() => navigate(`/app/grades?sub=takrorlash&topic=${tp.topicId}`)}
-                            className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-surface-raised"
+                            className="group flex w-full items-center gap-3 px-4 py-3.5 text-left transition-all duration-200 hover:bg-surface-raised hover:pl-5"
                           >
-                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-violet-soft text-violet">
-                              <Icon icon={Sparkles} size={15} />
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-violet-soft text-violet transition-transform duration-300 group-hover:scale-110">
+                              <Icon icon={Sparkles} size={16} />
                             </div>
                             <div className="min-w-0 flex-1">
-                              <p className="truncate text-body font-semibold text-ink">{tp.topicTitle}</p>
+                              <p className="truncate text-body font-semibold text-ink transition-colors group-hover:text-brand-tint">{tp.topicTitle}</p>
                               <p className="truncate text-note text-ink-faint">{tp.subjectName}</p>
                             </div>
                             <span className="shrink-0 rounded-pill bg-violet-soft px-2 py-0.5 text-note font-bold tabular-nums text-violet">
@@ -525,13 +527,13 @@ export function StudentDashboard() {
                           <button
                             key={n.caseAttemptId}
                             onClick={() => navigate(`/app/topics/${n.topicId}?tab=case`)}
-                            className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-surface-raised"
+                            className="group flex w-full items-center gap-3 px-4 py-3.5 text-left transition-all duration-200 hover:bg-surface-raised hover:pl-5"
                           >
-                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-soft text-emerald">
-                              <Icon icon={ClipboardCheck} size={15} />
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-soft text-emerald transition-transform duration-300 group-hover:scale-110">
+                              <Icon icon={ClipboardCheck} size={16} />
                             </div>
                             <div className="min-w-0 flex-1">
-                              <p className="truncate text-body font-semibold text-ink">{t("caseGraded")}</p>
+                              <p className="truncate text-body font-semibold text-ink transition-colors group-hover:text-brand-tint">{t("caseGraded")}</p>
                               <p className="truncate text-note text-ink-faint">{n.topic}</p>
                             </div>
                             {n.score !== null && <span className="shrink-0 text-body font-bold text-emerald">{n.score}</span>}
@@ -552,13 +554,13 @@ export function StudentDashboard() {
                             <button
                               key={`${a.type}-${a.topicId}-${i}`}
                               onClick={() => navigate(`/app/topics/${a.topicId}`)}
-                              className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-surface-raised"
+                              className="group flex w-full items-center gap-3 px-4 py-3.5 text-left transition-all duration-200 hover:bg-surface-raised hover:pl-5"
                             >
-                              <div className={cls("flex h-7 w-7 shrink-0 items-center justify-center rounded-full", m.tone)}>
-                                <Icon icon={m.icon} size={13} />
+                              <div className={cls("flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-transform duration-300 group-hover:scale-110", m.tone)}>
+                                <Icon icon={m.icon} size={14} />
                               </div>
                               <div className="min-w-0 flex-1">
-                                <p className="truncate text-note font-semibold text-ink">{t(`activity.${a.type}`)}</p>
+                                <p className="truncate text-note font-semibold text-ink transition-colors group-hover:text-brand-tint">{t(`activity.${a.type}`)}</p>
                                 <p className="truncate text-note text-ink-faint">{a.topic}</p>
                               </div>
                               {a.score !== null && (

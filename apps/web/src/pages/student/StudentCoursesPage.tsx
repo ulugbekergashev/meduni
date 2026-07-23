@@ -27,15 +27,15 @@ function CourseRow({ course }: { course: CourseSummary }) {
   return (
     <div
       onClick={() => navigate(`/app/courses/${course.id}`)}
-      className="flex cursor-pointer items-center gap-4 px-4 py-3.5 transition-colors hover:bg-surface-raised"
+      className="group flex cursor-pointer items-center gap-5 px-5 py-4 transition-all duration-300 hover:bg-surface-raised hover:pl-6"
     >
       <div
         className={cls(
-          "flex h-11 w-11 shrink-0 items-center justify-center rounded-full",
+          "flex h-12 w-12 shrink-0 items-center justify-center rounded-full transition-transform duration-300 group-hover:scale-110",
           done ? "bg-emerald-soft text-emerald" : "bg-brand-soft text-brand-tint"
         )}
       >
-        <Icon icon={done ? CheckCircle2 : BookOpen} size={20} />
+        <Icon icon={done ? CheckCircle2 : BookOpen} size={22} />
       </div>
 
       <div className="min-w-0 flex-1">
@@ -55,13 +55,13 @@ function CourseRow({ course }: { course: CourseSummary }) {
             </>
           )}
         </p>
-        <div className="mt-1.5 max-w-[360px]">
+        <div className="mt-2 max-w-[400px]">
           <ProgressBar value={course.progressPct} tone={done ? "emerald" : "brand"} />
         </div>
       </div>
 
       <div className="flex shrink-0 flex-col items-end gap-1.5 sm:flex-row sm:items-center sm:gap-3">
-        <span className={cls("text-[17px] font-bold tabular-nums", done ? "text-emerald" : "text-brand-tint")}>
+        <span className={cls("text-[18px] font-bold tabular-nums", done ? "text-emerald" : "text-brand-tint")}>
           {course.progressPct}%
         </span>
         {course.nextTopicId ? (
@@ -70,17 +70,17 @@ function CourseRow({ course }: { course: CourseSummary }) {
               e.stopPropagation();
               navigate(`/app/topics/${course.nextTopicId}`);
             }}
-            className="inline-flex items-center gap-1.5 rounded-control border border-line bg-surface px-3 py-1.5 text-note font-bold text-brand-tint transition-colors hover:border-brand-soft hover:bg-brand-soft"
+            className="inline-flex items-center gap-2 rounded-control border border-brand/20 bg-brand-soft/50 px-4 py-2 text-body font-bold text-brand-tint backdrop-blur-sm transition-all duration-300 hover:border-brand/40 hover:bg-brand-soft hover:shadow-sm hover:scale-105"
           >
-            <Icon icon={PlayCircle} size={15} />
+            <Icon icon={PlayCircle} size={16} />
             <span className="hidden sm:inline">{t("continueShort")}</span>
           </button>
         ) : done ? (
-          <span title={t("allDone")}>
-            <Icon icon={CheckCircle2} size={18} className="text-emerald" />
+          <span title={t("allDone")} className="drop-shadow-sm">
+            <Icon icon={CheckCircle2} size={22} className="text-emerald" />
           </span>
         ) : null}
-        <Icon icon={ChevronRight} size={18} className="text-ink-faint" />
+        <Icon icon={ChevronRight} size={20} className="text-ink-faint transition-transform duration-300 group-hover:translate-x-1" />
       </div>
     </div>
   );
@@ -184,17 +184,17 @@ export function StudentCoursesPage() {
         </HeroCard>
       </motion.div>
 
-      <motion.div variants={itemVariants} className="flex flex-wrap items-center gap-3">
+      <motion.div variants={itemVariants} className="sticky top-4 z-10 flex flex-wrap items-center gap-3 rounded-2xl bg-surface-glass px-5 py-4 shadow-sm backdrop-blur-xl border border-white/50">
         <div className="relative min-w-[240px] flex-1">
-          <Icon icon={Search} size={18} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-faint" />
+          <Icon icon={Search} size={18} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-ink-faint" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={t("searchPlaceholder")}
-            className="w-full rounded-control border border-line bg-surface py-2.5 pl-10 pr-4 text-body font-medium outline-none transition-colors focus:border-brand"
+            className="w-full rounded-control border border-line bg-surface/60 py-3 pl-11 pr-4 text-body font-medium outline-none transition-all focus:border-brand focus:ring-4 focus:ring-brand/10 hover:border-line-raised hover:bg-surface/90"
           />
         </div>
-        <div className="flex items-center gap-2 rounded-control border border-line bg-surface p-1">
+        <div className="flex items-center gap-2 rounded-control border border-line bg-surface/60 p-1.5 backdrop-blur-sm transition-all hover:bg-surface/90">
           <PeriodFilter
             years={options.years}
             semesters={options.semesters}
@@ -207,13 +207,13 @@ export function StudentCoursesPage() {
         {!isCurrentDefault && newest && (
           <button
             onClick={backToCurrent}
-            className="inline-flex items-center gap-1.5 rounded-control border border-line bg-surface px-3 py-2 text-note font-semibold text-brand-tint transition-colors hover:bg-brand-soft"
+            className="inline-flex items-center gap-2 rounded-control border border-line bg-surface/60 px-4 py-2.5 text-body font-semibold text-brand-tint backdrop-blur-sm transition-all hover:border-brand-soft hover:bg-brand-soft hover:shadow-sm"
           >
-            <Icon icon={RotateCcw} size={14} />
+            <Icon icon={RotateCcw} size={16} />
             {t("backToCurrent")}
           </button>
         )}
-        <span className="ml-auto text-note font-bold text-ink-soft">{t("totalN", { n: filtered.length })}</span>
+        <span className="ml-auto text-body font-bold text-ink-soft drop-shadow-sm">{t("totalN", { n: filtered.length })}</span>
       </motion.div>
 
       <motion.div variants={itemVariants}>
