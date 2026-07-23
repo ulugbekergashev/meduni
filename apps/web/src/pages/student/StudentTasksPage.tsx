@@ -60,7 +60,7 @@ function AutoTaskGroup({ task }: { task: AutoTask }) {
             <Icon icon={meta.icon} size={14} />
           </span>
           <h3 className="min-w-0 flex-1 truncate text-body font-bold text-ink">{t(meta.labelKey)}</h3>
-          <span className="rounded-pill bg-surface-raised px-2.5 py-0.5 text-[12.5px] font-bold tabular-nums text-ink-soft">
+          <span className="rounded-pill bg-surface-raised px-2.5 py-0.5 text-note font-bold tabular-nums text-ink-soft">
             {task.type === "attendance_low" ? `${task.count}%` : task.count}
           </span>
         </div>
@@ -79,7 +79,7 @@ function AutoTaskGroup({ task }: { task: AutoTask }) {
               <button
                 key={`${it.topicId}-${i}`}
                 onClick={() => navigate(it.link)}
-                className="group flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-surface-raised"
+                className="group flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-surface-raised"
               >
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-body font-semibold text-ink transition-colors group-hover:text-brand-tint">{it.topicTitle}</p>
@@ -201,11 +201,11 @@ export function StudentTasksPage() {
                         >
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2">
-                              <p className="text-[15.5px] font-bold text-ink">{task.title}</p>
+                              <p className="text-body font-bold text-ink">{task.title}</p>
                               {task.priority === "HIGH" && <Badge tone="rose">{t("priorityHigh")}</Badge>}
                             </div>
-                            {task.description && <p className="mt-1 text-[14px] text-ink-soft leading-relaxed">{task.description}</p>}
-                            <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-[13.5px] text-ink-faint">
+                            {task.description && <p className="mt-1 text-body text-ink-soft leading-relaxed">{task.description}</p>}
+                            <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-note text-ink-faint">
                               <span className="inline-flex items-center gap-1.5 font-medium">
                                 <Icon icon={UserRound} size={14} className="text-ink-soft" /> {task.createdByName}
                               </span>
@@ -269,7 +269,7 @@ export function StudentTasksPage() {
             {!nothing && ((showTeacher && assigned.length === 0 && filter !== "all") || (showStudy && auto.length === 0 && filter === "study")) && (
               <motion.div variants={itemVariants}>
                 <Card className="bg-surface border-dashed p-4 text-center">
-                  <p className="text-[15px] text-ink-faint">{t("noMatchFilter")}</p>
+                  <p className="text-body text-ink-faint">{t("noMatchFilter")}</p>
                 </Card>
               </motion.div>
             )}
@@ -284,7 +284,7 @@ export function StudentTasksPage() {
                 action={{ label: t("open"), onClick: () => navigate("/app/schedule") }}
               >
                 {schedule.length === 0 ? (
-                  <p className="px-5 py-5 text-[14px] text-ink-faint">{t("noLessonsShort")}</p>
+                  <p className="px-5 py-5 text-body text-ink-faint">{t("noLessonsShort")}</p>
                 ) : (
                   <div className="divide-y divide-line">
                     {schedule.slice(0, 3).map((s) => (
@@ -297,13 +297,13 @@ export function StudentTasksPage() {
                           <p className="text-[17px] font-bold leading-none tabular-nums text-brand-tint">
                             {new Date(s.date).getDate()}
                           </p>
-                          <p className="mt-0.5 text-[12px] tabular-nums text-ink-soft">
+                          <p className="mt-0.5 text-note tabular-nums text-ink-soft">
                             {`${String(new Date(s.date).getHours()).padStart(2, "0")}:${String(new Date(s.date).getMinutes()).padStart(2, "0")}`}
                           </p>
                         </div>
                         <div className="min-w-0 flex-1 border-l border-line pl-4">
-                          <p className="truncate text-[15px] font-semibold text-ink">{s.title ?? s.courseName}</p>
-                          <p className="truncate text-[13.5px] text-ink-soft mt-0.5">{s.courseName}</p>
+                          <p className="truncate text-body font-semibold text-ink">{s.title ?? s.courseName}</p>
+                          <p className="truncate text-note text-ink-soft mt-0.5">{s.courseName}</p>
                         </div>
                       </button>
                     ))}
@@ -315,12 +315,12 @@ export function StudentTasksPage() {
             <motion.div variants={itemVariants}>
               <RailCard title={t("doneSection")} icon={ClipboardCheck}>
                 {history.length === 0 ? (
-                  <p className="px-5 py-5 text-[14px] text-ink-faint">{t("noDoneYet")}</p>
+                  <p className="px-5 py-5 text-body text-ink-faint">{t("noDoneYet")}</p>
                 ) : (
                   <>
                     <button
                       onClick={() => setHistoryOpen((o) => !o)}
-                      className="flex w-full items-center gap-2 px-5 py-3 text-left text-[14px] font-semibold uppercase tracking-wide text-ink-soft transition-colors hover:bg-surface-raised"
+                      className="flex w-full items-center gap-2 px-5 py-3 text-left text-body font-semibold uppercase tracking-wide text-ink-soft transition-colors hover:bg-surface-raised"
                     >
                       <Icon
                         icon={ChevronDown}
@@ -341,8 +341,8 @@ export function StudentTasksPage() {
                           {history.slice(0, 8).map((h) => (
                             <div key={h.id} className="flex items-center gap-3 px-4 py-2.5">
                               <Icon icon={CheckCircle2} size={16} className="shrink-0 text-emerald opacity-60" />
-                              <p className="min-w-0 flex-1 truncate text-[14px] text-ink-soft line-through">{h.title}</p>
-                              {h.doneAt && <span className="shrink-0 text-[12.5px] font-medium tabular-nums text-ink-faint">{fmt(h.doneAt)}</span>}
+                              <p className="min-w-0 flex-1 truncate text-body text-ink-soft line-through">{h.title}</p>
+                              {h.doneAt && <span className="shrink-0 text-note font-medium tabular-nums text-ink-faint">{fmt(h.doneAt)}</span>}
                             </div>
                           ))}
                         </div>

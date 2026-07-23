@@ -43,8 +43,8 @@ function QuizRow({ q, onOpen }: { q: GradeQuiz; onOpen: () => void }) {
           <Icon icon={ClipboardList} size={18} />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-[15.5px] font-bold text-ink transition-colors group-hover:text-brand-tint">{q.topicTitle}</p>
-          <p className="flex items-center gap-1.5 text-[13px] text-ink-faint mt-0.5">
+          <p className="truncate text-body font-bold text-ink transition-colors group-hover:text-brand-tint">{q.topicTitle}</p>
+          <p className="flex items-center gap-1.5 text-note text-ink-faint mt-0.5">
             {t("attemptsN", { n: q.attempts })} · <span className={q.passed ? "text-emerald font-medium" : ""}>{q.passed ? t("passed") : t("notPassed")}</span>
             <span className="text-ink-faint">· {t("passThreshold", { n: q.passThreshold })}</span>
           </p>
@@ -69,10 +69,10 @@ function QuizRow({ q, onOpen }: { q: GradeQuiz; onOpen: () => void }) {
           className="overflow-hidden bg-surface-raised"
         >
           <div className="border-t border-line px-5 py-4">
-            <p className="mb-3 text-[12.5px] font-bold uppercase tracking-wider text-ink-faint">{t("historyTitle")}</p>
+            <p className="mb-3 text-note font-bold uppercase tracking-wider text-ink-faint">{t("historyTitle")}</p>
             <div className="space-y-2.5">
               {q.history.map((h) => (
-                <div key={h.attemptNo} className="flex items-center gap-4 text-[14px]">
+                <div key={h.attemptNo} className="flex items-center gap-4 text-body">
                   <span className="w-20 shrink-0 font-semibold text-ink-soft">{t("attemptsN", { n: h.attemptNo })}</span>
                   <span className="flex-1">
                     <ProgressBar value={h.scorePct} tone={h.passed ? "emerald" : "rose"} />
@@ -88,7 +88,7 @@ function QuizRow({ q, onOpen }: { q: GradeQuiz; onOpen: () => void }) {
             </div>
             <button
               onClick={onOpen}
-              className="mt-4 text-[13.5px] font-bold text-brand-tint hover:underline inline-flex items-center gap-1.5"
+              className="mt-4 text-note font-bold text-brand-tint hover:underline inline-flex items-center gap-1.5"
             >
               {t("openTopic")} <Icon icon={ChevronDown} size={14} className="-rotate-90" />
             </button>
@@ -112,8 +112,8 @@ function CaseRow({ c, onOpen }: { c: GradeCase; onOpen: () => void }) {
           <Icon icon={Stethoscope} size={18} />
         </div>
         <button onClick={onOpen} className="min-w-0 flex-1 text-left">
-          <p className="truncate text-[15.5px] font-bold text-ink transition-colors group-hover:text-brand-tint">{c.topicTitle}</p>
-          <p className="text-[13px] text-ink-soft mt-0.5 font-medium">
+          <p className="truncate text-body font-bold text-ink transition-colors group-hover:text-brand-tint">{c.topicTitle}</p>
+          <p className="text-note text-ink-soft mt-0.5 font-medium">
             {c.reviewed && c.reviewedAt
               ? `${c.reviewedByName ?? "—"} · ${formatDate(locale === "ru" ? "ru" : "uz", c.reviewedAt, "short")}`
               : formatDate(locale === "ru" ? "ru" : "uz", c.submittedAt, "short")}
@@ -130,7 +130,7 @@ function CaseRow({ c, onOpen }: { c: GradeCase; onOpen: () => void }) {
       {c.feedback && (
         <button
           onClick={() => setOpen((o) => !o)}
-          className="mt-3 flex w-full items-start gap-2.5 rounded-card bg-emerald-soft border border-emerald/20 px-4 py-3 text-left text-[14px] text-ink transition-colors hover:bg-emerald-soft"
+          className="mt-3 flex w-full items-start gap-2.5 rounded-card bg-emerald-soft border border-emerald/20 px-4 py-3 text-left text-body text-ink transition-colors hover:bg-emerald-soft"
         >
           <Icon icon={MessageSquareQuote} size={16} className="mt-0.5 shrink-0 text-emerald" />
           <span className={cls("min-w-0 flex-1 leading-relaxed", !open && "truncate")}>{c.feedback}</span>
@@ -154,12 +154,12 @@ function CourseBlock({ c, filter }: { c: GradesCourse; filter: Filter }) {
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2 px-1">
         <div className="flex items-center gap-3">
           <h2 className="text-[17px] font-bold tracking-tight text-ink">{c.subjectName}</h2>
-          <span className="rounded-pill bg-surface border border-line px-2.5 py-0.5 text-[12px] font-bold text-ink-soft shadow-sm">
+          <span className="rounded-pill bg-surface border border-line px-2.5 py-0.5 text-note font-bold text-ink-soft shadow-sm">
             {c.academicYear} · {tp("semester", { n: c.semester })}
           </span>
         </div>
         {c.avgQuiz !== null && (
-          <span className="text-[14px] font-bold text-ink-soft">
+          <span className="text-body font-bold text-ink-soft">
             {t("avgQuizShort")}: <span className={scoreTone(c.avgQuiz)}>{c.avgQuiz}%</span>
           </span>
         )}
@@ -233,7 +233,7 @@ export function GradesPage() {
             s && s.avgQuiz !== null ? (
               <div className="flex items-center gap-4">
                 <ProgressRing value={s.avgQuiz} size={72} stroke={8} tone="blue" />
-                <span className="text-[14px] font-bold text-ink-soft">{t("avgQuiz")}</span>
+                <span className="text-body font-bold text-ink-soft">{t("avgQuiz")}</span>
               </div>
             ) : undefined
           }
@@ -281,7 +281,7 @@ export function GradesPage() {
               key={f}
               onClick={() => setFilter(f)}
               className={cls(
-                "rounded-[8px] px-4 py-1.5 text-[14px] font-bold transition-all",
+                "rounded-[8px] px-4 py-1.5 text-body font-bold transition-all",
                 filter === f ? "bg-brand-soft text-brand-tint shadow-sm" : "text-ink-soft hover:bg-surface-raised hover:text-ink"
               )}
             >
@@ -324,8 +324,8 @@ export function GradesPage() {
                       className="flex w-full items-center gap-3 px-5 py-3 text-left transition-colors hover:bg-surface-raised"
                     >
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-[14.5px] font-bold text-ink">{r.title}</p>
-                        <p className="truncate text-[13px] font-medium text-ink-faint mt-0.5">{r.subject}</p>
+                        <p className="truncate text-body font-bold text-ink">{r.title}</p>
+                        <p className="truncate text-note font-medium text-ink-faint mt-0.5">{r.subject}</p>
                       </div>
                       <span className="shrink-0 text-[16px] font-bold tabular-nums text-ink">{r.score}</span>
                     </button>
@@ -349,8 +349,8 @@ export function GradesPage() {
                         <Icon icon={Stethoscope} size={15} />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-[14.5px] font-bold text-ink">{k.topicTitle}</p>
-                        <p className="truncate text-[13px] font-medium text-ink-faint mt-0.5">{k.subjectName}</p>
+                        <p className="truncate text-body font-bold text-ink">{k.topicTitle}</p>
+                        <p className="truncate text-note font-medium text-ink-faint mt-0.5">{k.subjectName}</p>
                       </div>
                       <Badge tone="amber">{t("underReview")}</Badge>
                     </button>

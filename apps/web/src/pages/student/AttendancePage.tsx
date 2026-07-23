@@ -30,7 +30,7 @@ export function AttendancePage() {
               key={tab.key}
               onClick={() => setParams(tab.key === "davomat" ? {} : { sub: tab.key }, { replace: true })}
               className={cls(
-                "inline-flex items-center gap-1.5 rounded-[8px] px-4 py-2 text-[15px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
+                "inline-flex items-center gap-1.5 rounded-[8px] px-4 py-2 text-body font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
                 on ? "bg-brand-soft text-brand-tint" : "text-ink-soft hover:bg-surface-raised hover:text-ink"
               )}
             >

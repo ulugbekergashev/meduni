@@ -164,7 +164,7 @@ export function AttendanceSection() {
       {/* Low-attendance notice — informative, not scary */}
       {low && (
         <motion.div variants={itemVariants}>
-          <div className="flex items-start gap-3 rounded-card border border-amber bg-amber-soft p-4 text-[14.5px] text-amber">
+          <div className="flex items-start gap-3 rounded-card border border-amber bg-amber-soft p-4 text-body text-amber">
             <Icon icon={AlertTriangle} size={18} className="mt-0.5 shrink-0" />
             <p className="font-medium">{t("lowWarning", { pct })}</p>
           </div>
@@ -181,7 +181,7 @@ export function AttendanceSection() {
           </div>
           <table className="w-full min-w-[560px] border-collapse">
             <thead>
-              <tr className="bg-surface-raised text-[12.5px] font-bold uppercase tracking-wide text-ink-faint">
+              <tr className="bg-surface-raised text-note font-bold uppercase tracking-wide text-ink-faint">
                 <th className="px-4 py-2 text-left">{t("colSubject")}</th>
                 <th className="px-2 py-2 text-center">{t("colTotal")}</th>
                 <th className="px-2 py-2 text-center">{t("present")}</th>
@@ -201,7 +201,7 @@ export function AttendanceSection() {
                   <Fragment key={c.courseId}>
                     <tr
                       onClick={() => setExpanded(open ? null : c.courseId)}
-                      className="cursor-pointer border-t border-line text-[14.5px] transition-colors hover:bg-surface-raised" 
+                      className="cursor-pointer border-t border-line text-body transition-colors hover:bg-surface-raised" 
                     >
                       <td className="px-4 py-2.5">
                         <span className="flex items-center gap-1.5 font-semibold text-ink">
@@ -258,7 +258,7 @@ export function AttendanceSection() {
                                     {formatDate(locale === "ru" ? "ru" : "uz", cs.date, "short")}
                                   </span>
                                   <span className="min-w-0 flex-1 truncate text-ink-soft">{cs.title ?? c.courseName}</span>
-                                  <span className={cls("shrink-0 rounded-pill px-2 py-0.5 text-[12px] font-semibold", cm.chip)}>
+                                  <span className={cls("shrink-0 rounded-pill px-2 py-0.5 text-note font-semibold", cm.chip)}>
                                     {t(`status.${cs.status}`)}
                                   </span>
                                 </div>
@@ -310,7 +310,7 @@ export function AttendanceSection() {
         <select
           value={courseId ?? ""}
           onChange={(e) => setCourseId(e.target.value ? Number(e.target.value) : undefined)}
-          className="rounded-control border border-line bg-surface px-3 py-2 text-[14.5px] font-medium outline-none transition-colors focus:border-brand shadow-sm"
+          className="rounded-control border border-line bg-surface px-3 py-2 text-body font-medium outline-none transition-colors focus:border-brand shadow-sm"
         >
           <option value="">{t("allCourses")}</option>
           {(coursesQ.data ?? []).map((c) => (
@@ -324,14 +324,14 @@ export function AttendanceSection() {
             type="date"
             value={range.from ?? ""}
             onChange={(e) => setRange((r) => ({ ...r, from: e.target.value || undefined }))}
-            className="rounded-control border-none px-2.5 py-1.5 text-[14px] outline-none bg-transparent"
+            className="rounded-control border-none px-2.5 py-1.5 text-body outline-none bg-transparent"
           />
           <span className="text-ink-faint">—</span>
           <input
             type="date"
             value={range.to ?? ""}
             onChange={(e) => setRange((r) => ({ ...r, to: e.target.value || undefined }))}
-            className="rounded-control border-none px-2.5 py-1.5 text-[14px] outline-none bg-transparent"
+            className="rounded-control border-none px-2.5 py-1.5 text-body outline-none bg-transparent"
           />
         </div>
       </motion.div>
@@ -361,12 +361,12 @@ export function AttendanceSection() {
                           <Icon icon={m.icon} size={18} />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-[15px] font-semibold text-ink">{s.title ?? s.courseName}</p>
-                          <p className="truncate text-[13.5px] text-ink-soft mt-0.5">
+                          <p className="truncate text-body font-semibold text-ink">{s.title ?? s.courseName}</p>
+                          <p className="truncate text-note text-ink-soft mt-0.5">
                             {formatDate(locale === "ru" ? "ru" : "uz", s.date, "short")} · {s.courseName}
                           </p>
                         </div>
-                        <span className={cls("shrink-0 rounded-pill px-3 py-1 text-[13px] font-semibold shadow-sm border border-transparent", m.chip)}>
+                        <span className={cls("shrink-0 rounded-pill px-3 py-1 text-note font-semibold shadow-sm border border-transparent", m.chip)}>
                           {t(`status.${s.status}`)}
                         </span>
                       </div>

@@ -191,7 +191,7 @@ export function StudentCoursesPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={t("searchPlaceholder")}
-            className="w-full rounded-control border border-line bg-surface py-2.5 pl-10 pr-4 text-[14px] font-medium outline-none transition-colors focus:border-brand"
+            className="w-full rounded-control border border-line bg-surface py-2.5 pl-10 pr-4 text-body font-medium outline-none transition-colors focus:border-brand"
           />
         </div>
         <div className="flex items-center gap-2 rounded-control border border-line bg-surface p-1">

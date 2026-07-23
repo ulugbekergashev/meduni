@@ -7,10 +7,10 @@ import type { LessonSection, Term } from "../api";
 import { BlockView } from "./BlockView";
 
 /** O'qish shrifti — A−/A+ bilan boshqariladi, tanlov localStorage'da qoladi.
- *  2026-07-23: shkala ko'tarildi (14→18, default 16px). Kalit ham versiyalandi —
+ *  2026-07-23 v2: buyurtmachi "kattaroq" dedi — default 17px. Kalit versiyalangan —
  *  eski saqlangan indeks yangi massivda boshqa o'lchamni bildirardi. */
-const READ_SIZES = [14, 15, 16, 17, 18];
-const SIZE_KEY = "meduni.readSize2";
+const READ_SIZES = [15, 16, 17, 18, 19];
+const SIZE_KEY = "meduni.readSize3";
 
 function useReadSize() {
   const [idx, setIdx] = useState(() => {

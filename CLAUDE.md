@@ -89,11 +89,16 @@ brand, emerald, amber, blue, rose (amber↔emerald yonma-yon faqat 2px oraliq/yo
 
 ### O'lchamlar
 - Karta radius 16px, tugma/input 10px, badge/pill 20px (dumaloq)
-- **Shrift shkalasi — `packages/ui/tailwind.config.ts` tokenlari** (2026-07-23 +1 pog'ona):
-  `h1` 22 · `stat` 34 · `section` 16 · `body` 14 · `note` 12.5 · `micro` 11.5 · `read` 16/1.75.
-  **`micro` (11.5px) — MUTLAQ MINIMUM.** `text-[10px]`/`text-[11px]` kabi arbitrary
-  qiymatlar TAQIQ. O'qish ustunida sarlavha/marker o'lchamlari **em** da beriladi
-  (A−/A+ bilan birga masshtablansin), px da EMAS.
+- **Shrift shkalasi — `packages/ui/tailwind.config.ts` tokenlari** (2026-07-23 v2,
+  buyurtmachi "kattaroq" dedi): `h1` 24 · `stat` 36 · `section` 17 · `body` 15 ·
+  `note` 13.5 · `micro` 12 · `read` 17/1.8. **`micro` (12px) — MUTLAQ MINIMUM.**
+  `text-[10px]`—`text-[15px]` kabi arbitrary qiymatlar TAQIQ — token ishlat
+  (talaba sahifalarida hammasi token'ga o'tkazilgan). O'qish ustunida sarlavha/
+  marker o'lchamlari **em** da beriladi (A−/A+ bilan birga masshtablansin).
+- **Talaba tomoni endi DEFAULT YORUG'** (2026-07-23, buyurtmachi: qora "texno"
+  qiyofa tibbiyotga mos emas): majburiy dark BEKOR (`StudentShell`da forceTheme
+  yo'q), Dark Mode headerdagi tugma orqali OPTSIYA (talabnoma sharti). Dark
+  tokenlar yumshatilgan slate (#0f141e/#161d2b) — void-qora (#06080d) EMAS.
 - Soyalar tokenli: `--shadow-card` / `--shadow-card-hover` (ink-tinted, dark'da o'z varianti); Tailwind `shadow-card`/`shadow-card-hover`
 - Sana formati: `lib/date.ts::formatDate(locale, date, "long|short|shortYear")` — uz oy nomlari qo'lda ("15-iyul, 2026-yil"; uz-UZ ICU "M07" buzuq), toLocaleDateString'ni oy-nomli formatda ISHLATMA
 - Panel padding 12-16px (`p-3`/`p-4`), kartalar orasi **8-12px** (`gap-2`/`gap-3`) — ZICHLIK QOIDASIga qarang

@@ -58,11 +58,11 @@ function LessonCell({ s }: { s: ScheduleItem }) {
             : "border-l-brand bg-brand-soft"
       )}
     >
-      <p className="line-clamp-2 text-[14px] font-bold leading-snug text-ink">{s.title ?? s.courseName}</p>
-      <p className="mt-0.5 truncate text-[12.5px] font-medium text-ink-soft">{s.courseName}</p>
+      <p className="line-clamp-2 text-body font-bold leading-snug text-ink">{s.title ?? s.courseName}</p>
+      <p className="mt-0.5 truncate text-note font-medium text-ink-soft">{s.courseName}</p>
       <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
         {s.room && (
-          <span className="inline-flex items-center gap-1 text-[12px] font-semibold text-ink-faint">
+          <span className="inline-flex items-center gap-1 text-note font-semibold text-ink-faint">
             <Icon icon={DoorOpen} size={12} /> {s.room}
           </span>
         )}
@@ -143,7 +143,7 @@ export function SchedulePage() {
                 >
                   <Icon icon={ChevronLeft} size={16} />
                 </button>
-                <span className="min-w-[180px] text-center text-[14px] font-bold tracking-wide text-ink">
+                <span className="min-w-[180px] text-center text-body font-bold tracking-wide text-ink">
                   {fmt(weekStart)} — {fmt(weekEnd)}
                 </span>
                 <button
@@ -156,7 +156,7 @@ export function SchedulePage() {
               </div>
               <button
                 onClick={() => setWeekStart(mondayOf(new Date()))}
-                className="rounded-control border border-line bg-surface-raised px-4 py-1.5 text-[14px] font-bold text-ink-soft transition-colors hover:bg-surface hover:text-ink"
+                className="rounded-control border border-line bg-surface-raised px-4 py-1.5 text-body font-bold text-ink-soft transition-colors hover:bg-surface hover:text-ink"
               >
                 {t("today")}
               </button>
@@ -196,7 +196,7 @@ export function SchedulePage() {
       ) : slots.length === 0 ? (
         <motion.div variants={itemVariants}>
           <Card className="mt-2 border-dashed bg-surface">
-            <p className="py-12 text-center text-[15px] font-medium text-ink-faint">{t("emptyWeek")}</p>
+            <p className="py-12 text-center text-body font-medium text-ink-faint">{t("emptyWeek")}</p>
           </Card>
         </motion.div>
       ) : (
@@ -215,7 +215,7 @@ export function SchedulePage() {
                       d.isToday && "bg-brand-soft"
                     )}
                   >
-                    <p className={cls("text-[13px] font-bold uppercase tracking-wider", d.isToday ? "text-brand-tint" : "text-ink-soft")}>
+                    <p className={cls("text-note font-bold uppercase tracking-wider", d.isToday ? "text-brand-tint" : "text-ink-soft")}>
                       {d.short}
                     </p>
                     <p className={cls("mt-0.5 text-[17px] font-bold tabular-nums", d.isToday ? "text-brand-tint" : "text-ink")}>
@@ -230,7 +230,7 @@ export function SchedulePage() {
               {slots.map((slot) => (
                 <div key={slot} className="grid grid-cols-[64px_repeat(7,minmax(0,1fr))] border-b border-line last:border-0">
                   <div className="flex items-start justify-center px-1 py-3">
-                    <span className="text-[13.5px] font-bold tabular-nums text-ink-soft">{slot}</span>
+                    <span className="text-note font-bold tabular-nums text-ink-soft">{slot}</span>
                   </div>
                   {days.map((d) => {
                     const rows = at(slot, d.key);
@@ -257,7 +257,7 @@ export function SchedulePage() {
 
       {/* Izoh (legenda) — katak uslubi bilan aynan mos */}
       {slots.length > 0 && (
-        <motion.div variants={itemVariants} className="flex flex-wrap items-center gap-x-5 gap-y-2 px-1 text-[13px] font-semibold text-ink-soft">
+        <motion.div variants={itemVariants} className="flex flex-wrap items-center gap-x-5 gap-y-2 px-1 text-note font-semibold text-ink-soft">
           <span className="inline-flex items-center gap-2">
             <span className="h-3.5 w-3.5 rounded-[4px] border-l-[3px] border-l-brand bg-brand-soft" /> {t("upcomingBadge")}
           </span>
