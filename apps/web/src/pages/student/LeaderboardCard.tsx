@@ -17,7 +17,7 @@ function Row({ row }: { row: LeaderboardRow }) {
       <div
         className={cls(
           "flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[13px] font-bold tabular-nums",
-          top3 ? "bg-amber-soft text-amber" : "bg-bg text-ink-soft"
+          top3 ? "bg-amber-soft text-amber" : "bg-surface-raised text-ink-soft"
         )}
       >
         {row.rank}

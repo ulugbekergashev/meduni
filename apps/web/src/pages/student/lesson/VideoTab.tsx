@@ -140,7 +140,7 @@ export function VideoTab({ topicId, data, threshold }: { topicId: number; data: 
           <button
             onClick={() => setCaptions((c) => !c)}
             className={`inline-flex items-center gap-2 rounded-pill border px-4 py-2 text-[14px] font-bold transition-all ${
-              captions ? "border-violet/30 bg-violet-soft text-violet shadow-sm" : "border-line text-ink-soft hover:bg-bg hover:text-ink"
+              captions ? "border-violet bg-violet-soft text-violet" : "border-line text-ink-soft hover:bg-surface-raised hover:text-ink"
             }`}
           >
             <Icon icon={Captions} size={18} />
@@ -159,7 +159,7 @@ export function VideoTab({ topicId, data, threshold }: { topicId: number; data: 
               </span>
             )}
           </div>
-          <div className="h-2 w-full overflow-hidden rounded-pill bg-bg shadow-inner">
+          <div className="h-2 w-full overflow-hidden rounded-pill bg-surface-raised">
             <div className="h-full rounded-pill bg-gradient-to-r from-violet to-violet-soft transition-all duration-500" style={{ width: `${Math.max(shownPct, 2)}%` }} />
           </div>
         </div>

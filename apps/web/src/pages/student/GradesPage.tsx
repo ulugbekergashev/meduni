@@ -37,13 +37,13 @@ function QuizRow({ q, onOpen }: { q: GradeQuiz; onOpen: () => void }) {
     <div className="border-b border-line last:border-b-0 group">
       <div
         onClick={() => setOpen((o) => !o)}
-        className="flex w-full cursor-pointer items-center gap-4 px-5 py-3.5 text-left transition-colors hover:bg-bg"
+        className="flex w-full cursor-pointer items-center gap-4 px-5 py-3.5 text-left transition-colors hover:bg-surface-raised"
       >
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-soft text-blue shadow-sm">
           <Icon icon={ClipboardList} size={18} />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-[15.5px] font-bold text-ink transition-colors group-hover:text-brand-deep">{q.topicTitle}</p>
+          <p className="truncate text-[15.5px] font-bold text-ink transition-colors group-hover:text-brand-tint">{q.topicTitle}</p>
           <p className="flex items-center gap-1.5 text-[13px] text-ink-faint mt-0.5">
             {t("attemptsN", { n: q.attempts })} · <span className={q.passed ? "text-emerald font-medium" : ""}>{q.passed ? t("passed") : t("notPassed")}</span>
             <span className="text-ink-faint">· {t("passThreshold", { n: q.passThreshold })}</span>
@@ -66,7 +66,7 @@ function QuizRow({ q, onOpen }: { q: GradeQuiz; onOpen: () => void }) {
           initial={{ height: 0, opacity: 0 }}
           animate={{ height: "auto", opacity: 1 }}
           exit={{ height: 0, opacity: 0 }}
-          className="overflow-hidden bg-bg"
+          className="overflow-hidden bg-surface-raised"
         >
           <div className="border-t border-line px-5 py-4">
             <p className="mb-3 text-[12.5px] font-bold uppercase tracking-wider text-ink-faint">{t("historyTitle")}</p>
@@ -88,7 +88,7 @@ function QuizRow({ q, onOpen }: { q: GradeQuiz; onOpen: () => void }) {
             </div>
             <button
               onClick={onOpen}
-              className="mt-4 text-[13.5px] font-bold text-brand-deep hover:underline inline-flex items-center gap-1.5"
+              className="mt-4 text-[13.5px] font-bold text-brand-tint hover:underline inline-flex items-center gap-1.5"
             >
               {t("openTopic")} <Icon icon={ChevronDown} size={14} className="-rotate-90" />
             </button>
@@ -106,13 +106,13 @@ function CaseRow({ c, onOpen }: { c: GradeCase; onOpen: () => void }) {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="border-b border-line last:border-b-0 px-5 py-4 group hover:bg-bg transition-colors">
+    <div className="border-b border-line last:border-b-0 px-5 py-4 group hover:bg-surface-raised transition-colors">
       <div className="flex items-center gap-4">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-rose-soft text-rose shadow-sm">
           <Icon icon={Stethoscope} size={18} />
         </div>
         <button onClick={onOpen} className="min-w-0 flex-1 text-left">
-          <p className="truncate text-[15.5px] font-bold text-ink transition-colors group-hover:text-brand-deep">{c.topicTitle}</p>
+          <p className="truncate text-[15.5px] font-bold text-ink transition-colors group-hover:text-brand-tint">{c.topicTitle}</p>
           <p className="text-[13px] text-ink-soft mt-0.5 font-medium">
             {c.reviewed && c.reviewedAt
               ? `${c.reviewedByName ?? "—"} · ${formatDate(locale === "ru" ? "ru" : "uz", c.reviewedAt, "short")}`
@@ -266,7 +266,7 @@ export function GradesPage() {
             icon={Clock}
             value={String(pendingCases.length)}
             label={t("statPending")}
-            tone={pendingCases.length > 0 ? "bg-amber-soft text-amber" : "bg-bg text-ink-faint"}
+            tone={pendingCases.length > 0 ? "bg-amber-soft text-amber" : "bg-surface text-ink-faint"}
             onClick={() => toggle("case")}
             selected={filter === "case"}
           />
@@ -282,7 +282,7 @@ export function GradesPage() {
               onClick={() => setFilter(f)}
               className={cls(
                 "rounded-[8px] px-4 py-1.5 text-[14px] font-bold transition-all",
-                filter === f ? "bg-brand-soft text-brand-deep shadow-sm" : "text-ink-soft hover:bg-bg hover:text-ink"
+                filter === f ? "bg-brand-soft text-brand-tint shadow-sm" : "text-ink-soft hover:bg-surface-raised hover:text-ink"
               )}
             >
               {t(`filter.${f}`)}
@@ -321,7 +321,7 @@ export function GradesPage() {
                     <button
                       key={r.key}
                       onClick={() => navigateTo(`/app/topics/${r.topicId}?tab=${r.tab}`)}
-                      className="flex w-full items-center gap-3 px-5 py-3 text-left transition-colors hover:bg-bg"
+                      className="flex w-full items-center gap-3 px-5 py-3 text-left transition-colors hover:bg-surface-raised"
                     >
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-[14.5px] font-bold text-ink">{r.title}</p>
@@ -343,7 +343,7 @@ export function GradesPage() {
                     <button
                       key={`p${k.topicId}`}
                       onClick={() => navigateTo(`/app/topics/${k.topicId}?tab=case`)}
-                      className="flex w-full items-center gap-3 px-5 py-3 text-left transition-colors hover:bg-bg"
+                      className="flex w-full items-center gap-3 px-5 py-3 text-left transition-colors hover:bg-surface-raised"
                     >
                       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-soft text-amber">
                         <Icon icon={Stethoscope} size={15} />

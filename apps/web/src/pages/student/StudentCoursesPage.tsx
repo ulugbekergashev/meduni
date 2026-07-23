@@ -27,12 +27,12 @@ function CourseRow({ course }: { course: CourseSummary }) {
   return (
     <div
       onClick={() => navigate(`/app/courses/${course.id}`)}
-      className="flex cursor-pointer items-center gap-4 px-4 py-3.5 transition-colors hover:bg-bg"
+      className="flex cursor-pointer items-center gap-4 px-4 py-3.5 transition-colors hover:bg-surface-raised"
     >
       <div
         className={cls(
           "flex h-11 w-11 shrink-0 items-center justify-center rounded-full",
-          done ? "bg-emerald-soft text-emerald" : "bg-brand-soft text-brand-deep"
+          done ? "bg-emerald-soft text-emerald" : "bg-brand-soft text-brand-tint"
         )}
       >
         <Icon icon={done ? CheckCircle2 : BookOpen} size={20} />
@@ -61,7 +61,7 @@ function CourseRow({ course }: { course: CourseSummary }) {
       </div>
 
       <div className="flex shrink-0 flex-col items-end gap-1.5 sm:flex-row sm:items-center sm:gap-3">
-        <span className={cls("text-[17px] font-bold tabular-nums", done ? "text-emerald" : "text-brand-deep")}>
+        <span className={cls("text-[17px] font-bold tabular-nums", done ? "text-emerald" : "text-brand-tint")}>
           {course.progressPct}%
         </span>
         {course.nextTopicId ? (
@@ -70,7 +70,7 @@ function CourseRow({ course }: { course: CourseSummary }) {
               e.stopPropagation();
               navigate(`/app/topics/${course.nextTopicId}`);
             }}
-            className="inline-flex items-center gap-1.5 rounded-control border border-line bg-surface px-3 py-1.5 text-note font-bold text-brand-deep transition-colors hover:border-brand-soft hover:bg-brand-soft"
+            className="inline-flex items-center gap-1.5 rounded-control border border-line bg-surface px-3 py-1.5 text-note font-bold text-brand-tint transition-colors hover:border-brand-soft hover:bg-brand-soft"
           >
             <Icon icon={PlayCircle} size={15} />
             <span className="hidden sm:inline">{t("continueShort")}</span>
@@ -170,7 +170,7 @@ export function StudentCoursesPage() {
             </div>
           }
         >
-          <HeroTile icon={BookOpen} value={String(courses.length)} label={t("statAll")} tone="bg-brand-soft text-brand-deep" />
+          <HeroTile icon={BookOpen} value={String(courses.length)} label={t("statAll")} tone="bg-brand-soft text-brand-tint" />
           <HeroTile
             icon={PlayCircle}
             value={String(currentCount)}
@@ -207,7 +207,7 @@ export function StudentCoursesPage() {
         {!isCurrentDefault && newest && (
           <button
             onClick={backToCurrent}
-            className="inline-flex items-center gap-1.5 rounded-control border border-line bg-surface px-3 py-2 text-note font-semibold text-brand-deep transition-colors hover:bg-brand-soft"
+            className="inline-flex items-center gap-1.5 rounded-control border border-line bg-surface px-3 py-2 text-note font-semibold text-brand-tint transition-colors hover:bg-brand-soft"
           >
             <Icon icon={RotateCcw} size={14} />
             {t("backToCurrent")}

@@ -34,8 +34,8 @@ function Chip({
 }) {
   const cn = cls(
     "inline-flex items-center gap-1 rounded-pill px-2 py-0.5 text-[12.5px] font-medium transition-colors",
-    done ? "bg-emerald-soft text-emerald" : "bg-bg text-ink-faint",
-    onClick && (done ? "hover:bg-emerald hover:text-white" : "hover:bg-brand-soft hover:text-brand-deep")
+    done ? "bg-emerald-soft text-emerald" : "bg-surface-raised text-ink-faint",
+    onClick && (done ? "hover:bg-emerald hover:text-white" : "hover:bg-brand-soft hover:text-brand-tint")
   );
   const inner = (
     <>
@@ -146,7 +146,7 @@ function TopicCard({ topic, last }: { topic: StudentTopic; last: boolean }) {
           {current && (
             <>
               <div>
-                <div className="h-2 w-full overflow-hidden rounded-pill bg-bg">
+                <div className="h-2 w-full overflow-hidden rounded-pill bg-surface-raised">
                   <div className="h-full rounded-pill bg-brand transition-all" style={{ width: `${Math.max(topic.pct, 2)}%` }} />
                 </div>
                 <p className="mt-1 text-[13px] text-ink-soft">{topic.pct}% {t("done")}</p>
@@ -162,7 +162,7 @@ function TopicCard({ topic, last }: { topic: StudentTopic; last: boolean }) {
 
           {topic.state === "COMPLETED" && (
             <Link to={`/app/topics/${topic.id}`} className="self-start">
-              <button className="flex items-center gap-1.5 rounded-control border border-line px-3 py-1.5 text-[14px] font-semibold text-ink-soft transition-all hover:bg-bg">
+              <button className="flex items-center gap-1.5 rounded-control border border-line px-3 py-1.5 text-[14px] font-semibold text-ink-soft transition-all hover:bg-surface-raised">
                 <Icon icon={RotateCcw} size={14} />
                 {t("review")}
               </button>
@@ -196,7 +196,7 @@ export function CoursePath() {
 
   return (
     <div className="mx-auto max-w-4xl">
-      <button onClick={() => navigate("/app")} className="mb-3 flex items-center gap-1 text-[14.5px] font-medium text-brand-deep hover:underline">
+      <button onClick={() => navigate("/app")} className="mb-3 flex items-center gap-1 text-[14.5px] font-medium text-brand-tint hover:underline">
         <Icon icon={ArrowLeft} size={15} />
         {t("back")}
       </button>
@@ -236,7 +236,7 @@ export function CoursePath() {
                     </p>
                     {current && (
                       <Link to={`/app/topics/${current.id}`}>
-                        <button className="flex items-center gap-1.5 rounded-control bg-white px-3 py-1.5 text-[14px] font-bold text-brand-deep transition-all hover:bg-white/90">
+                        <button className="flex items-center gap-1.5 rounded-control bg-white px-3 py-1.5 text-[14px] font-bold text-brand-tint transition-all hover:bg-white/90">
                           <Icon icon={PlayCircle} size={15} />
                           {t("continue")}
                         </button>
