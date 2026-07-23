@@ -2,9 +2,10 @@ import type { ReactNode } from "react";
 import { Card, Icon, cls } from "@meduni/ui";
 import type { LucideIcon } from "lucide-react";
 
-/** Sahifa shapkasi: chapda sarlavha/kontekst, o'ngda ko'rsatkichlar.
- *  2026-07-23 redizayn: tile'lar endi havoda suzmaydi — bitta yaxlit segmentli
- *  panel (gap-px + bg-line "grout" — har qanday wrap'да ingichka ajratgich). */
+/** Sahifa shapkasi + statistika kartalari qatori (2026-07-23 v3 — buyurtmachi
+ *  DentaCRM etalonini ko'rsatdi: har ko'rsatkich ALOHIDA keng karta, tepada
+ *  rangli ikonka-chip, katta raqam, havo ko'p). Sarlavha yuqorida, kartalar
+ *  ostida to'liq kenglikda. */
 export function HeroCard({
   title,
   subtitle,
@@ -13,70 +14,84 @@ export function HeroCard({
 }: {
   title: string;
   subtitle?: string;
-  /** Sarlavha ostidagi qo'shimcha (masalan hafta navigatsiyasi). */
+  /** Sarlavha yonidagi qo'shimcha (hafta navigatsiyasi, halqa, streak...). */
   left?: ReactNode;
-  /** Ko'rsatkich tile'lari. */
+  /** HeroTile kartalari. */
   children: ReactNode;
 }) {
   return (
-    <Card className="flex flex-wrap items-center gap-x-8 gap-y-4 !p-6">
-      <div className="min-w-0 flex-1">
-        <h1 className="truncate text-h1 font-bold text-ink">{title}</h1>
-        {subtitle && <p className="mt-1 text-note text-ink-faint">{subtitle}</p>}
-        {left && <div className="mt-3.5">{left}</div>}
+    <div>
+      <div className="mb-3.5 flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
+        <div className="min-w-0">
+          <h1 className="text-h1 font-bold text-ink">{title}</h1>
+          {subtitle && <p className="mt-1 text-note text-ink-faint">{subtitle}</p>}
+        </div>
+        {left && <div className="shrink-0">{left}</div>}
       </div>
-      <div className="grid w-full min-w-0 grid-cols-2 gap-px overflow-hidden rounded-control border border-line bg-line sm:flex sm:w-auto sm:items-stretch">
-        {children}
-      </div>
-    </Card>
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">{children}</div>
+    </div>
   );
 }
 
-/** Hero ichidagi ko'rsatkich — segmentli panel katagi. Bosilsa filtrlaydi
- *  yoki boshqa modulga o'tadi. */
+/** Statistika kartasi (DentaCRM uslubi): ikonka-chip → UPPERCASE yorliq → katta
+ *  raqam. Bosilsa filtrlaydi yoki modulga o'tadi; `accent` — gradient urg'u karta. */
 export function HeroTile({
   icon,
   value,
   label,
   tone,
+  hint,
   onClick,
   selected = false,
+  accent = false,
 }: {
   icon: LucideIcon;
   value: string;
   label: string;
   tone: string;
+  hint?: ReactNode;
   onClick?: () => void;
   selected?: boolean;
+  /** Gradient urg'u karta (masalan asosiy ko'rsatkich). */
+  accent?: boolean;
 }) {
-  const Wrapper = onClick ? "button" : "div";
+  if (accent) {
+    return (
+      <Card
+        interactive={!!onClick}
+        onClick={onClick}
+        className="flex flex-col gap-3 border-0 !bg-gradient-to-br from-brand-deep to-brand !p-5 text-white"
+      >
+        <span className="flex h-11 w-11 items-center justify-center rounded-control bg-white/15 text-white">
+          <Icon icon={icon} size={20} />
+        </span>
+        <div>
+          <p className="text-micro font-extrabold uppercase tracking-wider text-white/75">{label}</p>
+          <p className="mt-1.5 text-[30px] font-extrabold leading-none tabular-nums">{value}</p>
+          {hint && <p className="mt-1.5 text-note text-white/85">{hint}</p>}
+        </div>
+      </Card>
+    );
+  }
   return (
-    <Wrapper
+    <Card
+      interactive={!!onClick}
       onClick={onClick}
-      className={cls(
-        "flex min-w-0 items-center gap-3 px-4 py-3.5 text-left transition-colors sm:min-w-[148px]",
-        selected ? "bg-brand-soft" : "bg-surface-raised",
-        onClick && !selected && "hover:bg-surface",
-        onClick && "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand"
-      )}
+      className={cls("flex flex-col gap-3 !p-5", selected && "border-brand ring-2 ring-brand/25")}
     >
-      <span className={cls("flex h-9 w-9 shrink-0 items-center justify-center rounded-control", tone)}>
-        <Icon icon={icon} size={16} />
+      <span className={cls("flex h-11 w-11 items-center justify-center rounded-control", tone)}>
+        <Icon icon={icon} size={20} />
       </span>
-      <span className="min-w-0">
-        <span
-          className={cls(
-            "block text-[21px] font-extrabold leading-none tabular-nums",
-            selected ? "text-brand-tint" : "text-ink"
-          )}
-        >
-          {value}
-        </span>
-        <span className={cls("mt-1 block truncate text-note", selected ? "text-brand-tint" : "text-ink-dim")}>
+      <div>
+        <p className={cls("text-micro font-extrabold uppercase tracking-wider", selected ? "text-brand-tint" : "text-ink-faint")}>
           {label}
-        </span>
-      </span>
-    </Wrapper>
+        </p>
+        <p className={cls("mt-1.5 text-[30px] font-extrabold leading-none tabular-nums", selected ? "text-brand-tint" : "text-ink")}>
+          {value}
+        </p>
+        {hint && <p className="mt-1.5 text-note text-ink-faint">{hint}</p>}
+      </div>
+    </Card>
   );
 }
 
@@ -94,7 +109,7 @@ export function RailCard({
 }) {
   return (
     <Card className="p-0">
-      <div className="flex items-center gap-2 border-b border-line px-4 py-2.5">
+      <div className="flex items-center gap-2 border-b border-line px-4 py-3">
         <Icon icon={icon} size={15} className="text-ink-faint" />
         <p className="flex-1 text-note font-bold text-ink-soft">{title}</p>
         {action && (

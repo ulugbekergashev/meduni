@@ -132,7 +132,7 @@ export function StudentTasksPage() {
   const toggle = (f: Filter) => setFilter((cur) => (cur === f ? "all" : f));
 
   return (
-    <motion.div variants={containerVariants} initial="hidden" animate="show" className="space-y-3">
+    <motion.div variants={containerVariants} initial="hidden" animate="show" className="space-y-4">
       <motion.div variants={itemVariants}>
         <HeroCard title={t("studentTitle")} subtitle={t("studentHint")}>
           <HeroTile
@@ -178,8 +178,8 @@ export function StudentTasksPage() {
           <p className="py-4 text-center text-body text-rose">{t("error")}</p>
         </Card>
       ) : (
-        <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_340px]">
-          <div className="min-w-0 space-y-3">
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
+          <div className="min-w-0 space-y-4">
             {/* O'qituvchi topshiriqlari */}
             {showTeacher && assigned.length > 0 && (
               <motion.section variants={itemVariants}>
@@ -276,7 +276,7 @@ export function StudentTasksPage() {
           </div>
 
           {/* O'ng ustun — kontekst */}
-          <aside className="min-w-0 space-y-3">
+          <aside className="min-w-0 space-y-4">
             <motion.div variants={itemVariants}>
               <RailCard
                 title={t("upcomingLessons")}

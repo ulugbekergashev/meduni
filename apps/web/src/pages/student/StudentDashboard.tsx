@@ -269,8 +269,8 @@ export function StudentDashboard() {
             </motion.div>
 
             {/* Asosiy maydon: chapda ish, o'ngda kontekst */}
-            <div className="mt-3 grid gap-3 lg:grid-cols-[minmax(0,1fr)_340px]">
-              <div className="min-w-0 space-y-3">
+            <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
+              <div className="min-w-0 space-y-4">
                 {/* Davom ettirish */}
                 {d.resume && (
                   <motion.div
@@ -484,7 +484,7 @@ export function StudentDashboard() {
               </div>
 
               {/* O'ng ustun — takrorlash, bildirishnoma, faollik */}
-              <aside className="min-w-0 space-y-3">
+              <aside className="min-w-0 space-y-4">
                 {/* Interval takrorlash — bugun takrorlash kerak bo'lgan kartalar */}
                 {reviewQ.data && reviewQ.data.total > 0 && (
                   <motion.div variants={itemVariants}>

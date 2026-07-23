@@ -224,7 +224,7 @@ export function GradesPage() {
     .slice(0, 6);
 
   return (
-    <motion.div variants={containerVariants} initial="hidden" animate="show" className="space-y-3">
+    <motion.div variants={containerVariants} initial="hidden" animate="show" className="space-y-4">
       <motion.div variants={itemVariants}>
         <HeroCard
           title={t("title")}
@@ -291,7 +291,7 @@ export function GradesPage() {
         </motion.div>
       )}
 
-      <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_340px]">
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
         <div className="min-w-0">
           <AsyncSection
             isLoading={q.isLoading}
@@ -308,7 +308,7 @@ export function GradesPage() {
           </AsyncSection>
         </div>
 
-        <aside className="min-w-0 space-y-3">
+        <aside className="min-w-0 space-y-4">
           <motion.div variants={itemVariants}>
             <LeaderboardCard />
           </motion.div>

@@ -158,7 +158,7 @@ export function StudentCoursesPage() {
   const topicsTotal = courses.reduce((a, c) => a + c.topicsTotal, 0);
 
   return (
-    <motion.div variants={containerVariants} initial="hidden" animate="show" className="space-y-3">
+    <motion.div variants={containerVariants} initial="hidden" animate="show" className="space-y-4">
       <motion.div variants={itemVariants}>
         <HeroCard
           title={t("title")}
