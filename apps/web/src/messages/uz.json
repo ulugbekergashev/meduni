@@ -1621,5 +1621,20 @@
     "statAttended": "Keldingiz",
     "statMissed": "Qoldirdingiz",
     "statNextNone": "Keyingi dars yoʻq"
+  },
+  "mistakes": {
+    "title": "Guruh xatolari xaritasi",
+    "subtitle": "Savol va qadam darajasida — talabalarning Mashgʻlulotlar boʻlimi bilan bir xil mezonlar",
+    "subtitleHard": "{{n}} ta mavzuda guruh jiddiy qiynalgan — takrorlash tavsiya etiladi",
+    "empty": "Hozircha xato-signallar yoʻq — talabalar test/keys ishlagach xarita shu yerda paydo boʻladi.",
+    "quizSection": "Test savollari",
+    "caseSection": "Keys qadamlari",
+    "attemptedN": "{{n}} talaba ishladi",
+    "submittedN": "{{n}} talaba topshirdi",
+    "unknownN": "{{n}} bilinmagan karta",
+    "noAnswerN": "Javob bermagan: {{n}}",
+    "wrongWho": "Xato qilganlar",
+    "assignBtn": "Mashq qildirish",
+    "assignTitle": "Mavzuni takrorlang: {{topic}} — Oʻzlashtirish → Mashgʻulotlar boʻlimida xatolaringiz ustida ishlang"
   }
 }
