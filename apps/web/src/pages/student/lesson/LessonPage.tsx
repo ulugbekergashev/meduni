@@ -134,11 +134,18 @@ export function LessonPage() {
   // Materiallar bloki fayl YOKI havola bo'lsa turadi (matn ajratilmagan bo'lsa
   // ham — u holda blok ichida faqat yuklab olish ro'yxati ochiladi).
   if (lesson.materials.length > 0 || (lesson.links?.length ?? 0) > 0) studyBlocks.push("materials");
+  // Fleshkartalar — takrorlash bloki (test yoki konspekt bo'lsa hosil bo'ladi;
+  // test yakunlanmaguncha rail'da qulf bilan turadi).
+  if (lesson.tabs.quiz || lesson.digest) studyBlocks.push("flashcards");
   const activeBlock: ContentView = studyBlocks.includes(view as ContentView)
     ? (view as ContentView)
     : firstContentView(lesson);
   const isStudyView =
-    view === "konspekt" || view === "slides" || view === "video" || view === "materials";
+    view === "konspekt" ||
+    view === "slides" ||
+    view === "video" ||
+    view === "materials" ||
+    view === "flashcards";
   /** 3 panel FAQAT o'rganishda. Test/keys/kartalar/natija/overview — FOKUSLI
    *  yakka interfeys: chap rail ham, chat ham ko'rsatilmaydi (foydalanuvchi:
    *  "bu interfeys faqat o'rganish uchun; test/natija/keys/flashcard uchun

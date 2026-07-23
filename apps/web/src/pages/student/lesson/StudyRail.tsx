@@ -1,9 +1,9 @@
 import { useTranslation } from "react-i18next";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { BookText, Check, Download, ExternalLink, FileText, Layers, Link2, Lock, Video } from "lucide-react";
+import { BookText, Check, Download, ExternalLink, FileText, Layers, Link2, Lock, Sparkles, Video } from "lucide-react";
 import { Icon, cls } from "@meduni/ui";
 import { API_URL } from "../../../lib/api";
-import type { Lesson } from "../api";
+import { useFlashcards, type Lesson } from "../api";
 import { Panel } from "./Panel";
 import type { ContentView } from "./stages";
 
@@ -29,6 +29,7 @@ const BLOCK_ICON: Record<ContentView, typeof BookText> = {
   slides: Layers,
   video: Video,
   materials: FileText,
+  flashcards: Sparkles,
 };
 
 /** Chap ustun — o'rganish bloklari; faol blok ostida uning tafsiloti ochiladi
@@ -63,6 +64,14 @@ export function StudyRail({
   const links = lesson.links ?? [];
   const hasResources = lesson.materials.length > 0 || links.length > 0;
 
+  // Fleshkartalar holati (takrorlash bloki). Qulf: test bor va yakunlanmagan.
+  const fc = useFlashcards(lesson.topicId).data;
+  const fcLocked = fc?.locked ?? (!!lesson.tabs.quiz && lesson.tabs.quiz.attempt?.status !== "finished");
+
+  function blockLocked(v: ContentView): boolean {
+    return v === "flashcards" && fcLocked;
+  }
+
   function blockSub(v: ContentView): string | null {
     if (v === "konspekt") return sections.length ? t("sectionsN", { n: sections.length }) : null;
     if (v === "slides") return lesson.tabs.slides ? t("slidesN", { n: lesson.tabs.slides.slides.length }) : null;
@@ -74,6 +83,11 @@ export function StudyRail({
       const n = lesson.materials.filter((m) => m.hasText).length;
       return n ? t("filesN", { n }) : null;
     }
+    if (v === "flashcards") {
+      if (fcLocked) return t("flashLockedShort");
+      if (fc && fc.total > 0) return `${fc.knownCount}/${fc.total}`;
+      return t("flashReady");
+    }
     return null;
   }
 
@@ -81,6 +95,7 @@ export function StudyRail({
     if (v === "konspekt") return sections.length > 0 && sections.every((s) => s.read);
     if (v === "slides") return !!lesson.tabs.slides?.viewed;
     if (v === "video") return !!lesson.tabs.video?.done;
+    if (v === "flashcards") return !!fc && !fc.locked && fc.total > 0 && fc.knownCount === fc.total;
     return false;
   }
 
@@ -90,6 +105,7 @@ export function StudyRail({
         {blocks.map((v) => {
           const on = v === active;
           const done = blockDone(v);
+          const blockLock = blockLocked(v);
           const sub = blockSub(v);
           return (
             <div key={v}>
@@ -109,7 +125,7 @@ export function StudyRail({
                   />
                 )}
                 <motion.span
-                  key={done ? "done" : "icon"}
+                  key={done ? "done" : blockLock ? "locked" : "icon"}
                   initial={reduce ? false : { scale: 0.7, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ type: "spring", stiffness: 420, damping: 24 }}
@@ -119,18 +135,24 @@ export function StudyRail({
                     // yorqin belgi bo'lmasin uchun kontur ko'rinishida.
                     done
                       ? "bg-surface-raised text-emerald"
-                      : on
-                        ? "bg-brand text-white"
-                        : "bg-surface-raised text-ink-soft"
+                      : blockLock
+                        ? "bg-surface-raised text-ink-dim"
+                        : on
+                          ? "bg-brand text-white"
+                          : "bg-surface-raised text-ink-soft"
                   )}
                 >
-                  <Icon icon={done ? Check : BLOCK_ICON[v]} size={14} strokeWidth={done ? 3 : 2} />
+                  <Icon
+                    icon={done ? Check : blockLock ? Lock : BLOCK_ICON[v]}
+                    size={14}
+                    strokeWidth={done ? 3 : 2}
+                  />
                 </motion.span>
                 <span className="relative z-[1] min-w-0 flex-1">
                   <span
                     className={cls(
                       "block truncate text-note",
-                      on ? "font-bold text-brand-tint" : "font-semibold text-ink"
+                      on ? "font-bold text-brand-tint" : blockLock ? "font-semibold text-ink-soft" : "font-semibold text-ink"
                     )}
                   >
                     {t(`tab_${v}`)}

@@ -68,8 +68,6 @@ export function LessonOverview({
         if (st.state === "done" && st.hint) return `${t("finalBreakdownCase")}: ${st.hint}`;
         return t("casesN", { n: 1 });
       }
-      case "flashcards":
-        return st.state === "soon" ? t("flashLockedShort") : t("flashReady");
       case "result":
         return st.state === "soon" ? t("overviewResultLocked") : t("overviewResultOpen");
     }
