@@ -5,11 +5,11 @@ type Variant = "primary" | "deep" | "ghost" | "soft" | "danger";
 type Size = "sm" | "md" | "lg";
 
 const variantClass: Record<Variant, string> = {
-  primary: "bg-gradient-to-r from-brand to-brand-tint text-white shadow-[0_2px_10px_-2px_rgba(79,70,229,0.3)] hover:shadow-[0_4px_14px_-2px_rgba(79,70,229,0.4)] hover:-translate-y-[1px] hover:brightness-105 border border-transparent",
+  primary: "bg-brand text-white shadow-sm hover:shadow-md hover:bg-brand-deep hover:-translate-y-[1px]",
   deep: "bg-brand-deep text-white shadow-sm hover:shadow-md hover:bg-brand hover:-translate-y-[1px]",
-  ghost: "bg-transparent text-ink border border-line hover:bg-surface-raised hover:border-line-raised hover:shadow-sm",
-  soft: "bg-brand-soft text-brand-deep hover:bg-[#e4e9f7]",
-  danger: "bg-gradient-to-r from-rose to-[#fb7185] text-white shadow-sm hover:shadow-md hover:-translate-y-[1px]",
+  ghost: "bg-surface text-ink border border-line hover:bg-bg hover:border-brand-soft",
+  soft: "bg-brand-soft text-brand-deep hover:brightness-[0.97]",
+  danger: "bg-rose text-white shadow-sm hover:shadow-md hover:brightness-95 hover:-translate-y-[1px]",
 };
 
 const sizeClass: Record<Size, string> = {

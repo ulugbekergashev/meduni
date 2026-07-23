@@ -160,8 +160,8 @@ export function LegendRow({
 export function ProgressBar({ value, tone = "brand", className = "" }: { value: number; tone?: ToneKey; className?: string }) {
   const v = Math.max(0, Math.min(100, value));
   return (
-    <div className={`h-2.5 w-full overflow-hidden rounded-pill bg-bg shadow-inner ${className}`}>
-      <div className="h-full rounded-pill transition-all duration-500 shadow-sm" style={{ width: `${Math.max(v, 2)}%`, background: toneVar[tone] }} />
+    <div className={`h-2.5 w-full overflow-hidden rounded-pill bg-bg ${className}`}>
+      <div className="h-full rounded-pill transition-all" style={{ width: `${Math.max(v, 2)}%`, background: toneVar[tone] }} />
     </div>
   );
 }
@@ -183,11 +183,11 @@ export function BarRow({
     <button
       onClick={onClick}
       disabled={!onClick}
-      className={`flex w-full items-center gap-4 rounded-control px-2 py-2 text-left transition-all duration-200 ${onClick ? "hover:bg-bg hover:scale-[0.99]" : "cursor-default"}`}
+      className={`flex w-full items-center gap-4 rounded-control px-2 py-2 text-left transition-colors ${onClick ? "hover:bg-bg" : "cursor-default"}`}
     >
-      <span className="w-44 shrink-0 truncate text-[15px] font-semibold text-ink">{label}</span>
-      <span className="h-3.5 flex-1 overflow-hidden rounded-pill bg-bg shadow-inner">
-        <span className="block h-full rounded-pill transition-all duration-500 shadow-sm" style={{ width: `${Math.max(v, 2)}%`, background: toneVar[tone] }} />
+      <span className="w-44 shrink-0 truncate text-[15px] font-medium text-ink">{label}</span>
+      <span className="h-3 flex-1 overflow-hidden rounded-pill bg-bg">
+        <span className="block h-full rounded-pill transition-all" style={{ width: `${Math.max(v, 2)}%`, background: toneVar[tone] }} />
       </span>
       <span className="w-12 shrink-0 text-right text-[14.5px] font-bold tabular-nums text-ink">{Math.round(v)}%</span>
     </button>
@@ -228,7 +228,7 @@ export function MiniBars({
                 </span>
               )}
               <div
-                className="w-full rounded-t-[4px] transition-all duration-300 opacity-90 group-hover:opacity-100 group-hover:-translate-y-0.5 shadow-sm"
+                className="w-full rounded-t-[3px] transition-all group-hover:opacity-80"
                 style={{
                   height: h,
                   maxWidth: barMax,
