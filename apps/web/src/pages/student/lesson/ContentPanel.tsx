@@ -142,6 +142,7 @@ export function ContentPanel({
         (readerMode ? (
           <SectionReader
             sections={lesson.sections}
+            terms={lesson.digest?.terms ?? []}
             activeSection={section}
             onVisibleSection={onVisibleSection}
             onMarkRead={onMarkRead}

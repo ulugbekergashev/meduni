@@ -1,14 +1,20 @@
 import { useTranslation } from "react-i18next";
 import { CheckCircle2, Info, TriangleAlert } from "lucide-react";
 import { Icon, cls } from "@meduni/ui";
-import type { DigestBlock } from "../api";
+import type { DigestBlock, Term } from "../api";
+import { TermText } from "./TermTooltip";
 
-/** Konspekt blokining renderi — 1a (ro'yxat) va 1b (kartochka) ikkalasida bir xil. */
-export function BlockView({ block }: { block: DigestBlock }) {
+/** Konspekt blokining renderi — 1a (ro'yxat) va 1b (kartochka) ikkalasida bir xil.
+ *  `terms` berilsa, matn ichidagi tibbiy/lotincha atamalar tooltip oladi (Smart Tooltip). */
+export function BlockView({ block, terms = [] }: { block: DigestBlock; terms?: Term[] }) {
   const { t } = useTranslation(undefined, { keyPrefix: "lesson" });
 
   if (block.type === "para") {
-    return <p className="text-ink-strong">{block.text}</p>;
+    return (
+      <p className="text-ink-strong">
+        <TermText text={block.text} terms={terms} />
+      </p>
+    );
   }
 
   if (block.type === "callout") {
@@ -29,7 +35,9 @@ export function BlockView({ block }: { block: DigestBlock }) {
           <p className={cls("mb-0.5 text-micro font-extrabold uppercase tracking-wider", warn ? "text-amber" : "text-brand-tint")}>
             {warn ? t("calloutWarning") : t("calloutImportant")}
           </p>
-          <p className="text-ink-strong">{block.text}</p>
+          <p className="text-ink-strong">
+            <TermText text={block.text} terms={terms} />
+          </p>
         </div>
       </div>
     );
@@ -54,7 +62,7 @@ export function BlockView({ block }: { block: DigestBlock }) {
           <span className="min-w-0 text-ink-strong">
             {it.lead && <strong className="font-bold text-ink">{it.lead}</strong>}
             {it.lead ? " — " : ""}
-            {it.text}
+            <TermText text={it.text} terms={terms} />
           </span>
         </li>
       ))}
