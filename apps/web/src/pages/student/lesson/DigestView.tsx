@@ -34,11 +34,11 @@ export function DigestView({ digest }: { digest: DigestJson }) {
   return (
     <div className="space-y-4">
       {digest.objectives.length > 0 && (
-        <Section icon={ListChecks} title={t("konspekt_objectives")} tone="bg-brand-soft text-brand-deep">
+        <Section icon={ListChecks} title={t("konspekt_objectives")} tone="bg-brand-soft text-brand-tint">
           <ol className="space-y-1.5">
             {digest.objectives.map((o, i) => (
               <li key={i} className="flex gap-2.5 text-body text-ink">
-                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-soft text-[12px] font-bold text-brand-deep">
+                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-soft text-[12px] font-bold text-brand-tint">
                   {i + 1}
                 </span>
                 <span>{o}</span>
@@ -66,7 +66,7 @@ export function DigestView({ digest }: { digest: DigestJson }) {
           {/* Desktop: 3 ustunli jadval; mobil: karta-stack */}
           <div className="hidden overflow-hidden rounded-card border border-line sm:block">
             <table className="w-full text-left text-body">
-              <thead className="bg-bg text-note font-bold uppercase tracking-wide text-ink-soft">
+              <thead className="bg-surface-raised text-note font-bold uppercase tracking-wide text-ink-soft">
                 <tr>
                   <th className="px-4 py-2">{t("konspekt_termRu")}</th>
                   <th className="px-4 py-2">{t("konspekt_termUz")}</th>

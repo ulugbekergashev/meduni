@@ -21,12 +21,14 @@ const itemVariants: Variants = {
 const WEEKDAYS_UZ = ["Dush", "Sesh", "Chor", "Pay", "Juma", "Shan", "Yak"];
 const WEEKDAYS_RU = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
 
-/** Katak ohangi: o'tgan dars — yo'qlama holati, kelgusi — brand. */
+/** Katak ohangi: o'tgan dars — yo'qlama holati, kelgusi — brand.
+ *  Fon hamma katakda bir xil ko'tarilgan (surface-raised) — holat faqat chap
+ *  chekka rangi + kichik belgi bilan aytiladi (rang shovqini kam). */
 const STATUS_CELL: Record<AttStatus, { border: string; chip: string; icon: typeof Check }> = {
-  PRESENT: { border: "border-l-emerald bg-emerald-soft", chip: "bg-emerald-soft text-emerald-deep", icon: Check },
-  ABSENT: { border: "border-l-rose bg-rose-soft", chip: "bg-rose-soft text-rose-deep", icon: X },
-  LATE: { border: "border-l-amber bg-amber-soft", chip: "bg-amber-soft text-amber-deep", icon: Clock },
-  EXCUSED: { border: "border-l-blue bg-blue-soft", chip: "bg-blue-soft text-blue-deep", icon: Minus },
+  PRESENT: { border: "border-l-emerald", chip: "text-emerald", icon: Check },
+  ABSENT: { border: "border-l-rose", chip: "text-rose", icon: X },
+  LATE: { border: "border-l-amber", chip: "text-amber", icon: Clock },
+  EXCUSED: { border: "border-l-blue", chip: "text-blue", icon: Minus },
 };
 
 function mondayOf(d: Date) {
@@ -39,19 +41,24 @@ const dayKey = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 const hhmm = (d: Date) => `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 
-/** Jadval katagi — bitta dars. */
+/** Jadval katagi — bitta dars. Fon: ko'tarilgan chip (qora "teshik" emas);
+ *  kelgusi dars — brand-soft, o'tganlari — surface-raised + holat chekkasi. */
 function LessonCell({ s }: { s: ScheduleItem }) {
   const meta = s.myStatus ? STATUS_CELL[s.myStatus] : null;
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.95 }}
+      initial={{ opacity: 0, scale: 0.97 }}
       animate={{ opacity: 1, scale: 1 }}
       className={cls(
-        "group h-full rounded-[10px] border-l-[4px] p-2.5 text-left transition-all hover:shadow-md",
-        meta ? meta.border : s.isPast ? "border-l-line bg-bg" : "border-l-brand bg-brand-soft hover:bg-brand-soft"
+        "h-full rounded-control border border-line border-l-[3px] p-2.5 text-left",
+        meta
+          ? cls("bg-surface-raised", meta.border)
+          : s.isPast
+            ? "border-l-line-raised bg-surface-raised opacity-70"
+            : "border-l-brand bg-brand-soft"
       )}
     >
-      <p className="line-clamp-2 text-[14px] font-bold leading-snug text-ink transition-colors group-hover:text-brand-deep">{s.title ?? s.courseName}</p>
+      <p className="line-clamp-2 text-[14px] font-bold leading-snug text-ink">{s.title ?? s.courseName}</p>
       <p className="mt-0.5 truncate text-[12.5px] font-medium text-ink-soft">{s.courseName}</p>
       <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
         {s.room && (
@@ -60,8 +67,8 @@ function LessonCell({ s }: { s: ScheduleItem }) {
           </span>
         )}
         {meta && (
-          <span className={cls("inline-flex items-center rounded-pill px-1.5 py-0.5 shadow-sm", meta.chip)}>
-            <Icon icon={meta.icon} size={11} />
+          <span className={cls("inline-flex items-center", meta.chip)}>
+            <Icon icon={meta.icon} size={13} strokeWidth={3} />
           </span>
         )}
       </div>
@@ -128,28 +135,28 @@ export function SchedulePage() {
           subtitle={t("subtitle")}
           left={
             <div className="flex flex-wrap items-center gap-2.5">
-              <div className="flex items-center rounded-control border border-line bg-surface p-1 shadow-sm">
+              <div className="flex items-center rounded-control border border-line bg-surface-raised p-1">
                 <button
                   onClick={() => shift(-1)}
                   aria-label={t("prevWeek")}
-                  className="flex h-8 w-8 items-center justify-center rounded-[6px] text-ink-soft transition-colors hover:bg-bg"
+                  className="flex h-8 w-8 items-center justify-center rounded-[6px] text-ink-soft transition-colors hover:bg-surface hover:text-ink"
                 >
                   <Icon icon={ChevronLeft} size={16} />
                 </button>
-                <span className="min-w-[180px] text-center text-[14px] font-bold text-ink tracking-wide">
+                <span className="min-w-[180px] text-center text-[14px] font-bold tracking-wide text-ink">
                   {fmt(weekStart)} — {fmt(weekEnd)}
                 </span>
                 <button
                   onClick={() => shift(1)}
                   aria-label={t("nextWeek")}
-                  className="flex h-8 w-8 items-center justify-center rounded-[6px] text-ink-soft transition-colors hover:bg-bg"
+                  className="flex h-8 w-8 items-center justify-center rounded-[6px] text-ink-soft transition-colors hover:bg-surface hover:text-ink"
                 >
                   <Icon icon={ChevronRight} size={16} />
                 </button>
               </div>
               <button
                 onClick={() => setWeekStart(mondayOf(new Date()))}
-                className="rounded-control border border-line bg-surface px-4 py-1.5 text-[14px] font-bold text-ink-soft shadow-sm transition-colors hover:bg-bg hover:text-ink"
+                className="rounded-control border border-line bg-surface-raised px-4 py-1.5 text-[14px] font-bold text-ink-soft transition-colors hover:bg-surface hover:text-ink"
               >
                 {t("today")}
               </button>
@@ -160,14 +167,14 @@ export function SchedulePage() {
             icon={CalendarDays}
             value={String(sessions.length)}
             label={t("statLessons")}
-            tone="bg-brand-soft text-brand-deep"
+            tone="bg-brand-soft text-brand-tint"
           />
           <HeroTile icon={Check} value={String(attended)} label={t("statAttended")} tone="bg-emerald-soft text-emerald" />
           <HeroTile
             icon={X}
             value={String(missedCount)}
             label={t("statMissed")}
-            tone={missedCount > 0 ? "bg-rose-soft text-rose" : "bg-bg text-ink-faint"}
+            tone={missedCount > 0 ? "bg-rose-soft text-rose" : "bg-surface text-ink-faint"}
           />
           <HeroTile
             icon={Clock}
@@ -205,13 +212,13 @@ export function SchedulePage() {
                     key={d.key}
                     className={cls(
                       "border-l border-line px-2 py-3 text-center transition-colors",
-                      d.isToday ? "bg-brand-soft shadow-inner" : ""
+                      d.isToday && "bg-brand-soft"
                     )}
                   >
-                    <p className={cls("text-[13px] font-bold uppercase tracking-wider", d.isToday ? "text-brand" : "text-ink-soft")}>
+                    <p className={cls("text-[13px] font-bold uppercase tracking-wider", d.isToday ? "text-brand-tint" : "text-ink-soft")}>
                       {d.short}
                     </p>
-                    <p className={cls("text-[17px] font-bold tabular-nums mt-0.5", d.isToday ? "text-brand-deep" : "text-ink")}>
+                    <p className={cls("mt-0.5 text-[17px] font-bold tabular-nums", d.isToday ? "text-brand-tint" : "text-ink")}>
                       {d.num}
                     </p>
                   </div>
@@ -221,18 +228,18 @@ export function SchedulePage() {
               {/* Vaqt qatorlari */}
               <AnimatePresence>
               {slots.map((slot) => (
-                <div key={slot} className="grid grid-cols-[64px_repeat(7,minmax(0,1fr))] border-b border-line last:border-0 group transition-colors hover:bg-bg">
+                <div key={slot} className="grid grid-cols-[64px_repeat(7,minmax(0,1fr))] border-b border-line last:border-0">
                   <div className="flex items-start justify-center px-1 py-3">
-                    <span className="text-[13.5px] font-bold tabular-nums text-ink-soft group-hover:text-brand-deep transition-colors">{slot}</span>
+                    <span className="text-[13.5px] font-bold tabular-nums text-ink-soft">{slot}</span>
                   </div>
                   {days.map((d) => {
                     const rows = at(slot, d.key);
                     return (
                       <div
                         key={d.key}
-                        className={cls("min-h-[80px] border-l border-line p-2 transition-colors", d.isToday ? "bg-brand/5" : "")}
+                        className={cls("min-h-[76px] border-l border-line p-1.5", d.isToday && "bg-brand-soft")}
                       >
-                        <div className="space-y-2 h-full flex flex-col justify-start">
+                        <div className="flex h-full flex-col justify-start space-y-1.5">
                           {rows.map((s) => (
                             <LessonCell key={s.id} s={s} />
                           ))}
@@ -248,23 +255,23 @@ export function SchedulePage() {
         </motion.div>
       )}
 
-      {/* Izoh (legenda) */}
+      {/* Izoh (legenda) — katak uslubi bilan aynan mos */}
       {slots.length > 0 && (
-        <motion.div variants={itemVariants} className="flex flex-wrap items-center gap-x-5 gap-y-2 text-[13px] font-semibold text-ink-soft px-1">
+        <motion.div variants={itemVariants} className="flex flex-wrap items-center gap-x-5 gap-y-2 px-1 text-[13px] font-semibold text-ink-soft">
           <span className="inline-flex items-center gap-2">
-            <span className="h-3.5 w-3.5 rounded-[4px] border-l-[3px] border-l-brand bg-brand-soft shadow-sm" /> {t("upcomingBadge")}
+            <span className="h-3.5 w-3.5 rounded-[4px] border-l-[3px] border-l-brand bg-brand-soft" /> {t("upcomingBadge")}
           </span>
           <span className="inline-flex items-center gap-2">
-            <span className="h-3.5 w-3.5 rounded-[4px] border-l-[3px] border-l-emerald bg-emerald-soft shadow-sm" /> {ta("status.PRESENT")}
+            <span className="h-3.5 w-3.5 rounded-[4px] border-l-[3px] border-l-emerald bg-surface-raised" /> {ta("status.PRESENT")}
           </span>
           <span className="inline-flex items-center gap-2">
-            <span className="h-3.5 w-3.5 rounded-[4px] border-l-[3px] border-l-amber bg-amber-soft shadow-sm" /> {ta("status.LATE")}
+            <span className="h-3.5 w-3.5 rounded-[4px] border-l-[3px] border-l-amber bg-surface-raised" /> {ta("status.LATE")}
           </span>
           <span className="inline-flex items-center gap-2">
-            <span className="h-3.5 w-3.5 rounded-[4px] border-l-[3px] border-l-rose bg-rose-soft shadow-sm" /> {ta("status.ABSENT")}
+            <span className="h-3.5 w-3.5 rounded-[4px] border-l-[3px] border-l-rose bg-surface-raised" /> {ta("status.ABSENT")}
           </span>
           <span className="inline-flex items-center gap-2">
-            <span className="h-3.5 w-3.5 rounded-[4px] border-l-[3px] border-l-line bg-bg shadow-sm" /> {t("unmarked")}
+            <span className="h-3.5 w-3.5 rounded-[4px] border-l-[3px] border-l-line-raised bg-surface-raised" /> {t("unmarked")}
           </span>
         </motion.div>
       )}

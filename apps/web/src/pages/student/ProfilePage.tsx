@@ -25,7 +25,7 @@ import { useChangePassword, useMyProfile, useSetLocale } from "./api";
 function InfoRow({ icon, label, value }: { icon: LucideIcon; label: string; value: string }) {
   return (
     <div className="flex items-center gap-3 border-b border-line py-2.5 last:border-0">
-      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-control bg-bg text-ink-soft">
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-control bg-surface-raised text-ink-soft">
         <Icon icon={icon} size={15} />
       </div>
       <span className="w-32 shrink-0 text-note text-ink-faint">{label}</span>
@@ -119,7 +119,7 @@ export function ProfilePage() {
         <div className="mt-5 space-y-4">
           {/* Identity — kim */}
           <Card className="flex flex-wrap items-center gap-5">
-            <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-card bg-brand-soft text-[28px] font-bold text-brand-deep">
+            <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-card bg-brand-soft text-[28px] font-bold text-brand-tint">
               {initials}
             </div>
             <div className="min-w-0 flex-1">
@@ -136,7 +136,7 @@ export function ProfilePage() {
               <div className="mt-2 flex flex-wrap items-center gap-1.5">
                 <Badge tone={p.isActive ? "emerald" : "slate"}>{p.isActive ? t("activeBadge") : t("inactiveBadge")}</Badge>
                 <Badge tone="brand">{t("studentBadge")}</Badge>
-                <span className="rounded-pill bg-bg px-2 py-0.5 text-note font-semibold text-ink-soft">ID: {p.id}</span>
+                <span className="rounded-pill bg-surface-raised px-2 py-0.5 text-note font-semibold text-ink-soft">ID: {p.id}</span>
               </div>
             </div>
           </Card>
@@ -185,7 +185,7 @@ export function ProfilePage() {
                     disabled={setLocale.isPending}
                     className={cls(
                       "flex-1 px-3 py-2 text-[14.5px] font-semibold transition-colors",
-                      locale === l ? "bg-brand-soft text-brand-deep" : "text-ink-soft hover:bg-bg"
+                      locale === l ? "bg-brand-soft text-brand-tint" : "text-ink-soft hover:bg-surface-raised"
                     )}
                   >
                     {l === "uz" ? "O‘zbek (lotin)" : "Русский"}

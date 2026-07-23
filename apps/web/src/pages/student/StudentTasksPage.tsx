@@ -36,7 +36,7 @@ const itemVariants: Variants = {
 };
 
 const META: Record<string, { icon: LucideIcon; labelKey: string; chip: string }> = {
-  study: { icon: PlayCircle, labelKey: "study", chip: "bg-brand-soft text-brand-deep" },
+  study: { icon: PlayCircle, labelKey: "study", chip: "bg-brand-soft text-brand-tint" },
   quiz_todo: { icon: ClipboardList, labelKey: "quizTodo", chip: "bg-blue-soft text-blue" },
   case_todo: { icon: Stethoscope, labelKey: "caseTodo", chip: "bg-rose-soft text-rose" },
   case_graded: { icon: CheckCircle2, labelKey: "caseGraded", chip: "bg-emerald-soft text-emerald" },
@@ -53,45 +53,51 @@ function AutoTaskGroup({ task }: { task: AutoTask }) {
 
   return (
     <motion.section variants={itemVariants}>
-      <div className="mb-3 flex items-center gap-2.5">
-        <div className={cls("flex h-8 w-8 shrink-0 items-center justify-center rounded-full shadow-sm", meta.chip)}>
-          <Icon icon={meta.icon} size={16} />
+      {/* Guruh + qatorlar bitta kartada — sarlavha karta shapkasi sifatida */}
+      <Card className="overflow-hidden p-0">
+        <div className="flex items-center gap-2.5 border-b border-line px-4 py-2.5">
+          <span className={cls("flex h-7 w-7 shrink-0 items-center justify-center rounded-control", meta.chip)}>
+            <Icon icon={meta.icon} size={14} />
+          </span>
+          <h3 className="min-w-0 flex-1 truncate text-body font-bold text-ink">{t(meta.labelKey)}</h3>
+          <span className="rounded-pill bg-surface-raised px-2.5 py-0.5 text-[12.5px] font-bold tabular-nums text-ink-soft">
+            {task.type === "attendance_low" ? `${task.count}%` : task.count}
+          </span>
         </div>
-        <h3 className="text-[16px] font-bold text-ink">{t(meta.labelKey)}</h3>
-        <span className="rounded-pill bg-surface border border-line px-2.5 py-0.5 text-[12.5px] font-bold text-ink-soft shadow-sm">
-          {task.type === "attendance_low" ? `${task.count}%` : task.count}
-        </span>
-      </div>
 
-      {items.length === 0 ? (
-        <Card interactive onClick={() => navigate(task.link)} className="flex items-center gap-3 py-4 transition-all hover:border-brand/30 hover:bg-bg">
-          <p className="min-w-0 flex-1 text-[15px] font-medium text-ink">{t("attendanceLowHint", { pct: task.count })}</p>
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-soft text-brand">
-            <Icon icon={ArrowRight} size={16} className="shrink-0" />
+        {items.length === 0 ? (
+          <button
+            onClick={() => navigate(task.link)}
+            className="group flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-surface-raised"
+          >
+            <p className="min-w-0 flex-1 text-body font-medium text-ink">{t("attendanceLowHint", { pct: task.count })}</p>
+            <Icon icon={ArrowRight} size={16} className="shrink-0 text-ink-dim transition-transform group-hover:translate-x-0.5" />
+          </button>
+        ) : (
+          <div className="divide-y divide-line">
+            {items.map((it, i) => (
+              <button
+                key={`${it.topicId}-${i}`}
+                onClick={() => navigate(it.link)}
+                className="group flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-surface-raised"
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-body font-semibold text-ink transition-colors group-hover:text-brand-tint">{it.topicTitle}</p>
+                  <p className="truncate text-note text-ink-faint">{it.courseName}</p>
+                </div>
+                {it.value !== undefined && it.value !== null && (
+                  <span className="shrink-0 text-[17px] font-bold tabular-nums text-emerald">{it.value}</span>
+                )}
+                <Icon
+                  icon={ArrowRight}
+                  size={16}
+                  className="shrink-0 text-ink-dim transition-transform group-hover:translate-x-0.5"
+                />
+              </button>
+            ))}
           </div>
-        </Card>
-      ) : (
-        <Card className="divide-y divide-line p-0 overflow-hidden">
-          {items.map((it, i) => (
-            <button
-              key={`${it.topicId}-${i}`}
-              onClick={() => navigate(it.link)}
-              className="group flex w-full items-center gap-4 px-5 py-3.5 text-left transition-colors hover:bg-bg"
-            >
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-[15px] font-semibold text-ink transition-colors group-hover:text-brand-deep">{it.topicTitle}</p>
-                <p className="truncate text-[13.5px] text-ink-soft mt-0.5">{it.courseName}</p>
-              </div>
-              {it.value !== undefined && it.value !== null && (
-                <span className="shrink-0 text-[18px] font-bold tabular-nums text-emerald">{it.value}</span>
-              )}
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-bg text-ink-soft transition-colors group-hover:bg-brand-soft group-hover:text-brand">
-                <Icon icon={ArrowRight} size={16} />
-              </div>
-            </button>
-          ))}
-        </Card>
-      )}
+        )}
+      </Card>
     </motion.section>
   );
 }
@@ -133,7 +139,7 @@ export function StudentTasksPage() {
             icon={ListChecks}
             value={String(totalOpen)}
             label={t("statOpen")}
-            tone="bg-brand-soft text-brand-deep"
+            tone="bg-brand-soft text-brand-tint"
             onClick={() => setFilter("all")}
             selected={filter === "all"}
           />
@@ -149,7 +155,7 @@ export function StudentTasksPage() {
             icon={AlertTriangle}
             value={String(overdue.length)}
             label={t("statOverdue")}
-            tone={overdue.length > 0 ? "bg-rose-soft text-rose" : "bg-bg text-ink-faint"}
+            tone={overdue.length > 0 ? "bg-rose-soft text-rose" : "bg-surface text-ink-faint"}
             onClick={() => toggle("overdue")}
             selected={filter === "overdue"}
           />
@@ -191,7 +197,7 @@ export function StudentTasksPage() {
                         exit={{ opacity: 0, scale: 0.9, filter: "blur(4px)" }}
                       >
                         <Card
-                          className={cls("flex flex-wrap items-start justify-between gap-4 transition-all hover:shadow-md", isOverdue ? "border-rose/40 bg-rose/5" : "bg-surface")}
+                          className={cls("flex flex-wrap items-start justify-between gap-4", isOverdue && "border-rose")}
                         >
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2">
@@ -223,7 +229,7 @@ export function StudentTasksPage() {
                               icon={<Icon icon={CheckCircle2} size={16} />}
                               onClick={() => done.mutate(task.id)}
                               disabled={done.isPending && done.variables === task.id}
-                              className={isOverdue ? "bg-rose hover:bg-rose/90 text-white" : ""}
+                              className={isOverdue ? "bg-rose text-white hover:opacity-90" : ""}
                             >
                               {t("markDone")}
                             </Button>
@@ -251,9 +257,9 @@ export function StudentTasksPage() {
 
             {nothing && (
               <motion.div variants={itemVariants}>
-                <Card className="flex items-center gap-3 border-emerald/30 bg-emerald-soft shadow-sm p-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-soft text-emerald shadow-sm">
-                    <Icon icon={Sparkles} size={24} />
+                <Card className="flex items-center gap-3 p-4">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-control bg-emerald-soft text-emerald">
+                    <Icon icon={Sparkles} size={22} />
                   </div>
                   <p className="text-[16px] font-bold text-emerald">{t("studentAllDone")}</p>
                 </Card>
@@ -285,10 +291,10 @@ export function StudentTasksPage() {
                       <button
                         key={s.id}
                         onClick={() => navigate("/app/schedule")}
-                        className="flex w-full items-center gap-3 px-5 py-3 text-left transition-colors hover:bg-bg"
+                        className="flex w-full items-center gap-3 px-5 py-3 text-left transition-colors hover:bg-surface-raised"
                       >
                         <div className="w-10 shrink-0 text-center">
-                          <p className="text-[17px] font-bold leading-none tabular-nums text-brand-deep">
+                          <p className="text-[17px] font-bold leading-none tabular-nums text-brand-tint">
                             {new Date(s.date).getDate()}
                           </p>
                           <p className="mt-0.5 text-[12px] tabular-nums text-ink-soft">
@@ -314,7 +320,7 @@ export function StudentTasksPage() {
                   <>
                     <button
                       onClick={() => setHistoryOpen((o) => !o)}
-                      className="flex w-full items-center gap-2 px-5 py-3 text-left text-[14px] font-semibold uppercase tracking-wide text-ink-soft transition-colors hover:bg-bg"
+                      className="flex w-full items-center gap-2 px-5 py-3 text-left text-[14px] font-semibold uppercase tracking-wide text-ink-soft transition-colors hover:bg-surface-raised"
                     >
                       <Icon
                         icon={ChevronDown}
@@ -333,10 +339,10 @@ export function StudentTasksPage() {
                       >
                         <div className="divide-y divide-line">
                           {history.slice(0, 8).map((h) => (
-                            <div key={h.id} className="flex items-center gap-3 px-5 py-3 bg-bg">
-                              <Icon icon={CheckCircle2} size={16} className="shrink-0 text-emerald/60" />
+                            <div key={h.id} className="flex items-center gap-3 px-4 py-2.5">
+                              <Icon icon={CheckCircle2} size={16} className="shrink-0 text-emerald opacity-60" />
                               <p className="min-w-0 flex-1 truncate text-[14px] text-ink-soft line-through">{h.title}</p>
-                              {h.doneAt && <span className="shrink-0 text-[12.5px] font-medium text-ink-faint tabular-nums">{fmt(h.doneAt)}</span>}
+                              {h.doneAt && <span className="shrink-0 text-[12.5px] font-medium tabular-nums text-ink-faint">{fmt(h.doneAt)}</span>}
                             </div>
                           ))}
                         </div>

@@ -99,7 +99,7 @@ export function AttendanceSection() {
           
           <div className="relative z-10">
             <p className="text-note font-bold uppercase tracking-wide text-ink-soft">{t("overallPct")}</p>
-            <p className={cls("mt-1 text-[44px] font-bold leading-none tabular-nums", low ? "text-rose" : "text-brand-deep")}>
+            <p className={cls("mt-1 text-[44px] font-bold leading-none tabular-nums", low ? "text-rose" : "text-brand-tint")}>
               {pct !== null ? `${pct}%` : "—"}
             </p>
             <div className="mt-4">
@@ -132,7 +132,7 @@ export function AttendanceSection() {
               {statusFilter && (
                 <button
                   onClick={() => setStatusFilter(null)}
-                  className="mt-2 text-note font-semibold text-brand-deep hover:underline"
+                  className="mt-2 text-note font-semibold text-brand-tint hover:underline"
                 >
                   {t("clearFilter")}
                 </button>
@@ -164,7 +164,7 @@ export function AttendanceSection() {
       {/* Low-attendance notice — informative, not scary */}
       {low && (
         <motion.div variants={itemVariants}>
-          <div className="flex items-start gap-3 rounded-card border border-amber/30 bg-amber-soft p-4 text-[14.5px] text-amber shadow-sm">
+          <div className="flex items-start gap-3 rounded-card border border-amber bg-amber-soft p-4 text-[14.5px] text-amber">
             <Icon icon={AlertTriangle} size={18} className="mt-0.5 shrink-0" />
             <p className="font-medium">{t("lowWarning", { pct })}</p>
           </div>
@@ -181,7 +181,7 @@ export function AttendanceSection() {
           </div>
           <table className="w-full min-w-[560px] border-collapse">
             <thead>
-              <tr className="bg-bg text-[12.5px] font-bold uppercase tracking-wide text-ink-faint">
+              <tr className="bg-surface-raised text-[12.5px] font-bold uppercase tracking-wide text-ink-faint">
                 <th className="px-4 py-2 text-left">{t("colSubject")}</th>
                 <th className="px-2 py-2 text-center">{t("colTotal")}</th>
                 <th className="px-2 py-2 text-center">{t("present")}</th>
@@ -201,7 +201,7 @@ export function AttendanceSection() {
                   <Fragment key={c.courseId}>
                     <tr
                       onClick={() => setExpanded(open ? null : c.courseId)}
-                      className="cursor-pointer border-t border-line text-[14.5px] transition-colors hover:bg-bg" 
+                      className="cursor-pointer border-t border-line text-[14.5px] transition-colors hover:bg-surface-raised" 
                     >
                       <td className="px-4 py-2.5">
                         <span className="flex items-center gap-1.5 font-semibold text-ink">
@@ -223,7 +223,7 @@ export function AttendanceSection() {
                       </td>
                     </tr>
                     {open && (
-                      <tr className="border-t border-line bg-bg">
+                      <tr className="border-t border-line bg-surface-raised">
                         <td colSpan={7} className="px-4 py-3">
                           {missed.length > 0 && (
                             <>
@@ -287,7 +287,7 @@ export function AttendanceSection() {
           </div>
           <div className="divide-y divide-line">
             {schedule.slice(0, 5).map((s) => (
-              <div key={s.id} className="flex items-center gap-3 px-5 py-3 transition-colors hover:bg-bg">
+              <div key={s.id} className="flex items-center gap-3 px-5 py-3 transition-colors hover:bg-surface-raised">
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-body font-semibold text-ink">{s.title ?? s.courseName}</p>
                   <p className="truncate text-note text-ink-faint">
@@ -295,7 +295,7 @@ export function AttendanceSection() {
                     {s.room ? ` · ${s.room}` : ""}
                   </p>
                 </div>
-                <span className="shrink-0 rounded-pill bg-brand-soft px-2.5 py-1 text-note font-semibold text-brand-deep">
+                <span className="shrink-0 rounded-pill bg-brand-soft px-2.5 py-1 text-note font-semibold text-brand-tint">
                   {formatDate(locale === "ru" ? "ru" : "uz", s.date, "short")}
                 </span>
               </div>
@@ -356,7 +356,7 @@ export function AttendanceSection() {
                   {rows.map((s) => {
                     const m = META[s.status];
                     return (
-                      <div key={s.id} className="flex items-center gap-4 px-5 py-3.5 transition-colors hover:bg-bg">
+                      <div key={s.id} className="flex items-center gap-4 px-5 py-3.5 transition-colors hover:bg-surface-raised">
                         <div className={cls("flex h-10 w-10 shrink-0 items-center justify-center rounded-full", m.chip)}>
                           <Icon icon={m.icon} size={18} />
                         </div>

@@ -31,7 +31,7 @@ export function AttendancePage() {
               onClick={() => setParams(tab.key === "davomat" ? {} : { sub: tab.key }, { replace: true })}
               className={cls(
                 "inline-flex items-center gap-1.5 rounded-[8px] px-4 py-2 text-[15px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
-                on ? "bg-brand-soft text-brand-deep" : "text-ink-soft hover:bg-bg hover:text-ink"
+                on ? "bg-brand-soft text-brand-tint" : "text-ink-soft hover:bg-surface-raised hover:text-ink"
               )}
             >
               <Icon icon={tab.icon} size={16} />

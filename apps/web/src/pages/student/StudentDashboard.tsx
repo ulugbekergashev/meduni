@@ -43,7 +43,7 @@ import {
 
 const ACTIVITY_META: Record<ActivityType, { icon: LucideIcon; tone: string }> = {
   topic_completed: { icon: CheckCircle2, tone: "bg-emerald-soft text-emerald" },
-  topic_activity: { icon: PlayCircle, tone: "bg-brand-soft text-brand-deep" },
+  topic_activity: { icon: PlayCircle, tone: "bg-brand-soft text-brand-tint" },
   quiz_passed: { icon: ClipboardList, tone: "bg-blue-soft text-blue" },
   quiz_failed: { icon: ClipboardList, tone: "bg-rose-soft text-rose" },
   case_submitted: { icon: Stethoscope, tone: "bg-violet-soft text-violet" },
@@ -51,7 +51,7 @@ const ACTIVITY_META: Record<ActivityType, { icon: LucideIcon; tone: string }> = 
 };
 
 const AUTO_META: Record<string, { icon: LucideIcon; labelKey: string; tone: string }> = {
-  study: { icon: PlayCircle, labelKey: "study", tone: "bg-brand-soft text-brand-deep" },
+  study: { icon: PlayCircle, labelKey: "study", tone: "bg-brand-soft text-brand-tint" },
   quiz_todo: { icon: ClipboardList, labelKey: "quizTodo", tone: "bg-blue-soft text-blue" },
   case_todo: { icon: Stethoscope, labelKey: "caseTodo", tone: "bg-rose-soft text-rose" },
   case_graded: { icon: CheckCircle2, labelKey: "caseGraded", tone: "bg-emerald-soft text-emerald" },
@@ -111,7 +111,7 @@ function ActionRow({
   return (
     <Wrapper
       onClick={onClick}
-      className={cls("flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors", onClick && "hover:bg-bg")}
+      className={cls("flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors", onClick && "hover:bg-surface-raised")}
     >
       <div className={cls("flex h-8 w-8 shrink-0 items-center justify-center rounded-full", tone)}>
         <Icon icon={icon} size={15} />
@@ -227,7 +227,7 @@ export function StudentDashboard() {
                     <div
                       className={cls(
                         "inline-flex items-center gap-1.5 rounded-pill px-3 py-1.5 text-body font-bold",
-                        d.streak.activeToday ? "bg-amber-soft text-amber" : "bg-bg text-ink-faint"
+                        d.streak.activeToday ? "bg-amber-soft text-amber" : "bg-surface-raised text-ink-faint"
                       )}
                       title={!d.streak.activeToday && d.streak.days > 0 ? t("streakPausedHint") : undefined}
                     >
@@ -255,7 +255,7 @@ export function StudentDashboard() {
                   icon={BookOpen}
                   value={String(d.courses.length)}
                   label={t("summaryCourses")}
-                  tone="bg-brand-soft text-brand-deep"
+                  tone="bg-brand-soft text-brand-tint"
                   onClick={() => navigate("/app/courses")}
                 />
                 <HeroTile
@@ -292,7 +292,7 @@ export function StudentDashboard() {
                       </div>
                     </div>
                     <Link to={`/app/topics/${d.resume.topicId}`} className="shrink-0">
-                      <button className="flex items-center gap-2 rounded-control bg-white px-4 py-2.5 text-body font-bold text-brand-deep transition-all hover:bg-white/90">
+                      <button className="flex items-center gap-2 rounded-control bg-white px-4 py-2.5 text-body font-bold text-brand-tint transition-all hover:bg-white/90">
                         <Icon icon={PlayCircle} size={17} />
                         {t("continue")}
                       </button>
@@ -312,7 +312,7 @@ export function StudentDashboard() {
                       </p>
                       <button
                         onClick={() => navigate("/app/schedule")}
-                        className="text-note font-semibold text-brand-deep hover:underline"
+                        className="text-note font-semibold text-brand-tint hover:underline"
                       >
                         {t("openSchedule")}
                       </button>
@@ -324,12 +324,12 @@ export function StudentDashboard() {
                             key={s.id}
                             onClick={() => navigate("/app/schedule")}
                             className={cls(
-                              "flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-bg",
+                              "flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-surface-raised",
                               s.isPast && "opacity-55"
                             )}
                           >
                             <div className="w-12 shrink-0 text-center">
-                              <p className="text-[15px] font-bold leading-none tabular-nums text-brand-deep">{hhmm(s.date)}</p>
+                              <p className="text-[15px] font-bold leading-none tabular-nums text-brand-tint">{hhmm(s.date)}</p>
                             </div>
                             <div className="min-w-0 flex-1 border-l border-line pl-3">
                               <p className="truncate text-body font-semibold text-ink">{s.title ?? s.courseName}</p>
@@ -361,7 +361,7 @@ export function StudentDashboard() {
                       <p className="flex-1 text-note font-bold uppercase tracking-wide text-ink-soft">{t("todayTitle")}</p>
                       <button
                         onClick={() => navigate("/app/tasks")}
-                        className="text-note font-semibold text-brand-deep hover:underline"
+                        className="text-note font-semibold text-brand-tint hover:underline"
                       >
                         {t("seeAllCourses")}
                       </button>
@@ -451,7 +451,7 @@ export function StudentDashboard() {
                     className="flex flex-col rounded-card border border-line bg-surface p-5 text-left shadow-card transition-all hover:-translate-y-0.5 hover:shadow-card-hover"
                   >
                     <div className="flex items-center gap-2">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-soft text-brand-deep">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-soft text-brand-tint">
                         <Icon icon={GraduationCap} size={16} />
                       </div>
                       <p className="text-note font-bold uppercase tracking-wide text-ink-soft">{t("mastery")}</p>
@@ -494,7 +494,7 @@ export function StudentDashboard() {
                           <button
                             key={tp.topicId}
                             onClick={() => navigate(`/app/topics/${tp.topicId}?view=flashcards`)}
-                            className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left transition-colors hover:bg-bg"
+                            className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left transition-colors hover:bg-surface-raised"
                           >
                             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-violet-soft text-violet">
                               <Icon icon={Sparkles} size={15} />
@@ -521,7 +521,7 @@ export function StudentDashboard() {
                           <button
                             key={n.caseAttemptId}
                             onClick={() => navigate(`/app/topics/${n.topicId}?tab=case`)}
-                            className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left transition-colors hover:bg-bg"
+                            className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left transition-colors hover:bg-surface-raised"
                           >
                             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-soft text-emerald">
                               <Icon icon={ClipboardCheck} size={15} />
@@ -548,7 +548,7 @@ export function StudentDashboard() {
                             <button
                               key={`${a.type}-${a.topicId}-${i}`}
                               onClick={() => navigate(`/app/topics/${a.topicId}`)}
-                              className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left transition-colors hover:bg-bg"
+                              className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left transition-colors hover:bg-surface-raised"
                             >
                               <div className={cls("flex h-7 w-7 shrink-0 items-center justify-center rounded-full", m.tone)}>
                                 <Icon icon={m.icon} size={13} />
