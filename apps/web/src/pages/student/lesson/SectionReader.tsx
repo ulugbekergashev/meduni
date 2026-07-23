@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { motion, useReducedMotion, useScroll, useSpring } from "framer-motion";
 import { ArrowRight, Clock, FileText, Minus, Plus } from "lucide-react";
 import { Icon, cls } from "@meduni/ui";
-import type { LessonSection } from "../api";
+import type { LessonSection, Term } from "../api";
 import { BlockView } from "./BlockView";
 
 /** O'qish shrifti — A−/A+ bilan boshqariladi, tanlov localStorage'da qoladi.
@@ -40,6 +40,7 @@ function useReadSize() {
  *  o'qish ustunida 5 ta yashil belgi matnni kesib tashlardi). */
 export function SectionReader({
   sections,
+  terms = [],
   activeSection,
   onVisibleSection,
   onMarkRead,
@@ -47,6 +48,8 @@ export function SectionReader({
   finishedLabel,
 }: {
   sections: LessonSection[];
+  /** Konspekt atamalari — matn ichida Smart Tooltip uchun. */
+  terms?: Term[];
   /** Chap TOC'dan tanlangan bo'lim — shu yerga skroll qiladi. */
   activeSection: number | null;
   /** Skroll paytida ko'rinib turgan bo'lim (TOC'ni yoritish uchun). */
@@ -187,7 +190,7 @@ export function SectionReader({
 
               <div className="space-y-4 leading-[1.75]">
                 {section.blocks.map((b, i) => (
-                  <BlockView key={i} block={b} />
+                  <BlockView key={i} block={b} terms={terms} />
                 ))}
               </div>
 
