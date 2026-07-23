@@ -488,12 +488,16 @@ export function StudentDashboard() {
                 {/* Interval takrorlash — bugun takrorlash kerak bo'lgan kartalar */}
                 {reviewQ.data && reviewQ.data.total > 0 && (
                   <motion.div variants={itemVariants}>
-                    <RailCard title={t("reviewDueTitle")} icon={Repeat}>
+                    <RailCard
+                      title={t("reviewDueTitle")}
+                      icon={Repeat}
+                      action={{ label: t("reviewOpen"), onClick: () => navigate("/app/grades?sub=takrorlash") }}
+                    >
                       <div className="divide-y divide-line">
                         {reviewQ.data.topics.slice(0, 5).map((tp) => (
                           <button
                             key={tp.topicId}
-                            onClick={() => navigate(`/app/topics/${tp.topicId}?view=flashcards`)}
+                            onClick={() => navigate(`/app/grades?sub=takrorlash&topic=${tp.topicId}`)}
                             className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-surface-raised"
                           >
                             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-violet-soft text-violet">

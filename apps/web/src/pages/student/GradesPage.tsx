@@ -1,15 +1,28 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
-import { Award, ChevronDown, ClipboardList, Clock, MessageSquareQuote, Stethoscope, Target, TrendingUp } from "lucide-react";
-import { Badge, Card, Icon, ProgressBar, ProgressRing, cls } from "@meduni/ui";
-import { HeroCard, HeroTile, RailCard } from "../../components/HeroStats";
+import {
+  Award,
+  ChevronDown,
+  ClipboardList,
+  Clock,
+  Dumbbell,
+  MessageSquareQuote,
+  Repeat,
+  Stethoscope,
+  Target,
+  TrendingUp,
+} from "lucide-react";
+import { Badge, Card, Icon, ProgressBar, cls } from "@meduni/ui";
+import { HeroTile, RailCard } from "../../components/HeroStats";
 import { AsyncSection } from "../../components/AsyncSection";
 import { formatDate } from "../../lib/date";
 import { useLocale } from "../../lib/useLocale";
-import { useMyGrades, type GradeCase, type GradeQuiz, type GradesCourse } from "./api";
+import { useMyGrades, useReviewDue, type GradeCase, type GradeQuiz, type GradesCourse } from "./api";
 import { LeaderboardCard } from "./LeaderboardCard";
+import { ReviewTab } from "./grades/ReviewTab";
+import { PracticeTab } from "./grades/PracticeTab";
 
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
@@ -180,7 +193,56 @@ function CourseBlock({ c, filter }: { c: GradesCourse; filter: Filter }) {
 /** "Baholarim" — barcha test natijalari va keys baholari, kurslar kesimida. */
 type Filter = "all" | "quiz" | "case";
 
+/** O'zlashtirish moduli — 3 tab: Baholar | Takrorlash | Mashg'ulotlar (Modul 27). */
 export function GradesPage() {
+  const { t } = useTranslation(undefined, { keyPrefix: "grades" });
+  const [params, setParams] = useSearchParams();
+  const dueQ = useReviewDue();
+  const sub =
+    params.get("sub") === "takrorlash" ? "takrorlash" : params.get("sub") === "mashgulot" ? "mashgulot" : "baholar";
+
+  const tabs = [
+    { key: "baholar", label: t("tabGrades"), icon: Award, badge: 0 },
+    { key: "takrorlash", label: t("tabReview"), icon: Repeat, badge: dueQ.data?.total ?? 0 },
+    { key: "mashgulot", label: t("tabPractice"), icon: Dumbbell, badge: 0 },
+  ] as const;
+
+  return (
+    <div>
+      <h1 className="text-h1 font-bold text-ink">{t("title")}</h1>
+      <p className="mt-1 text-note text-ink-faint">{t("subtitle")}</p>
+
+      {/* Segmented tab — Davomat sahifasi bilan bir xil naqsh */}
+      <div className="mb-4 mt-3.5 inline-flex max-w-full gap-1 overflow-x-auto rounded-control border border-line bg-surface p-1">
+        {tabs.map((tab) => {
+          const on = sub === tab.key;
+          return (
+            <button
+              key={tab.key}
+              onClick={() => setParams(tab.key === "baholar" ? {} : { sub: tab.key }, { replace: true })}
+              className={cls(
+                "inline-flex shrink-0 items-center gap-2 rounded-[8px] px-4 py-2 text-body font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
+                on ? "bg-brand-soft text-brand-tint" : "text-ink-soft hover:bg-surface-raised hover:text-ink"
+              )}
+            >
+              <Icon icon={tab.icon} size={16} />
+              {tab.label}
+              {tab.badge > 0 && (
+                <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-brand px-1.5 text-micro font-bold text-white">
+                  {tab.badge}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {sub === "takrorlash" ? <ReviewTab /> : sub === "mashgulot" ? <PracticeTab /> : <GradesHome />}
+    </div>
+  );
+}
+
+function GradesHome() {
   const { t } = useTranslation(undefined, { keyPrefix: "grades" });
   const navigateTo = useNavigate();
   const q = useMyGrades();
@@ -225,19 +287,9 @@ export function GradesPage() {
 
   return (
     <motion.div variants={containerVariants} initial="hidden" animate="show" className="space-y-4">
+      {/* Sarlavha GradesPage o'rovida (tablar ustida) — bu yerda faqat kartalar */}
       <motion.div variants={itemVariants}>
-        <HeroCard
-          title={t("title")}
-          subtitle={t("subtitle")}
-          left={
-            s && s.avgQuiz !== null ? (
-              <div className="flex items-center gap-4">
-                <ProgressRing value={s.avgQuiz} size={72} stroke={8} tone="blue" />
-                <span className="text-body font-bold text-ink-soft">{t("avgQuiz")}</span>
-              </div>
-            ) : undefined
-          }
-        >
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
           <HeroTile
             icon={TrendingUp}
             value={s?.avgQuiz !== null && s?.avgQuiz !== undefined ? `${s.avgQuiz}%` : "—"}
@@ -270,7 +322,7 @@ export function GradesPage() {
             onClick={() => toggle("case")}
             selected={filter === "case"}
           />
-        </HeroCard>
+        </div>
       </motion.div>
 
       {/* Tur filtri — segmented */}
