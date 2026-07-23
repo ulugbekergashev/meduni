@@ -128,7 +128,7 @@ export function SchedulePage() {
   const nextLesson = upcoming[0];
 
   return (
-    <motion.div variants={containerVariants} initial="hidden" animate="show" className="space-y-3">
+    <motion.div variants={containerVariants} initial="hidden" animate="show" className="space-y-4">
       <motion.div variants={itemVariants}>
         <HeroCard
           title={t("title")}
