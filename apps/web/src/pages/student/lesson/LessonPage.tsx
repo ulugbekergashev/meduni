@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, PanelLeft } from "lucide-react";
+import { ArrowLeft, PanelLeft, Sparkles, X } from "lucide-react";
 import { Icon, Spinner, cls } from "@meduni/ui";
 import { apiErrorMessage } from "../../../lib/api";
 import { useLocale } from "../../../lib/useLocale";
@@ -65,6 +65,8 @@ function viewAvailable(v: LessonView, lesson: Lesson): boolean {
  *  navigatsiya — shuning uchun default OCHIQ; tugma faqat kontentga
  *  to'liq fokuslanmoqchi bo'lganda yopadi. */
 const RAIL_KEY = "meduni.lesson.rail";
+/** AI-tutor chat default YOPIQ — fokus markazda; tugma bilan ochiladi. */
+const CHAT_KEY = "meduni.lesson.chat";
 
 export function LessonPage() {
   const { id } = useParams();
@@ -88,6 +90,18 @@ export function LessonPage() {
       const next = !o;
       try {
         window.localStorage.setItem(RAIL_KEY, next ? "open" : "closed");
+      } catch {}
+      return next;
+    });
+  // Chat default YOPIQ (foydalanuvchi: "chat ko'rinmasin, fokus markazda").
+  const [chatOpen, setChatOpen] = useState(
+    () => typeof window !== "undefined" && window.localStorage.getItem(CHAT_KEY) === "open"
+  );
+  const toggleChat = () =>
+    setChatOpen((o) => {
+      const next = !o;
+      try {
+        window.localStorage.setItem(CHAT_KEY, next ? "open" : "closed");
       } catch {}
       return next;
     });
@@ -178,19 +192,33 @@ export function LessonPage() {
         </span>
         <h1 className="min-w-0 flex-1 truncate text-section font-extrabold tracking-tight text-ink">{lesson.title}</h1>
 
-        {/* Chap ustun toggle — faqat o'rganish rejimida ma'noli. Raqam yo'q:
-            rail ochilganda tarkib baribir ko'rinadi. */}
+        {/* O'rganish rejimidagi tugmalar: chap rail + AI-tutor chat toggle. */}
         {!focusMode && (
-          <button
-            onClick={toggleRail}
-            title={t("stage_study")}
-            className={cls(
-              "inline-flex shrink-0 items-center rounded-control p-1.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
-              railOpen ? "text-brand-tint" : "text-ink-faint hover:bg-surface-raised hover:text-ink"
-            )}
-          >
-            <Icon icon={PanelLeft} size={15} />
-          </button>
+          <div className="flex shrink-0 items-center gap-1.5">
+            <button
+              onClick={toggleRail}
+              title={t("stage_study")}
+              className={cls(
+                "inline-flex items-center rounded-control p-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
+                railOpen ? "text-brand-tint" : "text-ink-faint hover:bg-surface-raised hover:text-ink"
+              )}
+            >
+              <Icon icon={PanelLeft} size={17} />
+            </button>
+            <button
+              onClick={toggleChat}
+              title={t("chatTitle")}
+              className={cls(
+                "inline-flex items-center gap-1.5 rounded-control px-2.5 py-1.5 font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
+                chatOpen
+                  ? "bg-brand-soft text-brand-tint"
+                  : "border border-line text-ink-soft hover:bg-surface-raised hover:text-ink"
+              )}
+            >
+              <Icon icon={chatOpen ? X : Sparkles} size={16} />
+              <span className="text-note">{t("chatTitle")}</span>
+            </button>
+          </div>
         )}
       </div>
 
@@ -228,11 +256,18 @@ export function LessonPage() {
           )}
         </div>
       ) : (
-        /* O'RGANISH REJIMI — 3 panel: bloklar | kontent | AI-tutor */
+        /* O'RGANISH REJIMI — markazda kontent; chap rail va AI-chat toggle bilan.
+           Chat YOPIQ bo'lsa fokus markazda; ochilsa keng (400px) panel. */
         <div
           className={cls(
-            "grid gap-2 p-2 transition-[grid-template-columns] duration-200 ease-out lg:min-h-0 lg:flex-1",
-            railOpen ? "lg:grid-cols-[264px_minmax(0,1fr)_320px]" : "lg:grid-cols-[0px_minmax(0,1fr)_320px]"
+            "grid gap-2.5 p-2.5 transition-[grid-template-columns] duration-200 ease-out lg:min-h-0 lg:flex-1",
+            railOpen
+              ? chatOpen
+                ? "lg:grid-cols-[280px_minmax(0,1fr)_400px]"
+                : "lg:grid-cols-[280px_minmax(0,1fr)_0px]"
+              : chatOpen
+                ? "lg:grid-cols-[0px_minmax(0,1fr)_400px]"
+                : "lg:grid-cols-[0px_minmax(0,1fr)_0px]"
           )}
         >
           {railOpen && (
@@ -274,9 +309,10 @@ export function LessonPage() {
             />
           </div>
 
-          {/* AI-tutor — faqat o'rganishda (test paytida qulf) */}
-          <div className="order-2 flex min-h-0 flex-col lg:order-3">
-            <ChatPanel topicId={topicId} locked={quizRunning} />
+          {/* AI-tutor — YOPIQ bo'lsa umuman yo'q (fokus markazda); ochilsa keng panel.
+              Test paytida qulf. */}
+          <div className="order-2 flex min-h-0 flex-col overflow-hidden lg:order-3">
+            {chatOpen && <ChatPanel topicId={topicId} locked={quizRunning} onClose={toggleChat} />}
           </div>
         </div>
       )}

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { Lock, SendHorizontal, Sparkles } from "lucide-react";
+import { Lock, SendHorizontal, Sparkles, X } from "lucide-react";
 import { Icon, Spinner, cls } from "@meduni/ui";
 import { apiErrorMessage } from "../../../lib/api";
 import { useLocale } from "../../../lib/useLocale";
@@ -29,13 +29,16 @@ function Bubble({ role, text, animate }: { role: "student" | "assistant"; text: 
   );
 }
 
-/** O'ng ustun — AI-tutor chat (talaba + AI; layout v2). Test paytida qulf. */
+/** O'ng ustun — AI-tutor chat (talaba + AI; layout v2). Test paytida qulf.
+ *  Toggle bilan ochiladi (default yopiq); ochilganda keng, o'z shapkasi bilan. */
 export function ChatPanel({
   topicId,
   locked = false,
+  onClose,
 }: {
   topicId: number;
   locked?: boolean;
+  onClose?: () => void;
 }) {
   const { t } = useTranslation(undefined, { keyPrefix: "lesson" });
   const locale = useLocale();
@@ -65,9 +68,28 @@ export function ChatPanel({
   const suggestions = [t("chatSuggest1"), t("chatSuggest2")];
 
   return (
-    <Panel tone="chrome" title={t("chatTitle")} icon={Sparkles} bodyClassName="flex flex-col p-0">
+    <Panel
+      header={
+        <div className="flex items-center gap-2">
+          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-control bg-brand-soft text-brand-tint">
+            <Icon icon={Sparkles} size={15} />
+          </span>
+          <p className="flex-1 text-body font-bold text-ink">{t("chatTitle")}</p>
+          {onClose && (
+            <button
+              onClick={onClose}
+              aria-label={t("chatClose")}
+              className="flex h-7 w-7 items-center justify-center rounded-control text-ink-faint transition-colors hover:bg-surface-raised hover:text-ink"
+            >
+              <Icon icon={X} size={16} />
+            </button>
+          )}
+        </div>
+      }
+      bodyClassName="flex flex-col p-0"
+    >
       {/* Xabarlar lentasi */}
-      <div ref={scrollRef} className="h-[320px] flex-1 space-y-2 overflow-y-auto px-1.5 pb-2 lg:h-auto">
+      <div ref={scrollRef} className="h-[320px] flex-1 space-y-2.5 overflow-y-auto px-2.5 pb-2 pt-2 lg:h-auto">
         {chat.isLoading ? (
           <div className="flex justify-center py-6">
             <Spinner size={18} />

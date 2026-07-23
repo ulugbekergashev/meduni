@@ -100,8 +100,8 @@ export function StudyRail({
   }
 
   return (
-    <Panel tone="chrome" bodyClassName="flex flex-col p-1">
-      <div className="space-y-0.5">
+    <Panel title={t("stage_study")} icon={BookText} bodyClassName="flex flex-col p-2">
+      <div className="space-y-1">
         {blocks.map((v) => {
           const on = v === active;
           const done = blockDone(v);
@@ -112,9 +112,9 @@ export function StudyRail({
               <button
                 onClick={() => onBlock(v)}
                 className={cls(
-                  "relative flex w-full items-center gap-2.5 rounded-control px-2 py-2 text-left transition-colors",
+                  "relative flex w-full items-center gap-3 rounded-control px-2.5 py-2.5 text-left transition-colors",
                   FOCUS,
-                  on ? (reduce ? "bg-brand-soft" : "") : "hover:bg-surface"
+                  on ? (reduce ? "bg-brand-soft" : "") : "hover:bg-surface-raised"
                 )}
               >
                 {on && !reduce && (
@@ -130,11 +130,11 @@ export function StudyRail({
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ type: "spring", stiffness: 420, damping: 24 }}
                   className={cls(
-                    "relative z-[1] flex h-7 w-7 shrink-0 items-center justify-center rounded-control",
+                    "relative z-[1] flex h-9 w-9 shrink-0 items-center justify-center rounded-control",
                     // "Tugadi" endi to'ldirilgan yashil emas — bir ekranda 10+
                     // yorqin belgi bo'lmasin uchun kontur ko'rinishida.
                     done
-                      ? "bg-surface-raised text-emerald"
+                      ? "bg-emerald-soft text-emerald"
                       : blockLock
                         ? "bg-surface-raised text-ink-dim"
                         : on
@@ -144,14 +144,14 @@ export function StudyRail({
                 >
                   <Icon
                     icon={done ? Check : blockLock ? Lock : BLOCK_ICON[v]}
-                    size={14}
+                    size={17}
                     strokeWidth={done ? 3 : 2}
                   />
                 </motion.span>
                 <span className="relative z-[1] min-w-0 flex-1">
                   <span
                     className={cls(
-                      "block truncate text-note",
+                      "block truncate text-body",
                       on ? "font-bold text-brand-tint" : blockLock ? "font-semibold text-ink-soft" : "font-semibold text-ink"
                     )}
                   >
