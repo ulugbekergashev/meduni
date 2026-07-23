@@ -90,9 +90,9 @@ export function GlobalSearch({ fetch }: { fetch: (q: string) => Promise<SearchSe
   const showDropdown = open && q.trim().length > 0;
 
   return (
-    <div ref={boxRef} className="relative max-w-md">
-      <div className="flex items-center gap-2 rounded-control border border-line bg-bg px-3">
-        <Icon icon={Search} size={15} className="shrink-0 text-ink-faint" />
+    <div ref={boxRef} className="relative max-w-md w-full sm:w-[320px] lg:w-[400px]">
+      <div className="group flex items-center gap-2 rounded-full border border-line bg-surface-raised px-4 shadow-sm ring-1 ring-black/5 transition-all focus-within:ring-2 focus-within:ring-brand/30 hover:bg-surface-glass">
+        <Icon icon={Search} size={18} className="shrink-0 text-ink-faint transition-colors group-focus-within:text-brand" />
         <input
           ref={inputRef}
           value={q}
@@ -102,15 +102,15 @@ export function GlobalSearch({ fetch }: { fetch: (q: string) => Promise<SearchSe
           }}
           onFocus={() => setOpen(true)}
           placeholder={t("placeholder")}
-          className="h-9 w-full bg-transparent text-body text-ink outline-none placeholder:text-ink-faint"
+          className="h-10 w-full bg-transparent text-[14.5px] font-medium text-ink outline-none placeholder:text-ink-faint"
         />
-        <kbd className="hidden shrink-0 rounded border border-line bg-surface px-1.5 py-0.5 text-[11.5px] font-semibold text-ink-faint sm:block">
+        <kbd className="hidden shrink-0 rounded-md border border-line bg-surface px-2 py-0.5 text-[11px] font-bold tracking-wider text-ink-faint shadow-sm sm:block">
           Ctrl K
         </kbd>
       </div>
 
       {showDropdown && (
-        <div className="absolute left-0 right-0 top-full z-40 mt-1.5 max-h-[60vh] overflow-y-auto rounded-card border border-line bg-surface p-1.5 shadow-lg">
+        <div className="absolute left-0 right-0 top-full z-40 mt-2 max-h-[60vh] overflow-y-auto rounded-[20px] border border-line bg-surface/90 p-2 shadow-[0_10px_40px_rgb(0,0,0,0.1)] backdrop-blur-2xl ring-1 ring-black/5">
           {loading ? (
             <div className="flex items-center justify-center gap-2 py-5 text-note text-ink-soft">
               <Spinner size={15} /> {t("searching")}
@@ -132,10 +132,10 @@ export function GlobalSearch({ fetch }: { fetch: (q: string) => Promise<SearchSe
                         key={item.key}
                         onClick={() => go(item.link)}
                         className={cls(
-                          "flex w-full items-center gap-2.5 rounded-control px-2.5 py-2 text-left transition-colors hover:bg-bg"
+                          "group/item flex w-full items-center gap-3 rounded-[12px] px-3 py-2.5 text-left transition-all hover:bg-surface-raised hover:pl-4"
                         )}
                       >
-                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand-deep">
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-bg text-ink-soft transition-colors group-hover/item:bg-brand-soft group-hover/item:text-brand-deep">
                           <Icon icon={section.icon} size={14} />
                         </span>
                         <span className="min-w-0">

@@ -1,6 +1,6 @@
 import type { Prisma } from "../../lib/prisma";
 import { prisma } from "../../lib/prisma";
-import { ApiError, badRequest, notFound } from "../../lib/errors";
+import { ApiError, badRequest, forbidden, notFound } from "../../lib/errors";
 import { buildMatrix } from "./progress";
 import { loadCourse } from "../me/service";
 
@@ -228,6 +228,59 @@ export async function listTeacherCourses(teacherId: number) {
     include: courseInclude,
   });
   return rows.map(toCourseOut);
+}
+
+// ---- Guruh biriktirish (o'qituvchi o'z kursiga) ----
+// O'qituvchi o'z kursiga guruh ulaydi/uzadi; talabalar avtomatik yoziladi/DROPPED.
+
+async function ownCourseWithFaculty(courseId: number, teacherId: number) {
+  const c = await prisma.course.findUnique({
+    where: { id: courseId },
+    select: { id: true, teacherId: true, department: { select: { facultyId: true } } },
+  });
+  if (!c) throw notFound("Kurs");
+  if (c.teacherId !== teacherId) throw forbidden("Bu sizning kursingiz emas", "Это не ваш курс");
+  return c;
+}
+
+/** Kursga hali ulanmagan, o'sha fakultetdagi guruhlar (biriktirish uchun). */
+export async function listAssignableGroups(courseId: number, teacherId: number) {
+  const c = await ownCourseWithFaculty(courseId, teacherId);
+  const attached = await prisma.courseGroup.findMany({ where: { courseId }, select: { groupId: true } });
+  const attachedIds = attached.map((a) => a.groupId);
+  const groups = await prisma.studentGroup.findMany({
+    where: { facultyId: c.department.facultyId, ...(attachedIds.length ? { id: { notIn: attachedIds } } : {}) },
+    orderBy: { name: "asc" },
+    include: { _count: { select: { students: true } } },
+  });
+  return groups.map((g) => ({ id: g.id, name: g.name, yearOfStudy: g.yearOfStudy, studentCount: g._count.students }));
+}
+
+export async function teacherAttachGroup(courseId: number, teacherId: number, groupId: number) {
+  const c = await ownCourseWithFaculty(courseId, teacherId);
+  const group = await prisma.studentGroup.findUnique({ where: { id: groupId } });
+  if (!group) throw notFound("Guruh");
+  if (group.facultyId !== c.department.facultyId) {
+    throw badRequest("Guruh boshqa fakultetdan", "Группа из другого факультета");
+  }
+  const exists = await prisma.courseGroup.findFirst({ where: { courseId, groupId } });
+  if (!exists) await prisma.courseGroup.create({ data: { courseId, groupId } });
+  await syncEnrollments(courseId, [groupId]);
+  const enrolled = await prisma.enrollment.count({ where: { courseId, status: "ACTIVE", student: { groupId } } });
+  return { ok: true, enrolled };
+}
+
+export async function teacherDetachGroup(courseId: number, teacherId: number, groupId: number) {
+  await ownCourseWithFaculty(courseId, teacherId);
+  await prisma.courseGroup.deleteMany({ where: { courseId, groupId } });
+  const students = await prisma.user.findMany({ where: { role: "STUDENT", groupId }, select: { id: true } });
+  if (students.length) {
+    await prisma.enrollment.updateMany({
+      where: { courseId, studentId: { in: students.map((s) => s.id) } },
+      data: { status: "DROPPED" },
+    });
+  }
+  return { ok: true };
 }
 
 export async function getTeacherGroup(groupId: number, teacherId: number) {

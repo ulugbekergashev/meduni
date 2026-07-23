@@ -69,6 +69,43 @@ export function useCourseGroupsStats(courseId: number) {
   return useQuery({ queryKey: ["course-groups", courseId], queryFn: () => api<CourseGroupStat[]>(`/api/v1/teach/courses/${courseId}/groups`) });
 }
 
+// Guruh biriktirish (o'qituvchi o'z kursiga)
+export interface AssignableGroup {
+  id: number;
+  name: string;
+  yearOfStudy: number;
+  studentCount: number;
+}
+export function useAssignableGroups(courseId: number) {
+  return useQuery({
+    queryKey: ["assignable-groups", courseId],
+    queryFn: () => api<AssignableGroup[]>(`/api/v1/teach/courses/${courseId}/assignable-groups`),
+  });
+}
+function useGroupMutation(courseId: number) {
+  const qc = useQueryClient();
+  return () => {
+    qc.invalidateQueries({ queryKey: ["course-groups", courseId] });
+    qc.invalidateQueries({ queryKey: ["assignable-groups", courseId] });
+    qc.invalidateQueries({ queryKey: ["teach-course", courseId] });
+  };
+}
+export function useAttachGroup(courseId: number) {
+  const invalidate = useGroupMutation(courseId);
+  return useMutation({
+    mutationFn: (groupId: number) =>
+      api<{ ok: boolean; enrolled: number }>(`/api/v1/teach/courses/${courseId}/groups`, { method: "POST", body: JSON.stringify({ groupId }) }),
+    onSuccess: invalidate,
+  });
+}
+export function useDetachGroup(courseId: number) {
+  const invalidate = useGroupMutation(courseId);
+  return useMutation({
+    mutationFn: (groupId: number) => api(`/api/v1/teach/courses/${courseId}/groups/${groupId}`, { method: "DELETE" }),
+    onSuccess: invalidate,
+  });
+}
+
 export interface StudentDetailTopic {
   id: number;
   title: string;

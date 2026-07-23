@@ -48,14 +48,14 @@ export function TeachCoursesPage() {
       </div>
 
       {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-3 rounded-[24px] border border-white/60 bg-white/40 p-4 shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-2xl ring-1 ring-black/5">
+      <div className="flex flex-wrap items-center gap-3 rounded-[24px] border border-line bg-surface p-4 shadow-sm ring-1 ring-line">
         <div className="relative min-w-[240px] flex-1">
           <Icon icon={Search} size={18} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-ink-faint" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={t("searchCourse")}
-            className="w-full rounded-[16px] border-none bg-white/60 py-3 pl-11 pr-4 text-[15px] font-semibold text-ink shadow-sm ring-1 ring-black/5 transition-all focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand/50"
+            className="w-full rounded-[16px] border-none bg-surface-raised py-3 pl-11 pr-4 text-[15px] font-semibold text-ink shadow-sm ring-1 ring-line transition-all focus:bg-surface-glass focus:outline-none focus:ring-2 focus:ring-brand/50"
           />
         </div>
         <div className="flex items-center gap-3">
@@ -67,7 +67,7 @@ export function TeachCoursesPage() {
             onYear={setYear}
             onSemester={setSemester}
           />
-          <span className="hidden rounded-full bg-white/60 px-4 py-2 text-[14px] font-bold text-brand-deep shadow-sm ring-1 ring-black/5 sm:inline-block">
+          <span className="hidden rounded-full bg-surface-raised px-4 py-2 text-[14px] font-bold text-brand-deep shadow-sm ring-1 ring-line sm:inline-block">
             {t("totalN", { n: filtered.length })}
           </span>
         </div>

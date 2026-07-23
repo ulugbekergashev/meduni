@@ -24,7 +24,7 @@ function QuickAction({ icon, label, chip, onClick }: { icon: LucideIcon; label: 
   return (
     <button
       onClick={onClick}
-      className={`group relative flex items-center gap-4 overflow-hidden rounded-[20px] border border-white/60 bg-white/40 p-5 text-left shadow-[0_8px_30px_rgb(0,0,0,0.04)] ring-1 ring-black/5 backdrop-blur-xl transition-all duration-500 hover:-translate-y-1.5 hover:bg-white/60 hover:shadow-[0_20px_40px_rgb(0,0,0,0.1)]`}
+      className={`group relative flex items-center gap-4 overflow-hidden rounded-[20px] border border-line bg-surface p-5 text-left shadow-sm ring-1 ring-line transition-all duration-300 hover:-translate-y-1 hover:bg-surface-raised hover:shadow-md`}
     >
       <div className={`absolute -right-6 -top-6 h-24 w-24 rounded-full blur-2xl opacity-10 transition-opacity duration-500 group-hover:opacity-30 ${chip}`} />
       <div className={`relative flex h-12 w-12 shrink-0 items-center justify-center rounded-[16px] text-white shadow-inner transition-transform duration-500 group-hover:scale-110 group-hover:rotate-[10deg] ${chip}`}>
@@ -49,7 +49,7 @@ function TaskRow({ icon, tone, count, label, onClick }: { icon: LucideIcon; tone
     <button
       onClick={onClick}
       disabled={!onClick}
-      className={`group flex w-full items-center gap-4 rounded-[20px] border border-white/60 bg-white/40 p-4.5 text-left shadow-[0_4px_20px_rgb(0,0,0,0.03)] backdrop-blur-xl ring-1 ring-black/5 transition-all duration-500 ${onClick ? "hover:-translate-y-1 hover:bg-white/60 hover:shadow-[0_12px_30px_rgb(0,0,0,0.08)]" : "cursor-default"}`}
+      className={`group flex w-full items-center gap-4 rounded-[20px] border border-line bg-surface p-5 text-left shadow-sm ring-1 ring-line transition-all duration-300 ${onClick ? "hover:-translate-y-1 hover:bg-surface-raised hover:shadow-md" : "cursor-default"}`}
     >
       <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-[16px] transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-6 shadow-sm ${tone}`}>
         <Icon icon={icon} size={24} />
@@ -64,7 +64,7 @@ function TaskRow({ icon, tone, count, label, onClick }: { icon: LucideIcon; tone
 
 function MetricCard({ ring, tone, label, sublabel }: { ring: number; tone: "brand" | "blue" | "emerald"; label: string; sublabel?: string }) {
   return (
-    <div className="group flex items-center gap-5 rounded-[20px] border border-white/60 bg-white/40 p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-xl ring-1 ring-black/5 transition-all duration-500 hover:-translate-y-1 hover:bg-white/60 hover:shadow-[0_20px_40px_rgb(0,0,0,0.1)]">
+    <div className="group flex items-center gap-5 rounded-[20px] border border-line bg-surface p-6 shadow-sm ring-1 ring-line transition-all duration-300 hover:-translate-y-1 hover:bg-surface-raised hover:shadow-md">
       <div className="transition-transform duration-500 group-hover:scale-110">
         <ProgressRing value={ring} tone={tone} />
       </div>
@@ -93,7 +93,7 @@ function RankingCard({
   onPick: (id: number) => void;
 }) {
   return (
-    <div className="group flex flex-col rounded-[24px] border border-white/60 bg-white/40 p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-2xl ring-1 ring-black/5 transition-all duration-500 hover:bg-white/50 hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)]">
+    <div className="group flex flex-col rounded-[24px] border border-line bg-surface p-6 shadow-sm ring-1 ring-line transition-all duration-300 hover:bg-surface-raised hover:shadow-md">
       <p className={`mb-5 flex items-center gap-2.5 text-[15.5px] font-black uppercase tracking-widest ${tone}`}>
         <Icon icon={icon} size={20} /> {title}
       </p>
@@ -102,17 +102,17 @@ function RankingCard({
       ) : (
         <div className="space-y-2.5">
           {rows.map((r, i) => (
-            <button
-              key={r.id}
-              onClick={() => onPick(r.id)}
-              className="group/row flex w-full items-center gap-4 rounded-[16px] bg-white/50 px-3 py-2.5 text-left ring-1 ring-black/5 backdrop-blur-md transition-all duration-300 hover:bg-white/80 hover:shadow-md hover:ring-black/10 hover:pl-4"
-            >
+              <button
+                key={r.id}
+                onClick={() => onPick(r.id)}
+                className="group/row flex w-full items-center gap-4 rounded-[16px] bg-surface-raised px-4 py-3 text-left ring-1 ring-line transition-all duration-300 hover:bg-surface-glass hover:shadow-sm hover:ring-brand/20 hover:pl-5"
+              >
               <div className={cls(
                 "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[14px] font-black tabular-nums transition-transform duration-300 group-hover/row:scale-110 group-hover/row:rotate-[10deg]",
                 i === 0 ? "bg-gradient-to-br from-yellow-300 to-yellow-600 text-white shadow-md ring-2 ring-yellow-500/20" :
                 i === 1 ? "bg-gradient-to-br from-slate-300 to-slate-500 text-white shadow-sm ring-2 ring-slate-400/20" :
                 i === 2 ? "bg-gradient-to-br from-orange-400 to-amber-700 text-white shadow-sm ring-2 ring-orange-500/20" :
-                "bg-white/60 text-ink-soft ring-1 ring-black/10"
+                "bg-surface-raised text-ink-soft ring-1 ring-line"
               )}>
                 {i + 1}
               </div>
@@ -275,7 +275,7 @@ export function TeachDashboard() {
 
           {/* Clickable group chips */}
           {stats.groupList.length > 0 && (
-            <div className="mt-6 flex flex-wrap items-center gap-2.5 rounded-[20px] bg-white/40 p-4 backdrop-blur-xl ring-1 ring-black/5">
+            <div className="mt-6 flex flex-wrap items-center gap-2.5 rounded-[20px] bg-surface p-5 ring-1 ring-line">
               <span className="inline-flex items-center gap-2 text-[14px] font-bold text-ink-soft uppercase tracking-wider">
                 <Icon icon={Users2} size={16} /> {t("myGroups")}:
               </span>
@@ -283,7 +283,7 @@ export function TeachDashboard() {
                 <button
                   key={g.id}
                   onClick={() => navigate(`/teach/groups/${g.id}`)}
-                  className="rounded-full bg-white/60 px-4 py-1.5 text-[14px] font-bold text-ink-soft shadow-sm ring-1 ring-black/5 transition-all duration-300 hover:-translate-y-0.5 hover:bg-brand-soft hover:text-brand-deep hover:shadow-md hover:ring-brand/20"
+                  className="rounded-full bg-surface-raised px-4 py-1.5 text-[14px] font-bold text-ink-soft shadow-sm ring-1 ring-line transition-all duration-300 hover:-translate-y-0.5 hover:bg-brand-soft hover:text-brand-deep hover:shadow-md hover:ring-brand/20"
                 >
                   {g.name}
                 </button>
@@ -297,7 +297,7 @@ export function TeachDashboard() {
       <section>
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-[22px] font-black text-ink drop-shadow-sm">{t("myCourses")}</h2>
-          <button onClick={() => navigate("/teach/courses")} className="rounded-full bg-white/50 px-5 py-2 text-[14.5px] font-bold text-brand-deep shadow-sm ring-1 ring-black/5 backdrop-blur-md transition-all hover:bg-brand-soft hover:ring-brand/20">
+          <button onClick={() => navigate("/teach/courses")} className="rounded-full bg-surface-raised px-5 py-2 text-[14.5px] font-bold text-brand shadow-sm ring-1 ring-line transition-all hover:bg-brand-soft hover:ring-brand/20">
             {t("seeAll")} &rarr;
           </button>
         </div>
