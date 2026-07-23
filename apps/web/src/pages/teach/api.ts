@@ -92,8 +92,18 @@ export interface StudentDetailCourse {
   attendance: { present: number; absent: number; late: number; excused: number; pct: number | null; avgGrade: number | null };
   topics: StudentDetailTopic[];
 }
+export interface PracticeSignals {
+  cardsReviewed: number;
+  cardsKnownPct: number | null;
+  patientSessions: number;
+  patientAvgScore: number | null;
+  tutorQuestions: number;
+}
+
 export interface StudentDetail {
   student: { id: number; fullName: string; email: string; groupId: number | null; groupName: string | null };
+  /** Modul 28 — amaliyot faolligi (takrorlash/bemor/AI-tutor). */
+  practiceSignals: PracticeSignals;
   courses: StudentDetailCourse[];
 }
 
