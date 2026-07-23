@@ -157,7 +157,7 @@ export function StudyRail({
                   >
                     {t(`tab_${v}`)}
                   </span>
-                  {sub && <span className="block truncate text-micro text-ink-dim">{sub}</span>}
+                  {sub && <span className="block truncate text-note text-ink-soft">{sub}</span>}
                 </span>
               </button>
 
@@ -254,10 +254,10 @@ export function StudyRail({
                               <Icon icon={FileText} size={13} />
                             </span>
                             <span className="min-w-0 flex-1">
-                              <span className="block truncate text-micro font-bold text-ink group-hover:text-brand-tint">
+                              <span className="block truncate text-note font-bold text-ink group-hover:text-brand-tint">
                                 {m.fileName}
                               </span>
-                              <span className="block truncate text-micro text-ink-dim">{meta.join(" · ")}</span>
+                              <span className="block truncate text-note text-ink-soft">{meta.join(" · ")}</span>
                             </span>
                             <Icon
                               icon={INLINE.has(m.fileType) ? ExternalLink : Download}
@@ -283,10 +283,10 @@ export function StudyRail({
                             <Icon icon={Link2} size={13} />
                           </span>
                           <span className="min-w-0 flex-1">
-                            <span className="block truncate text-micro font-bold text-ink group-hover:text-brand-tint">
+                            <span className="block truncate text-note font-bold text-ink group-hover:text-brand-tint">
                               {l.title}
                             </span>
-                            <span className="block truncate text-micro text-ink-dim">{l.note || t("externalLink")}</span>
+                            <span className="block truncate text-note text-ink-soft">{l.note || t("externalLink")}</span>
                           </span>
                           <Icon
                             icon={ExternalLink}

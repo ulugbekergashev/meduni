@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { motion, useReducedMotion, useScroll, useSpring } from "framer-motion";
-import { ArrowRight, Clock, FileText, Minus, Plus } from "lucide-react";
+import { ArrowRight, Check, Clock, FileText, Minus, Plus } from "lucide-react";
 import { Icon, cls } from "@meduni/ui";
 import type { LessonSection, Term } from "../api";
 import { BlockView } from "./BlockView";
@@ -154,9 +154,9 @@ export function SectionReader({
         className="h-0.5 shrink-0 origin-left bg-brand"
       />
 
-      {/* Barcha bo'limlar — bitta oqim */}
+      {/* Barcha bo'limlar — bitta oqim. Kengroq ustun + kamroq yon bo'shliq. */}
       <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-[68ch] px-6 py-8 sm:px-10" style={{ fontSize: `${size.px}px` }}>
+        <div className="mx-auto max-w-[76ch] px-5 py-6 sm:px-7" style={{ fontSize: `${size.px}px` }}>
           {sections.map((section, si) => (
             <motion.section
               key={section.index}
@@ -166,23 +166,23 @@ export function SectionReader({
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.05 }}
               transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-              className={cls("scroll-mt-4", si > 0 && "mt-8 border-t border-line pt-7")}
+              className={cls("scroll-mt-4", si > 0 && "mt-7 border-t border-line pt-6")}
             >
-              <div className="mb-3.5">
+              <div className="mb-3">
                 <div className="mb-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1">
                   <span className="text-micro font-extrabold uppercase tracking-wider text-brand-tint">
                     {t("sectionOf", { n: section.index + 1, total: sections.length })}
                   </span>
-                  <span className="inline-flex items-center gap-1 text-micro font-bold text-ink-dim">
-                    <Icon icon={Clock} size={11} />
+                  <span className="inline-flex items-center gap-1 text-micro font-bold text-ink-soft">
+                    <Icon icon={Clock} size={12} />
                     {t("minutesN", { n: section.minutes })}
                   </span>
                 </div>
                 {/* em — sarlavha o'qish o'lchami bilan birga masshtablanadi */}
                 <h2 className="text-[1.3em] font-extrabold leading-tight tracking-tight text-ink">{section.title}</h2>
                 {section.sourceRef && (
-                  <p className="mt-1.5 inline-flex items-center gap-1.5 text-micro text-ink-dim">
-                    <Icon icon={FileText} size={11} />
+                  <p className="mt-1.5 inline-flex items-center gap-1.5 text-micro text-ink-faint">
+                    <Icon icon={FileText} size={12} />
                     {t("sourceRef")}: {section.sourceRef}
                   </p>
                 )}
@@ -201,20 +201,24 @@ export function SectionReader({
         </div>
       </div>
 
-      {/* Pastki bar — hammasi o'qilgach keyingi bosqichga */}
+      {/* Pastki bar — doim ko'rinadigan, KATTA "keyingi bosqich" tugmasi */}
       {allRead && onFinished && (
         <motion.div
           initial={reduce ? false : { y: 28, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ type: "spring", stiffness: 300, damping: 30 }}
-          className="flex shrink-0 items-center justify-end border-t border-line px-3 py-2"
+          className="flex shrink-0 items-center gap-3 border-t border-line bg-surface px-4 py-3"
         >
+          <span className="hidden items-center gap-1.5 text-note font-bold text-emerald sm:inline-flex">
+            <Icon icon={Check} size={16} strokeWidth={3} />
+            {t("readCount", { n: readCount, total: sections.length })}
+          </span>
           <button
             onClick={onFinished}
-            className="group inline-flex items-center gap-1.5 rounded-control bg-brand px-3.5 py-1.5 text-note font-bold text-white transition-[background-color,transform] hover:bg-brand-deep focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand active:scale-[0.98]"
+            className="group ml-auto inline-flex items-center gap-2 rounded-control bg-brand px-5 py-3 text-body font-extrabold text-white transition-[background-color,transform] hover:bg-brand-deep focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand active:scale-[0.98]"
           >
             {finishedLabel ?? t("finishReading")}
-            <Icon icon={ArrowRight} size={14} className="transition-transform duration-150 group-hover:translate-x-0.5" />
+            <Icon icon={ArrowRight} size={18} className="transition-transform duration-150 group-hover:translate-x-0.5" />
           </button>
         </motion.div>
       )}
