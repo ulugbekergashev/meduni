@@ -8,6 +8,7 @@ import { overallPct, type LessonView, type StageInfo, type StageKey } from "./st
 
 function activeStageKey(view: LessonView): StageKey | null {
   if (view === "overview") return null;
+  if (view === "patient") return "patient";
   if (view === "case") return "case";
   if (view === "quiz") return "quiz";
   if (view === "result") return "result";
