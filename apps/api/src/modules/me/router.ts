@@ -7,6 +7,7 @@ import * as lesson from "./lesson";
 import * as profile from "./profile";
 import * as chat from "./chat";
 import * as flashcards from "./flashcards";
+import * as patient from "./patient";
 import * as courseChat from "../chat/service";
 import { computeStudentAutoTasks, listAssigned } from "../tasks/service";
 import { studentSearch } from "../search/service";
@@ -146,6 +147,30 @@ meRouter.post(
 
 // Interval takrorlash — bugun takrorlash kerak bo'lgan kartalar (Dashboard).
 meRouter.get("/review/due", wrap(async (req, res) => res.json(await flashcards.getReviewDue(req.user!.id))));
+
+// ---------- Virtual bemor roleplay (Modul 26) ----------
+
+meRouter.get("/topics/:id/patient", wrap(async (req, res) => res.json(await patient.getPatient(req.user!.id, parseId(req.params.id)))));
+
+const patientMsgSchema = z.object({ text: z.string().min(1).max(2000) });
+meRouter.post(
+  "/topics/:id/patient",
+  wrap(async (req, res) => {
+    const b = parseBody(patientMsgSchema, req.body);
+    res.json(await patient.sendPatient(req.user!.id, parseId(req.params.id), b.text));
+  })
+);
+
+const patientFinishSchema = z.object({ diagnosis: z.string().max(2000).default("") });
+meRouter.post(
+  "/topics/:id/patient/finish",
+  wrap(async (req, res) => {
+    const b = parseBody(patientFinishSchema, req.body);
+    res.json(await patient.finishPatient(req.user!.id, parseId(req.params.id), b.diagnosis));
+  })
+);
+
+meRouter.post("/topics/:id/patient/reset", wrap(async (req, res) => res.json(await patient.resetPatient(req.user!.id, parseId(req.params.id)))));
 
 // ---------- AI-tutor chat (layout v2, 2C) ----------
 

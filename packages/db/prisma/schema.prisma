@@ -132,6 +132,7 @@ model User {
   sectionReads      SectionRead[]
   flashcardReviews  FlashcardReview[]
   tutorMessages     TutorMessage[]
+  patientMessages   PatientMessage[]
   chatMessages      CourseChatMessage[] @relation("ChatAuthor")
   quizAttempts      QuizAttempt[]
   caseAttempts      CaseAttempt[]    @relation("CaseStudent")
@@ -294,9 +295,28 @@ model Topic {
   sectionReads   SectionRead[]
   flashcardReviews FlashcardReview[]
   tutorMessages  TutorMessage[]
+  patientMessages PatientMessage[]
   sessions       LessonSession[]
 
   @@map("topics")
+}
+
+/// Virtual bemor roleplay (Modul 26) — AI bemor rolini o'ynaydi, talaba
+/// shifokor sifatida anamnez yig'adi; yakunda AI baholaydi. role="eval"
+/// bo'lgan xabar matni JSON baholash (frontend parse qiladi).
+model PatientMessage {
+  id        Int      @id @default(autoincrement())
+  studentId Int
+  student   User     @relation(fields: [studentId], references: [id])
+  topicId   Int
+  topic     Topic    @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  /// "student" | "patient" | "eval"
+  role      String
+  text      String
+  createdAt DateTime @default(now())
+
+  @@index([studentId, topicId, createdAt])
+  @@map("patient_messages")
 }
 
 model LessonSession {

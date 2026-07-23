@@ -1133,9 +1133,35 @@ Barcha modullar tugadi (1-17).
   fullBleed) + o'qituvchi kurs shell'ida **"Chat" tab** (`CourseChatTab`). Xabar:
   rol badge (o'qituvchi), mine=o'ng brand, sana ajratgichlar. **Smoke 10/10**
   (real): talaba post/mine=student, o'qituvchi javob mine=false role=teacher,
-  yozilmagan kurs→403. tsc+build ikkala tomonda toza. ⚠️ Roadmap qoldi: virtual
-  bemor, smart tooltip, PDF export, notifications, bookmarks (talabnoma —
-  `Desktop/talabnoma-student-panel.md`).
+  yozilmagan kurs→403. tsc+build ikkala tomonda toza. ⚠️ Roadmap qoldi:
+  PDF export, notifications, bookmarks (talabnoma — `Desktop/talabnoma-student-panel.md`).
+
+- **Modul 26 — Talabnoma AI xususiyatlari: Smart Tooltip + Interval takrorlash +
+  Virtual bemor (2026-07-23).** Buyurtmachi 5 talabini bajarish: #1 chatlar diviziyasi
+  (Modul 25'da tayyor) va #3 gibrid baholash (test avto + keys qadam-avto/yozma-o'qituvchi —
+  tayyor) allaqachon bor; qolgan uchtasi yangi.
+  **(A) Smart Tooltip** (frontend-only, AI'siz): o'qish ustunidagi matnда konspekt
+  `terms` (uz+lat) avtomatik topilib, hover/click'да tooltip (lotincha + uz + ru).
+  `lesson/TermTooltip.tsx` (buildMatcher — unicode so'z chegarasi, uzun avval;
+  TermText matnni bo'ladi; TermChip popover), `BlockView`/`SectionReader`/`ContentPanel`
+  terms uzatadi.
+  **(B) Interval takrorlash (Spaced Repetition)**: Prisma `FlashcardReview +=
+  intervalDays + dueAt` (migratsiya `spaced_repetition`). `flashcards.ts::reviewFlashcard`
+  SM-2 lite bucketlar [1,3,7,16,35] kun (bilaman→keyingi, bilmayman→1); yangi
+  `getReviewDue` (dueAt<=hozir, mavzu bo'yicha). `GET /me/review/due`. Dashboard o'ng
+  ustunда "Bugun takrorlang" RailCard (→ `?view=flashcards`).
+  **(C) Virtual bemor (AI roleplay)**: Prisma `PatientMessage` (role student|patient|eval,
+  eval matni JSON; migratsiya `virtual_patient`). `ai/prompts/patient.ts` — bemor
+  BIRINCHI SHAXSDA, keysдан yashirin haqiqat, tashxisni OSHKOR QILMAYDI, faqat
+  so'ralganда obyektiv/lab beradi; `evalSystemPrompt` — anamnez/muloqot/umumiy ball +
+  strengths/improvements + to'g'ri tashxis. `modules/me/patient.ts` — get/send/finish/
+  reset (assertTopicOpen + kvota, kind PATIENT/PATIENT_EVAL). Frontend: `lesson/PatientTab.tsx`
+  (fokus rejim — bemor kartasi + chat + "Yakunlash"→tashxis modali→baholash natijasi
+  ProgressRing bilan), `ContentView`/LessonView += `patient` (bosqich EMAS), CaseTab
+  yuqorisида kirish banneri (`?view=patient`). **Real Gemini smoke 13/13**: bemor
+  keysga mos javob berdi (holsizlik/bosh aylanishi/hansirash), tashxis oshkor qilinmadi,
+  baholash to'g'ri tashxisni tan oldi (III daraja AV blokada). Interval smoke 6/6.
+  tsc+build ikkala tomonда toza.
 
 ## 9. Loyiha holati va ishga tushirish (operatsion — sessiya 0)
 
