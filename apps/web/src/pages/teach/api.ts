@@ -14,6 +14,8 @@ export interface TeachCourse {
   groups: { id: number; name: string }[];
   studentCount: number;
   defaultUnlockRuleJson?: UnlockRule | null;
+  /** Sana-rejimi: mavzular dars jadvali bo'yicha ochiladi. */
+  scheduleUnlock?: boolean;
 }
 
 export function useTeachCourses() {
@@ -242,8 +244,8 @@ export function useCourseMistakes(courseId: number) {
 export function useUpdateCourseSettings(courseId: number) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (defaultUnlockRuleJson: UnlockRule) =>
-      api(`/api/v1/teach/courses/${courseId}/settings`, { method: "PUT", body: JSON.stringify({ defaultUnlockRuleJson }) }),
+    mutationFn: (body: { defaultUnlockRuleJson?: UnlockRule; scheduleUnlock?: boolean }) =>
+      api(`/api/v1/teach/courses/${courseId}/settings`, { method: "PUT", body: JSON.stringify(body) }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["teach-course", courseId] }),
   });
 }

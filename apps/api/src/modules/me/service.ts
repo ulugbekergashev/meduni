@@ -21,7 +21,18 @@ type CourseRow = Prisma.CourseGetPayload<{ include: typeof courseInclude }>;
 type TopicWithContent = CourseRow["topics"][number];
 // Downstream kod (progress matritsa, tasks, lesson) `course.topics` bilan ishlaydi —
 // loadCourse fan mavzularini shu maydonga normalizatsiya qiladi.
-export type CourseWithTopics = CourseRow & { topics: TopicWithContent[] };
+// `scheduleDates` — sana-rejimida loadCourse biriktiradi (topicId → ochilish ISO
+// sanasi); computeTopics uni sinxron o'qiydi, shuning uchun barcha chaqiruv joyi
+// (student yo'li, o'qituvchi matritsasi, tasks) avtomatik mos ishlaydi.
+export type CourseWithTopics = CourseRow & {
+  topics: TopicWithContent[];
+  scheduleDates?: Map<number, string> | null;
+};
+
+function dmyDate(iso: string): string {
+  const [y, m, d] = iso.split("-");
+  return `${d}.${m}.${y}`;
+}
 
 // Facts + extras: slides-viewed (shown on the card, doesn't gate) and a teacher
 // manual-override flag that force-completes the topic (unlocks the next one).
@@ -57,6 +68,11 @@ export interface TopicOut {
 /** The heart of the module: walk the topics in order, unlocking each only after
  *  the previous one is COMPLETED. Every LOCKED topic carries a concrete reason. */
 export function computeTopics(course: CourseWithTopics, factsByTopic: Map<number, FullFacts>): TopicOut[] {
+  // Sana-rejimi: kurs `scheduleUnlock` bo'lsa loadCourse `scheduleDates` biriktiradi —
+  // mavzu ketma-ketlik-tugatish emas, DARS JADVALI sanasi bo'yicha ochiladi.
+  const scheduleDates = course.scheduleDates ?? null;
+  const today = new Date().toISOString().slice(0, 10);
+
   const out: TopicOut[] = [];
   let prevCompleted = true; // the first topic is always open
   let prevUnmet: Reason[] = [];
@@ -68,19 +84,36 @@ export function computeTopics(course: CourseWithTopics, factsByTopic: Map<number
     // A teacher override force-completes the topic regardless of the student's facts.
     const completed = evaluated.completed || facts.forceComplete;
     const pct = facts.forceComplete ? 100 : evaluated.pct;
-    const dateOk = evaluated.dateOk || facts.forceComplete;
     const unmet = completed ? [] : evaluated.unmet;
 
     let state: TopicOut["state"];
     let reason: Reason | null = null;
 
-    if (completed) {
-      state = "COMPLETED";
-    } else if (prevCompleted && dateOk) {
-      state = pct > 0 ? "IN_PROGRESS" : "AVAILABLE";
+    if (scheduleDates) {
+      // Har mavzu O'Z dars kuni bo'yicha ochiladi (oldingi mavzu tugashi shart emas).
+      const unlockDate = scheduleDates.get(topic.id) ?? null;
+      const dateOk = (unlockDate !== null && today >= unlockDate) || facts.forceComplete;
+      if (completed) {
+        state = "COMPLETED";
+      } else if (dateOk) {
+        state = pct > 0 ? "IN_PROGRESS" : "AVAILABLE";
+      } else {
+        state = "LOCKED";
+        reason = unlockDate
+          ? { uz: `${dmyDate(unlockDate)} dan ochiladi`, ru: `Откроется ${dmyDate(unlockDate)}` }
+          : { uz: "Dars jadvaliga hali qoʻshilmagan", ru: "Ещё не добавлено в расписание" };
+      }
     } else {
-      state = "LOCKED";
-      reason = lockedReason(rule, prevUnmet);
+      // Klassik ketma-ketlik: N-mavzu (N-1) tugagach ochiladi.
+      const dateOk = evaluated.dateOk || facts.forceComplete;
+      if (completed) {
+        state = "COMPLETED";
+      } else if (prevCompleted && dateOk) {
+        state = pct > 0 ? "IN_PROGRESS" : "AVAILABLE";
+      } else {
+        state = "LOCKED";
+        reason = lockedReason(rule, prevUnmet);
+      }
     }
 
     out.push({
@@ -97,6 +130,29 @@ export function computeTopics(course: CourseWithTopics, factsByTopic: Map<number
     prevUnmet = unmet;
   }
 
+  return out;
+}
+
+/** Sana-rejimida har mavzuning ochilish sanasi = o'sha mavzuning OXIRGI dars
+ *  kuni + 1 kun ("dars bo'lgan kundan keyin ochiladi"). Sessiyalar mavzuga
+ *  LessonSession.topicId orqali bog'lanadi. */
+async function loadScheduleDates(courseId: number): Promise<Map<number, string>> {
+  const sessions = await prisma.lessonSession.findMany({
+    where: { courseId, topicId: { not: null } },
+    select: { topicId: true, date: true },
+  });
+  const lastByTopic = new Map<number, Date>();
+  for (const s of sessions) {
+    if (s.topicId === null) continue;
+    const cur = lastByTopic.get(s.topicId);
+    if (!cur || s.date > cur) lastByTopic.set(s.topicId, s.date);
+  }
+  const out = new Map<number, string>();
+  for (const [topicId, date] of lastByTopic) {
+    const next = new Date(date);
+    next.setDate(next.getDate() + 1); // dars kunidan KEYIN
+    out.set(topicId, next.toISOString().slice(0, 10));
+  }
   return out;
 }
 
@@ -206,7 +262,11 @@ export async function loadCourse(courseId: number): Promise<CourseWithTopics> {
   if (!course) throw notFound("Kurs");
   // Only topics with at least one PUBLISHED content item are visible to students;
   // topics still being built (no published content) don't appear on the path at all.
-  return { ...course, topics: course.topics.filter((t) => t.contentItems.length > 0) };
+  const topics = course.topics.filter((t) => t.contentItems.length > 0);
+  // Sana-rejimida ochilish sanalarini (jadvaldan) biriktiramiz — computeTopics
+  // uni sinxron o'qiydi, shunda barcha chaqiruv joyi mos ishlaydi.
+  const scheduleDates = course.scheduleUnlock ? await loadScheduleDates(courseId) : null;
+  return { ...course, topics, scheduleDates };
 }
 
 /** GET /me/courses — enrolled courses with a progress summary each. */
