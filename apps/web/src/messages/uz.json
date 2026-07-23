@@ -935,7 +935,9 @@
     "deanLabel": "Dekan",
     "headLabel": "Mudir",
     "faculty": "Fakultet",
-    "department": "Kafedra"
+    "department": "Kafedra",
+    "coursesSection": "Kurslar",
+    "noCoursesInDept": "Bu kafedrada hali kurs yoʻq"
   },
   "users": {
     "title": "Foydalanuvchilar",
@@ -1078,7 +1080,13 @@
     "totalN": "Jami: {{n}}",
     "noMatch": "Mos kurs topilmadi",
     "allSubjects": "Barcha fanlar",
-    "semesterN": "{{n}}-semestr"
+    "semesterN": "{{n}}-semestr",
+    "courseName": "Kurs nomi",
+    "courseNamePlaceholder": "Masalan: Kardiologiya",
+    "department": "Kafedra",
+    "selectDepartment": "Kafedra tanlang",
+    "allDepartments": "Barcha kafedralar",
+    "noDepartments": "Avval kafedra oching"
   },
   "student": {
     "hello": "Salom",

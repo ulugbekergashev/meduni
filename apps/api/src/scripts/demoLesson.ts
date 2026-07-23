@@ -347,14 +347,14 @@ async function main() {
   const topicId = Number(process.argv[2] ?? 29);
   const topic = await prisma.topic.findUnique({
     where: { id: topicId },
-    include: { subject: { include: { department: true } } },
+    include: { course: true },
   });
   if (!topic) throw new Error(`Topic ${topicId} topilmadi`);
 
   // Yuklovchi sifatida shu kafedra o'qituvchisi (bo'lmasa — istalgan TEACHER).
   const teacher =
     (await prisma.user.findFirst({
-      where: { role: "TEACHER", teacherProfile: { departmentId: topic.subject.departmentId } },
+      where: { role: "TEACHER", teacherProfile: { departmentId: topic.course.departmentId } },
     })) ?? (await prisma.user.findFirst({ where: { role: "TEACHER" } }));
   if (!teacher) throw new Error("O'qituvchi topilmadi");
 

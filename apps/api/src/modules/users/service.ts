@@ -306,14 +306,13 @@ export async function getUserProfile(id: number) {
     const courses = await prisma.course.findMany({
       where: { teacherId: id },
       include: {
-        subject: true,
         courseGroups: { include: { group: true } },
         _count: { select: { enrollments: { where: { status: "ACTIVE" } } } },
       },
       orderBy: { id: "asc" },
     });
     const publishedTopics = await prisma.topic.count({
-      where: { subject: { courses: { some: { teacherId: id } } }, contentItems: { some: { status: "PUBLISHED" } } },
+      where: { course: { teacherId: id }, contentItems: { some: { status: "PUBLISHED" } } },
     });
     const distinctStudents = await prisma.enrollment.findMany({
       where: { status: "ACTIVE", course: { teacherId: id } },
@@ -326,7 +325,7 @@ export async function getUserProfile(id: number) {
       stats: { courses: courses.length, students: distinctStudents.length, publishedTopics },
       courses: courses.map((c) => ({
         id: c.id,
-        subjectName: c.subject.name,
+        name: c.name,
         semester: c.semester,
         academicYear: c.academicYear,
         groups: c.courseGroups.map((cg) => cg.group.name),
@@ -338,23 +337,21 @@ export async function getUserProfile(id: number) {
   if (user.role === "STUDENT") {
     const enrollments = await prisma.enrollment.findMany({
       where: { studentId: id, status: "ACTIVE" },
-      include: { course: { include: { subject: true } } },
+      include: { course: true },
       orderBy: { courseId: "asc" },
     });
-    // Progress per course: COMPLETED topics / published topics (from persisted Progress rows).
-    // Faza 3: topic fanga tegishli — subject bo'yicha sanab, kursga fan orqali bog'laymiz.
-    const progressRows = await prisma.progress.findMany({ where: { studentId: id, state: "COMPLETED" }, select: { topic: { select: { subjectId: true } } } });
-    const completedBySubject = new Map<number, number>();
+    const progressRows = await prisma.progress.findMany({ where: { studentId: id, state: "COMPLETED" }, select: { topic: { select: { courseId: true } } } });
+    const completedByCourse = new Map<number, number>();
     for (const p of progressRows) {
-      completedBySubject.set(p.topic.subjectId, (completedBySubject.get(p.topic.subjectId) ?? 0) + 1);
+      completedByCourse.set(p.topic.courseId, (completedByCourse.get(p.topic.courseId) ?? 0) + 1);
     }
-    const subjectIds = enrollments.map((e) => e.course.subjectId);
+    const courseIds = enrollments.map((e) => e.course.id);
     const topicTotals = await prisma.topic.groupBy({
-      by: ["subjectId"],
-      where: { subjectId: { in: subjectIds }, contentItems: { some: { status: "PUBLISHED" } } },
+      by: ["courseId"],
+      where: { courseId: { in: courseIds }, contentItems: { some: { status: "PUBLISHED" } } },
       _count: true,
     });
-    const totalBySubject = new Map(topicTotals.map((t) => [t.subjectId, t._count]));
+    const totalByCourse = new Map(topicTotals.map((t) => [t.courseId, t._count]));
 
     const [att, quizAgg, lastProgress] = await Promise.all([
       prisma.attendance.groupBy({ by: ["status"], where: { studentId: id }, _count: true }),
@@ -378,11 +375,11 @@ export async function getUserProfile(id: number) {
       avgQuizScore: quizAgg._avg.scorePct === null ? null : Math.round(quizAgg._avg.scorePct),
       lastActiveAt: lastProgress._max.updatedAt,
       courses: enrollments.map((e) => {
-        const total = totalBySubject.get(e.course.subjectId) ?? 0;
-        const done = completedBySubject.get(e.course.subjectId) ?? 0;
+        const total = totalByCourse.get(e.courseId) ?? 0;
+        const done = completedByCourse.get(e.courseId) ?? 0;
         return {
           id: e.courseId,
-          subjectName: e.course.subject.name,
+          name: e.course.name,
           semester: e.course.semester,
           completed: done,
           total,

@@ -11,14 +11,14 @@ import { departmentForTopic } from "../../ai/glossary";
 import { slidesGenSchema, slidesResponseSchema, type DigestJson, type Slide, type SlidesGen } from "../../ai/types";
 import { slidesSystemPrompt, slidesUserContent } from "../../ai/prompts/slides";
 import { imagePromptForSlide } from "../../ai/prompts/images";
-import { assertSubjectTeacher } from "../topics/service";
+import { assertCourseTeacher } from "../topics/service";
 
 // ---------- Ownership (Faza 3: fan/kafedra darajasida) ----------
 
 async function topicForTeacher(topicId: number, teacherId: number) {
   const topic = await prisma.topic.findUnique({ where: { id: topicId }, include: { digest: true } });
   if (!topic) throw notFound("Mavzu");
-  await assertSubjectTeacher(topic.subjectId, teacherId);
+  await assertCourseTeacher(topic.courseId, teacherId);
   return topic;
 }
 
@@ -31,7 +31,7 @@ type PresFull = Prisma.PresentationGetPayload<{ include: typeof presInclude }>;
 async function presentationForTeacher(presentationId: number, teacherId: number): Promise<PresFull> {
   const pres = await prisma.presentation.findUnique({ where: { id: presentationId }, include: presInclude });
   if (!pres) throw notFound("Prezentatsiya");
-  await assertSubjectTeacher(pres.contentItem.topic.subjectId, teacherId);
+  await assertCourseTeacher(pres.contentItem.topic.courseId, teacherId);
   return pres;
 }
 

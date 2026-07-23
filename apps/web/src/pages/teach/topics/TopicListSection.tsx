@@ -57,7 +57,7 @@ function PipelineChips({ tp, t }: { tp: TopicRow; t: (k: string) => string }) {
 
 /** Mavzular ro'yxati + qo'shish/tartiblash/o'chirish. Kurs tabida ham,
  *  fan sahifasida ham ishlatiladi (qamrov `scope` orqali beriladi). */
-export function TopicListSection({ scope, showSharedNote = true }: { scope: TopicScope; showSharedNote?: boolean }) {
+export function TopicListSection({ scope }: { scope: TopicScope }) {
   const { t } = useTranslation(undefined, { keyPrefix: "topics" });
   const { t: tc } = useTranslation(undefined, { keyPrefix: "common" });
   const locale = useLocale();
@@ -104,12 +104,6 @@ export function TopicListSection({ scope, showSharedNote = true }: { scope: Topi
 
   return (
     <div className="space-y-3">
-      {showSharedNote && (
-        <p className="rounded-control border border-line bg-brand-soft/50 px-4 py-2.5 text-note text-ink-soft">
-          {t("subjectShared")}
-        </p>
-      )}
-
       <Card>
         <h2 className="mb-4 text-section font-bold text-ink">{t("addForm")}</h2>
         <form onSubmit={onAdd} className="flex flex-wrap items-start gap-3">

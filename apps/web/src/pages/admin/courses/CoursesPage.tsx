@@ -10,12 +10,15 @@ import { Field } from "../../../components/Field";
 import { apiErrorMessage } from "../../../lib/api";
 import { useList } from "../../../lib/crud";
 import { useLocale } from "../../../lib/useLocale";
-import type { Subject } from "../structure/types";
 import { PeriodFilter } from "../../../components/PeriodGroups";
 import { useDebounced } from "../../../lib/useDebounced";
 import { useCoursePeriods, useCourses, useCreateCourse, useDeleteCourse, useTeachers, type CourseRow } from "./api";
 
 interface GroupLite {
+  id: number;
+  name: string;
+}
+interface DepartmentLite {
   id: number;
   name: string;
 }
@@ -32,23 +35,24 @@ export function CoursesPage() {
   const [search, setSearch] = useState("");
   const [year, setYear] = useState("");
   const [semesterFilter, setSemesterFilter] = useState("");
-  const [subjectFilter, setSubjectFilter] = useState("");
+  const [departmentFilter, setDepartmentFilter] = useState("");
   const debouncedSearch = useDebounced(search, 300);
 
-  const list = useCourses({ academicYear: year, semester: semesterFilter, subjectId: subjectFilter, search: debouncedSearch });
+  const list = useCourses({ academicYear: year, semester: semesterFilter, departmentId: departmentFilter, search: debouncedSearch });
   const periods = useCoursePeriods();
-  const subjects = useList<Subject>("subjects");
+  const departments = useList<DepartmentLite>("departments");
   const groups = useList<GroupLite>("groups");
   const teachers = useTeachers();
   const create = useCreateCourse();
   const remove = useDeleteCourse();
 
-  const subjectOptions = subjects.data ?? [];
+  const departmentOptions = departments.data ?? [];
   const teacherOptions = teachers.data ?? [];
   const groupOptions = groups.data ?? [];
 
   const [addOpen, setAddOpen] = useState(false);
-  const [subjectId, setSubjectId] = useState("");
+  const [name, setName] = useState("");
+  const [departmentId, setDepartmentId] = useState("");
   const [teacherId, setTeacherId] = useState("");
   const [semester, setSemester] = useState("1");
   const [academicYear, setAcademicYear] = useState("");
@@ -58,7 +62,16 @@ export function CoursesPage() {
   const [deleting, setDeleting] = useState<CourseRow | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
-  const ready = subjectOptions.length > 0 && teacherOptions.length > 0 && groupOptions.length > 0;
+  const ready = departmentOptions.length > 0 && teacherOptions.length > 0 && groupOptions.length > 0;
+
+  const resetForm = () => {
+    setName("");
+    setDepartmentId("");
+    setTeacherId("");
+    setSemester("1");
+    setAcademicYear("");
+    setGroupIds([]);
+  };
 
   const onCreate = (e: FormEvent) => {
     e.preventDefault();
@@ -66,7 +79,8 @@ export function CoursesPage() {
     if (groupIds.length === 0) return;
     create.mutate(
       {
-        subjectId: Number(subjectId),
+        name: name.trim(),
+        departmentId: Number(departmentId),
         teacherId: Number(teacherId),
         semester: Number(semester),
         academicYear: academicYear.trim(),
@@ -74,11 +88,7 @@ export function CoursesPage() {
       },
       {
         onSuccess: (c) => {
-          setSubjectId("");
-          setTeacherId("");
-          setSemester("1");
-          setAcademicYear("");
-          setGroupIds([]);
+          resetForm();
           setAddOpen(false);
           show(t("created", { n: c.enrolledCount }));
         },
@@ -123,7 +133,7 @@ export function CoursesPage() {
           </Button>
         ) : (
           <div className="space-y-0.5 text-right text-[13.5px]">
-            {subjectOptions.length === 0 && <p className="text-amber">{t("noSubjects")}</p>}
+            {departmentOptions.length === 0 && <p className="text-amber">{t("noDepartments")}</p>}
             {teacherOptions.length === 0 && <p className="text-amber">{t("noTeachers")}</p>}
             {groupOptions.length === 0 && <p className="text-amber">{t("noGroups")}</p>}
           </div>
@@ -133,15 +143,18 @@ export function CoursesPage() {
       {/* Create modal */}
       <Modal open={addOpen} onClose={() => setAddOpen(false)} title={t("create")} className="max-w-2xl">
         <form onSubmit={onCreate} className="space-y-4">
+          <Field label={t("courseName")}>
+            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder={t("courseNamePlaceholder")} autoFocus required />
+          </Field>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label={t("subject")}>
-              <Select value={subjectId} onChange={(e) => setSubjectId(e.target.value)} required>
+            <Field label={t("department")}>
+              <Select value={departmentId} onChange={(e) => setDepartmentId(e.target.value)} required>
                 <option value="" disabled>
-                  {t("selectSubject")}
+                  {t("selectDepartment")}
                 </option>
-                {subjectOptions.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name} ({s.departmentName})
+                {departmentOptions.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.name}
                   </option>
                 ))}
               </Select>
@@ -215,14 +228,14 @@ export function CoursesPage() {
           onSemester={setSemesterFilter}
         />
         <select
-          value={subjectFilter}
-          onChange={(e) => setSubjectFilter(e.target.value)}
+          value={departmentFilter}
+          onChange={(e) => setDepartmentFilter(e.target.value)}
           className="rounded-control border border-line bg-surface px-2.5 py-2 text-[14.5px] text-ink outline-none focus:border-brand"
         >
-          <option value="">{t("allSubjects")}</option>
-          {subjectOptions.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.name}
+          <option value="">{t("allDepartments")}</option>
+          {departmentOptions.map((d) => (
+            <option key={d.id} value={d.id}>
+              {d.name}
             </option>
           ))}
         </select>
@@ -236,12 +249,12 @@ export function CoursesPage() {
           isError={list.isError}
           isEmpty={rows.length === 0}
           emptyIcon={<Icon icon={GraduationCap} size={22} />}
-          emptyText={list.data && list.data.length === 0 && (debouncedSearch || year || semesterFilter || subjectFilter) ? t("noMatch") : t("empty")}
+          emptyText={list.data && list.data.length === 0 && (debouncedSearch || year || semesterFilter || departmentFilter) ? t("noMatch") : t("empty")}
           onRetry={() => list.refetch()}
         >
           <DataTable
             headers={[
-              t("subject"),
+              t("courseName"),
               t("teacher"),
               t("semester"),
               t("academicYear"),
@@ -268,8 +281,9 @@ export function CoursesPage() {
                     onClick={() => navigate(`/admin/courses/${c.id}`)}
                     className="font-medium text-brand-deep hover:underline"
                   >
-                    {c.subjectName}
+                    {c.name}
                   </button>
+                  <p className="text-[12.5px] text-ink-faint">{c.departmentName}</p>
                 </td>
                 <td className="px-4 py-3 text-ink-soft">{c.teacherName}</td>
                 <td className="px-4 py-3 text-ink-soft">{c.semester}</td>

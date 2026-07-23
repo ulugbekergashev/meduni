@@ -935,7 +935,9 @@
     "deanLabel": "Декан",
     "headLabel": "Заведующий",
     "faculty": "Факультет",
-    "department": "Кафедра"
+    "department": "Кафедра",
+    "coursesSection": "Курсы",
+    "noCoursesInDept": "На этой кафедре пока нет курсов"
   },
   "users": {
     "title": "Пользователи",
@@ -1078,7 +1080,13 @@
     "totalN": "Всего: {{n}}",
     "noMatch": "Курсы не найдены",
     "allSubjects": "Все предметы",
-    "semesterN": "{{n}}-й семестр"
+    "semesterN": "{{n}}-й семестр",
+    "courseName": "Название курса",
+    "courseNamePlaceholder": "Например: Кардиология",
+    "department": "Кафедра",
+    "selectDepartment": "Выберите кафедру",
+    "allDepartments": "Все кафедры",
+    "noDepartments": "Сначала создайте кафедру"
   },
   "student": {
     "hello": "Привет",

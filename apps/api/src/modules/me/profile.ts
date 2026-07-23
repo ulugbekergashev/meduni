@@ -30,7 +30,7 @@ export async function getMyAttendance(studentId: number, opts: { courseId?: numb
       studentId, // only my own records — no cross-student leak possible
       session: { ...(opts.courseId ? { courseId: opts.courseId } : {}), ...(range ? { date: range } : {}) },
     },
-    include: { session: { include: { course: { include: { subject: true } }, topic: true } } },
+    include: { session: { include: { course: true, topic: true } } },
     orderBy: { session: { date: "desc" } },
   });
 
@@ -57,7 +57,7 @@ export async function getMyAttendance(studentId: number, opts: { courseId?: numb
   const monthMap = new Map<string, Bucket>();
   for (const r of rows) {
     const cid = r.session.courseId;
-    if (!courseMap.has(cid)) courseMap.set(cid, { name: r.session.course.subject.name, b: empty() });
+    if (!courseMap.has(cid)) courseMap.set(cid, { name: r.session.course.name, b: empty() });
     add(courseMap.get(cid)!.b, r.status as Status);
 
     const d = r.session.date;
@@ -88,7 +88,7 @@ export async function getMyAttendance(studentId: number, opts: { courseId?: numb
     sessions: rows.map((r) => ({
       id: r.session.id,
       date: r.session.date,
-      courseName: r.session.course.subject.name,
+      courseName: r.session.course.name,
       title: r.session.title ?? r.session.topic?.title ?? null,
       status: r.status as Status,
     })),
@@ -99,36 +99,36 @@ export async function getMyAttendance(studentId: number, opts: { courseId?: numb
 export async function getMyGrades(studentId: number) {
   const enrollments = await prisma.enrollment.findMany({
     where: { studentId, status: "ACTIVE" },
-    select: { course: { select: { id: true, subjectId: true, semester: true, academicYear: true, subject: { select: { name: true } } } } },
+    select: { course: { select: { id: true, name: true, semester: true, academicYear: true } } },
     orderBy: [{ course: { academicYear: "desc" } }, { course: { semester: "desc" } }],
   });
   if (enrollments.length === 0) return { courses: [], summary: { avgQuiz: null, quizzesPassed: 0, casesGraded: 0 } };
 
-  const subjectIds = [...new Set(enrollments.map((e) => e.course.subjectId))];
+  const courseIds = [...new Set(enrollments.map((e) => e.course.id))];
 
   // Barcha urinishlar bitta so'rovda (mavzu → fan bog'lanishi bilan).
   const [quizAttempts, caseAttempts] = await Promise.all([
     prisma.quizAttempt.findMany({
-      where: { studentId, finishedAt: { not: null }, quiz: { contentItem: { topic: { subjectId: { in: subjectIds } } } } },
+      where: { studentId, finishedAt: { not: null }, quiz: { contentItem: { topic: { courseId: { in: courseIds } } } } },
       orderBy: { finishedAt: "asc" },
       select: {
         scorePct: true, passed: true, attemptNo: true, finishedAt: true,
-        quiz: { select: { passThreshold: true, contentItem: { select: { topicId: true, topic: { select: { title: true, subjectId: true, orderIndex: true } } } } } },
+        quiz: { select: { passThreshold: true, contentItem: { select: { topicId: true, topic: { select: { title: true, courseId: true, orderIndex: true } } } } } },
       },
     }),
     prisma.caseAttempt.findMany({
-      where: { studentId, clinicalCase: { contentItem: { topic: { subjectId: { in: subjectIds } } } } },
+      where: { studentId, clinicalCase: { contentItem: { topic: { courseId: { in: courseIds } } } } },
       orderBy: { submittedAt: "asc" },
       select: {
         score: true, teacherFeedback: true, submittedAt: true, reviewedAt: true,
         reviewedBy: { select: { fullName: true } },
-        clinicalCase: { select: { contentItem: { select: { topicId: true, topic: { select: { title: true, subjectId: true, orderIndex: true } } } } } },
+        clinicalCase: { select: { contentItem: { select: { topicId: true, topic: { select: { title: true, courseId: true, orderIndex: true } } } } } },
       },
     }),
   ]);
 
   const courses = enrollments.map((e) => {
-    const sid = e.course.subjectId;
+    const sid = e.course.id;
 
     // Test: mavzu bo'yicha eng yaxshi natija + urinishlar TARIXI (qator ochilganda).
     type QuizAgg = {
@@ -140,7 +140,7 @@ export async function getMyGrades(studentId: number) {
     const quizByTopic = new Map<number, QuizAgg>();
     for (const a of quizAttempts) {
       const ci = a.quiz.contentItem;
-      if (ci.topic.subjectId !== sid) continue;
+      if (ci.topic.courseId !== sid) continue;
       const entry = { attemptNo: a.attemptNo, scorePct: a.scorePct, passed: a.passed, finishedAt: a.finishedAt };
       const cur = quizByTopic.get(ci.topicId);
       if (!cur) {
@@ -159,7 +159,7 @@ export async function getMyGrades(studentId: number) {
     }
 
     const cases = caseAttempts
-      .filter((a) => a.clinicalCase.contentItem.topic.subjectId === sid)
+      .filter((a) => a.clinicalCase.contentItem.topic.courseId === sid)
       .map((a) => {
         const ci = a.clinicalCase.contentItem;
         return {
@@ -181,7 +181,7 @@ export async function getMyGrades(studentId: number) {
 
     return {
       courseId: e.course.id,
-      subjectName: e.course.subject.name,
+      subjectName: e.course.name,
       semester: e.course.semester,
       academicYear: e.course.academicYear,
       avgQuiz: scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : null,
@@ -262,7 +262,7 @@ export async function getMySchedule(studentId: number, opts: { from?: string; to
       date: { gte: from, lte: to },
       course: { enrollments: { some: { studentId, status: "ACTIVE" } } },
     },
-    include: { course: { include: { subject: true } }, topic: { select: { title: true } } },
+    include: { course: true, topic: { select: { title: true } } },
     orderBy: { date: "asc" },
     take: 60,
   });
@@ -282,7 +282,7 @@ export async function getMySchedule(studentId: number, opts: { from?: string; to
     date: s.date,
     room: s.room,
     courseId: s.courseId,
-    courseName: s.course.subject.name,
+    courseName: s.course.name,
     title: s.title ?? s.topic?.title ?? null,
     isPast: s.date < now,
     /** O'tgan dars uchun mening holatim; belgilanmagan bo'lsa null. */

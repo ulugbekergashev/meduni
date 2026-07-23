@@ -21,7 +21,7 @@ import {
   type VideoVisual,
 } from "../../ai/types";
 import { videoScriptSystemPrompt, videoScriptUserContent } from "../../ai/prompts/videoScript";
-import { assertSubjectTeacher } from "../topics/service";
+import { assertCourseTeacher } from "../topics/service";
 
 function forbidden(): ApiError {
   return new ApiError(403, "forbidden", "Bu sizning kursingiz emas", "Это не ваш курс");
@@ -49,7 +49,7 @@ function geminiVoiceFor(voiceId: string | null): string {
 async function topicForTeacher(topicId: number, teacherId: number) {
   const topic = await prisma.topic.findUnique({ where: { id: topicId }, include: { digest: true } });
   if (!topic) throw notFound("Mavzu");
-  await assertSubjectTeacher(topic.subjectId, teacherId);
+  await assertCourseTeacher(topic.courseId, teacherId);
   return topic;
 }
 
@@ -62,7 +62,7 @@ type VideoFull = Prisma.VideoGetPayload<{ include: typeof videoInclude }>;
 async function videoForTeacher(videoId: number, teacherId: number): Promise<VideoFull> {
   const v = await prisma.video.findUnique({ where: { id: videoId }, include: videoInclude });
   if (!v) throw notFound("Video");
-  await assertSubjectTeacher(v.contentItem.topic.subjectId, teacherId);
+  await assertCourseTeacher(v.contentItem.topic.courseId, teacherId);
   return v;
 }
 
@@ -311,7 +311,7 @@ async function stageTtsAndRender(videoId: number) {
   const topicId = v.contentItem.topicId;
   // Fon-jobda initsiatorni bilmaymiz — AiUsage fanning birinchi kurs o'qituvchisiga yoziladi.
   const subjectCourse = await prisma.course.findFirst({
-    where: { subjectId: v.contentItem.topic.subjectId },
+    where: { id: v.contentItem.topic.courseId },
     orderBy: { id: "asc" },
     select: { teacherId: true },
   });

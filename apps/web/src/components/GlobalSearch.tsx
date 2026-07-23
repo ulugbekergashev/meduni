@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Search } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Icon, Spinner, cls } from "@meduni/ui";
 
 export interface SearchItem {
@@ -90,9 +91,12 @@ export function GlobalSearch({ fetch }: { fetch: (q: string) => Promise<SearchSe
   const showDropdown = open && q.trim().length > 0;
 
   return (
-    <div ref={boxRef} className="relative max-w-md">
-      <div className="flex items-center gap-2 rounded-control border border-line bg-bg px-3">
-        <Icon icon={Search} size={15} className="shrink-0 text-ink-faint" />
+    <div ref={boxRef} className="relative w-full max-w-md">
+      <div className={cls(
+        "flex items-center gap-2 rounded-control border bg-bg/50 backdrop-blur-sm px-3 transition-all duration-200",
+        open ? "border-brand ring-4 ring-brand/10 bg-surface" : "border-line hover:border-line-raised"
+      )}>
+        <Icon icon={Search} size={15} className={cls("shrink-0 transition-colors", open ? "text-brand" : "text-ink-faint")} />
         <input
           ref={inputRef}
           value={q}
@@ -102,29 +106,36 @@ export function GlobalSearch({ fetch }: { fetch: (q: string) => Promise<SearchSe
           }}
           onFocus={() => setOpen(true)}
           placeholder={t("placeholder")}
-          className="h-9 w-full bg-transparent text-body text-ink outline-none placeholder:text-ink-faint"
+          className="h-10 w-full bg-transparent text-[14.5px] font-medium text-ink outline-none placeholder:text-ink-faint placeholder:font-normal"
         />
-        <kbd className="hidden shrink-0 rounded border border-line bg-surface px-1.5 py-0.5 text-[11.5px] font-semibold text-ink-faint sm:block">
+        <kbd className="hidden shrink-0 rounded-[6px] border border-line bg-surface px-2 py-0.5 text-[11px] font-bold text-ink-faint sm:block shadow-sm">
           Ctrl K
         </kbd>
       </div>
 
+      <AnimatePresence>
       {showDropdown && (
-        <div className="absolute left-0 right-0 top-full z-40 mt-1.5 max-h-[60vh] overflow-y-auto rounded-card border border-line bg-surface p-1.5 shadow-lg">
+        <motion.div 
+          initial={{ opacity: 0, y: 4, scale: 0.98 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 4, scale: 0.98 }}
+          transition={{ duration: 0.15, ease: "easeOut" }}
+          className="absolute left-0 right-0 top-full z-40 mt-2 max-h-[60vh] overflow-y-auto rounded-card border border-line/50 bg-surface/95 backdrop-blur-xl p-2 shadow-card-hover"
+        >
           {loading ? (
-            <div className="flex items-center justify-center gap-2 py-5 text-note text-ink-soft">
-              <Spinner size={15} /> {t("searching")}
+            <div className="flex items-center justify-center gap-2 py-6 text-note font-medium text-ink-soft">
+              <Spinner size={16} /> {t("searching")}
             </div>
           ) : error ? (
-            <p className="py-5 text-center text-note text-rose">{t("error")}</p>
+            <p className="py-6 text-center text-note font-medium text-rose">{t("error")}</p>
           ) : !hasResults ? (
-            <p className="py-5 text-center text-note text-ink-faint">{t("empty")}</p>
+            <p className="py-6 text-center text-note font-medium text-ink-faint">{t("empty")}</p>
           ) : (
             sections.map(
               (section) =>
                 section.items.length > 0 && (
-                  <div key={section.key} className="mb-1 last:mb-0">
-                    <p className="px-2.5 pb-1 pt-2 text-[11.5px] font-bold uppercase tracking-wide text-ink-faint">
+                  <div key={section.key} className="mb-2 last:mb-0">
+                    <p className="px-3 pb-1.5 pt-2 text-[11px] font-bold uppercase tracking-wider text-ink-faint">
                       {t(`sections.${section.key}`)}
                     </p>
                     {section.items.map((item) => (
@@ -132,15 +143,15 @@ export function GlobalSearch({ fetch }: { fetch: (q: string) => Promise<SearchSe
                         key={item.key}
                         onClick={() => go(item.link)}
                         className={cls(
-                          "flex w-full items-center gap-2.5 rounded-control px-2.5 py-2 text-left transition-colors hover:bg-bg"
+                          "flex w-full items-center gap-3 rounded-control px-3 py-2.5 text-left transition-all duration-200 hover:bg-bg hover:scale-[0.99] active:scale-[0.97]"
                         )}
                       >
-                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand-deep">
-                          <Icon icon={section.icon} size={14} />
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand-deep shadow-sm">
+                          <Icon icon={section.icon} size={15} />
                         </span>
                         <span className="min-w-0">
-                          <span className="block truncate text-body font-medium text-ink">{item.label}</span>
-                          {item.sub && <span className="block truncate text-[12.5px] text-ink-faint">{item.sub}</span>}
+                          <span className="block truncate text-[14.5px] font-semibold text-ink">{item.label}</span>
+                          {item.sub && <span className="block truncate text-[12.5px] text-ink-soft">{item.sub}</span>}
                         </span>
                       </button>
                     ))}
@@ -148,8 +159,9 @@ export function GlobalSearch({ fetch }: { fetch: (q: string) => Promise<SearchSe
                 )
             )
           )}
-        </div>
+        </motion.div>
       )}
+      </AnimatePresence>
     </div>
   );
 }

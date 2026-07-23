@@ -166,7 +166,7 @@ export async function getReviewSession(studentId: number, topicId?: number) {
   }
   const topics = await prisma.topic.findMany({
     where: { id: { in: [...byTopic.keys()] } },
-    select: { id: true, title: true, subject: { select: { name: true } } },
+    select: { id: true, title: true, course: { select: { name: true } } },
   });
   const tmap = new Map(topics.map((t) => [t.id, t]));
   // Eng eski due birinchi chiqishi uchun asl tartibni saqlaymiz.
@@ -179,7 +179,7 @@ export async function getReviewSession(studentId: number, topicId?: number) {
     const { cards, locked } = await build(studentId, tid);
     if (locked) continue;
     for (const c of cards) {
-      if (keys.has(c.key)) out.push({ ...c, topicId: tid, topicTitle: t.title, subjectName: t.subject.name });
+      if (keys.has(c.key)) out.push({ ...c, topicId: tid, topicTitle: t.title, subjectName: t.course.name });
     }
   }
   out.sort(
@@ -214,7 +214,7 @@ export async function getReviewStats(studentId: number) {
   const tps = nextByTopic.size
     ? await prisma.topic.findMany({
         where: { id: { in: [...nextByTopic.keys()] } },
-        select: { id: true, title: true, subject: { select: { name: true } } },
+        select: { id: true, title: true, course: { select: { name: true } } },
       })
     : [];
   const tmap = new Map(tps.map((t) => [t.id, t]));
@@ -223,7 +223,7 @@ export async function getReviewStats(studentId: number) {
     .map(([tid, d]) => ({
       topicId: tid,
       topicTitle: tmap.get(tid)!.title,
-      subjectName: tmap.get(tid)!.subject.name,
+      subjectName: tmap.get(tid)!.course.name,
       nextDueAt: d,
       count: cntByTopic.get(tid) ?? 0,
     }))
@@ -245,14 +245,14 @@ export async function getReviewDue(studentId: number) {
 
   const topics = await prisma.topic.findMany({
     where: { id: { in: rows.map((r) => r.topicId) } },
-    select: { id: true, title: true, subject: { select: { name: true } } },
+    select: { id: true, title: true, course: { select: { name: true } } },
   });
   const byId = new Map(topics.map((t) => [t.id, t]));
   const list = rows
     .map((r) => ({
       topicId: r.topicId,
       topicTitle: byId.get(r.topicId)?.title ?? "—",
-      subjectName: byId.get(r.topicId)?.subject.name ?? "",
+      subjectName: byId.get(r.topicId)?.course.name ?? "",
       dueCount: r._count._all,
     }))
     .filter((x) => byId.has(x.topicId))

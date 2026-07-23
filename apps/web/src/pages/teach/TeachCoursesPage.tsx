@@ -35,38 +35,50 @@ export function TeachCoursesPage() {
   const groups = useMemo(() => groupByPeriod<TeachCourse>(filtered), [filtered]);
 
   return (
-    <div>
-      <h1 className="text-h1 font-bold text-ink">{t("myCourses")}</h1>
-      <p className="mt-1 text-[14px] text-ink-soft">{t("coursesSubtitle")}</p>
+    <div className="relative z-0 min-h-[80vh] space-y-6 pb-10">
+      {/* Background blobs for premium feel */}
+      <div className="pointer-events-none fixed left-0 top-0 -z-10 h-full w-full overflow-hidden bg-bg">
+        <div className="absolute right-[5%] top-[10%] h-[500px] w-[500px] rounded-full bg-brand/5 blur-[100px]" />
+        <div className="absolute bottom-[10%] left-[-10%] h-[400px] w-[400px] rounded-full bg-violet-400/5 blur-[120px]" />
+      </div>
 
-      {/* Toolbar — kurslar ko'p bo'lganda kerakli davrni tez topish uchun */}
-      <div className="mt-5 flex flex-wrap items-center gap-2">
-        <div className="relative min-w-[200px] flex-1">
-          <Icon icon={Search} size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-faint" />
+      <div className="flex flex-col gap-2">
+        <h1 className="text-[32px] font-black tracking-tight text-ink drop-shadow-sm sm:text-[40px]">{t("myCourses")}</h1>
+        <p className="text-[16px] font-medium text-ink-soft">{t("coursesSubtitle")}</p>
+      </div>
+
+      {/* Toolbar */}
+      <div className="flex flex-wrap items-center gap-3 rounded-[24px] border border-white/60 bg-white/40 p-4 shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-2xl ring-1 ring-black/5">
+        <div className="relative min-w-[240px] flex-1">
+          <Icon icon={Search} size={18} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-ink-faint" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={t("searchCourse")}
-            className="w-full rounded-control border border-line bg-surface py-2 pl-9 pr-3 text-[14.5px] outline-none focus:border-brand"
+            className="w-full rounded-[16px] border-none bg-white/60 py-3 pl-11 pr-4 text-[15px] font-semibold text-ink shadow-sm ring-1 ring-black/5 transition-all focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand/50"
           />
         </div>
-        <PeriodFilter
-          years={options.years}
-          semesters={options.semesters}
-          year={year}
-          semester={semester}
-          onYear={setYear}
-          onSemester={setSemester}
-        />
-        <span className="text-note font-semibold text-ink-soft">{t("totalN", { n: filtered.length })}</span>
+        <div className="flex items-center gap-3">
+          <PeriodFilter
+            years={options.years}
+            semesters={options.semesters}
+            year={year}
+            semester={semester}
+            onYear={setYear}
+            onSemester={setSemester}
+          />
+          <span className="hidden rounded-full bg-white/60 px-4 py-2 text-[14px] font-bold text-brand-deep shadow-sm ring-1 ring-black/5 sm:inline-block">
+            {t("totalN", { n: filtered.length })}
+          </span>
+        </div>
       </div>
 
-      <div className="mt-3">
+      <div className="mt-6">
         <AsyncSection
           isLoading={list.isLoading}
           isError={list.isError}
           isEmpty={filtered.length === 0}
-          emptyIcon={<Icon icon={BookOpen} size={22} />}
+          emptyIcon={<Icon icon={BookOpen} size={28} className="text-brand-soft" />}
           emptyText={courses.length === 0 ? t("empty") : t("noMatch")}
           emptyHint={courses.length === 0 ? undefined : t("noMatchHint")}
           onRetry={() => list.refetch()}
@@ -77,7 +89,7 @@ export function TeachCoursesPage() {
               group={g}
               defaultOpen={i === 0 || !!year || !!semester || !!search.trim()}
               renderRows={(rows) => (
-                <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
                   {rows.map((c) => (
                     <li key={c.id}>
                       <CourseCard course={c} avgProgress={avg(c.id)} />

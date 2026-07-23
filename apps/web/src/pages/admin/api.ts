@@ -84,7 +84,7 @@ export function useAudit(q: { actor: string; action: string; from: string; to: s
 // ---------------- User profile (role-aware) ----------------
 export interface TeacherProfileCourse {
   id: number;
-  subjectName: string;
+  name: string;
   semester: number;
   academicYear: string;
   groups: string[];
@@ -92,7 +92,7 @@ export interface TeacherProfileCourse {
 }
 export interface StudentProfileCourse {
   id: number;
-  subjectName: string;
+  name: string;
   semester: number;
   completed: number;
   total: number;

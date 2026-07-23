@@ -3,8 +3,10 @@ import { api } from "../../../lib/api";
 
 export interface CourseRow {
   id: number;
-  subjectId: number;
-  subjectName: string;
+  /** Fan/kurs birlashdi — kurs nomi. */
+  name: string;
+  description: string | null;
+  departmentId: number;
   departmentName: string;
   teacherId: number;
   teacherName: string;
@@ -33,7 +35,9 @@ export interface CreatedCourse extends CourseRow {
 }
 
 export interface CreateCourseBody {
-  subjectId: number;
+  name: string;
+  description?: string;
+  departmentId: number;
   teacherId: number;
   semester: number;
   academicYear: string;
@@ -48,7 +52,7 @@ interface TeacherLite {
 export interface CourseFilters {
   academicYear?: string;
   semester?: string;
-  subjectId?: string;
+  departmentId?: string;
   teacherId?: string;
   search?: string;
 }
