@@ -18,7 +18,7 @@ function activeStageKey(view: LessonView): StageKey | null {
 function Marker({ n, state, active }: { n: number; state: StageInfo["state"]; active: boolean }) {
   const reduce = useReducedMotion();
   const base =
-    "flex h-5 w-5 shrink-0 items-center justify-center rounded-pill text-micro font-extrabold tabular-nums";
+    "flex h-6 w-6 shrink-0 items-center justify-center rounded-pill text-micro font-extrabold tabular-nums";
 
   const inner =
     state === "done" ? (
@@ -91,7 +91,7 @@ export function StageStepper({
   const pct = overallPct(lesson);
 
   return (
-    <div className="flex shrink-0 items-center gap-2 border-b border-line bg-surface px-3 py-1.5">
+    <div className="flex shrink-0 items-center gap-2 border-b border-line bg-surface px-3 py-2">
       <div className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto scrollbar-hide">
         {stages.map((st, i) => {
           const active = current === st.key;
@@ -102,7 +102,7 @@ export function StageStepper({
               onClick={clickable ? () => onSelect(st.key) : undefined}
               disabled={!clickable}
               className={cls(
-                "relative inline-flex shrink-0 items-center gap-1.5 rounded-control px-2 py-1 transition-colors",
+                "relative inline-flex shrink-0 items-center gap-1.5 rounded-control px-2.5 py-1.5 transition-colors",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
                 clickable && !active && "hover:bg-surface-raised",
                 !clickable && "cursor-default opacity-55",
@@ -117,9 +117,9 @@ export function StageStepper({
                   transition={{ type: "spring", stiffness: 500, damping: 42 }}
                 />
               )}
-              <span className="relative z-[1] flex items-center gap-1.5">
+              <span className="relative z-[1] flex items-center gap-2">
                 <Marker n={i + 1} state={st.state} active={active} />
-                <span className={cls("text-note", active ? "font-bold text-brand-tint" : "font-semibold text-ink-soft")}>
+                <span className={cls("text-body", active ? "font-bold text-brand-tint" : "font-semibold text-ink-soft")}>
                   {t(`stage_${st.key}`)}
                 </span>
               </span>
@@ -133,7 +133,7 @@ export function StageStepper({
         onClick={onOverview}
         title={t("backToOverview")}
         className={cls(
-          "flex shrink-0 items-center gap-1.5 rounded-control px-2 py-1 transition-colors hover:bg-surface-raised",
+          "flex shrink-0 items-center gap-1.5 rounded-control px-2.5 py-1.5 transition-colors hover:bg-surface-raised",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
           view === "overview" && "bg-brand-soft"
         )}
