@@ -19,11 +19,11 @@ export function HeroCard({
   children: ReactNode;
 }) {
   return (
-    <Card className="flex flex-wrap items-center gap-x-6 gap-y-3 !p-4">
+    <Card className="flex flex-wrap items-center gap-x-8 gap-y-4 !p-6">
       <div className="min-w-0 flex-1">
         <h1 className="truncate text-h1 font-bold text-ink">{title}</h1>
-        {subtitle && <p className="mt-0.5 text-note text-ink-faint">{subtitle}</p>}
-        {left && <div className="mt-2.5">{left}</div>}
+        {subtitle && <p className="mt-1 text-note text-ink-faint">{subtitle}</p>}
+        {left && <div className="mt-3.5">{left}</div>}
       </div>
       <div className="grid w-full min-w-0 grid-cols-2 gap-px overflow-hidden rounded-control border border-line bg-line sm:flex sm:w-auto sm:items-stretch">
         {children}
@@ -54,25 +54,25 @@ export function HeroTile({
     <Wrapper
       onClick={onClick}
       className={cls(
-        "flex min-w-0 items-center gap-2.5 px-3.5 py-2.5 text-left transition-colors sm:min-w-[132px]",
+        "flex min-w-0 items-center gap-3 px-4 py-3.5 text-left transition-colors sm:min-w-[148px]",
         selected ? "bg-brand-soft" : "bg-surface-raised",
         onClick && !selected && "hover:bg-surface",
         onClick && "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand"
       )}
     >
-      <span className={cls("flex h-7 w-7 shrink-0 items-center justify-center rounded-control", tone)}>
-        <Icon icon={icon} size={14} />
+      <span className={cls("flex h-9 w-9 shrink-0 items-center justify-center rounded-control", tone)}>
+        <Icon icon={icon} size={16} />
       </span>
       <span className="min-w-0">
         <span
           className={cls(
-            "block text-[18px] font-extrabold leading-none tabular-nums",
+            "block text-[21px] font-extrabold leading-none tabular-nums",
             selected ? "text-brand-tint" : "text-ink"
           )}
         >
           {value}
         </span>
-        <span className={cls("mt-1 block truncate text-micro", selected ? "text-brand-tint" : "text-ink-dim")}>
+        <span className={cls("mt-1 block truncate text-note", selected ? "text-brand-tint" : "text-ink-dim")}>
           {label}
         </span>
       </span>

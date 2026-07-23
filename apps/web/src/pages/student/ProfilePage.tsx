@@ -113,7 +113,7 @@ export function ProfilePage() {
 
       {q.isError || !p ? (
         <Card className="mt-4">
-          <p className="py-6 text-center text-[14.5px] text-rose">{t("loadError")}</p>
+          <p className="py-6 text-center text-body text-rose">{t("loadError")}</p>
         </Card>
       ) : (
         <div className="mt-5 space-y-4">
@@ -176,7 +176,7 @@ export function ProfilePage() {
             <h2 className="text-section font-bold text-ink">{t("settings")}</h2>
 
             <div>
-              <p className="mb-1.5 text-[13.5px] font-semibold text-ink-soft">{t("language")}</p>
+              <p className="mb-1.5 text-note font-semibold text-ink-soft">{t("language")}</p>
               <div className="flex overflow-hidden rounded-control border border-line">
                 {(["uz", "ru"] as const).map((l) => (
                   <button
@@ -184,7 +184,7 @@ export function ProfilePage() {
                     onClick={() => pickLocale(l)}
                     disabled={setLocale.isPending}
                     className={cls(
-                      "flex-1 px-3 py-2 text-[14.5px] font-semibold transition-colors",
+                      "flex-1 px-3 py-2 text-body font-semibold transition-colors",
                       locale === l ? "bg-brand-soft text-brand-tint" : "text-ink-soft hover:bg-surface-raised"
                     )}
                   >
@@ -197,7 +197,7 @@ export function ProfilePage() {
             {/* Tema tanlash yo'q — talaba tomoni faqat qorong'i (dizayn qarori). */}
 
             <div className="space-y-2">
-              <p className="text-[13.5px] font-semibold text-ink-soft">{t("changePassword")}</p>
+              <p className="text-note font-semibold text-ink-soft">{t("changePassword")}</p>
               <input
                 type="password"
                 value={oldPassword}
@@ -206,7 +206,7 @@ export function ProfilePage() {
                   setPwErr(null);
                 }}
                 placeholder={t("oldPassword")}
-                className="w-full rounded-control border border-line px-3 py-2 text-[14.5px] outline-none focus:border-brand"
+                className="w-full rounded-control border border-line px-3 py-2 text-body outline-none focus:border-brand"
               />
               <input
                 type="password"
@@ -216,7 +216,7 @@ export function ProfilePage() {
                   setPwErr(null);
                 }}
                 placeholder={t("newPassword")}
-                className="w-full rounded-control border border-line px-3 py-2 text-[14.5px] outline-none focus:border-brand"
+                className="w-full rounded-control border border-line px-3 py-2 text-body outline-none focus:border-brand"
               />
               <input
                 type="password"
@@ -226,9 +226,9 @@ export function ProfilePage() {
                   setPwErr(null);
                 }}
                 placeholder={t("confirmPassword")}
-                className="w-full rounded-control border border-line px-3 py-2 text-[14.5px] outline-none focus:border-brand"
+                className="w-full rounded-control border border-line px-3 py-2 text-body outline-none focus:border-brand"
               />
-              {pwErr && <p className="text-[13.5px] font-medium text-rose">{pwErr}</p>}
+              {pwErr && <p className="text-note font-medium text-rose">{pwErr}</p>}
               <Button onClick={submitPw} disabled={changePw.isPending || !oldPassword || !newPassword || !confirm}>
                 {t("save")}
               </Button>

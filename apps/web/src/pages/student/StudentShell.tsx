@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from "react";
+import { useCallback } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import { Award, BookOpen, CalendarCheck, FileText, Home, ListChecks, MessagesSquare, User } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -7,7 +7,6 @@ import { RoleShell } from "../../components/RoleShell";
 import { GlobalSearch, type SearchSection } from "../../components/GlobalSearch";
 import { api } from "../../lib/api";
 import { useLocale } from "../../lib/useLocale";
-import { forceTheme, restoreTheme } from "../../lib/theme";
 import { useMyTasks } from "./api";
 
 interface StudentSearchResp {
@@ -24,12 +23,9 @@ export function StudentShell() {
   const { pathname } = useLocation();
   const isWorkspace = /^\/app\/topics\/\d+/.test(pathname) || pathname === "/app/chat";
 
-  // Talaba tomoni FAQAT qorong'i (dizayn qarori). Chiqishda foydalanuvchining
-  // o'z tanloviga qaytadi — admin/o'qituvchi temasi tegilmaydi.
-  useEffect(() => {
-    forceTheme("dark");
-    return () => restoreTheme();
-  }, []);
+  // 2026-07-23 (buyurtmachi): majburiy qora tema BEKOR — tibbiyot platformasiga
+  // tinch yorug' palitra mos; Dark Mode talabnoma bo'yicha OPTSIYA sifatida
+  // headerdagi tugma orqali qoladi.
 
   const search = useCallback(
     async (q: string): Promise<SearchSection[]> => {
@@ -66,7 +62,6 @@ export function StudentShell() {
       headerSlot={<GlobalSearch fetch={search} />}
       profileHref="/app/profile"
       fullBleed={isWorkspace}
-      showTheme={false}
       items={[
         { href: "/app", label: t("dashboard"), icon: <Icon icon={Home} />, end: true },
         { href: "/app/courses", label: t("myCourses"), icon: <Icon icon={BookOpen} />, end: true },

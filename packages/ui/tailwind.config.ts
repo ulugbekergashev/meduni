@@ -54,18 +54,18 @@ const sharedConfig: Partial<Config> = {
         card: "var(--shadow-card)",
         "card-hover": "var(--shadow-card-hover)",
       },
-      // Shkala 2026-07-23: bir pog'ona ko'tarildi (buyurtmachi: "sal textini
-      // kattalashtir"). micro=11.5px — MUTLAQ minimum; text-[10px] kabi
-      // arbitrary qiymatlar TAQIQ (dostupnost poli).
+      // Shkala 2026-07-23 v2: buyurtmachi "shriftlar kattaroq, spacelar kengroq"
+      // dedi — yana bir pog'ona ko'tarildi va line-height ochildi.
+      // micro=12px — MUTLAQ minimum; text-[10px]/[11px] arbitrary TAQIQ.
       fontSize: {
-        h1: ["22px", { lineHeight: "1.25", letterSpacing: "-0.02em" }],
-        stat: ["34px", { lineHeight: "1.05", letterSpacing: "-0.02em" }],
-        section: ["16px", { lineHeight: "1.35", letterSpacing: "-0.01em" }],
-        body: ["14px", { lineHeight: "1.55" }],
-        note: ["12.5px", { lineHeight: "1.45" }],
-        micro: ["11.5px", { lineHeight: "1.35" }],
+        h1: ["24px", { lineHeight: "1.25", letterSpacing: "-0.02em" }],
+        stat: ["36px", { lineHeight: "1.05", letterSpacing: "-0.02em" }],
+        section: ["17px", { lineHeight: "1.4", letterSpacing: "-0.01em" }],
+        body: ["15px", { lineHeight: "1.6" }],
+        note: ["13.5px", { lineHeight: "1.5" }],
+        micro: ["12px", { lineHeight: "1.4" }],
         /** Uzun matn o'qish uchun (konspekt tanasi) — A−/A+ bilan boshqariladi. */
-        read: ["16px", { lineHeight: "1.75" }],
+        read: ["17px", { lineHeight: "1.8" }],
       },
       fontFamily: {
         sans: ["'Manrope Variable'", "Manrope", "Inter", "system-ui", "sans-serif"],

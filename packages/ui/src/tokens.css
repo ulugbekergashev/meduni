@@ -49,22 +49,23 @@
   --shadow-card-hover: 0 2px 4px rgba(16, 24, 40, 0.05), 0 16px 36px -12px rgba(16, 24, 40, 0.16);
 }
 
-/* Dark theme — qiymatlar "Mavzu ekrani" dizaynidan aynan olingan
-   (Claude Design 66c8581e). Talaba tomoni shu palitrada ishlaydi. */
+/* Dark theme — 2026-07-23 yumshatildi: "qora bo'shliq" (#06080d) texno-startap
+   qiyofasi berardi; tibbiyot platformasiga tinchroq slate mos. Talaba tomoni
+   endi default YORUG' — dark faqat foydalanuvchi tanlovi. */
 :root[data-theme="dark"] {
   color-scheme: dark;
 
-  --bg: #06080d;          /* eng chuqur fon (sahifa) */
-  --surface: #0f141f;     /* asosiy panel */
-  --surface-raised: #151c2b; /* panel ichidagi karta */
-  --surface-glass: #0f141f;
-  --ink: #eef1f8;
-  --ink-strong: #dde3ef;
-  --ink-soft: #aab2c5;
-  --ink-faint: #8b93a7;
-  --ink-dim: #6b7385;
-  --line: #1b2232;
-  --line-raised: #232c40;
+  --bg: #0f141e;          /* eng chuqur fon (sahifa) */
+  --surface: #161d2b;     /* asosiy panel */
+  --surface-raised: #1e2738; /* panel ichidagi karta */
+  --surface-glass: #161d2b;
+  --ink: #f0f3f9;
+  --ink-strong: #e1e6f0;
+  --ink-soft: #b0b8ca;
+  --ink-faint: #929aae;
+  --ink-dim: #737b8e;
+  --line: #252e41;
+  --line-raised: #2e3950;
 
   --brand: #6366f1;
   --brand-soft: #1c2743;
@@ -82,14 +83,14 @@
   --emerald: #34d399;
   --emerald-soft: #0f2a24;
 
-  --side-bg: #0a0d14;
-  --side-bg-deep: #06080d;
-  --side-ink: #eef1f8;
-  --side-ink-soft: #8b93a7;
-  --side-line: #1b2232;
-  --side-active-bg: #1c2743;
+  --side-bg: #121826;
+  --side-bg-deep: #0f141e;
+  --side-ink: #f0f3f9;
+  --side-ink-soft: #929aae;
+  --side-line: #252e41;
+  --side-active-bg: #263252;
   --side-active-ink: #c7d2fe;
-  --side-hover-bg: #131926;
+  --side-hover-bg: #1a2233;
 
   --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px -12px rgba(0, 0, 0, 0.6);
   --shadow-card-hover: 0 2px 4px rgba(0, 0, 0, 0.45), 0 16px 36px -12px rgba(0, 0, 0, 0.7);

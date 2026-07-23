@@ -111,7 +111,7 @@ function ActionRow({
   return (
     <Wrapper
       onClick={onClick}
-      className={cls("flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors", onClick && "hover:bg-surface-raised")}
+      className={cls("flex w-full items-center gap-3 px-4 py-3 text-left transition-colors", onClick && "hover:bg-surface-raised")}
     >
       <div className={cls("flex h-8 w-8 shrink-0 items-center justify-center rounded-full", tone)}>
         <Icon icon={icon} size={15} />
@@ -222,7 +222,7 @@ export function StudentDashboard() {
                       title={t("overall")}
                       className="rounded-full transition-transform hover:scale-105"
                     >
-                      <ProgressRing value={overallPct} size={64} stroke={8} label={t("overall")} />
+                      <ProgressRing value={overallPct} size={76} stroke={9} label={t("overall")} />
                     </button>
                     <div
                       className={cls(
@@ -278,8 +278,8 @@ export function StudentDashboard() {
                     className="flex flex-wrap items-center gap-4 rounded-card bg-gradient-to-br from-brand-deep to-brand p-5 text-white shadow-card"
                   >
                     <div className="min-w-0 flex-1">
-                      <p className="text-[12.5px] font-bold uppercase tracking-wide text-white/70">{t("continueLabel")}</p>
-                      <h2 className="mt-0.5 truncate text-[19px] font-bold leading-tight">{d.resume.topic}</h2>
+                      <p className="text-note font-bold uppercase tracking-wide text-white/70">{t("continueLabel")}</p>
+                      <h2 className="mt-0.5 truncate text-[21px] font-bold leading-tight">{d.resume.topic}</h2>
                       <p className="truncate text-note text-white/85">{d.resume.subjectName}</p>
                       <div className="mt-2 flex items-center gap-2">
                         <span className="h-1.5 w-full max-w-[220px] overflow-hidden rounded-pill bg-white/25">
@@ -288,7 +288,7 @@ export function StudentDashboard() {
                             style={{ width: `${Math.max(d.resume.pct, 3)}%` }}
                           />
                         </span>
-                        <span className="text-[12.5px] text-white/85">{d.resume.pct}%</span>
+                        <span className="text-note text-white/85">{d.resume.pct}%</span>
                       </div>
                     </div>
                     <Link to={`/app/topics/${d.resume.topicId}`} className="shrink-0">
@@ -324,12 +324,12 @@ export function StudentDashboard() {
                             key={s.id}
                             onClick={() => navigate("/app/schedule")}
                             className={cls(
-                              "flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-surface-raised",
+                              "flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-surface-raised",
                               s.isPast && "opacity-55"
                             )}
                           >
                             <div className="w-12 shrink-0 text-center">
-                              <p className="text-[15px] font-bold leading-none tabular-nums text-brand-tint">{hhmm(s.date)}</p>
+                              <p className="text-body font-bold leading-none tabular-nums text-brand-tint">{hhmm(s.date)}</p>
                             </div>
                             <div className="min-w-0 flex-1 border-l border-line pl-3">
                               <p className="truncate text-body font-semibold text-ink">{s.title ?? s.courseName}</p>
@@ -494,7 +494,7 @@ export function StudentDashboard() {
                           <button
                             key={tp.topicId}
                             onClick={() => navigate(`/app/topics/${tp.topicId}?view=flashcards`)}
-                            className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left transition-colors hover:bg-surface-raised"
+                            className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-surface-raised"
                           >
                             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-violet-soft text-violet">
                               <Icon icon={Sparkles} size={15} />
@@ -521,7 +521,7 @@ export function StudentDashboard() {
                           <button
                             key={n.caseAttemptId}
                             onClick={() => navigate(`/app/topics/${n.topicId}?tab=case`)}
-                            className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left transition-colors hover:bg-surface-raised"
+                            className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-surface-raised"
                           >
                             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-soft text-emerald">
                               <Icon icon={ClipboardCheck} size={15} />
@@ -548,14 +548,14 @@ export function StudentDashboard() {
                             <button
                               key={`${a.type}-${a.topicId}-${i}`}
                               onClick={() => navigate(`/app/topics/${a.topicId}`)}
-                              className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left transition-colors hover:bg-surface-raised"
+                              className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-surface-raised"
                             >
                               <div className={cls("flex h-7 w-7 shrink-0 items-center justify-center rounded-full", m.tone)}>
                                 <Icon icon={m.icon} size={13} />
                               </div>
                               <div className="min-w-0 flex-1">
                                 <p className="truncate text-note font-semibold text-ink">{t(`activity.${a.type}`)}</p>
-                                <p className="truncate text-[12.5px] text-ink-faint">{a.topic}</p>
+                                <p className="truncate text-note text-ink-faint">{a.topic}</p>
                               </div>
                               {a.score !== null && (
                                 <span className="shrink-0 text-note font-bold tabular-nums text-ink-soft">{a.score}%</span>
@@ -574,7 +574,7 @@ export function StudentDashboard() {
       </AsyncSection>
 
       {d && d.courses.length === 0 && (
-        <p className="mt-3 text-center text-[14px] text-ink-faint">{t("adminWillAdd")}</p>
+        <p className="mt-3 text-center text-body text-ink-faint">{t("adminWillAdd")}</p>
       )}
 
       {!d && !q.isLoading && !q.isError && (
