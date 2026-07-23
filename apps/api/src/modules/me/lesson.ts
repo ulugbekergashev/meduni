@@ -182,6 +182,15 @@ export async function getTopicLesson(studentId: number, topicId: number) {
   const courseRule = (topic.unlockRuleJson ?? enrolledCourse?.defaultUnlockRuleJson) as Record<string, unknown> | null;
   const videoThreshold = (courseRule?.videoWatchedPct as number) ?? 80;
 
+  // Virtual bemor (Modul 26) — keys bo'lsa amaliyot bosqichi ochiq;
+  // baholash (role="eval") yozilgan bo'lsa — bajarilgan.
+  const patientEval = caseItem?.clinicalCase
+    ? await prisma.patientMessage.findFirst({
+        where: { studentId, topicId, role: "eval" },
+        select: { id: true },
+      })
+    : null;
+
   return {
     topicId: topic.id,
     orderIndex: topic.orderIndex,
@@ -214,6 +223,8 @@ export async function getTopicLesson(studentId: number, topicId: number) {
       sectionsRaw.reduce((n, s) => n + (s.minutes || 0), 0) +
       (quizItem?.quiz ? quizItem.quiz.questions.length : 0) +
       (caseItem ? 10 : 0),
+    /** Virtual bemor amaliyoti (bosqich sifatida ko'rsatiladi). */
+    patient: { available: !!caseItem?.clinicalCase, finished: !!patientEval },
     tabs: {
       video: videoItem?.video
         ? {

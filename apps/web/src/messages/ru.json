@@ -1374,6 +1374,8 @@
     "stage_patient": "Виртуальный пациент",
     "patientCta": "Потренируйтесь с виртуальным пациентом",
     "patientCtaHint": "Соберите анамнез, обследуйте и поставьте диагноз — AI играет роль пациента.",
+    "patientStageHint": "Тренировка анамнеза с AI-пациентом",
+    "patientDoneShort": "Выполнено",
     "calloutWarning": "Внимание",
     "topicProgress": "Прогресс темы",
     "externalLinks": "Внешние источники",

@@ -63,6 +63,8 @@ export function LessonOverview({
         // Ball o'ng chetdagi katta raqamda — bu yerda takrorlanmaydi.
         return `${t("questionsN", { n: q.questionCount })} · ${t("passIsN", { n: q.passThreshold })}`;
       }
+      case "patient":
+        return st.state === "done" ? t("patientDoneShort") : t("patientStageHint");
       case "case": {
         if (st.state === "pendingReview") return t("stagePending");
         if (st.state === "done" && st.hint) return `${t("finalBreakdownCase")}: ${st.hint}`;

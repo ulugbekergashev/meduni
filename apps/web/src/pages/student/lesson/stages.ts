@@ -5,7 +5,7 @@ import type { Lesson } from "../api";
  *  Spec tartibi: O'rganish → Keys → Test → Kartochkalar → Natija (dvigatel
  *  shartlaridan mustaqil — faqat UI tartibi). */
 
-export type StageKey = "study" | "case" | "quiz" | "result";
+export type StageKey = "study" | "patient" | "case" | "quiz" | "result";
 export type StageState = "done" | "open" | "pendingReview" | "soon";
 /** O'rganish bloklari (chap rail). "materials" — material matni mini-konspekti;
  *  "flashcards" — takrorlash (2026-07-23: fokus rejimidan o'rganishga ko'chirildi —
@@ -57,6 +57,12 @@ export function buildStages(lesson: Lesson): StageInfo[] {
     : undefined;
   const stages: StageInfo[] = [{ key: "study", state: studyDone ? "done" : "open", hint: studyHint }];
 
+  // Virtual bemor — amaliyot bosqichi (keys bo'lsa). Majburiy emas:
+  // resumeView/overallPct uni hisobga olmaydi, lekin talaba uni ko'radi.
+  if (lesson.patient?.available) {
+    stages.push({ key: "patient", state: lesson.patient.finished ? "done" : "open" });
+  }
+
   if (cs) {
     let state: StageState;
     if (completed || cs.attempt?.reviewed) state = "done";
@@ -90,6 +96,8 @@ export function stageToView(key: StageKey, lesson: Lesson): LessonView {
   switch (key) {
     case "study":
       return firstContentView(lesson);
+    case "patient":
+      return "patient";
     case "case":
       return "case";
     case "quiz":
@@ -105,7 +113,8 @@ export function stageToView(key: StageKey, lesson: Lesson): LessonView {
  *  olib boradi ("Davom ettirish"). */
 export function resumeView(lesson: Lesson): LessonView {
   const stages = buildStages(lesson);
-  const firstOpen = stages.find((st) => st.state === "open");
+  // "patient" — ixtiyoriy amaliyot: davom ettirish uni majburlab ochmaydi.
+  const firstOpen = stages.find((st) => st.key !== "patient" && st.state === "open");
   if (firstOpen) return stageToView(firstOpen.key, lesson);
   return firstContentView(lesson);
 }

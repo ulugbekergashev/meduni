@@ -317,6 +317,8 @@ export interface Lesson {
   sections: LessonSection[];
   /** Mavzuning taxminiy vaqti (daqiqa). */
   estimatedMinutes: number;
+  /** Virtual bemor amaliyoti — bosqich holati (keys bo'lsa ochiq). */
+  patient: { available: boolean; finished: boolean };
   tabs: {
     video: VideoTabData | null;
     slides: SlidesTabData | null;
@@ -531,7 +533,11 @@ export function useFinishPatient(topicId: number) {
         method: "POST",
         body: JSON.stringify({ diagnosis }),
       }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["me-patient", topicId] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["me-patient", topicId] });
+      // Bosqich holati (stepper/obzor) lesson payloadida — uni ham yangilaymiz.
+      qc.invalidateQueries({ queryKey: ["me-lesson", topicId] });
+    },
   });
 }
 
@@ -539,7 +545,10 @@ export function useResetPatient(topicId: number) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: () => api(`/api/v1/me/topics/${topicId}/patient/reset`, { method: "POST" }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["me-patient", topicId] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["me-patient", topicId] });
+      qc.invalidateQueries({ queryKey: ["me-lesson", topicId] });
+    },
   });
 }
 

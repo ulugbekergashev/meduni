@@ -1374,6 +1374,8 @@
     "stage_patient": "Virtual bemor",
     "patientCta": "Virtual bemor bilan mashq qiling",
     "patientCtaHint": "Anamnez yigʻing, tekshiring va tashxis qoʻying — AI bemor rolini oʻynaydi.",
+    "patientStageHint": "AI bemor bilan anamnez mashqi",
+    "patientDoneShort": "Bajarildi",
     "calloutWarning": "Diqqat",
     "topicProgress": "Mavzu jarayoni",
     "externalLinks": "Tashqi manbalar",
