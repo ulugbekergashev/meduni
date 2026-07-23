@@ -60,14 +60,14 @@ export function HeroTile({
       <Card
         interactive={!!onClick}
         onClick={onClick}
-        className="flex flex-col gap-3 border-0 !bg-gradient-to-br from-brand-deep to-brand !p-5 text-white"
+        className="flex flex-col gap-4 border-0 !bg-gradient-to-br from-brand-deep to-brand !p-6 text-white"
       >
-        <span className="flex h-11 w-11 items-center justify-center rounded-control bg-white/15 text-white">
-          <Icon icon={icon} size={20} />
+        <span className="flex h-12 w-12 items-center justify-center rounded-control bg-white/15 text-white">
+          <Icon icon={icon} size={23} />
         </span>
         <div>
-          <p className="text-micro font-extrabold uppercase tracking-wider text-white/75">{label}</p>
-          <p className="mt-1.5 text-[30px] font-extrabold leading-none tabular-nums">{value}</p>
+          <p className="text-note font-extrabold uppercase tracking-wider text-white/75">{label}</p>
+          <p className="mt-1.5 text-stat font-extrabold leading-none tabular-nums">{value}</p>
           {hint && <p className="mt-1.5 text-note text-white/85">{hint}</p>}
         </div>
       </Card>
@@ -77,16 +77,16 @@ export function HeroTile({
     <Card
       interactive={!!onClick}
       onClick={onClick}
-      className={cls("flex flex-col gap-3 !p-5", selected && "border-brand ring-2 ring-brand/25")}
+      className={cls("flex flex-col gap-4 !p-6", selected && "border-brand ring-2 ring-brand/25")}
     >
-      <span className={cls("flex h-11 w-11 items-center justify-center rounded-control", tone)}>
-        <Icon icon={icon} size={20} />
+      <span className={cls("flex h-12 w-12 items-center justify-center rounded-control", tone)}>
+        <Icon icon={icon} size={23} />
       </span>
       <div>
-        <p className={cls("text-micro font-extrabold uppercase tracking-wider", selected ? "text-brand-tint" : "text-ink-faint")}>
+        <p className={cls("text-note font-extrabold uppercase tracking-wider", selected ? "text-brand-tint" : "text-ink-faint")}>
           {label}
         </p>
-        <p className={cls("mt-1.5 text-[30px] font-extrabold leading-none tabular-nums", selected ? "text-brand-tint" : "text-ink")}>
+        <p className={cls("mt-1.5 text-stat font-extrabold leading-none tabular-nums", selected ? "text-brand-tint" : "text-ink")}>
           {value}
         </p>
         {hint && <p className="mt-1.5 text-note text-ink-faint">{hint}</p>}

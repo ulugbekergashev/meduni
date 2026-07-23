@@ -89,16 +89,20 @@ brand, emerald, amber, blue, rose (amber↔emerald yonma-yon faqat 2px oraliq/yo
 
 ### O'lchamlar
 - Karta radius 16px, tugma/input 10px, badge/pill 20px (dumaloq)
-- **Shrift shkalasi — `packages/ui/tailwind.config.ts` tokenlari** (2026-07-23 v2,
-  buyurtmachi "kattaroq" dedi): `h1` 24 · `stat` 36 · `section` 17 · `body` 15 ·
-  `note` 13.5 · `micro` 12 · `read` 17/1.8. **`micro` (12px) — MUTLAQ MINIMUM.**
-  `text-[10px]`—`text-[15px]` kabi arbitrary qiymatlar TAQIQ — token ishlat
-  (talaba sahifalarida hammasi token'ga o'tkazilgan). O'qish ustunida sarlavha/
-  marker o'lchamlari **em** da beriladi (A−/A+ bilan birga masshtablansin).
-- **Talaba tomoni endi DEFAULT YORUG'** (2026-07-23, buyurtmachi: qora "texno"
-  qiyofa tibbiyotga mos emas): majburiy dark BEKOR (`StudentShell`da forceTheme
-  yo'q), Dark Mode headerdagi tugma orqali OPTSIYA (talabnoma sharti). Dark
-  tokenlar yumshatilgan slate (#0f141e/#161d2b) — void-qora (#06080d) EMAS.
+- **Shrift shkalasi — `packages/ui/tailwind.config.ts` tokenlari** (2026-07-23 v3,
+  buyurtmachi 3-marta "kichkina" dedi → KATTA sakrash): `h1` 30 · `stat` 42 ·
+  `section` 20 · `body` 17 · `note` 15 · `micro` 13 · `read` 19/1.8.
+  **`micro` (13px) — MUTLAQ MINIMUM.** `text-[N]` arbitrary qiymatlar TAQIQ —
+  token ishlat (talaba sahifalari + packages/ui komponentlari hammasi token'ga
+  o'tkazilgan). O'qish ustunida sarlavha/marker o'lchamlari **em** da (A−/A+).
+- **Statistika kartalari — DentaCRM uslubi** (`components/HeroStats.tsx`
+  `HeroCard`/`HeroTile`; `packages/ui/StatCard`): ALOHIDA keng karta, ikonka-chip
+  (rounded-control 48px) → UPPERCASE `note` yorliq → `stat` (42px) raqam → hint,
+  `p-6` havo. Siqilgan "strip" TAQIQ. `HeroTile accent` = gradient urg'u karta.
+- **Talaba tomoni DEFAULT YORUG'** (dark headerdagi tugma bilan OPTSIYA). **Dark
+  tokenlar (2026-07-23 v3) boyroq/kontrastroq**: kartalar fondan aniq AJRALADI
+  (bg #0b1018, surface #19212f, raised #232d3f, line #2c3648, ink #f5f7fc) —
+  void-qora (#06080d) yoki flat-grey EMAS.
 - Soyalar tokenli: `--shadow-card` / `--shadow-card-hover` (ink-tinted, dark'da o'z varianti); Tailwind `shadow-card`/`shadow-card-hover`
 - Sana formati: `lib/date.ts::formatDate(locale, date, "long|short|shortYear")` — uz oy nomlari qo'lda ("15-iyul, 2026-yil"; uz-UZ ICU "M07" buzuq), toLocaleDateString'ni oy-nomli formatda ISHLATMA
 - Panel padding 12-16px (`p-3`/`p-4`), kartalar orasi **8-12px** (`gap-2`/`gap-3`) — ZICHLIK QOIDASIga qarang

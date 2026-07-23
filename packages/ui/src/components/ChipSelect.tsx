@@ -19,7 +19,7 @@ export function ChipSelect({
   emptyText?: string;
 }) {
   if (options.length === 0 && emptyText) {
-    return <p className="text-[14px] text-amber">{emptyText}</p>;
+    return <p className="text-body text-amber">{emptyText}</p>;
   }
 
   return (
@@ -32,7 +32,7 @@ export function ChipSelect({
             type="button"
             onClick={() => onToggle(opt.id)}
             className={cls(
-              "inline-flex items-center gap-1 rounded-pill border px-3 py-1.5 text-[14px] font-medium transition-colors",
+              "inline-flex items-center gap-1 rounded-pill border px-3 py-1.5 text-body font-medium transition-colors",
               isSel
                 ? "border-brand bg-brand-soft text-brand-deep"
                 : "border-line bg-surface text-ink-soft hover:bg-bg"
