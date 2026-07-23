@@ -132,6 +132,8 @@ export interface CaseJson {
   steps?: CaseStepJson[];
   questions: string[];
   referenceAnswer: string[];
+  /** Modul 28 — virtual bemor xulqi (o'qituvchi ssenariysi). */
+  patientBehavior?: string;
 }
 
 export type SlideLayout = "TITLE" | "TWO_BLOCK" | "THREE_BLOCK" | "BODY_DIAGRAM" | "IMAGE_LEFT" | "BULLETS";
