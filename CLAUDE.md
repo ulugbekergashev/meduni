@@ -1197,6 +1197,39 @@ Barcha modullar tugadi (1-17).
   "Успеваемость". **Smoke 14/14** (session/belgilash/stats/overview/set/patients).
   Faza C (AI yangi savollar — o'qituvchi tasdig'i bilan) rejada, qurilmagan.
 
+- **Modul 28 — O'qituvchi paneli talaba modullari bilan bog'landi + guruh chati
+  BEKOR (2026-07-23).** Reja: `.claude/plans/teacher-modul28.md`. Tamoyil:
+  bitta ma'lumot — ikki qarash (talaba Modul 26/27 ↔ o'qituvchi ko'zgusi).
+  **(Faza 0) Guruh chati BUTUNLAY olib tashlandi** (buyurtmachi; AI-tutor va
+  virtual bemor chatlariga tegilmagan): nav/route/sahifa/tab/hook/route'lar/
+  `modules/chat/` o'chirildi, `/app/chat`→redirect; `CourseChatMessage` jadvali
+  bazада qoladi (Glossary presedenti). Modul 25 yozuvi tarixiy — kod endi yo'q.
+  **(Faza 1) Guruh xatolari xaritasi** — `modules/courses/mistakes.ts::
+  getCourseMistakes` (savol darajasida xato% + distraktor taqsimoti + xato
+  qilganlar ismlari; keys qadamlari ham; mavzu severity). Mezonlar talaba
+  `practice.ts::topicMistakes` bilan BIR XIL — raqamlar mos. UI: ProgressTab
+  ostида `MistakesMap` (severity badge, ochiladigan savol qatorlari, variant
+  barlari) + **"Mashq qildirish"** → QuickTaskModal prefill (talabaning
+  `?sub=mashgulot` deep-linki). `GET /teach/courses/:id/mistakes`.
+  **(Faza 2) AI tavsiyaviy baho + bemor logi** — `CaseAttempt += aiSuggestJson`
+  (kesh; migratsiya `case_ai_suggest`); `review.ts::suggestCaseScore` (kind
+  CASE_SUGGEST, kvota; {score,rationale,missed[]}; FAQAT tavsiya — yakuniy
+  baho o'qituvchida); review detail += `autoScore`/`aiSuggest`/`patientSession`
+  (talabaning bemor suhbati + eval, read-only). UI: CaseReviewQueue'da
+  AiSuggestCard ("Qo'llash: N" ball inputга ko'chadi) + PatientSessionCard.
+  ⚠️ **i18n dublikat-kalit saboqi**: ikkita bir xil top-level JSON kalit
+  (student "review" + teacher "review") — JSON.parse jimgina birinchisini
+  yutadi; teacher bo'limi git tarixидан tiklandi, talaba tabi `reviewTab`
+  prefiksiga ko'chdi. YANGI i18n bo'lim ochishdan oldin kalit bandligini tekshir!
+  **(Faza 3) Virtual bemor ssenariysi** — `caseSchema += patientBehavior`
+  (o'qituvchi yozadi, migratsiyasiz); patientSystemPrompt "O'QITUVCHI QO'SHIMCHA
+  QOIDALARI" (xavfsizlik ustuvor); CaseEditor "Bemor xulqi" + 4 shablon.
+  Real Gemini smoke: "EKG faqat so'ralganda" — bemor amal qildi.
+  **(Faza 4) Amaliyot faolligi** — `getStudentDetail += practiceSignals`
+  (kartalar+bilaman%, bemor mashqlari+o'rt.ball, AI-tutor savollari);
+  StudentDetailPage kartasi. Smoke'lar: 8/8 xarita, 8/8 AI-tavsiya (real, 70
+  ball+kesh), 4/4 ssenariy, 5/5 signallar. tsc+build ikkala tomonда toza.
+
 ## 9. Loyiha holati va ishga tushirish (operatsion — sessiya 0)
 
 **Monorepo (npm workspaces):**
