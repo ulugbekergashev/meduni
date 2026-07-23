@@ -45,16 +45,16 @@ export function StatCard({
       )}
     >
       {icon && (
-        <div className={cls("flex items-center justify-center rounded-full", compact ? "h-8 w-8" : "h-10 w-10", tone)}>
-          <Icon icon={icon} size={compact ? 16 : 19} />
+        <div className={cls("flex items-center justify-center rounded-control", compact ? "h-10 w-10" : "h-12 w-12", tone)}>
+          <Icon icon={icon} size={compact ? 18 : 22} />
         </div>
       )}
-      <span className={cls("font-bold leading-none tabular-nums text-ink", compact ? "text-[26px]" : "text-[30px]")}>
+      <span className={cls("font-extrabold leading-none tabular-nums text-ink", compact ? "text-[32px]" : "text-stat")}>
         {value ?? "—"}
       </span>
       <div>
-        <p className={cls("font-semibold text-ink", compact ? "text-[13.5px]" : "text-[14.5px]")}>{label}</p>
-        {hint && <p className="text-[13px] text-ink-faint">{hint}</p>}
+        <p className={cls("font-semibold text-ink", compact ? "text-note" : "text-body")}>{label}</p>
+        {hint && <p className="text-note text-ink-faint">{hint}</p>}
       </div>
     </Card>
   );

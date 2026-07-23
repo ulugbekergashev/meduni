@@ -73,8 +73,8 @@ export function SidebarLayout({ brand, items, children, headerSlot, rightSlot, f
               key={item.href}
               href={item.href}
               className={cls(
-                "relative flex items-center rounded-control py-2.5 text-[15px] font-medium transition-colors duration-150",
-                collapsed ? "justify-center px-0" : "gap-3 px-3",
+                "relative flex items-center rounded-control py-3 text-body font-semibold transition-colors duration-150",
+                collapsed ? "justify-center px-0" : "gap-3 px-3.5",
                 item.active
                   ? "bg-side-active text-side-active-ink"
                   : "text-side-soft hover:bg-side-hover hover:text-side-ink"
@@ -94,7 +94,7 @@ export function SidebarLayout({ brand, items, children, headerSlot, rightSlot, f
               </span>
               {!collapsed && <span className="flex-1 truncate">{item.label}</span>}
               {!collapsed && item.badge !== undefined && item.badge > 0 && (
-                <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-rose px-1.5 text-[12px] font-bold text-white">
+                <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-rose px-1.5 text-micro font-bold text-white">
                   {item.badge}
                 </span>
               )}

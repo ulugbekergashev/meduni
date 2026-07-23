@@ -55,17 +55,19 @@
 :root[data-theme="dark"] {
   color-scheme: dark;
 
-  --bg: #0f141e;          /* eng chuqur fon (sahifa) */
-  --surface: #161d2b;     /* asosiy panel */
-  --surface-raised: #1e2738; /* panel ichidagi karta */
-  --surface-glass: #161d2b;
-  --ink: #f0f3f9;
-  --ink-strong: #e1e6f0;
-  --ink-soft: #b0b8ca;
-  --ink-faint: #929aae;
-  --ink-dim: #737b8e;
-  --line: #252e41;
-  --line-raised: #2e3950;
+  /* 2026-07-23 v3: kartalar fondan aniq AJRALSIN (DentaCRM kabi "chiqadi") —
+     bg chuqurroq, surface sezilarli ochroq, borderlar ko'rinarli, ink yorqin. */
+  --bg: #0b1018;          /* eng chuqur fon (sahifa) */
+  --surface: #19212f;     /* asosiy panel — fondan aniq ochroq */
+  --surface-raised: #232d3f; /* panel ichidagi karta */
+  --surface-glass: #19212f;
+  --ink: #f5f7fc;
+  --ink-strong: #e7ecf5;
+  --ink-soft: #bcc4d4;
+  --ink-faint: #9aa3b6;
+  --ink-dim: #7c8598;
+  --line: #2c3648;
+  --line-raised: #37435a;
 
   --brand: #6366f1;
   --brand-soft: #1c2743;
@@ -83,14 +85,14 @@
   --emerald: #34d399;
   --emerald-soft: #0f2a24;
 
-  --side-bg: #121826;
-  --side-bg-deep: #0f141e;
-  --side-ink: #f0f3f9;
-  --side-ink-soft: #929aae;
-  --side-line: #252e41;
-  --side-active-bg: #263252;
+  --side-bg: #141b28;
+  --side-bg-deep: #0b1018;
+  --side-ink: #f5f7fc;
+  --side-ink-soft: #9aa3b6;
+  --side-line: #2c3648;
+  --side-active-bg: #2a3960;
   --side-active-ink: #c7d2fe;
-  --side-hover-bg: #1a2233;
+  --side-hover-bg: #1d2637;
 
   --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px -12px rgba(0, 0, 0, 0.6);
   --shadow-card-hover: 0 2px 4px rgba(0, 0, 0, 0.45), 0 16px 36px -12px rgba(0, 0, 0, 0.7);

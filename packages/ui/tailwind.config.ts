@@ -54,18 +54,18 @@ const sharedConfig: Partial<Config> = {
         card: "var(--shadow-card)",
         "card-hover": "var(--shadow-card-hover)",
       },
-      // Shkala 2026-07-23 v2: buyurtmachi "shriftlar kattaroq, spacelar kengroq"
-      // dedi — yana bir pog'ona ko'tarildi va line-height ochildi.
-      // micro=12px — MUTLAQ minimum; text-[10px]/[11px] arbitrary TAQIQ.
+      // Shkala 2026-07-23 v3 — KATTA SAKRASH (buyurtmachi 3-marta "yozuvlar
+      // kichkina" dedi). Katta ekranlarda o'qishbop bo'lishi uchun ochiq
+      // shkala. micro=13px — MUTLAQ minimum; text-[N] arbitrary TAQIQ.
       fontSize: {
-        h1: ["24px", { lineHeight: "1.25", letterSpacing: "-0.02em" }],
-        stat: ["36px", { lineHeight: "1.05", letterSpacing: "-0.02em" }],
-        section: ["17px", { lineHeight: "1.4", letterSpacing: "-0.01em" }],
-        body: ["15px", { lineHeight: "1.6" }],
-        note: ["13.5px", { lineHeight: "1.5" }],
-        micro: ["12px", { lineHeight: "1.4" }],
+        h1: ["30px", { lineHeight: "1.2", letterSpacing: "-0.02em" }],
+        stat: ["42px", { lineHeight: "1.02", letterSpacing: "-0.02em" }],
+        section: ["20px", { lineHeight: "1.35", letterSpacing: "-0.01em" }],
+        body: ["17px", { lineHeight: "1.6" }],
+        note: ["15px", { lineHeight: "1.55" }],
+        micro: ["13px", { lineHeight: "1.45" }],
         /** Uzun matn o'qish uchun (konspekt tanasi) — A−/A+ bilan boshqariladi. */
-        read: ["17px", { lineHeight: "1.8" }],
+        read: ["19px", { lineHeight: "1.8" }],
       },
       fontFamily: {
         sans: ["'Manrope Variable'", "Manrope", "Inter", "system-ui", "sans-serif"],
