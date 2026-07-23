@@ -189,6 +189,9 @@ export const caseSchema = z.object({
   steps: z.array(caseStepSchema).default([]),
   questions: z.array(z.string()),
   referenceAnswer: z.array(z.string()),
+  /** Modul 28 — virtual bemor xulqi (O'QITUVCHI yozadi, AI generatsiya qilmaydi).
+   *  Masalan: "EKG natijasini faqat talaba aniq so'raganda ber". */
+  patientBehavior: z.string().optional(),
 });
 export type CaseJson = z.infer<typeof caseSchema>;
 export type CaseStep = z.infer<typeof caseStepSchema>;

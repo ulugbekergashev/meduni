@@ -101,6 +101,29 @@ export function CaseEditor({ content }: { content: ContentFull }) {
           </div>
           <p className="mt-1.5 text-[13px] text-ink-faint">{t("vitalsHint")}</p>
         </Block>
+
+        {/* Modul 28 — virtual bemor ssenariysi (talaba roleplay'ida qo'llanadi) */}
+        <Block title={t("behavior")}>
+          <Textarea
+            value={draft.patientBehavior ?? ""}
+            onChange={(e) => patch({ patientBehavior: e.target.value })}
+            placeholder={t("behaviorPlaceholder")}
+          />
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {(t("behaviorTemplates", { returnObjects: true }) as string[]).map((tpl) => (
+              <button
+                key={tpl}
+                onClick={() =>
+                  patch({ patientBehavior: (draft.patientBehavior ? draft.patientBehavior.trim() + " " : "") + tpl })
+                }
+                className="rounded-pill border border-line px-3 py-1 text-[13px] font-medium text-ink-soft transition-colors hover:bg-brand-soft hover:text-brand-tint"
+              >
+                + {tpl}
+              </button>
+            ))}
+          </div>
+          <p className="mt-1.5 text-[13px] text-ink-faint">{t("behaviorHint")}</p>
+        </Block>
       </Card>
 
       {/* Patient case blocks */}

@@ -763,7 +763,16 @@
     "addOption": "Variant qoʻshish",
     "addStep": "Qadam qoʻshish",
     "save": "Saqlash",
-    "saved": "Saqlandi"
+    "saved": "Saqlandi",
+    "behavior": "Virtual bemor xulqi (ssenariy)",
+    "behaviorPlaceholder": "Masalan: EKG natijasini faqat talaba aniq soʻraganda ber. Ogʻriq haqida soʻralmasa, oʻzing aytma.",
+    "behaviorHint": "Bu qoidalar talaba virtual bemor bilan mashq qilganda AI xulqini boshqaradi. Xavfsizlik qoidalari (keysda yoʻq faktni toʻqimaslik) baribir ustuvor.",
+    "behaviorTemplates": [
+      "Kamgap bemor — faqat aniq savolga javob beradi.",
+      "Tekshiruv/analiz natijalarini faqat soʻralganda ber.",
+      "Ogʻriqdan bezovta — gaplari uzuq-yuluq, chalgʻiydi.",
+      "Tibbiy savodsiz — hamma narsani sodda tilda aytadi."
+    ]
   },
   "factcheck": {
     "needContent": "Avval kamida bitta kontent yarating.",

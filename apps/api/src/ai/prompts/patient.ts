@@ -47,6 +47,15 @@ export function patientSystemPrompt(lang: "uz" | "ru", c: CaseJson): string {
     "6. Har javob QISQA (1–3 jumla). Suhbatni sun'iy cho'zmaysan.",
     `7. Til — ${langLabel[lang]}.`,
     "8. Javobni FAQAT JSON schema bo'yicha qaytar ({\"reply\": \"...\"}).",
+    // Modul 28 — o'qituvchi ssenariysi. Bazaviy xavfsizlik qoidalari (keysда
+    // yo'q faktni to'qimaslik, tashxisni aytmaslik) BARIBIR USTUVOR.
+    ...(c.patientBehavior?.trim()
+      ? [
+          "",
+          "O'QITUVCHI QO'SHIMCHA QOIDALARI (yuqoridagi xavfsizlik qoidalariga zid kelmasa, ularga qat'iy amal qil):",
+          c.patientBehavior.trim(),
+        ]
+      : []),
     "",
     "=== BEMOR HAQIDAGI YASHIRIN MA'LUMOT (talabaga oshkor qilma) ===",
     caseTruth(c),
