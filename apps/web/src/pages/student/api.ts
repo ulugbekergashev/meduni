@@ -568,6 +568,116 @@ export function useReviewDue() {
   });
 }
 
+/** Kross-mavzu takrorlash sessiyasi kartasi (Modul 27). */
+export interface ReviewSessionCard extends Flashcard {
+  topicId: number;
+  topicTitle: string;
+  subjectName: string;
+}
+
+export function useReviewSession(topicId?: number | null) {
+  return useQuery({
+    queryKey: ["me-review-session", topicId ?? null],
+    queryFn: () =>
+      api<{ cards: ReviewSessionCard[]; total: number }>(
+        `/api/v1/me/review/session${topicId ? `?topicId=${topicId}` : ""}`
+      ),
+  });
+}
+
+export interface ReviewStats {
+  dueNow: number;
+  reviewedToday: number;
+  knownPct: number | null;
+  nextDueAt: string | null;
+  upcoming: { topicId: number; topicTitle: string; subjectName: string; nextDueAt: string; count: number }[];
+}
+
+export function useReviewStats() {
+  return useQuery({ queryKey: ["me-review-stats"], queryFn: () => api<ReviewStats>("/api/v1/me/review/stats") });
+}
+
+/** Sessiya kartasini belgilash — kartaning O'Z mavzusi bo'yicha (global). */
+export function useReviewSessionMark() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (b: { topicId: number; cardKey: string; known: boolean }) =>
+      api(`/api/v1/me/topics/${b.topicId}/flashcards/review`, {
+        method: "POST",
+        body: JSON.stringify({ cardKey: b.cardKey, known: b.known }),
+      }),
+    onSuccess: (_r, b) => {
+      qc.invalidateQueries({ queryKey: ["me-review-due"] });
+      qc.invalidateQueries({ queryKey: ["me-review-stats"] });
+      qc.invalidateQueries({ queryKey: ["me-flashcards", b.topicId] });
+      // Sessiya keshiga tegmaymiz — pleyer o'z indeksi bilan yuradi, yakunda refetch.
+    },
+  });
+}
+
+// ---- Qo'shimcha mashg'ulotlar (Modul 27) ----
+
+export interface PracticeTopic {
+  topicId: number;
+  topicTitle: string;
+  subjectName: string;
+  wrongQuiz: number;
+  wrongSteps: number;
+  unknownCards: number;
+  total: number;
+}
+
+export type PracticeItem =
+  | {
+      kind: "quiz";
+      questionId: number;
+      text: string;
+      options: string[];
+      correctIndex: number;
+      explanations: string[];
+      sourceFragment: string | null;
+      yourAnswer: number | null;
+    }
+  | {
+      kind: "step";
+      title: string;
+      prompt: string;
+      options: { text: string; correct: boolean; feedback: string }[];
+      yourAnswer: number | null;
+    }
+  | { kind: "card"; front: string; back: string; note: string | null };
+
+export function usePracticeOverview() {
+  return useQuery({ queryKey: ["me-practice"], queryFn: () => api<{ topics: PracticeTopic[] }>("/api/v1/me/practice") });
+}
+
+export function usePracticeSet(topicId: number | null) {
+  return useQuery({
+    queryKey: ["me-practice-set", topicId],
+    queryFn: () =>
+      api<{ topicId: number; topicTitle: string; subjectName: string; items: PracticeItem[] }>(
+        `/api/v1/me/practice/${topicId}`
+      ),
+    enabled: topicId !== null,
+  });
+}
+
+export interface PatientPracticeItem {
+  topicId: number;
+  topicTitle: string;
+  subjectName: string;
+  patientName: string;
+  patientInfo: string;
+  finished: boolean;
+}
+
+export function usePatientPractice() {
+  return useQuery({
+    queryKey: ["me-practice-patients"],
+    queryFn: () => api<{ patients: PatientPracticeItem[] }>("/api/v1/me/practice/patients"),
+  });
+}
+
 // ---- Kurs guruh chati (Modul 25) — o'qituvchi + guruh talabalari ----
 
 export interface CourseChatMessage {

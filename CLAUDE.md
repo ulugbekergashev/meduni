@@ -1172,6 +1172,31 @@ Barcha modullar tugadi (1-17).
   baholash to'g'ri tashxisni tan oldi (III daraja AV blokada). Interval smoke 6/6.
   tsc+build ikkala tomonда toza.
 
+- **Modul 27 — O'zlashtirish kengaytmasi: Takrorlash + Mashg'ulotlar (2026-07-23).**
+  Reja: `.claude/plans/ozlashtirish-takrorlash-mashgulotlar.md`. `/app/grades` endi
+  3 tab (`?sub=`): **Baholar** (eski sahifa, `GradesHome`) | **Takrorlash**
+  (badge=due soni) | **Mashg'ulotlar**. **(A) Takrorlash** (`grades/ReviewTab.tsx`):
+  kross-mavzu sessiya — `flashcards.ts::getReviewSession` (due kartalar BARCHA
+  mavzulardan, 60 tagacha, mavzu konteksti bilan; belgilash mavjud per-topic
+  endpoint orqali — interval mantig'i bir joyda) + `getReviewStats` (dueNow/
+  reviewedToday/knownPct/upcoming). UI: 4 stat karta + katta karta-pleyer
+  (CardFace reuse, mavzu badge, 1/2 klaviatura) + yakuniy ring + o'ng ustunда
+  kelgusi takrorlar jadvali. Dashboard "Bugun takrorlang" endi shu tabga
+  (`?sub=takrorlash&topic=`). **(B) Mashg'ulotlar** (`grades/PracticeTab.tsx`,
+  yangi `modules/me/practice.ts` — AI YO'Q, bahoga/progressga ta'sir YO'Q):
+  (1) **Virtual bemor amaliyot markazi** — barcha OCHIQ mavzulardagi published
+  keyslar gridi (bemor ismi bilan) + "Tasodifiy bemor" tugmasi → mavjud
+  `?view=patient` roleplay (buyurtmachi: "hoxlagan payt kirib har xil keyslar");
+  `getPatientPractice` loadCourse/computeTopics reuse. (2) **Xatolar ustida
+  ishlash** — zaif mavzular (xato test savollari FAQAT yakunlangan urinishdan —
+  javob allaqachon reveal, sizdirish yo'q; xato keys qadamlari; known=false
+  kartalar) → mashq pleyeri: variant → darhol izoh (+sourceFragment) → yakunда
+  ring + "Konspektni qayta o'qish". Route'lar: `/me/review/{session,stats}`,
+  `/me/practice[/patients|/:topicId]` (⚠️ patients :topicId'dan OLDIN).
+  i18n `review.*`/`practice.*`/`grades.tab*`; grades title endi "O'zlashtirish"/
+  "Успеваемость". **Smoke 14/14** (session/belgilash/stats/overview/set/patients).
+  Faza C (AI yangi savollar — o'qituvchi tasdig'i bilan) rejada, qurilmagan.
+
 ## 9. Loyiha holati va ishga tushirish (operatsion — sessiya 0)
 
 **Monorepo (npm workspaces):**

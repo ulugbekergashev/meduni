@@ -22,8 +22,9 @@ function KindBadge({ kind }: { kind: Flashcard["kind"] }) {
   );
 }
 
-/** Katta fleshkarta — haqiqiy 3D ag'darish; balandlikni to'ldiradi. */
-function CardFace({ card, flipped, onFlip }: { card: Flashcard; flipped: boolean; onFlip: () => void }) {
+/** Katta fleshkarta — haqiqiy 3D ag'darish; balandlikni to'ldiradi.
+ *  Takrorlash sessiyasi (O'zlashtirish tabi) ham shu yuzani ishlatadi. */
+export function CardFace({ card, flipped, onFlip }: { card: Flashcard; flipped: boolean; onFlip: () => void }) {
   const { t } = useTranslation(undefined, { keyPrefix: "lesson" });
   const reduce = useReducedMotion();
 
