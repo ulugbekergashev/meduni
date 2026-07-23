@@ -17,7 +17,7 @@ import {
 
 /** Kross-mavzu takrorlash pleyeri — sessiya kartalari tugaguncha yuradi. */
 function SessionPlayer({ cards, onDone }: { cards: ReviewSessionCard[]; onDone: (known: number) => void }) {
-  const { t } = useTranslation(undefined, { keyPrefix: "review" });
+  const { t } = useTranslation(undefined, { keyPrefix: "reviewTab" });
   const { t: tl } = useTranslation(undefined, { keyPrefix: "lesson" });
   const reduce = useReducedMotion();
   const mark = useReviewSessionMark();
@@ -123,7 +123,7 @@ function SessionPlayer({ cards, onDone }: { cards: ReviewSessionCard[]; onDone: 
 
 /** O'zlashtirish → Takrorlash tabi: hero + sessiya + kelgusi jadval. */
 export function ReviewTab() {
-  const { t } = useTranslation(undefined, { keyPrefix: "review" });
+  const { t } = useTranslation(undefined, { keyPrefix: "reviewTab" });
   const locale = useLocale();
   const navigate = useNavigate();
   const [params] = useSearchParams();

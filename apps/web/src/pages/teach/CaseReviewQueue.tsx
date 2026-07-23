@@ -1,19 +1,162 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, CheckCircle2, ChevronDown, ClipboardCheck, Clock, FlaskConical, HeartPulse, ListPlus, Search, Stethoscope, User } from "lucide-react";
+import { ArrowLeft, CheckCircle2, ChevronDown, ClipboardCheck, Clock, FlaskConical, HeartPulse, ListPlus, Search, Sparkles, Stethoscope, User } from "lucide-react";
 import { Badge, Button, Card, Icon, Spinner, cls, useToast } from "@meduni/ui";
 import { AsyncSection } from "../../components/AsyncSection";
 import { QuickTaskModal } from "../../components/QuickTaskModal";
 import {
+  useAiSuggest,
   useCaseReviewDetail,
   useReviewCase,
   useReviewFilters,
   useReviewQueue,
   type CaseReviewDetail,
+  type PatientSessionLog,
   type QueueItem,
   type QueueQuery,
 } from "./api";
+
+/** Modul 28 — AI tavsiyaviy baho kartasi. FAQAT tavsiya: "Qo'llash" bosilsa
+ *  ball inputga ko'chadi, yakuniy qaror o'qituvchida. */
+function AiSuggestCard({
+  attemptId,
+  detail,
+  onApply,
+}: {
+  attemptId: number;
+  detail: CaseReviewDetail;
+  onApply: (score: number) => void;
+}) {
+  const { t } = useTranslation(undefined, { keyPrefix: "review" });
+  const suggest = useAiSuggest(attemptId);
+  const s = detail.aiSuggest;
+
+  return (
+    <Card className="overflow-hidden p-0">
+      <div className="flex flex-wrap items-center gap-3 border-b border-line px-4 py-3">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-control bg-brand-soft text-brand-tint">
+          <Icon icon={Sparkles} size={17} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-body font-extrabold text-ink">{t("aiTitle")}</p>
+          <p className="text-note text-ink-faint">{t("aiHint")}</p>
+        </div>
+        {detail.autoScore !== null && (
+          <span className="shrink-0 rounded-pill bg-surface-raised px-2.5 py-1 text-note font-bold tabular-nums text-ink-soft">
+            {t("autoScoreShort")}: {detail.autoScore}%
+          </span>
+        )}
+        {!s && (
+          <Button size="sm" onClick={() => suggest.mutate(undefined)} disabled={suggest.isPending}>
+            {suggest.isPending ? t("aiLoading") : t("aiGet")}
+          </Button>
+        )}
+      </div>
+
+      {s && (
+        <div className="space-y-2.5 px-4 py-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="text-stat font-extrabold tabular-nums text-brand-tint">{s.score}</span>
+            <p className="min-w-0 flex-1 text-body leading-relaxed text-ink-strong">{s.rationale}</p>
+          </div>
+          {s.missed.length > 0 && (
+            <div className="rounded-control border-l-2 border-amber bg-amber-soft px-3.5 py-2.5">
+              <p className="mb-1 text-micro font-extrabold uppercase tracking-wider text-amber">{t("aiMissed")}</p>
+              <ul className="space-y-0.5">
+                {s.missed.map((m, i) => (
+                  <li key={i} className="text-note leading-relaxed text-ink-strong">
+                    · {m}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" onClick={() => onApply(s.score)}>
+              {t("aiApply", { n: s.score })}
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => suggest.mutate(true)} disabled={suggest.isPending}>
+              {suggest.isPending ? t("aiLoading") : t("aiAgain")}
+            </Button>
+          </div>
+        </div>
+      )}
+    </Card>
+  );
+}
+
+/** Modul 28 — talabaning virtual bemor amaliyoti (read-only log + AI baho). */
+function PatientSessionCard({ session }: { session: PatientSessionLog }) {
+  const { t } = useTranslation(undefined, { keyPrefix: "review" });
+  const [open, setOpen] = useState(false);
+  const ev = session.eval;
+
+  return (
+    <Card className="overflow-hidden p-0">
+      <button onClick={() => setOpen((o) => !o)} className="flex w-full items-center gap-3 px-4 py-3 text-left">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-control bg-rose-soft text-rose">
+          <Icon icon={HeartPulse} size={17} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-body font-extrabold text-ink">{t("patientLogTitle")}</p>
+          <p className="truncate text-note text-ink-faint">
+            {ev
+              ? t("patientLogEval", { overall: ev.overallScore, anamnez: ev.anamnesisScore })
+              : t("patientLogNoEval", { n: session.messages.length })}
+          </p>
+        </div>
+        {ev && (
+          <span
+            className={cls(
+              "shrink-0 rounded-pill px-2.5 py-1 text-note font-extrabold tabular-nums",
+              ev.correct ? "bg-emerald-soft text-emerald" : "bg-amber-soft text-amber"
+            )}
+          >
+            {ev.overallScore}
+          </span>
+        )}
+        <Icon
+          icon={ChevronDown}
+          size={17}
+          className={cls("shrink-0 text-ink-dim transition-transform", !open && "-rotate-90")}
+        />
+      </button>
+
+      {open && (
+        <div className="border-t border-line">
+          {ev && (
+            <div className="border-b border-line px-4 py-2.5 text-note leading-relaxed text-ink-strong">
+              <span className="font-bold">{t("patientDx")}:</span> {ev.diagnosis}
+              {ev.improvements && (
+                <>
+                  {" · "}
+                  <span className="text-ink-soft">{ev.improvements}</span>
+                </>
+              )}
+            </div>
+          )}
+          <div className="max-h-[320px] space-y-2 overflow-y-auto px-4 py-3">
+            {session.messages.map((m, i) => (
+              <div key={i} className={cls("flex", m.role === "student" ? "justify-end" : "justify-start")}>
+                <p
+                  className={cls(
+                    "max-w-[80%] whitespace-pre-wrap rounded-card px-3 py-1.5 text-note leading-relaxed",
+                    m.role === "student"
+                      ? "rounded-br-control bg-brand-soft text-ink"
+                      : "rounded-bl-control bg-surface-raised text-ink-strong"
+                  )}
+                >
+                  {m.text}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </Card>
+  );
+}
 
 function daysAgoLabel(iso: string, t: (k: string, o?: any) => string): string {
   const d = Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
@@ -159,6 +302,17 @@ function ReviewPanel({ id, onSavedNext, onClose }: { id: number; onSavedNext: ()
           </Card>
         ))}
       </div>
+
+      {/* Modul 28 — AI tavsiyasi + talabaning virtual bemor amaliyoti */}
+      <AiSuggestCard
+        attemptId={id}
+        detail={detail}
+        onApply={(s) => {
+          setScore(String(s));
+          setErr(null);
+        }}
+      />
+      {detail.patientSession && <PatientSessionCard session={detail.patientSession} />}
 
       {/* Grade Sticky Bottom */}
       <div className="sticky bottom-0 z-20 mt-3 border-t-2 border-brand/20 bg-surface p-5 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] sm:rounded-card">
