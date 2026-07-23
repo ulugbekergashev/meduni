@@ -1,13 +1,16 @@
 import { useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import {
   Activity,
+  ArrowRight,
   Check,
   ChevronRight,
   ClipboardList,
   FlaskConical,
   HeartPulse,
+  MessagesSquare,
   Stethoscope,
   Thermometer,
   User,
@@ -157,6 +160,7 @@ function StepView({
 
 export function CaseTab({ topicId, data }: { topicId: number; data: CaseTabData }) {
   const { t } = useTranslation(undefined, { keyPrefix: "lesson" });
+  const [, setParams] = useSearchParams();
   const submit = useSubmitCase(topicId);
   const attempt = data.attempt;
   const submitted = !!attempt;
@@ -193,6 +197,21 @@ export function CaseTab({ topicId, data }: { topicId: number; data: CaseTabData 
 
   return (
     <div className="space-y-3">
+      {/* Virtual bemor amaliyoti — keys asosidagi interaktiv roleplay */}
+      <button
+        onClick={() => setParams({ view: "patient" }, { replace: true })}
+        className="group flex w-full items-center gap-3 rounded-card border border-rose bg-rose-soft px-3.5 py-3 text-left transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+      >
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-control bg-rose text-white">
+          <Icon icon={MessagesSquare} size={17} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-note font-extrabold text-ink">{t("patientCta")}</p>
+          <p className="text-micro text-ink-soft">{t("patientCtaHint")}</p>
+        </div>
+        <Icon icon={ArrowRight} size={16} className="shrink-0 text-rose transition-transform group-hover:translate-x-0.5" />
+      </button>
+
       <PatientCard patient={data.patient} />
 
       {/* Keys sharti */}

@@ -1,6 +1,6 @@
 import { Suspense, lazy } from "react";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, BookText, ClipboardList, Stethoscope, Trophy } from "lucide-react";
+import { ArrowLeft, BookText, ClipboardList, HeartPulse, Stethoscope, Trophy } from "lucide-react";
 import { EmptyState, Icon, Spinner } from "@meduni/ui";
 import type { Lesson } from "../api";
 import { Panel } from "./Panel";
@@ -13,6 +13,7 @@ import { VideoTab } from "./VideoTab";
 import { SlidesTab } from "./SlidesTab";
 import { QuizTab } from "./QuizTab";
 import { CaseTab } from "./CaseTab";
+import { PatientTab } from "./PatientTab";
 import { FlashcardsTab } from "./FlashcardsTab";
 
 // Natija ekrani anime.js timeline'ini olib keladi (~22kb gzip) — u faqat shu
@@ -62,6 +63,32 @@ export function ContentPanel({
     view === "slides" ||
     view === "materials" ||
     view === "flashcards";
+
+  // ---- Virtual bemor roleplay (amaliyot — fokus rejim) ----
+  if (view === "patient") {
+    return (
+      <Panel
+        header={
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setView(lesson.tabs.case ? "case" : firstContentView(lesson))}
+              className="inline-flex items-center gap-1 rounded-control px-2 py-1 text-note font-semibold text-brand-tint transition-colors hover:bg-surface-raised"
+            >
+              <Icon icon={ArrowLeft} size={14} />
+              {t("backToContent")}
+            </button>
+            <span className="ml-auto inline-flex items-center gap-1.5 pr-1 text-note font-bold text-ink">
+              <Icon icon={HeartPulse} size={14} className="text-rose" />
+              {t("stage_patient")}
+            </span>
+          </div>
+        }
+        bodyClassName="flex flex-col p-4"
+      >
+        <PatientTab topicId={topicId} />
+      </Panel>
+    );
+  }
 
   // ---- Baholash / natija yuzasi (test/keys/natija — fokus rejim) ----
   if (!isContentView && view !== "overview") {

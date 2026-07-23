@@ -32,6 +32,7 @@ const ALL_VIEWS: LessonView[] = [
   "quiz",
   "flashcards",
   "result",
+  "patient",
 ];
 
 /** So'ralgan ko'rinish mavjudmi — bo'lmasa overview'ga tushadi. */
@@ -51,6 +52,9 @@ function viewAvailable(v: LessonView, lesson: Lesson): boolean {
       return !!lesson.tabs.case;
     case "quiz":
       return !!lesson.tabs.quiz;
+    case "patient":
+      // Virtual bemor keys asosida — keys bo'lsa ochiq.
+      return !!lesson.tabs.case;
     case "flashcards":
     case "result":
       return true;

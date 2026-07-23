@@ -473,6 +473,76 @@ export function useSendTutorMessage(topicId: number) {
   });
 }
 
+// ---- Virtual bemor roleplay (Modul 26) ----
+
+export interface PatientEval {
+  diagnosis: string;
+  correct: boolean;
+  anamnesisScore: number;
+  communicationScore: number;
+  overallScore: number;
+  strengths: string;
+  improvements: string;
+}
+
+export interface PatientMsg {
+  id: number;
+  role: "student" | "patient" | "eval";
+  text: string;
+  eval?: PatientEval;
+  createdAt: string;
+}
+
+export interface PatientData {
+  available: boolean;
+  patientInfo: { name: string; info: string } | null;
+  finished: boolean;
+  messages: PatientMsg[];
+}
+
+export function usePatient(topicId: number) {
+  return useQuery({
+    queryKey: ["me-patient", topicId],
+    queryFn: () => api<PatientData>(`/api/v1/me/topics/${topicId}/patient`),
+  });
+}
+
+export function useSendPatient(topicId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (text: string) =>
+      api<{ messages: PatientMsg[] }>(`/api/v1/me/topics/${topicId}/patient`, {
+        method: "POST",
+        body: JSON.stringify({ text }),
+      }),
+    onSuccess: (res) => {
+      qc.setQueryData<PatientData>(["me-patient", topicId], (old) =>
+        old ? { ...old, messages: [...old.messages, ...res.messages] } : old
+      );
+    },
+  });
+}
+
+export function useFinishPatient(topicId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (diagnosis: string) =>
+      api<{ eval: PatientEval; finished: boolean }>(`/api/v1/me/topics/${topicId}/patient/finish`, {
+        method: "POST",
+        body: JSON.stringify({ diagnosis }),
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["me-patient", topicId] }),
+  });
+}
+
+export function useResetPatient(topicId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api(`/api/v1/me/topics/${topicId}/patient/reset`, { method: "POST" }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["me-patient", topicId] }),
+  });
+}
+
 // ---- Interval takrorlash (Modul 26) — bugun takrorlanadigan kartalar ----
 
 export interface ReviewDueTopic {

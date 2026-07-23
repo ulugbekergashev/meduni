@@ -11,8 +11,9 @@ export type StageState = "done" | "open" | "pendingReview" | "soon";
  *  "flashcards" — takrorlash (2026-07-23: fokus rejimidan o'rganishga ko'chirildi —
  *  u baholash emas, o'quv/takrorlash quroli). */
 export type ContentView = "konspekt" | "video" | "slides" | "materials" | "flashcards";
-/** "overview" — kirish landing'i: bosqichlar obzori (layout v2). */
-export type LessonView = "overview" | ContentView | "case" | "quiz" | "result";
+/** "overview" — kirish landing'i (layout v2); "patient" — virtual bemor roleplay
+ *  (amaliyot, fokus rejim — bosqich emas). */
+export type LessonView = "overview" | ContentView | "case" | "quiz" | "result" | "patient";
 
 export interface StageInfo {
   key: StageKey;
