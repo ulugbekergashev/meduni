@@ -13,7 +13,7 @@
     "users": "Foydalanuvchilar",
     "courses": "Kurslar",
     "attendance": "Davomat",
-    "profile": "Profil",
+    "profile": "Profil va sozlamalar",
     "ai": "AI monitoring",
     "audit": "Audit",
     "caseReview": "Keys tekshiruvi",
@@ -28,14 +28,31 @@
     "myDept": "Kafedram",
     "subjects": "Fanlarim",
     "openProfile": "Profilni ochish",
-    "myCourses": "Kurslarim",
-    "grades": "Baholarim",
-    "schedule": "Jadval"
+    "myCourses": "Kurslar",
+    "grades": "O'zlashtirish",
+    "schedule": "Jadval",
+    "courseChat": "Kurs chati"
   },
   "theme": {
     "label": "Mavzu (rang)",
     "light": "Yorugʻ",
     "dark": "Tungi"
+  },
+  "courseChat": {
+    "title": "Kurs chati",
+    "back": "Orqaga",
+    "teacherTag": "Oʻqituvchi",
+    "membersN": "{{n}} ishtirokchi",
+    "placeholder": "Xabar yozing…",
+    "send": "Yuborish",
+    "emptyTitle": "Hozircha xabar yoʻq",
+    "emptyHint": "Birinchi boʻlib savol yoki eʼlon yozing — oʻqituvchi va guruhdoshlaringiz koʻradi.",
+    "pickTitle": "Kursni tanlang",
+    "pickHint": "Chapdan kursni tanlang — oʻsha kurs oʻqituvchisi va guruhi bilan muloqot qiling.",
+    "noCourses": "Siz hali birorta kursga yozilmagansiz.",
+    "teacherPlaceholder": "Guruhga xabar yozing…",
+    "teacherEmptyTitle": "Guruh chati boʻsh",
+    "teacherEmptyHint": "Talabalarga eʼlon bering yoki savollariga javob bering — shu kurs guruhi koʻradi."
   },
   "tasks": {
     "myTasks": "Mening vazifalarim",
@@ -378,6 +395,8 @@
   },
   "attendanceMe": {
     "title": "Mening davomatim",
+    "tabAttendance": "Davomat",
+    "tabSchedule": "Dars jadvali",
     "empty": "Hali dars yoʻq yoki davomat belgilanmagan.",
     "overallPct": "Umumiy davomat",
     "lowWarning": "Davomatingiz past ({{pct}}%). Oʻqituvchi bilan bogʻlaning.",
@@ -490,6 +509,7 @@
       "results": "Natijalar",
       "sessions": "Darslar",
       "progress": "Progress",
+      "chat": "Chat",
       "settings": "Sozlamalar"
     },
     "placeholder": {

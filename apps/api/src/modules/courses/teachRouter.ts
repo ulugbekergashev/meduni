@@ -1,11 +1,13 @@
 import { Router, type RequestHandler } from "express";
-import { notFound } from "../../lib/errors";
+import { z } from "zod";
+import { badRequest, notFound } from "../../lib/errors";
 import { requireRoles } from "../../middleware/rbac";
 import * as svc from "./service";
 import * as progress from "./progress";
 import * as review from "./review";
 import * as attendance from "./attendance";
 import * as subjects from "./subjects";
+import * as courseChat from "../chat/service";
 import { computeTeacherAutoTasks, listAssigned } from "../tasks/service";
 import { teacherSearch } from "../search/service";
 
@@ -48,6 +50,28 @@ teachCoursesRouter.get(
 teachCoursesRouter.get(
   "/courses",
   wrap(async (req, res) => res.json(await svc.listTeacherCourses(req.user!.id)))
+);
+
+// Kurs chati (Modul 25) — o'qituvchi tomoni (o'z kursi).
+teachCoursesRouter.get(
+  "/courses/:id/chat",
+  wrap(async (req, res) => {
+    const after = req.query.after ? Number(req.query.after) : undefined;
+    res.json(await courseChat.getTeacherChat(req.user!.id, parseId(req.params.id), after));
+  })
+);
+teachCoursesRouter.get(
+  "/courses/:id/chat/meta",
+  wrap(async (req, res) => res.json(await courseChat.chatCourseMeta(parseId(req.params.id))))
+);
+const teachChatMsgSchema = z.object({ text: z.string().min(1).max(2000) });
+teachCoursesRouter.post(
+  "/courses/:id/chat",
+  wrap(async (req, res) => {
+    const parsed = teachChatMsgSchema.safeParse(req.body);
+    if (!parsed.success) throw badRequest("Maʼlumotlar notoʻgʻri", "Неверные данные");
+    res.json(await courseChat.postTeacherChat(req.user!.id, parseId(req.params.id), parsed.data.text));
+  })
 );
 
 // Subjects the teacher can author (dept membership OR teaches a course of it).

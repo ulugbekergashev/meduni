@@ -144,6 +144,50 @@ export function useTeachCourseMeta(id: number) {
   });
 }
 
+// ---- Kurs guruh chati (Modul 25) — o'qituvchi tomoni ----
+
+export interface ChatMessage {
+  id: number;
+  text: string;
+  authorId: number;
+  authorName: string;
+  role: "teacher" | "student";
+  mine: boolean;
+  createdAt: string;
+}
+
+export function useCourseChat(courseId: number) {
+  return useQuery({
+    queryKey: ["teach-course-chat", courseId],
+    queryFn: () => api<{ messages: ChatMessage[] }>(`/api/v1/teach/courses/${courseId}/chat`),
+    refetchInterval: 5000,
+  });
+}
+
+export function useCourseChatMeta(courseId: number) {
+  return useQuery({
+    queryKey: ["teach-course-chat-meta", courseId],
+    queryFn: () => api<{ courseId: number; name: string; teacherName: string; memberCount: number }>(
+      `/api/v1/teach/courses/${courseId}/chat/meta`
+    ),
+  });
+}
+
+export function useSendCourseChat(courseId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (text: string) =>
+      api<ChatMessage>(`/api/v1/teach/courses/${courseId}/chat`, { method: "POST", body: JSON.stringify({ text }) }),
+    onSuccess: (msg) => {
+      qc.setQueryData<{ messages: ChatMessage[] }>(["teach-course-chat", courseId], (old) => {
+        const list = old?.messages ?? [];
+        if (list.some((m) => m.id === msg.id)) return old!;
+        return { messages: [...list, msg] };
+      });
+    },
+  });
+}
+
 export function useUpdateCourseSettings(courseId: number) {
   const qc = useQueryClient();
   return useMutation({

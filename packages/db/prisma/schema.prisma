@@ -132,6 +132,7 @@ model User {
   sectionReads      SectionRead[]
   flashcardReviews  FlashcardReview[]
   tutorMessages     TutorMessage[]
+  chatMessages      CourseChatMessage[] @relation("ChatAuthor")
   quizAttempts      QuizAttempt[]
   caseAttempts      CaseAttempt[]    @relation("CaseStudent")
   reviewedCases     CaseAttempt[]    @relation("CaseReviewer")
@@ -254,8 +255,24 @@ model Course {
   courseGroups          CourseGroup[]
   enrollments           Enrollment[]
   sessions              LessonSession[]
+  chatMessages          CourseChatMessage[]
 
   @@map("courses")
+}
+
+/// Kurs guruh chati (Modul 25) — kurs o'qituvchisi + shu kursga yozilgan
+/// talabalar. Dars ichidagi AI-chatdan farqli: bu real odamlar muloqoti.
+model CourseChatMessage {
+  id        Int      @id @default(autoincrement())
+  courseId  Int
+  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  authorId  Int
+  author    User     @relation("ChatAuthor", fields: [authorId], references: [id])
+  text      String
+  createdAt DateTime @default(now())
+
+  @@index([courseId, createdAt])
+  @@map("course_chat_messages")
 }
 
 model Topic {
