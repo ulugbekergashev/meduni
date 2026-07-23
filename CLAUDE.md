@@ -1269,8 +1269,10 @@ Barcha modullar tugadi (1-17).
 
 - **Sana-rejimi: mavzular DARS JADVALI bo'yicha ochiladi (2026-07-24, foydalanuvchi
   so'rovi).** Ilgari mavzu faqat ketma-ketlik-tugatish bilan ochilardi (N-mavzu
-  (N-1) COMPLETED bo'lgach). Endi kurs **`scheduleUnlock`** rejimida mavzu O'Z dars
-  kunidan keyin, KALENDAR bo'yicha ochiladi (oldingi mavzu tugashi shart emas).
+  (N-1) COMPLETED bo'lgach). Endi kurs **`scheduleUnlock`** rejimida mavzu **IKKI
+  shart birga** bajarilganda ochiladi: (1) mavzuning dars kuni kelgan (jadval
+  sanasi) VA (2) oldingi mavzu ham tugagan (ketma-ketlik). Qulf sababi: avval
+  oldingi-mavzu (aktual qadam), u tugagach dars sanasi ("DD.MM.YYYY dan ochiladi").
   **Model:** har mavzuning ochilish sanasi = o'sha mavzuga bog'langan **oxirgi dars
   kuni + 1 kun** ("dars bo'lgan kundan keyin"). Sessiya→mavzu bog'lanishi mavjud
   `LessonSession.topicId` orqali (o'qituvchi Davomat → Dars jadvalida sessiyani

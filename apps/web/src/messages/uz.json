@@ -851,7 +851,7 @@
     "modeSequential": "Ketma-ketlik",
     "modeSequentialHint": "Har mavzu oldingisini tugatgach ochiladi (test/keys/video mezoni bo'yicha).",
     "modeSchedule": "Dars jadvali bo'yicha",
-    "modeScheduleHint": "Har mavzu O'Z dars kunidan keyin ochiladi. Buning uchun Davomat → Dars jadvalida sessiyani mavzuga bog'lang.",
+    "modeScheduleHint": "Har mavzu O'Z dars kunidan keyin VA oldingi mavzu tugagach ochiladi (ikkala shart birga). Sessiyani mavzuga Davomat → Dars jadvalida bog'lang.",
     "completionRule": "Tugash mezoni",
     "defaultRuleHint": "Mavzu qachon \"bajarildi\" hisoblanadi va keyingisi ochiladi.",
     "completionHintSchedule": "Ochilish dars jadvalidan; bu mezon mavzu \"bajarildi\" (progress/baho) uchun ishlatiladi."
