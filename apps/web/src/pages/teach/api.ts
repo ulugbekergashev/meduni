@@ -402,6 +402,25 @@ export interface ReviewFilters {
   topics: { id: number; courseId: number; title: string }[];
 }
 
+export interface AiSuggest {
+  score: number;
+  rationale: string;
+  missed: string[];
+}
+
+export interface PatientSessionLog {
+  messages: { role: "student" | "patient"; text: string }[];
+  eval: {
+    diagnosis: string;
+    correct: boolean;
+    anamnesisScore: number;
+    communicationScore: number;
+    overallScore: number;
+    strengths: string;
+    improvements: string;
+  } | null;
+}
+
 export interface CaseReviewDetail {
   id: number;
   studentId: number;
@@ -413,11 +432,33 @@ export interface CaseReviewDetail {
   questions: string[];
   referenceAnswer: string[];
   answers: string[];
+  /** v2 qadam avto-bahosi. */
+  autoScore: number | null;
   submittedAt: string;
   score: number | null;
   feedback: string | null;
   reviewedAt: string | null;
   status: ReviewStatus;
+  /** Modul 28 — AI tavsiyasi keshi va talabaning virtual bemor amaliyoti. */
+  aiSuggest: AiSuggest | null;
+  patientSession: PatientSessionLog | null;
+}
+
+/** AI tavsiyaviy baho so'rash (kesh; force qayta generatsiya). */
+export function useAiSuggest(attemptId: number | null) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (force?: boolean) =>
+      api<{ suggest: AiSuggest; cached: boolean }>(
+        `/api/v1/teach/cases/${attemptId}/ai-suggest${force ? "?force=1" : ""}`,
+        { method: "POST" }
+      ),
+    onSuccess: (r) => {
+      qc.setQueryData<CaseReviewDetail>(["case-review", attemptId], (old) =>
+        old ? { ...old, aiSuggest: r.suggest } : old
+      );
+    },
+  });
 }
 
 export interface QueueQuery {

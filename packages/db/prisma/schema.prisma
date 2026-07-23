@@ -491,6 +491,9 @@ model CaseAttempt {
   /// v2 — qadamlar bo'yicha avto-baho (to'g'ri qarorlar ulushi, 0-100).
   /// Erkin matnli qismni baribir o'qituvchi baholaydi (gibrid baholash).
   autoScore       Int?
+  /// Modul 28 — AI tavsiyaviy baho keshи ({score, rationale, missed[]}).
+  /// FAQAT tavsiya: yakuniy bahoni o'qituvchi qo'yadi.
+  aiSuggestJson   Json?
   submittedAt     DateTime     @default(now())
   teacherFeedback String?
   score           Int?

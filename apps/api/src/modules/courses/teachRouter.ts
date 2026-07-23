@@ -130,6 +130,14 @@ teachCoursesRouter.post(
   })
 );
 
+// Modul 28 — AI tavsiyaviy baho (kesh bilan; ?force=1 qayta generatsiya).
+teachCoursesRouter.post(
+  "/cases/:id/ai-suggest",
+  wrap(async (req, res) =>
+    res.json(await review.suggestCaseScore(req.user!.id, parseId(req.params.id), req.query.force === "1"))
+  )
+);
+
 // ---------- Attendance (sessions + marking + report) ----------
 
 const qs = (v: unknown): string | undefined => (typeof v === "string" && v ? v : undefined);

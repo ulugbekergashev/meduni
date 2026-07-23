@@ -2,6 +2,10 @@ import { Prisma, prisma } from "../../lib/prisma";
 import { ApiError, badRequest, notFound } from "../../lib/errors";
 import type { CaseJson } from "../../ai/types";
 import { syncTopicProgress } from "../me/service";
+import { Type } from "@google/genai";
+import { generateStructured } from "../../ai/gemini";
+import { departmentForTopic } from "../../ai/glossary";
+import { assertQuota } from "../../ai/quota";
 
 function forbidden(): ApiError {
   return new ApiError(403, "forbidden", "Bu sizning kursingiz emas", "Это не ваш курс");
@@ -115,6 +119,28 @@ export async function getCaseAttemptForReview(teacherId: number, attemptId: numb
   const courseOf = await resolveAttemptCourses([a], teacherId);
   if (!courseOf.has(a.id)) throw forbidden();
   const caseJson = a.clinicalCase.caseJson as unknown as CaseJson;
+
+  // Modul 28: talabaning virtual bemor suhbati (o'sha mavzu) — o'qituvchi
+  // anamnez qanday yig'ilganini ko'radi. Read-only.
+  const topicId = a.clinicalCase.contentItem.topicId;
+  const patientMsgs = await prisma.patientMessage.findMany({
+    where: { studentId: a.studentId, topicId },
+    orderBy: { createdAt: "asc" },
+    take: 200,
+  });
+  let patientEval: unknown = null;
+  const patientChat = patientMsgs
+    .filter((m) => m.role !== "eval")
+    .map((m) => ({ role: m.role as "student" | "patient", text: m.text }));
+  const evalRow = patientMsgs.find((m) => m.role === "eval");
+  if (evalRow) {
+    try {
+      patientEval = JSON.parse(evalRow.text);
+    } catch {
+      patientEval = null;
+    }
+  }
+
   return {
     id: a.id,
     studentId: a.studentId,
@@ -126,12 +152,90 @@ export async function getCaseAttemptForReview(teacherId: number, attemptId: numb
     questions: caseJson.questions,
     referenceAnswer: caseJson.referenceAnswer,
     answers: a.answersJson as string[],
+    /** v2 qadam avto-bahosi (bo'lsa). */
+    autoScore: a.autoScore,
     submittedAt: a.submittedAt,
     score: a.score,
     feedback: a.teacherFeedback,
     reviewedAt: a.reviewedAt,
     status: a.reviewedAt ? ("REVIEWED" as const) : ("PENDING" as const),
+    /** Modul 28 — AI tavsiyasi keshi (bo'lsa) va bemor amaliyoti. */
+    aiSuggest: (a.aiSuggestJson as { score: number; rationale: string; missed: string[] } | null) ?? null,
+    patientSession: patientChat.length > 0 ? { messages: patientChat, eval: patientEval } : null,
   };
+}
+
+/** Modul 28 — AI tavsiyaviy baho. FAQAT tavsiya: o'qituvchi yakuniy qaror
+ *  qiladi (gibrid baholash). Natija keshlanadi (aiSuggestJson) — har ochilishda
+ *  qayta so'ralmaydi; force=true qayta generatsiya qiladi. */
+export async function suggestCaseScore(teacherId: number, attemptId: number, force = false) {
+  const a = await prisma.caseAttempt.findUnique({ where: { id: attemptId }, include: attemptInclude });
+  if (!a) throw notFound("Keys javobi");
+  const courseOf = await resolveAttemptCourses([a], teacherId);
+  if (!courseOf.has(a.id)) throw forbidden();
+
+  if (!force && a.aiSuggestJson) {
+    return { suggest: a.aiSuggestJson as { score: number; rationale: string; missed: string[] }, cached: true };
+  }
+
+  const topicId = a.clinicalCase.contentItem.topicId;
+  const departmentId = await departmentForTopic(topicId);
+  if (departmentId) await assertQuota(departmentId);
+
+  const caseJson = a.clinicalCase.caseJson as unknown as CaseJson;
+  const answers = (a.answersJson as string[]) ?? [];
+  const picked = (a.stepsJson as Record<string, number>) ?? {};
+  const steps = caseJson.steps ?? [];
+  const stepSummary = steps
+    .map((s, i) => {
+      const correctIdx = s.options.findIndex((o) => o.correct);
+      const your = picked[String(i)];
+      const okMark = your === correctIdx ? "TO'G'RI" : "XATO";
+      return `${i + 1}. ${s.title}: talaba "${s.options[your]?.text ?? "javobsiz"}" tanladi — ${okMark} (to'g'risi: "${s.options[correctIdx]?.text ?? "—"}")`;
+    })
+    .join("\n");
+
+  const result = await generateStructured<{ score: number; rationale: string; missed: string[] }>({
+    systemInstruction: [
+      "Sen tibbiyot o'qituvchisining yordamchisisan. Talabaning klinik keys",
+      "yozma javoblarini ETALON bilan solishtirib, TAVSIYAVIY baho berasan.",
+      "Yakuniy bahoni O'QITUVCHI qo'yadi — sen faqat asosli taklif berasan.",
+      "Mezon: to'g'rilik, to'liqlik, klinik mulohaza. Etalonda YO'Q talabni",
+      "talabadan kutmaysan. score 0-100. rationale — 2-3 jumla, nima uchun.",
+      "missed — talaba qoldirgan/xato qilgan asosiy punktlar (0-4 ta, qisqa).",
+      "Til: o'zbek (lotin). Javob FAQAT JSON schema bo'yicha.",
+    ].join("\n"),
+    userContent: [
+      "=== KEYS SAVOLLARI VA ETALON ===",
+      ...caseJson.questions.map((q, i) => `SAVOL ${i + 1}: ${q}\nETALON: ${caseJson.referenceAnswer[i] ?? "—"}`),
+      "",
+      "=== TALABA JAVOBLARI ===",
+      ...answers.map((ans, i) => `JAVOB ${i + 1}: ${ans}`),
+      ...(stepSummary ? ["", "=== QADAM QARORLARI ===", stepSummary, `Qadam avto-bahosi: ${a.autoScore ?? "—"}%`] : []),
+      "=== TUGADI ===",
+    ].join("\n"),
+    responseSchema: {
+      type: Type.OBJECT,
+      properties: {
+        score: { type: Type.INTEGER },
+        rationale: { type: Type.STRING },
+        missed: { type: Type.ARRAY, items: { type: Type.STRING } },
+      },
+      required: ["score", "rationale", "missed"],
+    },
+    kind: "CASE_SUGGEST",
+    topicId,
+    departmentId: departmentId ?? undefined,
+    userId: teacherId,
+  });
+
+  const clean = {
+    score: Math.max(0, Math.min(100, Math.round(Number(result?.score) || 0))),
+    rationale: (result?.rationale ?? "").toString(),
+    missed: Array.isArray(result?.missed) ? result.missed.map((m) => String(m)).slice(0, 4) : [],
+  };
+  await prisma.caseAttempt.update({ where: { id: attemptId }, data: { aiSuggestJson: clean } });
+  return { suggest: clean, cached: false };
 }
 
 export async function reviewCase(teacherId: number, attemptId: number, score: number, feedback: string) {
