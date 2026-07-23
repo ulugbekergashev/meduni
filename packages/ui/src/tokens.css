@@ -1,12 +1,12 @@
 :root {
   /* Premium Light Mode Palette (WOW effect redesign). */
-  --bg: #f3f7fb;          /* Ultra clean, soft slate background */
+  --bg: #f4f7fb;          /* Much softer, cooler background */
   --surface: #ffffff;
-  --surface-raised: #fbfcfd;
-  --surface-glass: rgba(255, 255, 255, 0.85); /* Frosty glass */
-  --ink: #0f172a;         /* Deep slate */
+  --surface-raised: #fafbfc;
+  --surface-glass: rgba(255, 255, 255, 0.75); /* Translucent for glassmorphism */
+  --ink: #0f172a;         /* Deep slate for better contrast */
   --ink-strong: #020617;
-  --ink-soft: #64748b;    
+  --ink-soft: #64748b;    /* Modern slate soft text */
   --ink-faint: #94a3b8;
   --ink-dim: #cbd5e1;
   --line: #e2e8f0;
@@ -28,23 +28,23 @@
   --emerald: #10b981;
   --emerald-soft: #d1fae5;
 
-  /* Light sidebar (Floating WOW UI). */
+  /* Light sidebar (2026-07): white surface, soft indigo active chip. */
   --side-bg: #ffffff;
   --side-bg-deep: #f8fafc;
   --side-ink: #0f172a;
   --side-ink-soft: #64748b;
   --side-line: #e2e8f0;
   --side-active-bg: #eef2ff;
-  --side-active-ink: #4f46e5;
-  --side-hover-bg: #f8fafc;
+  --side-active-ink: #4338ca;
+  --side-hover-bg: #f1f5f9;
 
-  --radius-card: 24px;    /* Softer and larger */
-  --radius-control: 14px;
+  --radius-card: 20px;    /* Smoother, larger border radius */
+  --radius-control: 12px;
   --radius-pill: 9999px;
 
-  /* Premium Apple-like dispersed shadows */
-  --shadow-card: 0 8px 30px rgba(0, 0, 0, 0.04), 0 4px 10px rgba(0, 0, 0, 0.02);
-  --shadow-card-hover: 0 20px 40px -10px rgba(0, 0, 0, 0.08), 0 8px 16px rgba(0, 0, 0, 0.03);
+  /* Premium, dispersed, soft shadows (apple-like) */
+  --shadow-card: 0 4px 20px -4px rgba(15, 23, 42, 0.05), 0 1px 2px rgba(15, 23, 42, 0.02);
+  --shadow-card-hover: 0 12px 32px -8px rgba(15, 23, 42, 0.1), 0 4px 8px rgba(15, 23, 42, 0.04);
 }
 
 /* Dark theme — 2026-07-23 yumshatildi: "qora bo'shliq" (#06080d) texno-startap
