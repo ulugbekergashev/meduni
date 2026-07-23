@@ -7,15 +7,15 @@ import type { LessonSection, Term } from "../api";
 import { BlockView } from "./BlockView";
 
 /** O'qish shrifti — A−/A+ bilan boshqariladi, tanlov localStorage'da qoladi.
- *  2026-07-23 v2: buyurtmachi "kattaroq" dedi — default 17px. Kalit versiyalangan —
- *  eski saqlangan indeks yangi massivda boshqa o'lchamni bildirardi. */
-const READ_SIZES = [15, 16, 17, 18, 19];
-const SIZE_KEY = "meduni.readSize3";
+ *  2026-07-23 v3: buyurtmachi "shrift kichik" dedi → default 20px (katta).
+ *  Kalit versiyalangan — eski indeks yangi massivda boshqa o'lchamni bildirardi. */
+const READ_SIZES = [17, 18, 20, 22, 24];
+const SIZE_KEY = "meduni.readSize4";
 
 function useReadSize() {
   const [idx, setIdx] = useState(() => {
     const raw = typeof window !== "undefined" ? window.localStorage.getItem(SIZE_KEY) : null;
-    const n = raw ? Number(raw) : 2;
+    const n = raw ? Number(raw) : 2; // default = 20px
     return Number.isInteger(n) && n >= 0 && n < READ_SIZES.length ? n : 2;
   });
   const set = (next: number) => {
@@ -154,9 +154,9 @@ export function SectionReader({
         className="h-0.5 shrink-0 origin-left bg-brand"
       />
 
-      {/* Barcha bo'limlar — bitta oqim. Kengroq ustun + kamroq yon bo'shliq. */}
+      {/* Barcha bo'limlar — bitta oqim. Kontent kenglikni to'ldiradi. */}
       <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-[76ch] px-5 py-6 sm:px-7" style={{ fontSize: `${size.px}px` }}>
+        <div className="mx-auto max-w-[80ch] px-4 py-6 sm:px-8" style={{ fontSize: `${size.px}px` }}>
           {sections.map((section, si) => (
             <motion.section
               key={section.index}
