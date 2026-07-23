@@ -144,6 +144,9 @@ meRouter.post(
   wrap(async (req, res) => res.json(await flashcards.resetFlashcards(req.user!.id, parseId(req.params.id))))
 );
 
+// Interval takrorlash — bugun takrorlash kerak bo'lgan kartalar (Dashboard).
+meRouter.get("/review/due", wrap(async (req, res) => res.json(await flashcards.getReviewDue(req.user!.id))));
+
 // ---------- AI-tutor chat (layout v2, 2C) ----------
 
 meRouter.get("/topics/:id/chat", wrap(async (req, res) => res.json(await chat.getChat(req.user!.id, parseId(req.params.id)))));

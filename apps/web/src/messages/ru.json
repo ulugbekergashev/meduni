@@ -1063,6 +1063,7 @@
     "overall": "Общий",
     "streakDays": "{{count}} дней подряд",
     "streakStart": "Первый день",
+    "reviewDueTitle": "Повторите сегодня",
     "streakPausedHint": "На паузе",
     "summaryTopics": "Пройдено",
     "summaryAttendance": "Посещаемость",

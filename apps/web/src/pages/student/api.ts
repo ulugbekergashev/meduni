@@ -473,6 +473,22 @@ export function useSendTutorMessage(topicId: number) {
   });
 }
 
+// ---- Interval takrorlash (Modul 26) — bugun takrorlanadigan kartalar ----
+
+export interface ReviewDueTopic {
+  topicId: number;
+  topicTitle: string;
+  subjectName: string;
+  dueCount: number;
+}
+
+export function useReviewDue() {
+  return useQuery({
+    queryKey: ["me-review-due"],
+    queryFn: () => api<{ total: number; topics: ReviewDueTopic[] }>("/api/v1/me/review/due"),
+  });
+}
+
 // ---- Kurs guruh chati (Modul 25) — o'qituvchi + guruh talabalari ----
 
 export interface CourseChatMessage {
