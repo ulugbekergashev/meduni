@@ -8,6 +8,7 @@ import * as profile from "./profile";
 import * as chat from "./chat";
 import * as flashcards from "./flashcards";
 import * as patient from "./patient";
+import * as practice from "./practice";
 import * as courseChat from "../chat/service";
 import { computeStudentAutoTasks, listAssigned } from "../tasks/service";
 import { studentSearch } from "../search/service";
@@ -147,6 +148,24 @@ meRouter.post(
 
 // Interval takrorlash — bugun takrorlash kerak bo'lgan kartalar (Dashboard).
 meRouter.get("/review/due", wrap(async (req, res) => res.json(await flashcards.getReviewDue(req.user!.id))));
+// Kross-mavzu takrorlash sessiyasi + statistika (O'zlashtirish → Takrorlash tabi).
+meRouter.get(
+  "/review/session",
+  wrap(async (req, res) => {
+    const topicId = req.query.topicId ? Number(req.query.topicId) : undefined;
+    res.json(await flashcards.getReviewSession(req.user!.id, topicId));
+  })
+);
+meRouter.get("/review/stats", wrap(async (req, res) => res.json(await flashcards.getReviewStats(req.user!.id))));
+
+// ---------- Qo'shimcha mashg'ulotlar (Modul 27) ----------
+// ⚠️ /practice/patients marshuti /practice/:topicId dan OLDIN turishi shart.
+meRouter.get("/practice", wrap(async (req, res) => res.json(await practice.getPracticeOverview(req.user!.id))));
+meRouter.get("/practice/patients", wrap(async (req, res) => res.json(await practice.getPatientPractice(req.user!.id))));
+meRouter.get(
+  "/practice/:topicId",
+  wrap(async (req, res) => res.json(await practice.getPracticeSet(req.user!.id, parseId(req.params.topicId))))
+);
 
 // ---------- Virtual bemor roleplay (Modul 26) ----------
 
