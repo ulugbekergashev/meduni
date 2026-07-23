@@ -32,9 +32,9 @@ export async function teacherSearch(teacherId: number, q: string) {
     prisma.course.findMany({
       where: {
         teacherId,
-        subject: { name: contains(needle) },
+        name: contains(needle),
       },
-      select: { id: true, semester: true, subject: { select: { name: true } } },
+      select: { id: true, semester: true, name: true },
       orderBy: { id: "asc" },
       take: LIMIT,
     }),
@@ -43,7 +43,7 @@ export async function teacherSearch(teacherId: number, q: string) {
   return {
     students: students.map((s) => ({ id: s.id, fullName: s.fullName, groupName: s.group?.name ?? null })),
     groups: groups.map((g) => ({ id: g.id, name: g.name, studentCount: g._count.students })),
-    courses: courses.map((c) => ({ id: c.id, name: c.subject.name, semester: c.semester })),
+    courses: courses.map((c) => ({ id: c.id, name: c.name, semester: c.semester })),
   };
 }
 
@@ -55,7 +55,7 @@ export async function adminSearch(q: string, scope?: { facultyId?: number | null
   const d = scope?.departmentId ?? undefined;
 
   const studentScope = d
-    ? { enrollments: { some: { status: "ACTIVE" as const, course: { subject: { departmentId: d } } } } }
+    ? { enrollments: { some: { status: "ACTIVE" as const, course: { departmentId: d } } } }
     : f
       ? { group: { facultyId: f } }
       : {};
@@ -64,7 +64,7 @@ export async function adminSearch(q: string, scope?: { facultyId?: number | null
     : f
       ? { teacherProfile: { department: { facultyId: f } } }
       : {};
-  const courseScope = d ? { subject: { departmentId: d } } : f ? { subject: { department: { facultyId: f } } } : {};
+  const courseScope = d ? { departmentId: d } : f ? { department: { facultyId: f } } : {};
 
   const [students, teachers, groups, courses] = await Promise.all([
     prisma.user.findMany({
@@ -86,8 +86,8 @@ export async function adminSearch(q: string, scope?: { facultyId?: number | null
       take: LIMIT,
     }),
     prisma.course.findMany({
-      where: { ...courseScope, subject: { name: contains(needle) } },
-      select: { id: true, semester: true, subject: { select: { name: true } } },
+      where: { ...courseScope, name: contains(needle) },
+      select: { id: true, semester: true, name: true },
       orderBy: { id: "asc" },
       take: LIMIT,
     }),
@@ -101,7 +101,7 @@ export async function adminSearch(q: string, scope?: { facultyId?: number | null
       department: t.teacherProfile?.department.name ?? null,
     })),
     groups: groups.map((g) => ({ id: g.id, name: g.name, studentCount: g._count.students })),
-    courses: courses.map((c) => ({ id: c.id, name: c.subject.name, semester: c.semester })),
+    courses: courses.map((c) => ({ id: c.id, name: c.name, semester: c.semester })),
   };
 }
 
@@ -115,30 +115,30 @@ export async function studentSearch(studentId: number, q: string) {
     prisma.course.findMany({
       where: {
         enrollments: enrolled,
-        subject: { name: contains(needle) },
+        name: contains(needle),
       },
-      select: { id: true, semester: true, subject: { select: { name: true } } },
+      select: { id: true, semester: true, name: true },
       orderBy: { id: "asc" },
       take: LIMIT,
     }),
     prisma.topic.findMany({
       where: {
-        subject: { courses: { some: { enrollments: enrolled } } },
+        course: { enrollments: enrolled },
         contentItems: { some: { status: "PUBLISHED" } }, // students only see published topics
         title: contains(needle),
       },
-      select: { id: true, title: true, subject: { select: { name: true } } },
+      select: { id: true, title: true, course: { select: { name: true } } },
       orderBy: { id: "asc" },
       take: LIMIT,
     }),
   ]);
 
   return {
-    courses: courses.map((c) => ({ id: c.id, name: c.subject.name, semester: c.semester })),
+    courses: courses.map((c) => ({ id: c.id, name: c.name, semester: c.semester })),
     topics: topics.map((t) => ({
       id: t.id,
       title: t.title,
-      courseName: t.subject.name,
+      courseName: t.course.name,
     })),
   };
 }

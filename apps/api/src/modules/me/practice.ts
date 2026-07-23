@@ -159,7 +159,7 @@ export async function getPracticeOverview(studentId: number) {
 
   const meta = await prisma.topic.findMany({
     where: { id: { in: [...ids] } },
-    select: { id: true, title: true, subject: { select: { name: true } } },
+    select: { id: true, title: true, course: { select: { name: true } } },
   });
   const tmap = new Map(meta.map((t) => [t.id, t]));
 
@@ -181,7 +181,7 @@ export async function getPracticeOverview(studentId: number) {
     out.push({
       topicId: tid,
       topicTitle: t.title,
-      subjectName: t.subject.name,
+      subjectName: t.course.name,
       wrongQuiz: m.wrongQuizCount,
       wrongSteps: m.wrongStepCount,
       unknownCards: m.unknownCardCount,
@@ -196,7 +196,7 @@ export async function getPracticeOverview(studentId: number) {
 export async function getPracticeSet(studentId: number, topicId: number) {
   const topic = await prisma.topic.findUnique({
     where: { id: topicId },
-    select: { id: true, title: true, subject: { select: { name: true } } },
+    select: { id: true, title: true, course: { select: { name: true } } },
   });
   if (!topic) throw notFound("Mavzu");
 
@@ -207,7 +207,7 @@ export async function getPracticeSet(studentId: number, topicId: number) {
   return {
     topicId,
     topicTitle: topic.title,
-    subjectName: topic.subject.name,
+    subjectName: topic.course.name,
     items: m.items,
   };
 }
@@ -235,7 +235,7 @@ export async function getPatientPractice(studentId: number) {
       out.push({
         topicId: t.id,
         topicTitle: t.title,
-        subjectName: course.subject.name,
+        subjectName: course.name,
         patientName: "",
         patientInfo: "",
         finished: false,

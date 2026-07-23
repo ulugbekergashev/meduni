@@ -205,7 +205,7 @@ export function UserProfilePage() {
                             onClick={() => navigate(`/admin/courses/${c.id}`)}
                             className="flex w-full flex-wrap items-center gap-4 border-b border-line px-5 py-3.5 text-left transition-colors last:border-0 hover:bg-bg"
                           >
-                            <span className="min-w-[140px] flex-1 text-[15px] font-semibold text-ink">{c.subjectName}</span>
+                            <span className="min-w-[140px] flex-1 text-[15px] font-semibold text-ink">{c.name}</span>
                             <span className="text-[13.5px] tabular-nums text-ink-soft">{c.completed}/{c.total}</span>
                             <div className="w-32"><ProgressBar value={c.progressPct} /></div>
                             <span className="w-12 text-right text-[14px] font-bold tabular-nums text-ink">{c.progressPct}%</span>
@@ -233,7 +233,7 @@ export function UserProfilePage() {
                       <div className="grid gap-3 sm:grid-cols-2">
                         {(p.courses as TeacherProfileCourse[]).map((c) => (
                           <Card key={c.id} interactive onClick={() => navigate(`/admin/courses/${c.id}`)} className="flex flex-col gap-2">
-                            <h3 className="text-[16px] font-bold text-ink">{c.subjectName}</h3>
+                            <h3 className="text-[16px] font-bold text-ink">{c.name}</h3>
                             <div className="flex flex-wrap gap-1.5 text-[13px]">
                               <span className="rounded-pill bg-brand-soft px-2 py-0.5 font-semibold text-brand-deep">{c.semester}-semestr</span>
                               <span className="rounded-pill bg-bg px-2 py-0.5 text-ink-soft">{c.academicYear}</span>

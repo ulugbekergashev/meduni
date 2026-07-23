@@ -14,7 +14,7 @@ function forbidden(): ApiError {
 const attemptInclude = {
   student: true,
   clinicalCase: {
-    include: { contentItem: { include: { topic: { include: { subject: true } } } } },
+    include: { contentItem: { include: { topic: { include: { course: true } } } } },
   },
 } satisfies Prisma.CaseAttemptInclude;
 
@@ -26,7 +26,7 @@ type AttemptFull = Prisma.CaseAttemptGetPayload<{ include: typeof attemptInclude
 async function resolveAttemptCourses(rows: AttemptFull[], teacherId: number): Promise<Map<number, number>> {
   const out = new Map<number, number>();
   if (rows.length === 0) return out;
-  const courses = await prisma.course.findMany({ where: { teacherId }, select: { id: true, subjectId: true }, orderBy: { id: "asc" } });
+  const courses = await prisma.course.findMany({ where: { teacherId }, select: { id: true }, orderBy: { id: "asc" } });
   if (courses.length === 0) return out;
   const enr = await prisma.enrollment.findMany({
     where: {
@@ -34,16 +34,16 @@ async function resolveAttemptCourses(rows: AttemptFull[], teacherId: number): Pr
       courseId: { in: courses.map((c) => c.id) },
       status: "ACTIVE",
     },
-    select: { studentId: true, courseId: true, course: { select: { subjectId: true } } },
+    select: { studentId: true, courseId: true },
     orderBy: { courseId: "asc" },
   });
-  const byStudentSubject = new Map<string, number>();
+  const byStudentCourse = new Map<string, number>();
   for (const e of enr) {
-    const k = `${e.studentId}:${e.course.subjectId}`;
-    if (!byStudentSubject.has(k)) byStudentSubject.set(k, e.courseId);
+    const k = `${e.studentId}:${e.courseId}`;
+    if (!byStudentCourse.has(k)) byStudentCourse.set(k, e.courseId);
   }
   for (const r of rows) {
-    const cid = byStudentSubject.get(`${r.studentId}:${r.clinicalCase.contentItem.topic.subjectId}`);
+    const cid = byStudentCourse.get(`${r.studentId}:${r.clinicalCase.contentItem.topic.courseId}`);
     if (cid !== undefined) out.set(r.id, cid);
   }
   return out;
@@ -60,7 +60,7 @@ export async function listReviewQueue(
       contentItem: {
         topic: {
           ...(opts.topicId ? { id: opts.topicId } : {}),
-          subject: { courses: { some: { teacherId } } },
+          course: { teacherId },
         },
       },
     },
@@ -84,7 +84,7 @@ export async function listReviewQueue(
       id: a.id,
       studentName: a.student.fullName,
       courseId: courseOf.get(a.id)!,
-      subjectName: a.clinicalCase.contentItem.topic.subject.name,
+      subjectName: a.clinicalCase.contentItem.topic.course.name,
       topicId: a.clinicalCase.contentItem.topicId,
       topic: a.clinicalCase.contentItem.topic.title,
       submittedAt: a.submittedAt,
@@ -97,7 +97,7 @@ export async function listReviewQueue(
 /** Distinct courses/topics that actually have case answers — for the filter dropdowns. */
 export async function reviewFilters(teacherId: number) {
   const rows = await prisma.caseAttempt.findMany({
-    where: { clinicalCase: { contentItem: { topic: { subject: { courses: { some: { teacherId } } } } } } },
+    where: { clinicalCase: { contentItem: { topic: { course: { teacherId } } } } },
     include: attemptInclude,
   });
   const courseOf = await resolveAttemptCourses(rows, teacherId);
@@ -107,7 +107,7 @@ export async function reviewFilters(teacherId: number) {
     const cid = courseOf.get(a.id);
     if (cid === undefined) continue;
     const tp = a.clinicalCase.contentItem.topic;
-    courses.set(cid, { id: cid, name: tp.subject.name });
+    courses.set(cid, { id: cid, name: tp.course.name });
     topics.set(tp.id, { id: tp.id, courseId: cid, title: tp.title });
   }
   return { courses: [...courses.values()], topics: [...topics.values()] };
@@ -146,7 +146,7 @@ export async function getCaseAttemptForReview(teacherId: number, attemptId: numb
     studentId: a.studentId,
     studentName: a.student.fullName,
     courseId: courseOf.get(a.id)!,
-    subjectName: a.clinicalCase.contentItem.topic.subject.name,
+    subjectName: a.clinicalCase.contentItem.topic.course.name,
     topic: a.clinicalCase.contentItem.topic.title,
     blocks: { complaints: caseJson.complaints, anamnesis: caseJson.anamnesis, objectiveStatus: caseJson.objectiveStatus, labData: caseJson.labData },
     questions: caseJson.questions,

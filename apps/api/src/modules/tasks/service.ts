@@ -32,7 +32,7 @@ export interface AutoTask {
 
 export async function computeTeacherAutoTasks(teacherId: number): Promise<AutoTask[]> {
   const topics = await prisma.topic.findMany({
-    where: { subject: { courses: { some: { teacherId } } } },
+    where: { course: { teacherId } },
     select: {
       id: true,
       materials: { select: { parseStatus: true } },
@@ -59,7 +59,7 @@ export async function computeTeacherAutoTasks(teacherId: number): Promise<AutoTa
   }
 
   const [casesToReview, pastSessions, courses] = await Promise.all([
-    prisma.caseAttempt.count({ where: { reviewedAt: null, clinicalCase: { contentItem: { topic: { subject: { courses: { some: { teacherId } } } } } } } }),
+    prisma.caseAttempt.count({ where: { reviewedAt: null, clinicalCase: { contentItem: { topic: { course: { teacherId } } } } } }),
     prisma.lessonSession.findMany({
       where: { course: { teacherId }, date: { lt: new Date() } },
       select: { id: true, _count: { select: { attendance: true } }, course: { select: { courseGroups: { select: { groupId: true }, take: 1 } } } },
@@ -114,7 +114,7 @@ export async function computeStudentAutoTasks(studentId: number): Promise<AutoTa
     const topics = computeTopics(course, pm);
     const current = topics.find((t) => t.state === "IN_PROGRESS") ?? topics.find((t) => t.state === "AVAILABLE");
     if (!current) continue;
-    const courseName = course.subject.name;
+    const courseName = course.name;
     const base = { topicId: current.id, topicTitle: current.title, courseName };
     study.push({ ...base, link: `/app/topics/${current.id}` });
     if (current.elements.quiz.exists && current.elements.quiz.score === null) {
@@ -136,7 +136,7 @@ export async function computeStudentAutoTasks(studentId: number): Promise<AutoTa
         clinicalCase: {
           select: {
             contentItem: {
-              select: { topicId: true, topic: { select: { title: true, subject: { select: { name: true } } } } },
+              select: { topicId: true, topic: { select: { title: true, course: { select: { name: true } } } } },
             },
           },
         },
@@ -158,7 +158,7 @@ export async function computeStudentAutoTasks(studentId: number): Promise<AutoTa
     return {
       topicId: ci.topicId,
       topicTitle: ci.topic.title,
-      courseName: ci.topic.subject.name,
+      courseName: ci.topic.course.name,
       link: `/app/topics/${ci.topicId}?tab=case`,
       value: g.score,
     };

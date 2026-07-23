@@ -31,8 +31,7 @@ import { SettingsTab } from "./pages/teach/course/SettingsTab";
 import { TopicConstructor } from "./pages/teach/topics/TopicConstructor";
 import { ContentEditor } from "./pages/teach/content/ContentEditor";
 import { CaseReviewQueue } from "./pages/teach/CaseReviewQueue";
-import { SubjectsPage } from "./pages/teach/subjects/SubjectsPage";
-import { SubjectDetailPage } from "./pages/teach/subjects/SubjectDetailPage";
+
 import { StudentShell } from "./pages/student/StudentShell";
 import { StudentDashboard } from "./pages/student/StudentDashboard";
 import { StudentTasksPage } from "./pages/student/StudentTasksPage";
@@ -85,8 +84,7 @@ export function App() {
       >
         <Route index element={<TeachDashboard />} />
         <Route path="tasks" element={<TeachTasksPage />} />
-        <Route path="subjects" element={<SubjectsPage />} />
-        <Route path="subjects/:id" element={<SubjectDetailPage />} />
+
         <Route path="courses" element={<TeachCoursesPage />} />
         <Route path="groups" element={<TeachGroupsPage />} />
         <Route path="groups/:id" element={<GroupProfile />} />

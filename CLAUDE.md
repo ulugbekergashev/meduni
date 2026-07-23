@@ -1230,6 +1230,43 @@ Barcha modullar tugadi (1-17).
   StudentDetailPage kartasi. Smoke'lar: 8/8 xarita, 8/8 AI-tavsiya (real, 70
   ball+kesh), 4/4 ssenariy, 5/5 signallar. tsc+build ikkala tomonда toza.
 
+- **Fan/kurs BIRLASHDI — endi bitta model (2026-07-23, foydalanuvchi: "fanlar va
+  kurslar bitta qivorgin").** Ilgari `Subject` (fan: nom+kafedra+mavzular) va
+  `Course` (fan-ref+o'qituvchi+guruh+semestr) alohida edi — endi **Course yagona
+  birlik**: `name`+`description`+`departmentId`+teacher+semestr+yil+guruhlar+
+  **mavzular**. Prisma: `Subject` modeli O'CHIRILDI, `Course += name/description/
+  departmentId` (`subjectId` o'rniga), `Topic.subjectId → courseId`, `Department.
+  subjects → courses`. Migratsiya `20260723170000_merge_subject_into_course`
+  (⚠️ DROP+ADD — ma'lumot saqlamaydi; pilotdan oldin, prod ma'lumot yo'q paytida).
+  ⚠️ **DB reset falokati:** birlashuv paytida `db push` butun akademik bazani
+  o'chirib yuborgan (5 seed user qolgan) VA `_prisma_migrations` jadvalini ham
+  tozalagan. Tuzatildi: (1) merge migratsiya SQL `migrate diff` bilan generatsiya +
+  `migrate resolve --applied`; (2) barcha 33 migratsiya `migrate resolve --applied`
+  bilan **baseline** qilindi (DB sxemasi to'g'ri, faqat tarix yo'qolgandi) →
+  `migrate status` = "up to date"; (3) `apps/api/src/scripts/demoRestore.ts` YANGI
+  sxemada demo quradi (fakultet→kafedra→guruh→kurslar→mavzular→published test+keys→
+  talaba tarixi[67% test 1 xato, keys 1 qadam xato]→fleshkarta→darslar+davomat).
+  ⚠️ **`prisma migrate reset` klassifikator tomonidan bloklandi** (destruktiv) —
+  shu sabab baseline yo'li tanlandi (bazani buzmaydi). **Backend:** `toCourseOut`
+  `subjectName: c.name` **compat alias** beradi (eski o'qituvchi/talaba UI hali
+  `subjectName` o'qiydi — tegilmadi); `courses/router` create sxemasi `{name,
+  description?, departmentId, teacherId, semester, academicYear, groupIds}`;
+  `structureTree` dept ostида `courses[]`; `topics` faqat `courseId`; `subjects.ts`
+  moduli+`/teach/subjects` route O'CHIRILDI. users profil endi kurs `name` beradi
+  (subjectName EMAS). **Frontend:** admin CoursesPage — fan-picker o'rniga **nom
+  input + kafedra select** + kafedra filtri; admin structure — DepartmentPage
+  "Fanlar" bo'limi **"Kurslar" (o'qish-uchun ro'yxat → /admin/courses)** ga aylandi,
+  EntityKind'dan `subject` olib tashlandi, FacultyPage `nCourses`; UserProfilePage
+  `c.name`; **teach/subjects/ sahifalari O'CHIRILDI** (route yo'q edi), topics/api
+  `SubjectRow/useMySubjects/useSubject` + `TopicScope` subjectId varianti +
+  `TopicRow.subjectId` olib tashlandi, TopicListSection "fan umumiy" izohi ketdi.
+  i18n `courses.courseName/department/selectDepartment/allDepartments`,
+  `structure.coursesSection/noCoursesInDept`. **Smoke 10/11 (1 "xato" = demo
+  tartibi — talaba 1-kursi Nefrologiya, published kontentsiz; Kardiologiya to'liq
+  yuriladi: anatomiya IN_PROGRESS→fiziologiya LOCKED).** tsc+build ikkala tomonda
+  toza. Demo: student@meduni.uz/student123, teacher.m11demo@meduni.uz/student123,
+  admin@meduni.uz/admin123.
+
 ## 9. Loyiha holati va ishga tushirish (operatsion — sessiya 0)
 
 **Monorepo (npm workspaces):**

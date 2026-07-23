@@ -10,7 +10,7 @@ function forbidden(): ApiError {
 }
 
 async function ownCourse(courseId: number, teacherId: number) {
-  const course = await prisma.course.findUnique({ where: { id: courseId }, include: { subject: true } });
+  const course = await prisma.course.findUnique({ where: { id: courseId } });
   if (!course) throw notFound("Kurs");
   if (course.teacherId !== teacherId) throw forbidden();
   return course;
@@ -81,7 +81,7 @@ export async function createSession(courseId: number, teacherId: number, body: {
   if (!body.date) throw badRequest("Sana kiriting", "Введите дату");
   if (body.topicId) {
     const topic = await prisma.topic.findUnique({ where: { id: body.topicId } });
-    if (!topic || topic.subjectId !== course.subjectId) throw notFound("Mavzu");
+    if (!topic || topic.courseId !== course.id) throw notFound("Mavzu");
   }
   const s = await prisma.lessonSession.create({
     data: { courseId, date: new Date(body.date), title: body.title?.trim() || null, topicId: body.topicId || null, room: body.room?.trim() || null, createdById: teacherId },
@@ -93,7 +93,7 @@ export async function updateSession(sessionId: number, teacherId: number, body: 
   const session = await ownSession(sessionId, teacherId);
   if (body.topicId) {
     const topic = await prisma.topic.findUnique({ where: { id: body.topicId } });
-    if (!topic || topic.subjectId !== session.course.subjectId) throw notFound("Mavzu");
+    if (!topic || topic.courseId !== session.courseId) throw notFound("Mavzu");
   }
   await prisma.lessonSession.update({
     where: { id: sessionId },

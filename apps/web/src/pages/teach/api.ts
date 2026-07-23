@@ -6,7 +6,7 @@ export { API_URL };
 
 export interface TeachCourse {
   id: number;
-  subjectName: string;
+  subjectName: string; // The backend now sends loaded.name here which we can rename or keep as subjectName but I will just rename to courseName in UI
   departmentName: string;
   teacherName: string;
   semester: number;

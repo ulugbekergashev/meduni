@@ -68,16 +68,7 @@ const facultyIn = z.object({ name: nameField, admin: adminIn });
 const facultyUpdate = z.object({ name: nameField });
 const departmentIn = z.object({ facultyId: z.number().int().positive(), name: nameField, admin: adminIn, quota: quotaIn });
 const departmentUpdate = z.object({ facultyId: z.number().int().positive().optional(), name: nameField });
-const subjectIn = z.object({
-  departmentId: z.number().int().positive(),
-  name: nameField,
-  description: z.string().trim().optional().nullable(),
-});
-const subjectUpdate = z.object({
-  departmentId: z.number().int().positive().optional(),
-  name: nameField,
-  description: z.string().trim().optional().nullable(),
-});
+
 const groupIn = z.object({
   facultyId: z.number().int().positive(),
   name: z.string().trim().min(1),
@@ -152,41 +143,7 @@ orgRouter.delete("/departments/:id", wrap(async (req, res) => {
   res.status(204).end();
 }));
 
-// Subjects — dept admin manages subjects of their own department.
 
-orgRouter.get("/subjects", wrap(async (req, res) => {
-  const scope = await adminScope(req);
-  if (scope.level === "DEPT") return res.json(await svc.listSubjects(scope.departmentId ?? undefined));
-  if (scope.level === "FACULTY") {
-    return res.json(await svc.listSubjects(optionalId(req.query.departmentId), scope.facultyId ?? undefined));
-  }
-  res.json(await svc.listSubjects(optionalId(req.query.departmentId)));
-}));
-orgRouter.post("/subjects", wrap(async (req, res) => {
-  const scope = await adminScope(req);
-  const body = parseBody(subjectIn, req.body);
-  assertDeptScope(scope, await deptOrThrow(body.departmentId));
-  res.status(201).json(await svc.createSubject(body));
-}));
-orgRouter.patch("/subjects/:id", wrap(async (req, res) => {
-  const scope = await adminScope(req);
-  const subject = await prisma.subject.findUnique({ where: { id: parseId(req.params.id) }, select: { id: true, departmentId: true } });
-  if (!subject) throw notFound("Fan");
-  assertDeptScope(scope, await deptOrThrow(subject.departmentId));
-  const body = parseBody(subjectUpdate, req.body);
-  if (body.departmentId && body.departmentId !== subject.departmentId) {
-    assertDeptScope(scope, await deptOrThrow(body.departmentId));
-  }
-  res.json(await svc.updateSubject(subject.id, body));
-}));
-orgRouter.delete("/subjects/:id", wrap(async (req, res) => {
-  const scope = await adminScope(req);
-  const subject = await prisma.subject.findUnique({ where: { id: parseId(req.params.id) }, select: { id: true, departmentId: true } });
-  if (!subject) throw notFound("Fan");
-  assertDeptScope(scope, await deptOrThrow(subject.departmentId));
-  await svc.deleteSubject(subject.id);
-  res.status(204).end();
-}));
 
 // Groups — faculty-level entity; dept admin can read (course wiring) but not manage.
 

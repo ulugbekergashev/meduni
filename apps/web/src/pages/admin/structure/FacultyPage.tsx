@@ -126,7 +126,7 @@ export function FacultyPage() {
                   <p className="truncate text-[15px] font-semibold text-ink">{d.name}</p>
                   <p className="truncate text-[13px] text-ink-faint">
                     {d.admins[0] ? `${d.admins[0].fullName} · ` : ""}
-                    {t("nSubjects", { n: d.subjects.length })} · {t("nTeachers", { n: d.teacherCount })}
+                    {t("nCourses", { n: d.courses.length })} · {t("nTeachers", { n: d.teacherCount })}
                   </p>
                 </div>
                 <Icon icon={ChevronRight} size={16} className="shrink-0 text-ink-faint" />

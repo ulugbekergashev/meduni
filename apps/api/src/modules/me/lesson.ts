@@ -196,7 +196,7 @@ export async function getTopicLesson(studentId: number, topicId: number) {
     orderIndex: topic.orderIndex,
     title: topic.title,
     courseId: enrolledCourseId,
-    subjectName: enrolledCourse.subject.name,
+    subjectName: enrolledCourse.name,
     // Tugagach to'g'ridan keyingisiga o'tish uchun (LOCKED bo'lsa tugma chiqmaydi).
     nextTopic: nextTopic ? { id: nextTopic.id, title: nextTopic.title, state: nextTopic.state } : null,
     state: state.state,

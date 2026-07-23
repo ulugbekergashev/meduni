@@ -51,16 +51,17 @@ export function SidebarLayout({ brand, items, children, headerSlot, rightSlot, f
     });
 
   return (
-    <div className={cls("flex bg-bg", fullBleed ? "h-screen overflow-hidden" : "min-h-screen")}>
+    <div className={cls("flex bg-bg md:p-3 lg:p-4 md:gap-3 lg:gap-4", fullBleed ? "h-screen overflow-hidden" : "min-h-screen")}>
       <aside
         className={cls(
-          "sticky top-0 z-20 h-screen shrink-0 flex flex-col border-r border-side-line bg-side transition-[width] duration-200",
-          collapsed ? "w-[72px]" : "w-[272px]"
+          "sticky top-0 md:top-3 lg:top-4 z-20 shrink-0 flex flex-col md:rounded-card border-r md:border border-side-line bg-side/95 backdrop-blur-xl md:shadow-card transition-all duration-300",
+          "h-screen md:h-[calc(100vh-24px)] lg:h-[calc(100vh-32px)]",
+          collapsed ? "w-[72px]" : "w-[260px]"
         )}
       >
         <div
           className={cls(
-            "flex h-[57px] shrink-0 items-center border-b border-side-line text-[18px] font-bold tracking-tight text-side-ink",
+            "flex h-[64px] shrink-0 items-center border-b border-side-line/50 text-[18px] font-bold tracking-tight text-side-ink",
             collapsed ? "justify-center" : "px-6"
           )}
         >
@@ -73,17 +74,17 @@ export function SidebarLayout({ brand, items, children, headerSlot, rightSlot, f
               key={item.href}
               href={item.href}
               className={cls(
-                "relative flex items-center rounded-control py-3 text-body font-semibold transition-colors duration-150",
+                "relative flex items-center rounded-control py-3 text-[14.5px] font-bold transition-all duration-200",
                 collapsed ? "justify-center px-0" : "gap-3 px-3.5",
                 item.active
-                  ? "bg-side-active text-side-active-ink"
-                  : "text-side-soft hover:bg-side-hover hover:text-side-ink"
+                  ? "bg-gradient-to-r from-side-active-bg to-transparent text-side-active-ink shadow-sm"
+                  : "text-side-soft hover:bg-side-hover hover:text-side-ink hover:translate-x-1"
               )}
             >
               {item.active && (
                 <motion.span
                   layoutId="sidebar-active-indicator"
-                  className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-brand"
+                  className="absolute left-0 top-1/2 h-[60%] w-[3px] -translate-y-1/2 rounded-r-full bg-brand"
                 />
               )}
               <span className="relative shrink-0" title={collapsed ? item.label : undefined}>
@@ -103,12 +104,12 @@ export function SidebarLayout({ brand, items, children, headerSlot, rightSlot, f
         </nav>
       </aside>
 
-      <main className="relative flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-30 flex h-[57px] shrink-0 items-center gap-3 border-b border-line bg-surface px-4 sm:px-6">
+      <main className="relative flex min-w-0 flex-1 flex-col md:rounded-card md:bg-surface md:shadow-card md:ring-1 ring-line/50 overflow-hidden">
+        <header className="sticky top-0 z-30 flex h-[64px] shrink-0 items-center gap-3 border-b border-line/50 bg-surface-glass backdrop-blur-xl px-4 sm:px-6 md:rounded-t-card transition-all">
           <button
             onClick={toggle}
             aria-label={collapsed ? "open sidebar" : "collapse sidebar"}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-control text-ink-soft transition-colors hover:bg-bg hover:text-ink"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-control text-ink-soft transition-all hover:bg-bg hover:text-ink hover:scale-105 active:scale-95"
           >
             <Icon icon={PanelLeft} size={18} />
           </button>

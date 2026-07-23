@@ -10,14 +10,6 @@ export interface Department {
   facultyName: string;
 }
 
-export interface Subject {
-  id: number;
-  departmentId: number;
-  name: string;
-  description: string | null;
-  departmentName: string;
-}
-
 export interface Group {
   id: number;
   facultyId: number;

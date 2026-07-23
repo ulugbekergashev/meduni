@@ -94,7 +94,7 @@ export function CourseDetail() {
       </button>
 
       <h1 className="mt-3 text-h1 font-bold text-ink">
-        {c.subjectName}
+        {c.name}
       </h1>
       <p className="mt-1 text-[14.5px] text-ink-soft">
         {c.departmentName} ·{" "}

@@ -30,13 +30,10 @@ export const topicsRouter = Router();
 topicsRouter.use(requireRoles("TEACHER"));
 
 // Faza 3: mavzu fanga tegishli — kurs YOKI fan konteksti orqali yaratiladi.
-const createSchema = z
-  .object({
-    courseId: z.number().int().positive().optional(),
-    subjectId: z.number().int().positive().optional(),
-    title: z.string().trim().min(1),
-  })
-  .refine((b) => b.courseId !== undefined || b.subjectId !== undefined, { message: "courseId yoki subjectId kerak" });
+const createSchema = z.object({
+  courseId: z.number().int().positive(),
+  title: z.string().trim().min(1),
+});
 const updateSchema = z.object({
   title: z.string().trim().min(1).optional(),
   status: z.enum(["DRAFT", "PUBLISHED"]).optional(),
@@ -48,12 +45,7 @@ topicsRouter.get(
   "/",
   wrap(async (req, res) => {
     const courseId = Number(req.query.courseId);
-    const subjectId = Number(req.query.subjectId);
-    if (Number.isInteger(subjectId) && subjectId > 0) {
-      res.json(await svc.listTopicsBySubject(subjectId, req.user!.id));
-      return;
-    }
-    if (!Number.isInteger(courseId) || courseId <= 0) throw badRequest("courseId yoki subjectId kerak", "Требуется courseId или subjectId");
+    if (!Number.isInteger(courseId) || courseId <= 0) throw badRequest("courseId kerak", "Требуется courseId");
     res.json(await svc.listTopics(courseId, req.user!.id));
   })
 );

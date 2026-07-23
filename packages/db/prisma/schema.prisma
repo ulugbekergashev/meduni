@@ -193,7 +193,7 @@ model Department {
   faculty   Faculty   @relation(fields: [facultyId], references: [id])
   name      String
   createdAt DateTime  @default(now())
-  subjects  Subject[]
+  courses   Course[]
   teachers  TeacherProfile[]
   aiUsage   AiUsage[]
   aiQuota   AiQuota?
@@ -214,20 +214,6 @@ model AiQuota {
   @@map("ai_quotas")
 }
 
-model Subject {
-  id           Int        @id @default(autoincrement())
-  departmentId Int
-  department   Department @relation(fields: [departmentId], references: [id])
-  name         String
-  description  String?
-  createdAt    DateTime   @default(now())
-  courses      Course[]
-  topics       Topic[]
-
-  @@unique([departmentId, name])
-  @@map("subjects")
-}
-
 model StudentGroup {
   id          Int      @id @default(autoincrement())
   facultyId   Int
@@ -244,8 +230,10 @@ model StudentGroup {
 
 model Course {
   id           Int           @id @default(autoincrement())
-  subjectId    Int
-  subject      Subject       @relation(fields: [subjectId], references: [id])
+  departmentId Int
+  department   Department    @relation(fields: [departmentId], references: [id])
+  name         String
+  description  String?
   teacherId    Int
   teacher      User          @relation("CourseTeacher", fields: [teacherId], references: [id])
   semester              Int
@@ -257,6 +245,7 @@ model Course {
   enrollments           Enrollment[]
   sessions              LessonSession[]
   chatMessages          CourseChatMessage[]
+  topics                Topic[]
 
   @@map("courses")
 }
@@ -278,8 +267,8 @@ model CourseChatMessage {
 
 model Topic {
   id             Int              @id @default(autoincrement())
-  subjectId      Int
-  subject        Subject          @relation(fields: [subjectId], references: [id])
+  courseId       Int
+  course         Course           @relation(fields: [courseId], references: [id])
   title          String
   orderIndex     Int
   status         TopicStatus      @default(DRAFT)

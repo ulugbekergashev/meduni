@@ -12,8 +12,9 @@ import { useLocale } from "../../../lib/useLocale";
 // ---- Tree payload (one scoped query feeds all three structure pages) ----
 
 export interface TreeAdmin { id: number; fullName: string; phone: string | null; email: string }
-export interface TreeSubject { id: number; name: string; description: string | null; courseCount: number }
-export interface TreeDept { id: number; name: string; teacherCount: number; admins: TreeAdmin[]; subjects: TreeSubject[] }
+/** Fan/kurs birlashdi — kafedra ostidagi kurslar. */
+export interface TreeCourse { id: number; name: string; description: string | null }
+export interface TreeDept { id: number; name: string; teacherCount: number; admins: TreeAdmin[]; courses: TreeCourse[] }
 export interface TreeGroup { id: number; name: string; yearOfStudy: number; studentCount: number }
 export interface TreeFaculty { id: number; name: string; admins: TreeAdmin[]; departments: TreeDept[]; groups: TreeGroup[] }
 
@@ -24,12 +25,13 @@ export function useStructureTree() {
   });
 }
 
-export type EntityKind = "faculty" | "department" | "subject" | "group";
+// Kurslar alohida "Kurslar" modulida (o'qituvchi+guruh+semestr bilan) boshqariladi —
+// bu yerdagi generik modal faqat fakultet/kafedra/guruh uchun.
+export type EntityKind = "faculty" | "department" | "group";
 
 const RESOURCE: Record<EntityKind, string> = {
   faculty: "faculties",
   department: "departments",
-  subject: "subjects",
   group: "groups",
 };
 
@@ -86,7 +88,6 @@ export function EntityFormModal({
   const mutate = useStructureMutation();
 
   const [name, setName] = useState(editing?.name ?? "");
-  const [description, setDescription] = useState(editing?.description ?? "");
   const [yearOfStudy, setYearOfStudy] = useState(String(editing?.yearOfStudy ?? 1));
   // Optional unit admin (dekan/mudir) — create mode only.
   const [adminFullName, setAdminFullName] = useState("");
@@ -106,11 +107,9 @@ export function EntityFormModal({
     e.preventDefault();
     setError(null);
     const body: Record<string, unknown> = { name: name.trim() };
-    if (kind === "subject") body.description = description.trim() || null;
     if (kind === "group") body.yearOfStudy = Number(yearOfStudy);
     const parent = editing ? editing.parentId : parentId;
     if (kind === "department" || kind === "group") body.facultyId = parent;
-    if (kind === "subject") body.departmentId = parent;
 
     if (withAdmin) {
       const anyAdmin = adminFullName.trim() || adminEmail.trim();
@@ -164,11 +163,6 @@ export function EntityFormModal({
             required
           />
         </Field>
-        {kind === "subject" && (
-          <Field label={t("descriptionOptional")}>
-            <Input value={description} onChange={(e) => setDescription(e.target.value)} />
-          </Field>
-        )}
         {kind === "group" && (
           <Field label={t("yearOfStudy")}>
             <Select value={yearOfStudy} onChange={(e) => setYearOfStudy(e.target.value)}>

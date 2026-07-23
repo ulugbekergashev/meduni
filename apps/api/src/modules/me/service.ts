@@ -12,13 +12,13 @@ const topicInclude = {
 
 // Faza 3: mavzular FANGA tegishli — kurs o'z fanining mavzularini ko'rsatadi.
 const courseInclude = {
-  subject: { include: { topics: { orderBy: { orderIndex: "asc" }, include: topicInclude } } },
+  topics: { orderBy: { orderIndex: "asc" }, include: topicInclude },
   teacher: true,
   courseGroups: { include: { group: true } },
 } satisfies Prisma.CourseInclude;
 
 type CourseRow = Prisma.CourseGetPayload<{ include: typeof courseInclude }>;
-type TopicWithContent = CourseRow["subject"]["topics"][number];
+type TopicWithContent = CourseRow["topics"][number];
 // Downstream kod (progress matritsa, tasks, lesson) `course.topics` bilan ishlaydi —
 // loadCourse fan mavzularini shu maydonga normalizatsiya qiladi.
 export type CourseWithTopics = CourseRow & { topics: TopicWithContent[] };
@@ -176,7 +176,7 @@ function courseSummary(course: CourseWithTopics, topics: TopicOut[]) {
   const next = topics.find((t) => t.state === "AVAILABLE" || t.state === "IN_PROGRESS") ?? null;
   return {
     id: course.id,
-    subjectName: course.subject.name,
+    subjectName: course.name,
     teacherName: course.teacher.fullName,
     groupName: course.courseGroups[0]?.group.name ?? null,
     // Davr — talabada kurslar semestrlar bo'ylab ko'payadi, guruhlash uchun.
@@ -206,7 +206,7 @@ export async function loadCourse(courseId: number): Promise<CourseWithTopics> {
   if (!course) throw notFound("Kurs");
   // Only topics with at least one PUBLISHED content item are visible to students;
   // topics still being built (no published content) don't appear on the path at all.
-  return { ...course, topics: course.subject.topics.filter((t) => t.contentItems.length > 0) };
+  return { ...course, topics: course.topics.filter((t) => t.contentItems.length > 0) };
 }
 
 /** GET /me/courses — enrolled courses with a progress summary each. */
@@ -234,7 +234,7 @@ export async function getMyCourse(studentId: number, courseId: number) {
   const topics = computeTopics(course, pm);
   return {
     id: course.id,
-    subjectName: course.subject.name,
+    subjectName: course.name,
     teacherName: course.teacher.fullName,
     groupName: course.courseGroups[0]?.group.name ?? null,
     semester: course.semester,
@@ -272,7 +272,7 @@ export async function getDashboard(studentId: number) {
       if (current) {
         resume = {
           courseId: course.id,
-          subjectName: course.subject.name,
+          subjectName: course.name,
           topicId: current.id,
           topic: current.title,
           pct: current.pct,
@@ -320,10 +320,10 @@ export function forbiddenLocked(reason?: Reason): ApiError {
 
 /** Faza 3: mavzu fanga tegishli — talabaning shu fandan ACTIVE yozilgan kursini topamiz. */
 export async function enrolledCourseIdForTopic(studentId: number, topicId: number): Promise<number | null> {
-  const topic = await prisma.topic.findUnique({ where: { id: topicId }, select: { subjectId: true } });
+  const topic = await prisma.topic.findUnique({ where: { id: topicId }, select: { courseId: true } });
   if (!topic) throw notFound("Mavzu");
   const enrollment = await prisma.enrollment.findFirst({
-    where: { studentId, status: "ACTIVE", course: { subjectId: topic.subjectId } },
+    where: { studentId, status: "ACTIVE", courseId: topic.courseId },
     orderBy: { courseId: "asc" },
     select: { courseId: true },
   });

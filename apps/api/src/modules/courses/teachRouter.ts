@@ -5,7 +5,6 @@ import * as svc from "./service";
 import * as progress from "./progress";
 import * as review from "./review";
 import * as attendance from "./attendance";
-import * as subjects from "./subjects";
 import * as mistakes from "./mistakes";
 import { computeTeacherAutoTasks, listAssigned } from "../tasks/service";
 import { teacherSearch } from "../search/service";
@@ -57,15 +56,7 @@ teachCoursesRouter.get(
   wrap(async (req, res) => res.json(await mistakes.getCourseMistakes(parseId(req.params.id), req.user!.id)))
 );
 
-// Subjects the teacher can author (dept membership OR teaches a course of it).
-teachCoursesRouter.get(
-  "/subjects",
-  wrap(async (req, res) => res.json(await subjects.listTeacherSubjects(req.user!.id)))
-);
-teachCoursesRouter.get(
-  "/subjects/:id",
-  wrap(async (req, res) => res.json(await subjects.getTeacherSubject(parseId(req.params.id), req.user!.id)))
-);
+
 
 // Groups the teacher teaches (with students).
 teachCoursesRouter.get(

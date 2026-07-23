@@ -95,7 +95,7 @@ export function DepartmentPage() {
           </p>
           <h1 className="mt-0.5 text-h1 font-bold text-ink">{d.name}</h1>
           <div className="mt-1.5 flex flex-wrap gap-1.5">
-            <CountChip>{t("nSubjects", { n: d.subjects.length })}</CountChip>
+            <CountChip>{t("nCourses", { n: d.courses.length })}</CountChip>
             <CountChip>{t("nTeachers", { n: d.teacherCount })}</CountChip>
           </div>
         </div>
@@ -174,53 +174,37 @@ export function DepartmentPage() {
           </div>
         </Card>
 
-        {/* Subjects */}
+        {/* Kurslar — fan/kurs birlashdi. To'liq boshqaruv (o'qituvchi/guruh/semestr)
+            "Kurslar" modulida; bu yerda ro'yxat + o'sha modulga o'tish. */}
         <Card className="!p-0">
           <div className="flex items-center justify-between gap-2 border-b border-line px-5 py-3.5">
             <h2 className="inline-flex items-center gap-2 text-section font-bold text-ink">
-              <Icon icon={BookMarked} size={17} className="text-blue" /> {t("subjectsSection")}
+              <Icon icon={GraduationCap} size={17} className="text-blue" /> {t("coursesSection")}
             </h2>
             {canStaff && (
-              <Button size="sm" variant="soft" icon={<Icon icon={Plus} size={14} />} onClick={() => setModal({ kind: "subject", parentId: d.id })}>
+              <Button size="sm" variant="soft" icon={<Icon icon={Plus} size={14} />} onClick={() => navigate("/admin/courses")}>
                 {tc("add")}
               </Button>
             )}
           </div>
           <div>
-            {d.subjects.map((s) => (
-              <div key={s.id} className="group flex items-center gap-3 border-b border-line px-5 py-3.5 last:border-0">
+            {d.courses.map((c) => (
+              <Link
+                key={c.id}
+                to={`/admin/courses/${c.id}`}
+                className="group flex items-center gap-3 border-b border-line px-5 py-3.5 transition-colors last:border-0 hover:bg-bg"
+              >
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-control bg-blue-soft text-blue">
                   <Icon icon={BookMarked} size={16} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-[15px] font-semibold text-ink">{s.name}</p>
-                  <p className="truncate text-[13px] text-ink-faint">
-                    {t("nCourses", { n: s.courseCount })}
-                    {s.description ? ` · ${s.description}` : ""}
-                  </p>
+                  <p className="truncate text-[15px] font-semibold text-ink group-hover:text-brand-deep">{c.name}</p>
+                  {c.description && <p className="truncate text-[13px] text-ink-faint">{c.description}</p>}
                 </div>
-                {canStaff && (
-                  <div className="flex shrink-0 items-center gap-0.5">
-                    <button
-                      onClick={() => setModal({ kind: "subject", editing: { id: s.id, name: s.name, description: s.description, parentId: d.id } })}
-                      className="rounded-control p-1.5 text-ink-faint transition-colors hover:bg-brand-soft hover:text-brand-deep"
-                      aria-label={tc("edit")}
-                    >
-                      <Icon icon={Pencil} size={15} />
-                    </button>
-                    <button
-                      onClick={() => setDel({ kind: "subject", id: s.id, name: s.name })}
-                      className="rounded-control p-1.5 text-ink-faint transition-colors hover:bg-rose-soft hover:text-rose"
-                      aria-label={tc("delete")}
-                    >
-                      <Icon icon={Trash2} size={15} />
-                    </button>
-                  </div>
-                )}
-              </div>
+              </Link>
             ))}
-            {d.subjects.length === 0 && (
-              <p className="px-5 py-6 text-center text-[14px] text-ink-faint">{t("noSubjectsInDept")}</p>
+            {d.courses.length === 0 && (
+              <p className="px-5 py-6 text-center text-[14px] text-ink-faint">{t("noCoursesInDept")}</p>
             )}
           </div>
         </Card>

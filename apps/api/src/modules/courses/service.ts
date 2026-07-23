@@ -5,7 +5,7 @@ import { buildMatrix } from "./progress";
 import { loadCourse } from "../me/service";
 
 const courseInclude = {
-  subject: { include: { department: true } },
+  department: true,
   teacher: true,
   courseGroups: { include: { group: true } },
   _count: { select: { enrollments: { where: { status: "ACTIVE" } } } },
@@ -16,9 +16,13 @@ type CourseWithRelations = Prisma.CourseGetPayload<{ include: typeof courseInclu
 function toCourseOut(c: CourseWithRelations) {
   return {
     id: c.id,
-    subjectId: c.subjectId,
-    subjectName: c.subject.name,
-    departmentName: c.subject.department.name,
+    name: c.name,
+    // Compat: fan/kurs birlashgach kurs nomi `name`; eski frontend (o'qituvchi
+    // sahifalari, admin jadvali) hali `subjectName` o'qiydi — ikkalasi ham beriladi.
+    subjectName: c.name,
+    description: c.description,
+    departmentId: c.departmentId,
+    departmentName: c.department.name,
     teacherId: c.teacherId,
     teacherName: c.teacher.fullName,
     semester: c.semester,
@@ -28,8 +32,6 @@ function toCourseOut(c: CourseWithRelations) {
   };
 }
 
-// Kurslar ko'p bo'ladi (har semestrda bir nechta, semestrlar yillar davomida) —
-// hamma joyda YANGI davr birinchi turadi: o'quv yili ↓, semestr ↓.
 const courseOrder: Prisma.CourseOrderByWithRelationInput[] = [
   { academicYear: "desc" },
   { semester: "desc" },
@@ -41,7 +43,6 @@ export async function listCourses(where?: Prisma.CourseWhereInput) {
   return rows.map(toCourseOut);
 }
 
-/** Filtrlar uchun mavjud davrlar (o'quv yili / semestr) — ro'yxatga bog'liq. */
 export async function listCoursePeriods(where?: Prisma.CourseWhereInput) {
   const rows = await prisma.course.findMany({
     where,
@@ -60,8 +61,6 @@ async function getCourseOut(id: number) {
   return toCourseOut(c);
 }
 
-// Enroll every STUDENT of the given groups into the course (idempotent);
-// re-activates previously DROPPED students who are back in an attached group.
 async function syncEnrollments(courseId: number, groupIds: number[]) {
   if (groupIds.length === 0) return;
   const students = await prisma.user.findMany({
@@ -78,14 +77,16 @@ async function syncEnrollments(courseId: number, groupIds: number[]) {
 }
 
 export async function createCourse(input: {
-  subjectId: number;
+  name: string;
+  description?: string;
+  departmentId: number;
   teacherId: number;
   semester: number;
   academicYear: string;
   groupIds: number[];
 }) {
-  const subject = await prisma.subject.findUnique({ where: { id: input.subjectId } });
-  if (!subject) throw notFound("Fan");
+  const department = await prisma.department.findUnique({ where: { id: input.departmentId } });
+  if (!department) throw notFound("Kafedra");
 
   const teacher = await prisma.user.findUnique({ where: { id: input.teacherId } });
   if (!teacher) throw notFound("Oʻqituvchi");
@@ -99,7 +100,9 @@ export async function createCourse(input: {
 
   const course = await prisma.course.create({
     data: {
-      subjectId: input.subjectId,
+      name: input.name.trim(),
+      description: input.description?.trim(),
+      departmentId: input.departmentId,
       teacherId: input.teacherId,
       semester: input.semester,
       academicYear: input.academicYear.trim(),
@@ -115,7 +118,9 @@ export async function createCourse(input: {
 export async function updateCourse(
   id: number,
   input: {
-    subjectId?: number;
+    name?: string;
+    description?: string;
+    departmentId?: number;
     teacherId?: number;
     semester?: number;
     academicYear?: string;
@@ -134,22 +139,23 @@ export async function updateCourse(
     if (teacher.role !== "TEACHER")
       throw badRequest("Faqat oʻqituvchi tanlanishi mumkin", "Можно выбрать только преподавателя");
   }
-  if (input.subjectId) {
-    const subject = await prisma.subject.findUnique({ where: { id: input.subjectId } });
-    if (!subject) throw notFound("Fan");
+  if (input.departmentId) {
+    const department = await prisma.department.findUnique({ where: { id: input.departmentId } });
+    if (!department) throw notFound("Kafedra");
   }
 
   await prisma.course.update({
     where: { id },
     data: {
-      subjectId: input.subjectId,
+      name: input.name?.trim(),
+      description: input.description?.trim(),
+      departmentId: input.departmentId,
       teacherId: input.teacherId,
       semester: input.semester,
       academicYear: input.academicYear?.trim(),
     },
   });
 
-  // Reconcile groups if provided.
   if (input.groupIds) {
     const nextIds = [...new Set(input.groupIds)];
     const groups = await prisma.studentGroup.findMany({ where: { id: { in: nextIds } }, select: { id: true } });
@@ -165,7 +171,6 @@ export async function updateCourse(
     }
     if (toRemove.length) {
       await prisma.courseGroup.deleteMany({ where: { courseId: id, groupId: { in: toRemove } } });
-      // Drop (not delete) students who were in the removed groups.
       const removedStudents = await prisma.user.findMany({
         where: { role: "STUDENT", groupId: { in: toRemove } },
         select: { id: true },
@@ -186,9 +191,6 @@ export async function deleteCourse(id: number) {
   const existing = await prisma.course.findUnique({ where: { id } });
   if (!existing) throw notFound("Kurs");
 
-  // Topics belong to a later module; guard defensively if the table exists.
-  // For now: block only if there is student activity beyond plain enrollment
-  // is not tracked yet, so allow delete and clean up join/enrollment rows.
   await prisma.enrollment.deleteMany({ where: { courseId: id } });
   await prisma.courseGroup.deleteMany({ where: { courseId: id } });
   await prisma.course.delete({ where: { id } });
@@ -215,27 +217,23 @@ export async function listCourseStudents(id: number) {
 export async function getCourseDetail(id: number) {
   const out = await getCourseOut(id);
   const students = await listCourseStudents(id);
-  const topicCount = await prisma.topic.count({ where: { subject: { courses: { some: { id } } } } });
+  const topicCount = await prisma.topic.count({ where: { courseId: id } });
   return { ...out, students, topicCount };
 }
-
-// ---------- Teacher-facing (own courses only) ----------
 
 export async function listTeacherCourses(teacherId: number) {
   const rows = await prisma.course.findMany({
     where: { teacherId },
-    orderBy: courseOrder, // yangi o'quv yili/semestr birinchi
+    orderBy: courseOrder,
     include: courseInclude,
   });
   return rows.map(toCourseOut);
 }
 
-/** One group's profile for a teacher: info + students + this teacher's courses with it.
- *  Ownership: the teacher must have at least one course attached to the group. */
 export async function getTeacherGroup(groupId: number, teacherId: number) {
   const cgs = await prisma.courseGroup.findMany({
     where: { groupId, course: { teacherId } },
-    include: { course: { include: { subject: true } } },
+    include: { course: true },
   });
   if (cgs.length === 0) {
     throw new ApiError(403, "forbidden", "Bu sizning guruhingiz emas", "Это не ваша группа");
@@ -251,8 +249,6 @@ export async function getTeacherGroup(groupId: number, teacherId: number) {
   const studentIds = students.map((s) => s.id);
   const courseIds = cgs.map((cg) => cg.course.id);
 
-  // Per-student metrics across this teacher's courses for the group (reuses the
-  // same matrix the progress heatmap builds), keyed to this group's students only.
   const metric = new Map<number, { pcts: number[]; quiz: number[]; last: number; behind: boolean }>();
   for (const s of students) metric.set(s.id, { pcts: [], quiz: [], last: 0, behind: false });
   for (const cid of courseIds) {
@@ -261,7 +257,7 @@ export async function getTeacherGroup(groupId: number, teacherId: number) {
     const { students: rows } = await buildMatrix(loaded);
     for (const r of rows) {
       const m = metric.get(r.id);
-      if (!m) continue; // student from another group on the same course — skip
+      if (!m) continue;
       m.pcts.push(r.overallPct);
       if (r.avgQuizScore !== null) m.quiz.push(r.avgQuizScore);
       if (r.lastActiveAt) m.last = Math.max(m.last, new Date(r.lastActiveAt).getTime());
@@ -269,7 +265,6 @@ export async function getTeacherGroup(groupId: number, teacherId: number) {
     }
   }
 
-  // Attendance % per student across the group's (teacher-course) sessions.
   const attRows = studentIds.length
     ? await prisma.attendance.groupBy({
         by: ["studentId", "status"],
@@ -301,7 +296,6 @@ export async function getTeacherGroup(groupId: number, teacherId: number) {
     };
   });
 
-  // Reyting: umumiy progress bo'yicha, teng bo'lsa o'rtacha test balli.
   const rankOrder = [...studentsOut].sort(
     (a, b) => b.overallPct - a.overallPct || (b.avgQuizScore ?? -1) - (a.avgQuizScore ?? -1)
   );
@@ -318,7 +312,7 @@ export async function getTeacherGroup(groupId: number, teacherId: number) {
     name: group.name,
     yearOfStudy: group.yearOfStudy,
     facultyName: group.faculty.name,
-    courses: cgs.map((cg) => ({ id: cg.course.id, name: cg.course.subject.name })),
+    courses: cgs.map((cg) => ({ id: cg.course.id, name: cg.course.name })),
     students: studentsRanked,
     studentCount: students.length,
     avgProgress,
@@ -327,17 +321,16 @@ export async function getTeacherGroup(groupId: number, teacherId: number) {
   };
 }
 
-/** Groups the teacher teaches (via their courses) — with students and subjects. */
 export async function listTeacherGroups(teacherId: number) {
   const cgs = await prisma.courseGroup.findMany({
     where: { course: { teacherId } },
-    include: { group: { include: { faculty: true } }, course: { include: { subject: true } } },
+    include: { group: { include: { faculty: true } }, course: true },
   });
 
   const map = new Map<number, { group: (typeof cgs)[number]["group"]; courses: Map<number, { id: number; name: string }> }>();
   for (const cg of cgs) {
     if (!map.has(cg.groupId)) map.set(cg.groupId, { group: cg.group, courses: new Map() });
-    map.get(cg.groupId)!.courses.set(cg.course.id, { id: cg.course.id, name: cg.course.subject.name });
+    map.get(cg.groupId)!.courses.set(cg.course.id, { id: cg.course.id, name: cg.course.name });
   }
 
   const groupIds = [...map.keys()];
@@ -367,7 +360,6 @@ export async function listTeacherGroups(teacherId: number) {
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 
-/** Lightweight course metadata for the teacher course shell (no students list). */
 export async function getTeacherCourseMeta(courseId: number, teacherId: number) {
   const c = await prisma.course.findUnique({ where: { id: courseId }, include: courseInclude });
   if (!c) throw notFound("Kurs");
@@ -376,8 +368,6 @@ export async function getTeacherCourseMeta(courseId: number, teacherId: number) 
   }
   return { ...toCourseOut(c), defaultUnlockRuleJson: c.defaultUnlockRuleJson ?? null };
 }
-
-// ---------- Syllabus (o'quv rejasi) ----------
 
 interface SyllabusMeta {
   description: string;
@@ -392,13 +382,13 @@ function emptyMeta(): SyllabusMeta {
 export async function getSyllabus(courseId: number, teacherId: number) {
   const course = await prisma.course.findUnique({
     where: { id: courseId },
-    include: { subject: { include: { topics: { orderBy: { orderIndex: "asc" } } } } },
+    include: { topics: { orderBy: { orderIndex: "asc" } } },
   });
   if (!course) throw notFound("Kurs");
   if (course.teacherId !== teacherId) throw new ApiError(403, "forbidden", "Bu sizning kursingiz emas", "Это не ваш курс");
 
   const meta = { ...emptyMeta(), ...((course.syllabusJson as Partial<SyllabusMeta> | null) ?? {}) };
-  const topics = course.subject.topics.map((t) => ({
+  const topics = course.topics.map((t) => ({
     id: t.id,
     title: t.title,
     orderIndex: t.orderIndex,
@@ -407,7 +397,7 @@ export async function getSyllabus(courseId: number, teacherId: number) {
   }));
   return {
     courseId,
-    subjectName: course.subject.name,
+    courseName: course.name,
     description: meta.description,
     objectives: meta.objectives,
     literature: meta.literature,
@@ -423,7 +413,7 @@ export async function saveSyllabus(
 ) {
   const course = await prisma.course.findUnique({
     where: { id: courseId },
-    include: { subject: { include: { topics: { select: { id: true } } } } },
+    include: { topics: { select: { id: true } } },
   });
   if (!course) throw notFound("Kurs");
   if (course.teacherId !== teacherId) throw new ApiError(403, "forbidden", "Bu sizning kursingiz emas", "Это не ваш курс");
@@ -434,7 +424,7 @@ export async function saveSyllabus(
     literature: (body.literature ?? []).map((s) => s.trim()).filter(Boolean),
   };
 
-  const ownTopicIds = new Set(course.subject.topics.map((t) => t.id));
+  const ownTopicIds = new Set(course.topics.map((t) => t.id));
   await prisma.$transaction([
     prisma.course.update({ where: { id: courseId }, data: { syllabusJson: meta as object } }),
     ...(body.topics ?? [])

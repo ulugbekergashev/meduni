@@ -19,14 +19,14 @@ import {
 } from "../../ai/types";
 import { quizSystemPrompt, quizUserContent } from "../../ai/prompts/quiz";
 import { caseSystemPrompt, caseUserContent } from "../../ai/prompts/case";
-import { assertSubjectTeacher } from "../topics/service";
+import { assertCourseTeacher } from "../topics/service";
 
 // ---------- Ownership (Faza 3: fan/kafedra darajasida) ----------
 
 async function topicForTeacher(topicId: number, teacherId: number) {
   const topic = await prisma.topic.findUnique({ where: { id: topicId }, include: { digest: true } });
   if (!topic) throw notFound("Mavzu");
-  await assertSubjectTeacher(topic.subjectId, teacherId);
+  await assertCourseTeacher(topic.courseId, teacherId);
   return topic;
 }
 
@@ -46,7 +46,7 @@ async function contentForTeacher(contentId: number, teacherId: number): Promise<
     include: { ...contentInclude, topic: true },
   });
   if (!item) throw notFound("Kontent");
-  await assertSubjectTeacher(item.topic.subjectId, teacherId);
+  await assertCourseTeacher(item.topic.courseId, teacherId);
   return item;
 }
 

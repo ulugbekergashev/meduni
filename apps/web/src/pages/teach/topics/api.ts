@@ -6,9 +6,8 @@ export type ParseStatus = "pending" | "processing" | "done" | "error";
 
 export interface TopicRow {
   id: number;
-  subjectId: number;
-  /** O'qituvchining shu fandagi kursi (back-nav uchun); fan kafedradosh bo'lsa null bo'lishi mumkin. */
-  courseId: number | null;
+  /** Fan/kurs birlashdi — mavzu bevosita kursga tegishli. */
+  courseId: number;
   title: string;
   orderIndex: number;
   status: TopicStatus;
@@ -199,14 +198,12 @@ export interface ContentFull {
 }
 
 // ---- Topics ----
-// Faza 3: mavzular fanga tegishli, lekin kurs sahifasidan ham ochiladi — shuning
-// uchun ro'yxat ikki "qamrov"da so'raladi: kurs (fanini aniqlaydi) yoki to'g'ridan fan.
+// Fan/kurs birlashdi — mavzular bevosita kursga tegishli.
 
-export type TopicScope = { courseId: number } | { subjectId: number };
+export type TopicScope = { courseId: number };
 
-const scopeKey = (s: TopicScope) =>
-  "courseId" in s ? (["topics", "course", s.courseId] as const) : (["topics", "subject", s.subjectId] as const);
-const scopeQs = (s: TopicScope) => ("courseId" in s ? `courseId=${s.courseId}` : `subjectId=${s.subjectId}`);
+const scopeKey = (s: TopicScope) => ["topics", "course", s.courseId] as const;
+const scopeQs = (s: TopicScope) => `courseId=${s.courseId}`;
 
 export function useTopics(scope: TopicScope) {
   return useQuery({
@@ -245,43 +242,6 @@ export function useReorderTopics() {
       api("/api/v1/topics/reorder", { method: "PATCH", body: JSON.stringify({ orderedIds }) }),
     onSuccess: invalidate,
   });
-}
-
-// ---- Subjects (Fanlarim) ----
-
-export interface SubjectRow {
-  id: number;
-  name: string;
-  departmentName: string;
-  myCourseId: number | null;
-  /** Fan bo'yicha ochilgan kurslar soni (barcha semestrlar). */
-  courseCount: number;
-  /** Eng oxirgi davr (o'quv yili + semestr), kurs bo'lmasa null. */
-  latest: { academicYear: string; semester: number } | null;
-  topicsTotal: number;
-  published: number;
-  inProgress: number;
-  empty: number;
-  attention: { materialMissing: number; digestPending: number; publishPending: number; factcheckFlagged: number };
-}
-
-export interface SubjectDetail extends SubjectRow {
-  courses: {
-    id: number;
-    academicYear: string;
-    semester: number;
-    teacherName: string;
-    isMine: boolean;
-    studentCount: number;
-  }[];
-}
-
-export function useMySubjects() {
-  return useQuery({ queryKey: ["teach-subjects"], queryFn: () => api<SubjectRow[]>("/api/v1/teach/subjects") });
-}
-
-export function useSubject(id: number) {
-  return useQuery({ queryKey: ["teach-subject", id], queryFn: () => api<SubjectDetail>(`/api/v1/teach/subjects/${id}`) });
 }
 
 // ---- Topic detail (constructor) ----

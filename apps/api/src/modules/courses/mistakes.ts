@@ -21,18 +21,14 @@ export async function getCourseMistakes(courseId: number, teacherId: number) {
   const course = await prisma.course.findUnique({
     where: { id: courseId },
     include: {
-      subject: {
+      topics: {
+        orderBy: { orderIndex: "asc" },
         include: {
-          topics: {
-            orderBy: { orderIndex: "asc" },
+          contentItems: {
+            where: { status: "PUBLISHED", kind: { in: ["QUIZ", "CASE"] } },
             include: {
-              contentItems: {
-                where: { status: "PUBLISHED", kind: { in: ["QUIZ", "CASE"] } },
-                include: {
-                  quiz: { include: { questions: { orderBy: { orderIndex: "asc" } } } },
-                  clinicalCase: true,
-                },
-              },
+              quiz: { include: { questions: { orderBy: { orderIndex: "asc" } } } },
+              clinicalCase: true,
             },
           },
         },
@@ -48,11 +44,11 @@ export async function getCourseMistakes(courseId: number, teacherId: number) {
   const nameById = new Map(students.map((s) => [s.id, s.fullName]));
   if (studentIds.length === 0) return { topics: [], studentCount: 0 };
 
-  const quizIds = course.subject.topics
+  const quizIds = course.topics
     .flatMap((t) => t.contentItems)
     .filter((c) => c.kind === "QUIZ" && c.quiz)
     .map((c) => c.quiz!.id);
-  const caseIds = course.subject.topics
+  const caseIds = course.topics
     .flatMap((t) => t.contentItems)
     .filter((c) => c.kind === "CASE" && c.clinicalCase)
     .map((c) => c.clinicalCase!.id);
@@ -84,7 +80,7 @@ export async function getCourseMistakes(courseId: number, teacherId: number) {
   }
 
   // "Bilmayman" kartalar — mavzu kesimida jami (guruh bo'ylab).
-  const topicIds = course.subject.topics.map((t) => t.id);
+  const topicIds = course.topics.map((t) => t.id);
   const unknown = topicIds.length
     ? await prisma.flashcardReview.groupBy({
         by: ["topicId"],
@@ -94,7 +90,7 @@ export async function getCourseMistakes(courseId: number, teacherId: number) {
     : [];
   const unknownByTopic = new Map(unknown.map((u) => [u.topicId, u._count._all]));
 
-  const topics = course.subject.topics
+  const topics = course.topics
     .map((topic) => {
       const quizItem = topic.contentItems.find((c) => c.kind === "QUIZ")?.quiz ?? null;
       const caseItem = topic.contentItems.find((c) => c.kind === "CASE")?.clinicalCase ?? null;
