@@ -61,13 +61,14 @@
   --surface: #19212f;     /* asosiy panel — fondan aniq ochroq */
   --surface-raised: #232d3f; /* panel ichidagi karta */
   --surface-glass: #19212f;
-  --ink: #f5f7fc;
-  --ink-strong: #e7ecf5;
-  --ink-soft: #bcc4d4;
-  --ink-faint: #9aa3b6;
-  --ink-dim: #7c8598;
+  /* 2026-07-23 v4: ikkilamchi matn juda xira edi ("ko'rinmaydi") — yorqinlashtirildi. */
+  --ink: #f6f8fc;
+  --ink-strong: #e9eef6;
+  --ink-soft: #cbd2df;   /* sub-yorliqlar shu — endi aniq o'qiladi */
+  --ink-faint: #aab2c4;
+  --ink-dim: #9aa3b6;    /* eng xira ham o'qiladigan darajada */
   --line: #2c3648;
-  --line-raised: #37435a;
+  --line-raised: #3a4456;
 
   --brand: #6366f1;
   --brand-soft: #1c2743;
