@@ -162,6 +162,33 @@ export function StudentDetailPage() {
                 onGroup={() => d.student.groupId && navigate(`/teach/groups/${d.student.groupId}`)}
                 onAssign={() => setAssign(true)}
               />
+
+              {/* Modul 28 — amaliyot faolligi (takrorlash / virtual bemor / AI-tutor) */}
+              <Card className="mt-4 flex flex-wrap items-center gap-x-8 gap-y-3 !p-4">
+                <p className="w-full text-note font-bold text-ink-soft sm:w-auto">{t("practiceTitle")}</p>
+                <span className="inline-flex items-center gap-2 text-body text-ink">
+                  <Icon icon={Check} size={15} className="text-violet" />
+                  <b className="tabular-nums">{d.practiceSignals.cardsReviewed}</b>
+                  {t("practiceCards")}
+                  {d.practiceSignals.cardsKnownPct !== null && (
+                    <span className="text-ink-faint">({d.practiceSignals.cardsKnownPct}%)</span>
+                  )}
+                </span>
+                <span className="inline-flex items-center gap-2 text-body text-ink">
+                  <Icon icon={Stethoscope} size={15} className="text-rose" />
+                  <b className="tabular-nums">{d.practiceSignals.patientSessions}</b>
+                  {t("practicePatient")}
+                  {d.practiceSignals.patientAvgScore !== null && (
+                    <span className="text-ink-faint">({t("practiceAvg")} {d.practiceSignals.patientAvgScore})</span>
+                  )}
+                </span>
+                <span className="inline-flex items-center gap-2 text-body text-ink">
+                  <Icon icon={ClipboardList} size={15} className="text-blue" />
+                  <b className="tabular-nums">{d.practiceSignals.tutorQuestions}</b>
+                  {t("practiceTutor")}
+                </span>
+              </Card>
+
               <div className="mt-4 space-y-4">
                 {d.courses.map((c) => (
                   <CourseSection key={c.courseId} course={c} onReview={() => navigate("/teach/cases/review")} />

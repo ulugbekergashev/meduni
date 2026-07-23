@@ -276,7 +276,12 @@
     },
     "topicsDone": "тем",
     "gradeNow": "Оценить",
-    "assignTask": "Дать задание"
+    "assignTask": "Дать задание",
+    "practiceTitle": "Практическая активность",
+    "practiceCards": "карточек повторено",
+    "practicePatient": "практик с вирт. пациентом",
+    "practiceAvg": "ср.",
+    "practiceTutor": "вопросов AI-тьютору"
   },
   "journal": {
     "hint": "Нажмите на ячейку — отметьте посещаемость и оценку.",

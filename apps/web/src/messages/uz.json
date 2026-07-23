@@ -276,7 +276,12 @@
     },
     "topicsDone": "mavzu",
     "gradeNow": "Baholash",
-    "assignTask": "Vazifa berish"
+    "assignTask": "Vazifa berish",
+    "practiceTitle": "Amaliyot faolligi",
+    "practiceCards": "karta takrorlangan",
+    "practicePatient": "virtual bemor mashqi",
+    "practiceAvg": "oʻrt.",
+    "practiceTutor": "AI-tutor savoli"
   },
   "journal": {
     "hint": "Katakni bosing — yoʻqlama va baho qoʻying.",

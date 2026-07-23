@@ -293,8 +293,35 @@ export async function getStudentDetail(teacherId: number, studentId: number) {
     });
   }
 
+  // Modul 28 — amaliyot faolligi (talaba tomonidagi Modul 26/27 bilan
+  // assotsiatsiya): takrorlash kartalari, virtual bemor mashqlari, AI-tutor.
+  const [fcRows, patientEvals, tutorCount] = await Promise.all([
+    prisma.flashcardReview.findMany({ where: { studentId }, select: { known: true } }),
+    prisma.patientMessage.findMany({ where: { studentId, role: "eval" }, select: { text: true } }),
+    prisma.tutorMessage.count({ where: { studentId, role: "student" } }),
+  ]);
+  const patientScores = patientEvals
+    .map((e) => {
+      try {
+        return Number((JSON.parse(e.text) as { overallScore?: number }).overallScore);
+      } catch {
+        return NaN;
+      }
+    })
+    .filter((n) => Number.isFinite(n));
+  const practiceSignals = {
+    cardsReviewed: fcRows.length,
+    cardsKnownPct: fcRows.length ? Math.round((fcRows.filter((r) => r.known).length / fcRows.length) * 100) : null,
+    patientSessions: patientEvals.length,
+    patientAvgScore: patientScores.length
+      ? Math.round(patientScores.reduce((a, b) => a + b, 0) / patientScores.length)
+      : null,
+    tutorQuestions: tutorCount,
+  };
+
   return {
     student: { id: student.id, fullName: student.fullName, email: student.email, groupId: student.groupId, groupName: student.group?.name ?? null },
+    practiceSignals,
     courses,
   };
 }
