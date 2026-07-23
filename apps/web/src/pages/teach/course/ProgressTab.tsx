@@ -5,6 +5,7 @@ import { AlertTriangle, Download, GraduationCap, LayoutGrid, List, ListPlus, Sea
 import { Badge, Button, Card, Icon, Modal, Spinner, StatCard, cls, useToast } from "@meduni/ui";
 import { AsyncSection } from "../../../components/AsyncSection";
 import { QuickTaskModal } from "../../../components/QuickTaskModal";
+import { MistakesMap } from "./MistakesMap";
 import {
   API_URL,
   useCourseProgress,
@@ -328,6 +329,9 @@ export function ProgressTab() {
         onClose={() => setAssignTo(null)}
         prefill={assignTo ? { studentId: assignTo.id, studentName: assignTo.name } : undefined}
       />
+
+      {/* Guruh xatolari xaritasi (Modul 28) — savol/qadam darajasidagi tahlil */}
+      <MistakesMap courseId={courseId} />
     </div>
   );
 }

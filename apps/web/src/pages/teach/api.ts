@@ -145,6 +145,53 @@ export function useTeachCourseMeta(id: number) {
 }
 
 
+// ---- Guruh xatolari xaritasi (Modul 28) ----
+
+export interface MistakeStudent {
+  id: number;
+  fullName: string;
+}
+
+export interface MistakeQuestion {
+  questionId: number;
+  text: string;
+  options: string[];
+  correctIndex: number;
+  wrongCount: number;
+  wrongPct: number;
+  distribution: number[];
+  noAnswer: number;
+  wrongStudents: MistakeStudent[];
+}
+
+export interface MistakeStep {
+  index: number;
+  title: string;
+  prompt: string;
+  options: { text: string; correct: boolean }[];
+  wrongCount: number;
+  wrongPct: number;
+  distribution: number[];
+  wrongStudents: MistakeStudent[];
+}
+
+export interface MistakeTopic {
+  topicId: number;
+  title: string;
+  orderIndex: number;
+  quiz: { attempted: number; questions: MistakeQuestion[] } | null;
+  case: { submitted: number; steps: MistakeStep[] } | null;
+  unknownCards: number;
+  severity: number;
+}
+
+export function useCourseMistakes(courseId: number) {
+  return useQuery({
+    queryKey: ["teach-mistakes", courseId],
+    queryFn: () => api<{ topics: MistakeTopic[]; studentCount: number }>(`/api/v1/teach/courses/${courseId}/mistakes`),
+  });
+}
+
 export function useUpdateCourseSettings(courseId: number) {
   const qc = useQueryClient();
   return useMutation({

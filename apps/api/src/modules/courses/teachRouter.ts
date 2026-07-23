@@ -6,6 +6,7 @@ import * as progress from "./progress";
 import * as review from "./review";
 import * as attendance from "./attendance";
 import * as subjects from "./subjects";
+import * as mistakes from "./mistakes";
 import { computeTeacherAutoTasks, listAssigned } from "../tasks/service";
 import { teacherSearch } from "../search/service";
 
@@ -48,6 +49,12 @@ teachCoursesRouter.get(
 teachCoursesRouter.get(
   "/courses",
   wrap(async (req, res) => res.json(await svc.listTeacherCourses(req.user!.id)))
+);
+
+// Guruh xatolari xaritasi (Modul 28) — savol/qadam darajasidagi xato agregat.
+teachCoursesRouter.get(
+  "/courses/:id/mistakes",
+  wrap(async (req, res) => res.json(await mistakes.getCourseMistakes(parseId(req.params.id), req.user!.id)))
 );
 
 // Subjects the teacher can author (dept membership OR teaches a course of it).
