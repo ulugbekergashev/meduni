@@ -5,12 +5,14 @@ import type { Lesson } from "../api";
  *  Spec tartibi: O'rganish → Keys → Test → Kartochkalar → Natija (dvigatel
  *  shartlaridan mustaqil — faqat UI tartibi). */
 
-export type StageKey = "study" | "case" | "quiz" | "flashcards" | "result";
+export type StageKey = "study" | "case" | "quiz" | "result";
 export type StageState = "done" | "open" | "pendingReview" | "soon";
-/** "materials" — material matni mini-konspekti (ajratilgan matn). */
-export type ContentView = "konspekt" | "video" | "slides" | "materials";
+/** O'rganish bloklari (chap rail). "materials" — material matni mini-konspekti;
+ *  "flashcards" — takrorlash (2026-07-23: fokus rejimidan o'rganishga ko'chirildi —
+ *  u baholash emas, o'quv/takrorlash quroli). */
+export type ContentView = "konspekt" | "video" | "slides" | "materials" | "flashcards";
 /** "overview" — kirish landing'i: bosqichlar obzori (layout v2). */
-export type LessonView = "overview" | ContentView | "case" | "quiz" | "flashcards" | "result";
+export type LessonView = "overview" | ContentView | "case" | "quiz" | "result";
 
 export interface StageInfo {
   key: StageKey;
@@ -72,11 +74,8 @@ export function buildStages(lesson: Lesson): StageInfo[] {
     stages.push({ key: "quiz", state, hint });
   }
 
-  // Fleshkartalar — takrorlash. Test savollari javobni oshkor qilgani uchun
-  // test yakunlanmaguncha yopiq (backend ham shu qoidani majburlaydi).
-  const quizFinished = !qz || qz.attempt?.status === "finished";
-  stages.push({ key: "flashcards", state: quizFinished ? "open" : "soon" });
-
+  // Fleshkartalar bosqichlar qatorida EMAS — endi u chap "o'rganish" raili
+  // bloki (takrorlash quroli), stepper stage'i emas.
   const caseTerminal = !cs || !!cs.attempt;
   const quizTerminal = !qz || qz.attempt?.status === "finished";
   const resultOpen = caseTerminal && quizTerminal;
@@ -94,8 +93,6 @@ export function stageToView(key: StageKey, lesson: Lesson): LessonView {
       return "case";
     case "quiz":
       return "quiz";
-    case "flashcards":
-      return "flashcards";
     case "result":
       return "result";
     default:
@@ -107,9 +104,7 @@ export function stageToView(key: StageKey, lesson: Lesson): LessonView {
  *  olib boradi ("Davom ettirish"). */
 export function resumeView(lesson: Lesson): LessonView {
   const stages = buildStages(lesson);
-  const firstOpen = stages.find(
-    (st) => st.key !== "flashcards" && st.state === "open"
-  );
+  const firstOpen = stages.find((st) => st.state === "open");
   if (firstOpen) return stageToView(firstOpen.key, lesson);
   return firstContentView(lesson);
 }

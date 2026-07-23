@@ -1,6 +1,6 @@
 import { Suspense, lazy } from "react";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, BookText, ClipboardList, Sparkles, Stethoscope, Trophy } from "lucide-react";
+import { ArrowLeft, BookText, ClipboardList, Stethoscope, Trophy } from "lucide-react";
 import { EmptyState, Icon, Spinner } from "@meduni/ui";
 import type { Lesson } from "../api";
 import { Panel } from "./Panel";
@@ -22,7 +22,6 @@ const ResultPanel = lazy(() => import("./ResultPanel").then((m) => ({ default: m
 const SURFACE_ICON = {
   case: Stethoscope,
   quiz: ClipboardList,
-  flashcards: Sparkles,
   result: Trophy,
 } as const;
 
@@ -58,15 +57,18 @@ export function ContentPanel({
   if (lesson.materials.some((m) => m.hasText)) contentTabs.push("materials");
 
   const isContentView =
-    view === "konspekt" || view === "video" || view === "slides" || view === "materials";
+    view === "konspekt" ||
+    view === "video" ||
+    view === "slides" ||
+    view === "materials" ||
+    view === "flashcards";
 
-  // ---- Baholash / natija yuzasi ----
+  // ---- Baholash / natija yuzasi (test/keys/natija — fokus rejim) ----
   if (!isContentView && view !== "overview") {
-    const key = view as "case" | "quiz" | "flashcards" | "result";
+    const key = view as "case" | "quiz" | "result";
     const terminal =
       (key === "quiz" && lesson.tabs.quiz?.attempt?.status === "finished") ||
-      (key === "case" && !!lesson.tabs.case?.attempt) ||
-      key === "flashcards";
+      (key === "case" && !!lesson.tabs.case?.attempt);
     return (
       <Panel
         header={
@@ -90,7 +92,6 @@ export function ContentPanel({
         <div className="mx-auto w-full max-w-[720px]">
           {view === "case" && lesson.tabs.case && <CaseTab topicId={topicId} data={lesson.tabs.case} />}
           {view === "quiz" && lesson.tabs.quiz && <QuizTab topicId={topicId} data={lesson.tabs.quiz} />}
-          {view === "flashcards" && <FlashcardsTab topicId={topicId} />}
           {view === "result" && (
             <Suspense
               fallback={
@@ -104,6 +105,16 @@ export function ContentPanel({
           )}
           {terminal && <NextStageBar stages={stages} currentKey={key as StageKey} onSelect={onStage} />}
         </div>
+      </Panel>
+    );
+  }
+
+  // ---- Fleshkartalar (o'rganish bloki — takrorlash) ----
+  // Rail + chat bilan 3-panelда ko'rsatiladi; shapka yo'q (nom chap railda).
+  if (view === "flashcards") {
+    return (
+      <Panel bodyClassName="p-4">
+        <FlashcardsTab topicId={topicId} />
       </Panel>
     );
   }
