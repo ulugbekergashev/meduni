@@ -239,10 +239,15 @@ teachCoursesRouter.put(
   wrap(async (req, res) => res.json(await svc.saveSyllabus(parseId(req.params.id), req.user!.id, req.body ?? {})))
 );
 
-// Course-level default unlock rule (Settings tab).
+// Course-level settings: default unlock rule + schedule-driven unlock (Settings tab).
 teachCoursesRouter.put(
   "/courses/:id/settings",
   wrap(async (req, res) =>
-    res.json(await svc.updateCourseSettings(parseId(req.params.id), req.user!.id, req.body?.defaultUnlockRuleJson))
+    res.json(
+      await svc.updateCourseSettings(parseId(req.params.id), req.user!.id, {
+        defaultUnlockRuleJson: req.body?.defaultUnlockRuleJson,
+        scheduleUnlock: req.body?.scheduleUnlock,
+      })
+    )
   )
 );

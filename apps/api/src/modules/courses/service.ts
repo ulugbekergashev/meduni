@@ -419,7 +419,7 @@ export async function getTeacherCourseMeta(courseId: number, teacherId: number) 
   if (c.teacherId !== teacherId) {
     throw new ApiError(403, "forbidden", "Bu sizning kursingiz emas", "Это не ваш курс");
   }
-  return { ...toCourseOut(c), defaultUnlockRuleJson: c.defaultUnlockRuleJson ?? null };
+  return { ...toCourseOut(c), defaultUnlockRuleJson: c.defaultUnlockRuleJson ?? null, scheduleUnlock: c.scheduleUnlock };
 }
 
 interface SyllabusMeta {
@@ -492,15 +492,23 @@ export async function saveSyllabus(
   return { ok: true };
 }
 
-export async function updateCourseSettings(courseId: number, teacherId: number, defaultUnlockRuleJson: unknown) {
+export async function updateCourseSettings(
+  courseId: number,
+  teacherId: number,
+  body: { defaultUnlockRuleJson?: unknown; scheduleUnlock?: boolean }
+) {
   const c = await prisma.course.findUnique({ where: { id: courseId } });
   if (!c) throw notFound("Kurs");
   if (c.teacherId !== teacherId) {
     throw new ApiError(403, "forbidden", "Bu sizning kursingiz emas", "Это не ваш курс");
   }
-  await prisma.course.update({
-    where: { id: courseId },
-    data: { defaultUnlockRuleJson: (defaultUnlockRuleJson ?? null) as object },
-  });
+  const data: Prisma.CourseUpdateInput = {};
+  if (body.defaultUnlockRuleJson !== undefined) {
+    data.defaultUnlockRuleJson = (body.defaultUnlockRuleJson ?? null) as object;
+  }
+  if (typeof body.scheduleUnlock === "boolean") {
+    data.scheduleUnlock = body.scheduleUnlock;
+  }
+  await prisma.course.update({ where: { id: courseId }, data });
   return { ok: true };
 }

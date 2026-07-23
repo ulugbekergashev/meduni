@@ -13,7 +13,7 @@ export const DEFAULT_RULE: UnlockRule = {
   logic: "AND",
 };
 
-export function UnlockRuleForm({ value, onChange }: { value: UnlockRule; onChange: (r: UnlockRule) => void }) {
+export function UnlockRuleForm({ value, onChange, hideDate = false }: { value: UnlockRule; onChange: (r: UnlockRule) => void; hideDate?: boolean }) {
   const { t } = useTranslation(undefined, { keyPrefix: "settings" });
   const set = (p: Partial<UnlockRule>) => onChange({ ...value, ...p });
   const num = (v: string, fallback: number) => (v === "" ? fallback : Math.max(0, Number(v)));
@@ -63,13 +63,15 @@ export function UnlockRuleForm({ value, onChange }: { value: UnlockRule; onChang
       </label>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label={t("notBeforeDate")}>
-          <Input
-            type="date"
-            value={value.notBeforeDate ?? ""}
-            onChange={(e) => set({ notBeforeDate: e.target.value || null })}
-          />
-        </Field>
+        {!hideDate && (
+          <Field label={t("notBeforeDate")}>
+            <Input
+              type="date"
+              value={value.notBeforeDate ?? ""}
+              onChange={(e) => set({ notBeforeDate: e.target.value || null })}
+            />
+          </Field>
+        )}
         <Field label={t("logic")}>
           <Select value={value.logic} onChange={(e) => set({ logic: e.target.value as "AND" | "OR" })}>
             <option value="AND">{t("logicAnd")}</option>
