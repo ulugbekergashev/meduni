@@ -11,7 +11,7 @@ export function CourseCard({ course, avgProgress }: { course: TeachCourse; avgPr
   return (
     <button
       onClick={() => navigate(`/teach/courses/${course.id}`)}
-      className="group relative flex h-full w-full flex-col gap-5 overflow-hidden rounded-[24px] bg-white/40 p-6 text-left shadow-[0_8px_30px_rgb(0,0,0,0.04)] ring-1 ring-white/60 backdrop-blur-2xl transition-all duration-500 hover:-translate-y-2 hover:bg-white/60 hover:shadow-[0_20px_40px_rgb(0,0,0,0.12)] hover:ring-white"
+      className="group relative flex h-full w-full flex-col gap-5 overflow-hidden rounded-[24px] bg-surface p-6 text-left shadow-sm ring-1 ring-line transition-all duration-300 hover:-translate-y-1 hover:bg-surface-raised hover:shadow-md"
     >
       {/* Decorative gradient blobs */}
       <div className="absolute -right-6 -top-6 h-32 w-32 rounded-full bg-brand/10 blur-2xl transition-opacity duration-500 group-hover:bg-brand/20 group-hover:opacity-100" />
@@ -33,13 +33,13 @@ export function CourseCard({ course, avgProgress }: { course: TeachCourse; avgPr
       </div>
 
       <div className="relative z-10 flex flex-wrap gap-2 text-[13px]">
-        <span className="flex items-center gap-1 rounded-full bg-white/70 px-3 py-1 font-bold text-brand-deep shadow-sm ring-1 ring-black/5 backdrop-blur-md">
+        <span className="flex items-center gap-1 rounded-full bg-brand-soft px-3 py-1 font-bold text-brand-deep shadow-sm ring-1 ring-brand/20">
           {t("semesterN", { n: course.semester })}
         </span>
         {course.groups.map((g) => (
           <span
             key={g.id}
-            className="rounded-full bg-white/40 px-3 py-1 font-semibold text-ink-soft shadow-sm ring-1 ring-black/5 backdrop-blur-md transition-colors group-hover:bg-white/60 group-hover:text-ink"
+            className="rounded-full bg-surface-raised px-3 py-1 font-semibold text-ink-soft shadow-sm ring-1 ring-line transition-colors group-hover:bg-surface-glass group-hover:text-ink"
           >
             {g.name}
           </span>

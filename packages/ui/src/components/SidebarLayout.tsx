@@ -104,11 +104,11 @@ export function SidebarLayout({ brand, items, children, headerSlot, rightSlot, f
       </aside>
 
       <main className="relative flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-30 flex h-[57px] shrink-0 items-center gap-3 border-b border-line bg-surface px-4 sm:px-6">
+        <header className="sticky top-0 z-30 flex h-[64px] shrink-0 items-center gap-4 border-b border-line/50 bg-surface/80 px-4 backdrop-blur-xl shadow-sm sm:px-6 transition-all duration-300">
           <button
             onClick={toggle}
             aria-label={collapsed ? "open sidebar" : "collapse sidebar"}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-control text-ink-soft transition-colors hover:bg-bg hover:text-ink"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-ink-soft transition-all hover:bg-surface-raised hover:text-ink hover:shadow-sm"
           >
             <Icon icon={PanelLeft} size={18} />
           </button>

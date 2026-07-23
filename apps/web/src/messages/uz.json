@@ -216,7 +216,20 @@
     "subtitle": "Bu kurs qaysi guruhlarda oʻtiladi. Guruhni bosing — profili (talabalar, jurnal, davomat).",
     "empty": "Kursga hali guruh biriktirilmagan (admin biriktiradi).",
     "yearN": "{{n}}-kurs",
-    "studentsN": "{{n}} talaba"
+    "studentsN": "{{n}} talaba",
+    "subtitleManage": "Bu kurs qaysi guruhlarda oʻtiladi. Guruh biriktiring — talabalar avtomatik yoziladi.",
+    "attachBtn": "Guruh biriktirish",
+    "emptyManage": "Hali guruh biriktirilmagan. \"Guruh biriktirish\" orqali qoʻshing.",
+    "detach": "Uzish",
+    "detached": "Guruh kursdan uzildi",
+    "detachTitle": "Guruhni uzish",
+    "detachConfirm": "\"{{name}}\" kursdan uziladi. Talabalar oʻqishdan chiqariladi (tarixi saqlanadi). Davom etamizmi?",
+    "attachTitle": "Guruh biriktirish",
+    "attachHint": "Guruhni tanlang — uning talabalari kursga avtomatik yoziladi.",
+    "noAssignable": "Biriktirish uchun boshqa guruh yoʻq (fakultetdagi barcha guruhlar ulangan).",
+    "attachOne": "Ulash",
+    "attached": "\"{{name}}\" biriktirildi — {{n}} talaba yozildi",
+    "close": "Yopish"
   },
   "userProfile": {
     "back": "← Foydalanuvchilar",

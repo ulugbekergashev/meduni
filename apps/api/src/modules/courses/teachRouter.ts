@@ -76,6 +76,20 @@ teachCoursesRouter.get(
   wrap(async (req, res) => res.json(await progress.getCourseGroupsStats(parseId(req.params.id), req.user!.id)))
 );
 
+// O'qituvchi o'z kursiga guruh biriktiradi / uzadi (talabalar avto yoziladi/DROPPED).
+teachCoursesRouter.get(
+  "/courses/:id/assignable-groups",
+  wrap(async (req, res) => res.json(await svc.listAssignableGroups(parseId(req.params.id), req.user!.id)))
+);
+teachCoursesRouter.post(
+  "/courses/:id/groups",
+  wrap(async (req, res) => res.json(await svc.teacherAttachGroup(parseId(req.params.id), req.user!.id, Number(req.body?.groupId))))
+);
+teachCoursesRouter.delete(
+  "/courses/:id/groups/:groupId",
+  wrap(async (req, res) => res.json(await svc.teacherDetachGroup(parseId(req.params.id), req.user!.id, parseId(req.params.groupId))))
+);
+
 // One student's full picture (attendance + progress + tests + cases).
 teachCoursesRouter.get(
   "/students/:id",
