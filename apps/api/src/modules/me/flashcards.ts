@@ -108,6 +108,16 @@ export async function getFlashcards(studentId: number, topicId: number) {
   };
 }
 
+// Interval takrorlash (Modul 26) — SM-2  soddalashtirilgan: "bilaman" har safar
+// keyingi intervalga o'tkazadi, "bilmayman" 1 kunga qaytaradi.
+const REVIEW_BUCKETS = [1, 3, 7, 16, 35] as const;
+const DAY_MS = 24 * 60 * 60 * 1000;
+function nextIntervalDays(prevDays: number, known: boolean): number {
+  if (!known) return REVIEW_BUCKETS[0];
+  for (const d of REVIEW_BUCKETS) if (d > prevDays) return d;
+  return REVIEW_BUCKETS[REVIEW_BUCKETS.length - 1];
+}
+
 export async function reviewFlashcard(studentId: number, topicId: number, cardKey: string, known: boolean) {
   await assertTopicOpen(studentId, topicId);
   if (!cardKey || cardKey.length > 64) throw badRequest("Karta notoʻgʻri", "Неверная карточка");
@@ -118,14 +128,50 @@ export async function reviewFlashcard(studentId: number, topicId: number, cardKe
   }
   if (!cards.some((c) => c.key === cardKey)) throw notFound("Karta");
 
+  const prev = await prisma.flashcardReview.findUnique({
+    where: { studentId_topicId_cardKey: { studentId, topicId, cardKey } },
+    select: { intervalDays: true },
+  });
+  const days = nextIntervalDays(prev?.intervalDays ?? 0, known);
+  const dueAt = new Date(Date.now() + days * DAY_MS);
+
   await prisma.flashcardReview.upsert({
     where: { studentId_topicId_cardKey: { studentId, topicId, cardKey } },
-    create: { studentId, topicId, cardKey, known },
-    update: { known },
+    create: { studentId, topicId, cardKey, known, intervalDays: days, dueAt },
+    update: { known, intervalDays: days, dueAt },
   });
 
   const knownCount = await prisma.flashcardReview.count({ where: { studentId, topicId, known: true } });
   return { ok: true, knownCount, total: cards.length };
+}
+
+/** Bugun takrorlash kerak bo'lgan kartalar — barcha mavzular kesimida
+ *  (Dashboard "Bugun takrorlang" bloki). dueAt <= hozir bo'lgan kartalar. */
+export async function getReviewDue(studentId: number) {
+  const now = new Date();
+  const rows = await prisma.flashcardReview.groupBy({
+    by: ["topicId"],
+    where: { studentId, dueAt: { not: null, lte: now } },
+    _count: { _all: true },
+  });
+  if (rows.length === 0) return { total: 0, topics: [] as { topicId: number; topicTitle: string; subjectName: string; dueCount: number }[] };
+
+  const topics = await prisma.topic.findMany({
+    where: { id: { in: rows.map((r) => r.topicId) } },
+    select: { id: true, title: true, subject: { select: { name: true } } },
+  });
+  const byId = new Map(topics.map((t) => [t.id, t]));
+  const list = rows
+    .map((r) => ({
+      topicId: r.topicId,
+      topicTitle: byId.get(r.topicId)?.title ?? "—",
+      subjectName: byId.get(r.topicId)?.subject.name ?? "",
+      dueCount: r._count._all,
+    }))
+    .filter((x) => byId.has(x.topicId))
+    .sort((a, b) => b.dueCount - a.dueCount);
+
+  return { total: list.reduce((s, x) => s + x.dueCount, 0), topics: list };
 }
 
 /** Takrorlashni qaytadan boshlash — barcha belgilarni tozalaydi. */

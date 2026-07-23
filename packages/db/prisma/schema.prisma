@@ -595,10 +595,15 @@ model FlashcardReview {
   topic      Topic    @relation(fields: [topicId], references: [id], onDelete: Cascade)
   cardKey    String
   known      Boolean
-  reviewedAt DateTime @updatedAt
+  /// Interval takrorlash (Modul 26): joriy interval (kun) va navbatdagi takror
+  /// sanasi. "bilaman" → interval o'sadi, "bilmayman" → 1 kunga qaytadi.
+  intervalDays Int      @default(0)
+  dueAt        DateTime?
+  reviewedAt   DateTime @updatedAt
 
   @@unique([studentId, topicId, cardKey])
   @@index([studentId, topicId])
+  @@index([studentId, dueAt])
   @@map("flashcard_reviews")
 }
 

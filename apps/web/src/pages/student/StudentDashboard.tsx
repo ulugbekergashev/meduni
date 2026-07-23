@@ -15,6 +15,7 @@ import {
   Layers,
   Medal,
   PlayCircle,
+  Repeat,
   Sparkles,
   Stethoscope,
   Trophy,
@@ -34,6 +35,7 @@ import {
   useMyRank,
   useMySchedule,
   useMyTasks,
+  useReviewDue,
   useSetMyTaskDone,
   type ActivityType,
   type ScheduleItem,
@@ -149,6 +151,7 @@ export function StudentDashboard() {
   const activityQ = useMyActivity();
   const attendanceQ = useMyAttendance(undefined, {});
   const gradesQ = useMyGrades();
+  const reviewQ = useReviewDue();
   const done = useSetMyTaskDone();
 
   const d = q.data;
@@ -480,8 +483,36 @@ export function StudentDashboard() {
                 </motion.div>
               </div>
 
-              {/* O'ng ustun — bildirishnoma, faollik */}
+              {/* O'ng ustun — takrorlash, bildirishnoma, faollik */}
               <aside className="min-w-0 space-y-3">
+                {/* Interval takrorlash — bugun takrorlash kerak bo'lgan kartalar */}
+                {reviewQ.data && reviewQ.data.total > 0 && (
+                  <motion.div variants={itemVariants}>
+                    <RailCard title={t("reviewDueTitle")} icon={Repeat}>
+                      <div className="divide-y divide-line">
+                        {reviewQ.data.topics.slice(0, 5).map((tp) => (
+                          <button
+                            key={tp.topicId}
+                            onClick={() => navigate(`/app/topics/${tp.topicId}?view=flashcards`)}
+                            className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left transition-colors hover:bg-bg"
+                          >
+                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-violet-soft text-violet">
+                              <Icon icon={Sparkles} size={15} />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-body font-semibold text-ink">{tp.topicTitle}</p>
+                              <p className="truncate text-note text-ink-faint">{tp.subjectName}</p>
+                            </div>
+                            <span className="shrink-0 rounded-pill bg-violet-soft px-2 py-0.5 text-note font-bold tabular-nums text-violet">
+                              {tp.dueCount}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </RailCard>
+                  </motion.div>
+                )}
+
                 {d.notifications.length > 0 && (
                   <motion.div variants={itemVariants}>
                     <RailCard title={t("notifications")} icon={ClipboardCheck}>
