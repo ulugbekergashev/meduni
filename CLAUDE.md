@@ -1102,6 +1102,41 @@ Barcha modullar tugadi (1-17).
   AI generatsiyani jimgina sindirgan edi). Demo: `apps/api/src/scripts/demoLesson.ts`
   (topic 29 — 5 bo'limli tasdiqlangan konspekt, 2 material, 2 havola, v2 keys).
 
+- **Dars sahifasi UX overhaul + fleshkarta o'rganishga (2026-07-23).** Buyurtmachi:
+  "joylashuvlar norm, lekin samolyot boshqaruviga o'xshaydi". Sabab layout emas —
+  ovoz ierarxiyasi + takror signal + kichik matn edi. (1) **OVOZ IERARXIYASI**:
+  `lesson/Panel.tsx::tone` (`content`=yagona yoritilgan karta; `chrome`=rail/chat,
+  chegarasiz). (2) **Takrorlar olib tashlandi** (~13 signal): "O'qildi 5/5" faqat
+  TOC'da, stepper=marker+nom+1 agregat %, overview'da stepper yashirin, materiallar
+  rail'da 1 joyda, ContentPanel shapkasiz. "Tugadi" = kontur belgi (to'ldirilgan
+  yashil emas). (3) **Tipografika +1** (§4 tokenlar). (4) **Motion**: layoutId
+  suzuvchi chip, o'qish-progress chizig'i, sakramas % counter, chat animatsiyalari,
+  focus-visible ring — hammasi `useReducedMotion` bilan. (5) **anime.js v4** natija
+  ekrani timeline'i (React.lazy chunk). (6) 3D fleshkarta. §4 "OVOZ IERARXIYASI"
+  va "Motion" qoidalari qo'shildi. **Fleshkarta fokus rejimidan O'RGANISH bloklariga
+  ko'chirildi** (`ContentView += "flashcards"`, StageKey'dan chiqarildi): chap
+  rail'da konspekt/slaydlar/video/material bilan yonma-yon, test yakunlanmaguncha
+  qulf (backend qulfi bilan mos).
+
+- **Modul 25 — Kurs guruh chati + nav qayta nomlash (2026-07-23, buyurtmachi
+  "Yakuniy Xulosa" strukturasi).** (A) **Nav qayta tuzildi:** Jadval alohida modul
+  emas → **Davomat sahifasi ichida tab** (`?sub=jadval`, `AttendancePage` endi
+  Davomat|Dars jadvali segmented tab; `/app/schedule` → redirect). Nomlar:
+  Kurslarim→**Kurslar**, Baholarim→**O'zlashtirish**, Profil→**Profil va sozlamalar**.
+  Vazifalar qoldi. (B) **Kurs Chati (yangi, to'liq)** — o'qituvchi + guruh talabalari
+  real muloqoti (dars ichidagi AI-tutor chatdan ALOHIDA). Prisma `CourseChatMessage`
+  (courseId/authorId/text, cascade; migratsiya `course_chat`). Backend
+  `modules/chat/service.ts` — kirish: talaba ACTIVE enrollment, o'qituvchi
+  `course.teacherId`; `me` route (`/me/courses/:id/chat[/meta]`) + `teach` route
+  (`/teach/courses/:id/chat[/meta]`), **5s polling** (jadval yo'q). Frontend:
+  `/app/chat` (`CourseChatPage` — kurslar ro'yxati + chat, mobil'da bitta ustun,
+  fullBleed) + o'qituvchi kurs shell'ida **"Chat" tab** (`CourseChatTab`). Xabar:
+  rol badge (o'qituvchi), mine=o'ng brand, sana ajratgichlar. **Smoke 10/10**
+  (real): talaba post/mine=student, o'qituvchi javob mine=false role=teacher,
+  yozilmagan kurs→403. tsc+build ikkala tomonda toza. ⚠️ Roadmap qoldi: virtual
+  bemor, smart tooltip, PDF export, notifications, bookmarks (talabnoma —
+  `Desktop/talabnoma-student-panel.md`).
+
 ## 9. Loyiha holati va ishga tushirish (operatsion — sessiya 0)
 
 **Monorepo (npm workspaces):**

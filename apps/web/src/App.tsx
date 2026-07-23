@@ -27,6 +27,7 @@ import { CourseGroupsTab } from "./pages/teach/course/CourseGroupsTab";
 import { SyllabusTab } from "./pages/teach/course/SyllabusTab";
 import { GroupProfile } from "./pages/teach/group/GroupProfile";
 import { ProgressTab } from "./pages/teach/course/ProgressTab";
+import { CourseChatTab } from "./pages/teach/course/CourseChatTab";
 import { SettingsTab } from "./pages/teach/course/SettingsTab";
 import { TopicConstructor } from "./pages/teach/topics/TopicConstructor";
 import { ContentEditor } from "./pages/teach/content/ContentEditor";
@@ -38,7 +39,7 @@ import { StudentDashboard } from "./pages/student/StudentDashboard";
 import { StudentTasksPage } from "./pages/student/StudentTasksPage";
 import { StudentCoursesPage } from "./pages/student/StudentCoursesPage";
 import { GradesPage } from "./pages/student/GradesPage";
-import { SchedulePage } from "./pages/student/SchedulePage";
+import { CourseChatPage } from "./pages/student/CourseChatPage";
 import { CoursePath } from "./pages/student/CoursePath";
 import { LessonPage } from "./pages/student/lesson/LessonPage";
 import { AttendancePage } from "./pages/student/AttendancePage";
@@ -100,6 +101,7 @@ export function App() {
           {/* Attendance moved to the group profile; old links land on topics. */}
           <Route path="sessions" element={<Navigate to="../topics" replace />} />
           <Route path="progress" element={<ProgressTab />} />
+          <Route path="chat" element={<CourseChatTab />} />
           <Route path="settings" element={<SettingsTab />} />
         </Route>
         {/* Topic constructor — separate page, NOT inside the course shell */}
@@ -119,8 +121,10 @@ export function App() {
       >
         <Route index element={<StudentDashboard />} />
         <Route path="tasks" element={<StudentTasksPage />} />
+        <Route path="chat" element={<CourseChatPage />} />
         <Route path="grades" element={<GradesPage />} />
-        <Route path="schedule" element={<SchedulePage />} />
+        {/* Jadval endi Davomat sahifasining ichida (tab) — eski link redirect qiladi. */}
+        <Route path="schedule" element={<Navigate to="/app/attendance?sub=jadval" replace />} />
         <Route path="courses" element={<StudentCoursesPage />} />
         <Route path="courses/:id" element={<CoursePath />} />
         <Route path="topics/:id" element={<LessonPage />} />
