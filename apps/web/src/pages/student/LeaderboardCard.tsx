@@ -6,31 +6,33 @@ import { useMyProfile, useMyRank, type LeaderboardRow } from "./api";
 
 function Row({ row }: { row: LeaderboardRow }) {
   const { t } = useTranslation(undefined, { keyPrefix: "leaderboard" });
-  const top3 = row.rank <= 3;
   return (
     <div
       className={cls(
-        "flex items-center gap-3 px-4 py-2.5",
-        row.isMe && "bg-brand-soft"
+        "group flex items-center gap-4 px-5 py-3.5 transition-all duration-300 hover:bg-surface-raised",
+        row.isMe && "bg-brand-soft/50 ring-1 ring-brand-tint/20"
       )}
     >
       <div
         className={cls(
-          "flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-note font-bold tabular-nums",
-          top3 ? "bg-amber-soft text-amber" : "bg-surface-raised text-ink-soft"
+          "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[14px] font-black tabular-nums transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6",
+          row.rank === 1 ? "bg-gradient-to-br from-yellow-300 to-yellow-600 text-white shadow-lg ring-4 ring-yellow-500/20" :
+          row.rank === 2 ? "bg-gradient-to-br from-slate-300 to-slate-500 text-white shadow-md ring-4 ring-slate-400/20" :
+          row.rank === 3 ? "bg-gradient-to-br from-orange-400 to-amber-700 text-white shadow-md ring-4 ring-orange-500/20" :
+          "bg-surface-raised text-ink-soft shadow-inner border border-line"
         )}
       >
         {row.rank}
       </div>
-      <p className="min-w-0 flex-1 truncate text-body font-semibold text-ink">
+      <p className="min-w-0 flex-1 truncate text-body font-semibold text-ink transition-colors group-hover:text-brand-tint">
         {row.fullName}
         {row.isMe && (
-          <span className="ml-1.5 rounded-pill bg-brand px-1.5 py-0.5 text-[11px] font-bold text-white">
+          <span className="ml-2 rounded-pill bg-brand-tint px-2 py-0.5 text-[11px] font-bold tracking-wide text-white drop-shadow-sm">
             {t("you")}
           </span>
         )}
       </p>
-      <span className="shrink-0 text-note font-semibold tabular-nums text-ink-soft">
+      <span className="shrink-0 text-note font-semibold tabular-nums text-ink-soft transition-colors group-hover:text-ink">
         {t("completedN", { count: row.completed })}
       </span>
     </div>

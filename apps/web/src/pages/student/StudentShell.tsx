@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import { Outlet, useLocation } from "react-router-dom";
-import { Award, BookOpen, CalendarCheck, FileText, Home, ListChecks, MessagesSquare, User } from "lucide-react";
+import { Award, BookOpen, CalendarCheck, FileText, Home, ListChecks, User } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Icon } from "@meduni/ui";
 import { RoleShell } from "../../components/RoleShell";
@@ -19,9 +19,9 @@ export function StudentShell() {
   const locale = useLocale();
   const tasks = useMyTasks();
   const openTasks = tasks.data?.auto.length ?? 0;
-  // Ishchi panel (to'liq ekran, panel ichida skroll): dars sahifasi + kurs chati.
+  // Ishchi panel (to'liq ekran, panel ichida skroll): dars sahifasi.
   const { pathname } = useLocation();
-  const isWorkspace = /^\/app\/topics\/\d+/.test(pathname) || pathname === "/app/chat";
+  const isWorkspace = /^\/app\/topics\/\d+/.test(pathname);
 
   // 2026-07-23 (buyurtmachi): majburiy qora tema BEKOR — tibbiyot platformasiga
   // tinch yorug' palitra mos; Dark Mode talabnoma bo'yicha OPTSIYA sifatida
@@ -66,7 +66,6 @@ export function StudentShell() {
         { href: "/app", label: t("dashboard"), icon: <Icon icon={Home} />, end: true },
         { href: "/app/courses", label: t("myCourses"), icon: <Icon icon={BookOpen} />, end: true },
         { href: "/app/tasks", label: t("tasks"), icon: <Icon icon={ListChecks} />, badge: openTasks },
-        { href: "/app/chat", label: t("courseChat"), icon: <Icon icon={MessagesSquare} /> },
         { href: "/app/grades", label: t("grades"), icon: <Icon icon={Award} /> },
         { href: "/app/attendance", label: t("attendance"), icon: <Icon icon={CalendarCheck} /> },
         { href: "/app/profile", label: t("profile"), icon: <Icon icon={User} /> },

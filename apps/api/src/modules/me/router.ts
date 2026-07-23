@@ -9,7 +9,6 @@ import * as chat from "./chat";
 import * as flashcards from "./flashcards";
 import * as patient from "./patient";
 import * as practice from "./practice";
-import * as courseChat from "../chat/service";
 import { computeStudentAutoTasks, listAssigned } from "../tasks/service";
 import { studentSearch } from "../search/service";
 
@@ -47,26 +46,6 @@ meRouter.get("/tasks", wrap(async (req, res) => {
   res.json({ auto, assigned });
 }));
 meRouter.get("/courses", wrap(async (req, res) => res.json(await svc.listMyCourses(req.user!.id))));
-
-// ---------- Kurs chati (Modul 25) — talaba tomoni ----------
-// ⚠️ /courses/:id/chat* marshrutlari /courses/:id dan OLDIN turishi shart.
-meRouter.get(
-  "/courses/:id/chat",
-  wrap(async (req, res) => {
-    const after = req.query.after ? Number(req.query.after) : undefined;
-    res.json(await courseChat.getStudentChat(req.user!.id, parseId(req.params.id), after));
-  })
-);
-meRouter.get("/courses/:id/chat/meta", wrap(async (req, res) => res.json(await courseChat.chatCourseMeta(parseId(req.params.id)))));
-const chatMsgSchema = z.object({ text: z.string().min(1).max(2000) });
-meRouter.post(
-  "/courses/:id/chat",
-  wrap(async (req, res) => {
-    const b = parseBody(chatMsgSchema, req.body);
-    res.json(await courseChat.postStudentChat(req.user!.id, parseId(req.params.id), b.text));
-  })
-);
-
 meRouter.get("/courses/:id", wrap(async (req, res) => res.json(await svc.getMyCourse(req.user!.id, parseId(req.params.id)))));
 
 // ---------- Attendance + profile (Module 16) ----------

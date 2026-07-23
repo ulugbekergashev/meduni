@@ -95,7 +95,6 @@ export function TeacherCourseShell() {
             { to: `${base}/syllabus`, label: t("tabs.syllabus") },
             { to: `${base}/groups`, label: t("tabs.groups") },
             { to: `${base}/progress`, label: t("tabs.results") },
-            { to: `${base}/chat`, label: t("tabs.chat") },
             { to: `${base}/settings`, label: t("tabs.settings") },
           ]}
         />

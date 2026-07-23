@@ -678,61 +678,6 @@ export function usePatientPractice() {
   });
 }
 
-// ---- Kurs guruh chati (Modul 25) — o'qituvchi + guruh talabalari ----
-
-export interface CourseChatMessage {
-  id: number;
-  text: string;
-  authorId: number;
-  authorName: string;
-  role: "teacher" | "student";
-  mine: boolean;
-  createdAt: string;
-}
-
-export interface CourseChatMeta {
-  courseId: number;
-  name: string;
-  teacherName: string;
-  memberCount: number;
-}
-
-/** Kurs chati — 5s polling bilan (real vaqtga yaqin). */
-export function useCourseChat(courseId: number | null) {
-  return useQuery({
-    queryKey: ["me-course-chat", courseId],
-    queryFn: () => api<{ messages: CourseChatMessage[] }>(`/api/v1/me/courses/${courseId}/chat`),
-    enabled: courseId != null,
-    refetchInterval: 5000,
-  });
-}
-
-export function useCourseChatMeta(courseId: number | null) {
-  return useQuery({
-    queryKey: ["me-course-chat-meta", courseId],
-    queryFn: () => api<CourseChatMeta>(`/api/v1/me/courses/${courseId}/chat/meta`),
-    enabled: courseId != null,
-  });
-}
-
-export function useSendCourseChat(courseId: number | null) {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (text: string) =>
-      api<CourseChatMessage>(`/api/v1/me/courses/${courseId}/chat`, {
-        method: "POST",
-        body: JSON.stringify({ text }),
-      }),
-    onSuccess: (msg) => {
-      qc.setQueryData<{ messages: CourseChatMessage[] }>(["me-course-chat", courseId], (old) => {
-        const list = old?.messages ?? [];
-        if (list.some((m) => m.id === msg.id)) return old!;
-        return { messages: [...list, msg] };
-      });
-    },
-  });
-}
-
 /** Konspekt bo'limini o'qildi deb belgilaydi (1a — "O'qildi n/N"). */
 export function useMarkSectionRead(topicId: number) {
   const qc = useQueryClient();

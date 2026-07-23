@@ -12,7 +12,7 @@ import {
   UserX,
   type LucideIcon,
 } from "lucide-react";
-import { BarRow, Card, Icon, ProgressBar, ProgressRing, Spinner } from "@meduni/ui";
+import { BarRow, Card, Icon, ProgressBar, ProgressRing, Spinner, cls } from "@meduni/ui";
 import { AsyncSection } from "../../components/AsyncSection";
 import { useLocale } from "../../lib/useLocale";
 import { formatDate } from "../../lib/date";
@@ -20,25 +20,26 @@ import { useMe } from "../../lib/auth";
 import { useTeachCourses, useTeachDashboard, type RankedStudent } from "./api";
 import { CourseCard } from "./CourseCard";
 
-function QuickAction({ icon, label, tone, chip, onClick }: { icon: LucideIcon; label: string; tone: string; chip: string; onClick: () => void }) {
+function QuickAction({ icon, label, chip, onClick }: { icon: LucideIcon; label: string; chip: string; onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      className={`flex items-center gap-3.5 rounded-card border p-4 text-left shadow-card transition-all hover:-translate-y-0.5 hover:shadow-card-hover ${tone}`}
+      className={`group relative flex items-center gap-4 overflow-hidden rounded-2xl border p-5 text-left shadow-card transition-all duration-300 hover:-translate-y-1.5 hover:shadow-card-hover hover:border-brand/30 bg-surface`}
     >
-      <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-control text-white ${chip}`}>
-        <Icon icon={icon} size={20} />
+      <div className={`absolute -right-6 -top-6 h-24 w-24 rounded-full blur-2xl opacity-10 transition-opacity duration-300 group-hover:opacity-30 ${chip}`} />
+      <div className={`relative flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-white shadow-inner transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6 ${chip}`}>
+        <Icon icon={icon} size={22} />
       </div>
-      <span className="text-[15.5px] font-semibold text-ink">{label}</span>
+      <span className="relative z-10 text-[16px] font-bold text-ink transition-colors duration-300 group-hover:text-brand-tint">{label}</span>
     </button>
   );
 }
 
 function HeroStat({ value, label }: { value: string | number; label: string }) {
   return (
-    <div className="min-w-[72px]">
-      <p className="text-[26px] font-bold leading-none tabular-nums">{value}</p>
-      <p className="mt-1 text-[13.5px] font-medium text-white/70">{label}</p>
+    <div className="relative min-w-[72px] rounded-2xl bg-white/10 p-3.5 backdrop-blur-md border border-white/10 shadow-lg transition-transform hover:scale-105">
+      <p className="text-[28px] font-black leading-none tabular-nums text-white drop-shadow-md">{value}</p>
+      <p className="mt-1 text-[13px] font-bold uppercase tracking-wider text-white/80">{label}</p>
     </div>
   );
 }
@@ -48,24 +49,28 @@ function TaskRow({ icon, tone, count, label, onClick }: { icon: LucideIcon; tone
     <button
       onClick={onClick}
       disabled={!onClick}
-      className={`flex w-full items-center gap-3 rounded-control border p-3 text-left transition-all ${tone} ${onClick ? "hover:-translate-y-0.5 hover:shadow-sm" : "cursor-default"}`}
+      className={`group flex w-full items-center gap-4 rounded-2xl border border-line bg-surface p-4 text-left shadow-sm transition-all duration-300 ${onClick ? "hover:-translate-y-1 hover:border-brand/30 hover:shadow-md hover:pl-5" : "cursor-default"}`}
     >
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/60">
-        <Icon icon={icon} size={17} />
+      <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-6 ${tone}`}>
+        <Icon icon={icon} size={22} />
       </div>
-      <span className="text-[24px] font-bold tabular-nums leading-none">{count}</span>
-      <span className="text-body font-medium">{label}</span>
+      <div className="flex flex-col">
+        <span className="text-[26px] font-black tabular-nums leading-none text-ink drop-shadow-sm transition-colors group-hover:text-brand-tint">{count}</span>
+        <span className="mt-0.5 text-[14px] font-semibold text-ink-soft transition-colors group-hover:text-ink">{label}</span>
+      </div>
     </button>
   );
 }
 
 function MetricCard({ ring, tone, label, sublabel }: { ring: number; tone: "brand" | "blue" | "emerald"; label: string; sublabel?: string }) {
   return (
-    <Card className="flex items-center gap-4">
-      <ProgressRing value={ring} tone={tone} />
+    <Card className="group flex items-center gap-5 !p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-card-hover border border-line hover:border-brand/30">
+      <div className="transition-transform duration-500 group-hover:scale-110">
+        <ProgressRing value={ring} tone={tone} />
+      </div>
       <div className="min-w-0">
-        <p className="text-body font-semibold text-ink">{label}</p>
-        {sublabel && <p className="mt-0.5 text-note text-ink-faint">{sublabel}</p>}
+        <p className="text-[16px] font-extrabold text-ink transition-colors group-hover:text-brand-tint">{label}</p>
+        {sublabel && <p className="mt-1 text-[13.5px] font-medium text-ink-faint">{sublabel}</p>}
       </div>
     </Card>
   );
@@ -88,24 +93,32 @@ function RankingCard({
   onPick: (id: number) => void;
 }) {
   return (
-    <Card>
-      <p className={`mb-2.5 flex items-center gap-1.5 text-note font-bold uppercase tracking-wide ${tone}`}>
-        <Icon icon={icon} size={14} /> {title}
+    <Card className="group flex flex-col hover:border-brand/30 transition-colors duration-300">
+      <p className={`mb-4 flex items-center gap-2 text-[15px] font-extrabold uppercase tracking-widest ${tone}`}>
+        <Icon icon={icon} size={18} /> {title}
       </p>
       {rows.length === 0 ? (
-        <p className="py-2 text-note text-ink-faint">{emptyText}</p>
+        <p className="py-5 text-center text-[14.5px] font-medium text-ink-faint bg-surface-raised rounded-xl border border-dashed border-line">{emptyText}</p>
       ) : (
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           {rows.map((r, i) => (
             <button
               key={r.id}
               onClick={() => onPick(r.id)}
-              className="flex w-full items-center gap-2.5 rounded-control px-1.5 py-1 text-left transition-colors hover:bg-bg"
+              className="group/row flex w-full items-center gap-3.5 rounded-xl border border-transparent px-2.5 py-2 text-left transition-all hover:bg-surface-raised hover:border-line hover:shadow-sm hover:pl-4"
             >
-              <span className="w-4 shrink-0 text-note font-bold tabular-nums text-ink-faint">{i + 1}</span>
-              <span className="min-w-0 flex-1 truncate text-body text-ink">{r.fullName}</span>
-              <ProgressBar value={r.overallPct} className="hidden w-20 shrink-0 sm:block" tone={r.behind ? "rose" : "emerald"} />
-              <span className="w-9 shrink-0 text-right text-note font-bold tabular-nums text-ink-soft">{r.overallPct}%</span>
+              <div className={cls(
+                "flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[13px] font-black tabular-nums transition-transform group-hover/row:scale-110 group-hover/row:rotate-6",
+                i === 0 ? "bg-gradient-to-br from-yellow-300 to-yellow-600 text-white shadow-md ring-2 ring-yellow-500/20" :
+                i === 1 ? "bg-gradient-to-br from-slate-300 to-slate-500 text-white shadow-sm ring-2 ring-slate-400/20" :
+                i === 2 ? "bg-gradient-to-br from-orange-400 to-amber-700 text-white shadow-sm ring-2 ring-orange-500/20" :
+                "bg-bg text-ink-soft border border-line"
+              )}>
+                {i + 1}
+              </div>
+              <span className="min-w-0 flex-1 truncate text-[15px] font-bold text-ink group-hover/row:text-brand-tint transition-colors">{r.fullName}</span>
+              <ProgressBar value={r.overallPct} className="hidden w-24 shrink-0 sm:block" tone={r.behind ? "rose" : "emerald"} />
+              <span className="w-10 shrink-0 text-right text-[14.5px] font-bold tabular-nums text-ink-soft">{r.overallPct}%</span>
             </button>
           ))}
         </div>
@@ -132,16 +145,19 @@ export function TeachDashboard() {
   return (
     <div>
       {/* Hero band: greeting + date + at-a-glance numbers */}
-      <div className="rounded-card bg-gradient-to-br from-brand-deep to-brand p-4 text-white shadow-card sm:p-7">
-        <div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-5">
+      <div className="relative overflow-hidden rounded-[24px] bg-gradient-to-br from-brand-deep via-brand to-violet p-6 text-white shadow-[0_8px_30px_rgb(0,0,0,0.12)] sm:p-10">
+        <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
+        <div className="absolute -bottom-20 left-10 h-40 w-40 rounded-full bg-brand-tint/40 blur-3xl" />
+        
+        <div className="relative z-10 flex flex-wrap items-end justify-between gap-x-8 gap-y-6">
           <div className="min-w-0">
-            <h1 className="text-[26px] font-bold leading-tight tracking-tight">
+            <h1 className="text-[32px] font-black leading-tight tracking-tight drop-shadow-md">
               {t("hello")}, {me?.full_name?.split(" ")[0]}
             </h1>
-            <p className="mt-1 text-[14.5px] font-medium text-white/70">{today}</p>
+            <p className="mt-1.5 text-[16px] font-medium text-white/80">{today}</p>
           </div>
           {stats && (
-            <div className="flex gap-3">
+            <div className="flex flex-wrap gap-4">
               <HeroStat value={stats.students} label={t("statStudents")} />
               <HeroStat value={stats.courses} label={t("qaCourses")} />
               <HeroStat value={stats.groupList.length} label={t("qaGroups")} />
@@ -152,10 +168,10 @@ export function TeachDashboard() {
 
       {/* Quick actions */}
       <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <QuickAction icon={ListChecks} label={t("qaTasks")} tone="border-brand/20 bg-brand-soft" chip="bg-brand" onClick={() => navigate("/teach/tasks")} />
-        <QuickAction icon={ClipboardCheck} label={t("qaReview")} tone="border-amber/20 bg-amber-soft" chip="bg-amber" onClick={() => navigate("/teach/cases/review")} />
-        <QuickAction icon={BookOpen} label={t("qaCourses")} tone="border-blue/20 bg-blue-soft" chip="bg-blue" onClick={() => navigate("/teach/courses")} />
-        <QuickAction icon={Users2} label={t("qaGroups")} tone="border-violet/20 bg-violet-soft" chip="bg-violet" onClick={() => navigate("/teach/groups")} />
+        <QuickAction icon={ListChecks} label={t("qaTasks")} chip="bg-brand" onClick={() => navigate("/teach/tasks")} />
+        <QuickAction icon={ClipboardCheck} label={t("qaReview")} chip="bg-amber" onClick={() => navigate("/teach/cases/review")} />
+        <QuickAction icon={BookOpen} label={t("qaCourses")} chip="bg-blue" onClick={() => navigate("/teach/courses")} />
+        <QuickAction icon={Users2} label={t("qaGroups")} chip="bg-violet" onClick={() => navigate("/teach/groups")} />
       </div>
 
       {/* Tasks */}
@@ -252,15 +268,15 @@ export function TeachDashboard() {
           <h2 className="mb-3 text-section font-bold text-ink">{t("upcoming")}</h2>
           <div className="space-y-2">
             {dash.data.upcomingSessions.map((s) => (
-              <button key={s.id} onClick={() => navigate(s.groupId ? `/teach/groups/${s.groupId}?tab=sessions` : `/teach/courses/${s.courseId}`)} className="flex w-full items-center gap-3 rounded-card border border-line bg-surface p-3 text-left transition-all hover:-translate-y-0.5 hover:shadow-sm">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand-deep">
-                  <Icon icon={CalendarDays} size={18} />
+              <button key={s.id} onClick={() => navigate(s.groupId ? `/teach/groups/${s.groupId}?tab=sessions` : `/teach/courses/${s.courseId}`)} className="group flex w-full items-center gap-4 rounded-2xl border border-line bg-surface p-4 text-left transition-all duration-300 hover:-translate-y-1 hover:border-brand/30 hover:shadow-md hover:pl-5">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-brand-soft text-brand-deep shadow-inner transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
+                  <Icon icon={CalendarDays} size={22} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-body font-semibold text-ink">{s.title ?? s.subjectName}</p>
-                  <p className="truncate text-note text-ink-faint">{s.subjectName}{s.room ? ` · ${s.room}` : ""}</p>
+                  <p className="truncate text-[16px] font-bold text-ink transition-colors duration-300 group-hover:text-brand-tint">{s.title ?? s.subjectName}</p>
+                  <p className="mt-0.5 truncate text-[14px] font-medium text-ink-soft">{s.subjectName}{s.room ? ` · ${s.room}` : ""}</p>
                 </div>
-                <span className="shrink-0 text-note font-medium text-ink-soft">{formatDate(locale === "ru" ? "ru" : "uz", s.date, "short")}</span>
+                <span className="shrink-0 text-[14.5px] font-bold text-ink-soft">{formatDate(locale === "ru" ? "ru" : "uz", s.date, "short")}</span>
               </button>
             ))}
           </div>

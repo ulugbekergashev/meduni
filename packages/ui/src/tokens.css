@@ -1,52 +1,50 @@
 :root {
-  /* Indigo Pro palette (2026-07 redesign). Categorical chart set — brand, emerald,
-     amber, blue(sky), rose — is CVD/contrast-validated; amber↔emerald only ever
-     sit adjacent with a 2px gap or direct labels. Violet stays a UI accent (video). */
-  --bg: #f6f7f9;
+  /* Premium Light Mode Palette (WOW effect redesign). */
+  --bg: #f4f7fb;          /* Much softer, cooler background */
   --surface: #ffffff;
-  --surface-raised: #fbfbfd;
-  --surface-glass: #ffffff;
-  --ink: #101828;
-  --ink-strong: #101828;
-  --ink-soft: #5b6474;
-  --ink-faint: #98a1b2;
-  --ink-dim: #98a1b2;
-  --line: #e7eaf0;
-  --line-raised: #dfe3ec;
+  --surface-raised: #fafbfc;
+  --surface-glass: rgba(255, 255, 255, 0.75); /* Translucent for glassmorphism */
+  --ink: #0f172a;         /* Deep slate for better contrast */
+  --ink-strong: #020617;
+  --ink-soft: #64748b;    /* Modern slate soft text */
+  --ink-faint: #94a3b8;
+  --ink-dim: #cbd5e1;
+  --line: #e2e8f0;
+  --line-raised: #cbd5e1;
 
   --brand: #4f46e5;
   --brand-soft: #eef2ff;
   --brand-deep: #3730a3;
   --brand-tint: #4338ca;
 
-  --blue: #0284c7;
+  --blue: #0ea5e9;
   --blue-soft: #e0f2fe;
-  --violet: #7c3aed;
-  --violet-soft: #f1ebfe;
-  --amber: #d97706;
-  --amber-soft: #fef3e2;
-  --rose: #e11d48;
-  --rose-soft: #fde9ee;
-  --emerald: #059669;
-  --emerald-soft: #e6f7f0;
+  --violet: #8b5cf6;
+  --violet-soft: #ede9fe;
+  --amber: #f59e0b;
+  --amber-soft: #fef3c7;
+  --rose: #f43f5e;
+  --rose-soft: #ffe4e6;
+  --emerald: #10b981;
+  --emerald-soft: #d1fae5;
 
   /* Light sidebar (2026-07): white surface, soft indigo active chip. */
   --side-bg: #ffffff;
-  --side-bg-deep: #fbfbfd;
-  --side-ink: #101828;
-  --side-ink-soft: #5b6474;
-  --side-line: #e7eaf0;
+  --side-bg-deep: #f8fafc;
+  --side-ink: #0f172a;
+  --side-ink-soft: #64748b;
+  --side-line: #e2e8f0;
   --side-active-bg: #eef2ff;
   --side-active-ink: #4338ca;
-  --side-hover-bg: #f4f5f8;
+  --side-hover-bg: #f1f5f9;
 
-  --radius-card: 16px;
-  --radius-control: 10px;
-  --radius-pill: 20px;
+  --radius-card: 20px;    /* Smoother, larger border radius */
+  --radius-control: 12px;
+  --radius-pill: 9999px;
 
-  /* Soft, ink-tinted elevation (no harsh black shadows). */
-  --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.04), 0 8px 24px -12px rgba(16, 24, 40, 0.1);
-  --shadow-card-hover: 0 2px 4px rgba(16, 24, 40, 0.05), 0 16px 36px -12px rgba(16, 24, 40, 0.16);
+  /* Premium, dispersed, soft shadows (apple-like) */
+  --shadow-card: 0 4px 20px -4px rgba(15, 23, 42, 0.05), 0 1px 2px rgba(15, 23, 42, 0.02);
+  --shadow-card-hover: 0 12px 32px -8px rgba(15, 23, 42, 0.1), 0 4px 8px rgba(15, 23, 42, 0.04);
 }
 
 /* Dark theme — 2026-07-23 yumshatildi: "qora bo'shliq" (#06080d) texno-startap
