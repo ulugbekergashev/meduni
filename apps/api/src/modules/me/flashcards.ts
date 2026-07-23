@@ -145,6 +145,93 @@ export async function reviewFlashcard(studentId: number, topicId: number, cardKe
   return { ok: true, knownCount, total: cards.length };
 }
 
+/** Kross-mavzu takrorlash sessiyasi (Modul 27 "Takrorlash" tabi) — due bo'lgan
+ *  kartalarni BARCHA mavzulardan bitta to'plamga yig'adi. Har kartada mavzu
+ *  konteksti bor; belgilash mavjud per-topic endpoint orqali qilinadi. */
+const SESSION_LIMIT = 60;
+
+export async function getReviewSession(studentId: number, topicId?: number) {
+  const now = new Date();
+  const due = await prisma.flashcardReview.findMany({
+    where: { studentId, dueAt: { not: null, lte: now }, ...(topicId ? { topicId } : {}) },
+    orderBy: { dueAt: "asc" },
+    take: SESSION_LIMIT,
+  });
+  if (due.length === 0) return { cards: [], total: 0 };
+
+  const byTopic = new Map<number, Set<string>>();
+  for (const r of due) {
+    if (!byTopic.has(r.topicId)) byTopic.set(r.topicId, new Set());
+    byTopic.get(r.topicId)!.add(r.cardKey);
+  }
+  const topics = await prisma.topic.findMany({
+    where: { id: { in: [...byTopic.keys()] } },
+    select: { id: true, title: true, subject: { select: { name: true } } },
+  });
+  const tmap = new Map(topics.map((t) => [t.id, t]));
+  // Eng eski due birinchi chiqishi uchun asl tartibni saqlaymiz.
+  const order = new Map(due.map((r, i) => [`${r.topicId}:${r.cardKey}`, i]));
+
+  const out: (Flashcard & { topicId: number; topicTitle: string; subjectName: string })[] = [];
+  for (const [tid, keys] of byTopic) {
+    const t = tmap.get(tid);
+    if (!t) continue;
+    const { cards, locked } = await build(studentId, tid);
+    if (locked) continue;
+    for (const c of cards) {
+      if (keys.has(c.key)) out.push({ ...c, topicId: tid, topicTitle: t.title, subjectName: t.subject.name });
+    }
+  }
+  out.sort(
+    (a, b) => (order.get(`${a.topicId}:${a.key}`) ?? 0) - (order.get(`${b.topicId}:${b.key}`) ?? 0)
+  );
+  return { cards: out, total: out.length };
+}
+
+/** Takrorlash statistikasi (Takrorlash tabi hero'si + kelgusi jadval). */
+export async function getReviewStats(studentId: number) {
+  const now = new Date();
+  const startToday = new Date(now);
+  startToday.setHours(0, 0, 0, 0);
+
+  const all = await prisma.flashcardReview.findMany({
+    where: { studentId },
+    select: { topicId: true, known: true, dueAt: true, reviewedAt: true },
+  });
+  const dueNow = all.filter((r) => r.dueAt && r.dueAt <= now).length;
+  const reviewedToday = all.filter((r) => r.reviewedAt >= startToday).length;
+  const knownPct = all.length ? Math.round((all.filter((r) => r.known).length / all.length) * 100) : null;
+
+  // Kelgusi takrorlar — mavzu kesimida eng yaqin sana + soni.
+  const nextByTopic = new Map<number, Date>();
+  const cntByTopic = new Map<number, number>();
+  for (const r of all) {
+    if (!r.dueAt || r.dueAt <= now) continue;
+    cntByTopic.set(r.topicId, (cntByTopic.get(r.topicId) ?? 0) + 1);
+    const cur = nextByTopic.get(r.topicId);
+    if (!cur || r.dueAt < cur) nextByTopic.set(r.topicId, r.dueAt);
+  }
+  const tps = nextByTopic.size
+    ? await prisma.topic.findMany({
+        where: { id: { in: [...nextByTopic.keys()] } },
+        select: { id: true, title: true, subject: { select: { name: true } } },
+      })
+    : [];
+  const tmap = new Map(tps.map((t) => [t.id, t]));
+  const upcoming = [...nextByTopic.entries()]
+    .filter(([tid]) => tmap.has(tid))
+    .map(([tid, d]) => ({
+      topicId: tid,
+      topicTitle: tmap.get(tid)!.title,
+      subjectName: tmap.get(tid)!.subject.name,
+      nextDueAt: d,
+      count: cntByTopic.get(tid) ?? 0,
+    }))
+    .sort((a, b) => +a.nextDueAt - +b.nextDueAt);
+
+  return { dueNow, reviewedToday, knownPct, nextDueAt: upcoming[0]?.nextDueAt ?? null, upcoming };
+}
+
 /** Bugun takrorlash kerak bo'lgan kartalar — barcha mavzular kesimida
  *  (Dashboard "Bugun takrorlang" bloki). dueAt <= hozir bo'lgan kartalar. */
 export async function getReviewDue(studentId: number) {
