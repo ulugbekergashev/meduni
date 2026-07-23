@@ -90,18 +90,29 @@ export function computeTopics(course: CourseWithTopics, factsByTopic: Map<number
     let reason: Reason | null = null;
 
     if (scheduleDates) {
-      // Har mavzu O'Z dars kuni bo'yicha ochiladi (oldingi mavzu tugashi shart emas).
+      // IKKI shart birga: (1) mavzuning dars kuni kelgan bo'lsin (jadval sanasi),
+      // (2) oldingi mavzu ham tugagan bo'lsin (ketma-ketlik). Ikkalasi ham bajarilsa
+      // ochiladi.
       const unlockDate = scheduleDates.get(topic.id) ?? null;
       const dateOk = (unlockDate !== null && today >= unlockDate) || facts.forceComplete;
       if (completed) {
         state = "COMPLETED";
-      } else if (dateOk) {
+      } else if (prevCompleted && dateOk) {
         state = pct > 0 ? "IN_PROGRESS" : "AVAILABLE";
       } else {
         state = "LOCKED";
-        reason = unlockDate
-          ? { uz: `${dmyDate(unlockDate)} dan ochiladi`, ru: `Откроется ${dmyDate(unlockDate)}` }
-          : { uz: "Dars jadvaliga hali qoʻshilmagan", ru: "Ещё не добавлено в расписание" };
+        // Sabab: avval AKTUAL qadam — oldingi mavzu tugamagan bo'lsa shuni ko'rsat
+        // (talaba hozir tugatishi mumkin), aks holda dars sanasi.
+        if (!prevCompleted) {
+          reason =
+            prevUnmet.length > 0
+              ? { uz: `Oldingi mavzu: ${prevUnmet[0].uz.toLowerCase()}`, ru: `Предыдущая тема: ${prevUnmet[0].ru.toLowerCase()}` }
+              : { uz: "Oldingi mavzuni tugating", ru: "Завершите предыдущую тему" };
+        } else {
+          reason = unlockDate
+            ? { uz: `${dmyDate(unlockDate)} dan ochiladi`, ru: `Откроется ${dmyDate(unlockDate)}` }
+            : { uz: "Dars jadvaliga hali qoʻshilmagan", ru: "Ещё не добавлено в расписание" };
+        }
       }
     } else {
       // Klassik ketma-ketlik: N-mavzu (N-1) tugagach ochiladi.
