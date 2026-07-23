@@ -1267,6 +1267,33 @@ Barcha modullar tugadi (1-17).
   toza. Demo: student@meduni.uz/student123, teacher.m11demo@meduni.uz/student123,
   admin@meduni.uz/admin123.
 
+- **Sana-rejimi: mavzular DARS JADVALI bo'yicha ochiladi (2026-07-24, foydalanuvchi
+  so'rovi).** Ilgari mavzu faqat ketma-ketlik-tugatish bilan ochilardi (N-mavzu
+  (N-1) COMPLETED bo'lgach). Endi kurs **`scheduleUnlock`** rejimida mavzu O'Z dars
+  kunidan keyin, KALENDAR bo'yicha ochiladi (oldingi mavzu tugashi shart emas).
+  **Model:** har mavzuning ochilish sanasi = o'sha mavzuga bog'langan **oxirgi dars
+  kuni + 1 kun** ("dars bo'lgan kundan keyin"). Sessiya→mavzu bog'lanishi mavjud
+  `LessonSession.topicId` orqali (o'qituvchi Davomat → Dars jadvalida sessiyani
+  mavzudan yaratganda). Prisma: `Course.scheduleUnlock Boolean` (migratsiya
+  `course_schedule_unlock`, additive). **Kalit arxitektura:** `loadCourse`
+  sana-rejimida `scheduleDates` (topicId→ISO) ni kursga BIRIKTIRADI
+  (`loadScheduleDates`: sessiyalardan MAX(date)+1), `computeTopics` esa uni SINXRON
+  o'qiydi — shuning uchun 11 ta chaqiruv joyi (student yo'li, o'qituvchi progress
+  matritsasi, tasks, lesson, `assertTopicOpen` 403) hech biriga tegmasdan avtomatik
+  mos ishlaydi. `computeTopics` sana-rejimida qulf sababi "DD.MM.YYYY dan ochiladi"
+  yoki "jadvalga qo'shilmagan". `updateCourseSettings` endi `{defaultUnlockRuleJson?,
+  scheduleUnlock?}` qabul qiladi, meta `scheduleUnlock` qaytaradi. Frontend
+  SettingsTab: "Mavzu ochilish rejimi" tanlovi (Ketma-ketlik | Dars jadvali);
+  sana-rejimida tugash-mezoni formasidan `notBeforeDate` yashiriladi (`hideDate`).
+  **Tugash mezoni (quizPassedPct v.h.)** har ikki rejimda ham mavzu "bajarildi"
+  (progress/baho) uchun ishlatiladi — sana-rejimida faqat OCHILISH sanadan, tugash
+  esa o'sha mezondan. Demo: `src/scripts/demoSchedule.ts` (Kardiologiya sana-rejimida:
+  anatomiya darsi o'tgan→ochiq, fiziologiya oxirgi darsi kelajakda→qulf). Smoke 7/7
+  (HTTP): fizio LOCKED "29.07.2026 dan ochiladi", qulf mavzu→403, meta toggle,
+  OFF'da sabab ketma-ketlikka qaytadi. tsc+build toza. ⚠️ Sana-arifmetikasi UTC
+  emas, mahalliy: `loadScheduleDates` `setDate(+1)` + `toISOString().slice(0,10)`;
+  `computeTopics` `today` UTC ISO — dev'da mos, prod TZ farqi bo'lsa tekshir.
+
 ## 9. Loyiha holati va ishga tushirish (operatsion — sessiya 0)
 
 **Monorepo (npm workspaces):**
