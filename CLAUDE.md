@@ -1425,6 +1425,19 @@ Barcha modullar tugadi (1-17).
   o'zi yaratgan (kurssiz) guruh "Mening guruhlarim"da ko'rinadi (migratsiya
   `group_created_by`). Kurs yaratishda **semestr formada YO'Q** (default 1).
 
+- **Sikl masteri: sana oralig'i + kunlar → butun jadval (2026-07-24).** Buyurtmachi:
+  har darsni qo'lda qo'yish og'ir; kerak — oylik kalendardan sikl davri + qaysi
+  kunlar + har kunga o'z vaqti (Du 09:00, Ju 12:00). Bu **iCal RRULE** naqshi
+  (FREQ=WEEKLY, BYDAY, UNTIL) — pravilo saqlanadi, darslar server tomonda ochiladi.
+  Prisma: `CourseGroup += cycleStart/cycleEnd` (sikl davri per kurs+guruh; migratsiya
+  `course_group_cycle`). `timetable.ts::setupCycle` — sikl davrini o'rnatadi + kurs+
+  guruh slotlarini qayta yaratadi (har kun o'z vaqti/xonasi); `getTeacherLessons`
+  darslarni faqat [cycleStart,cycleEnd] oralig'ida beradi; `getGroupTimetable`
+  kurslar bo'yicha (sikl + kunlar) — master prefill. Route `POST
+  /teach/courses/:id/groups/:groupId/cycle`. Frontend: `TimetableSetupModal` endi
+  SIKL MASTERI (kurs → sana oralig'i + haftalik kunlar checkbox + vaqt/xona →
+  «Jadval yaratish»), mavjud sikl prefill; `useSetupCycle`. Smoke 6/6.
+
 ## 9. Loyiha holati va ishga tushirish (operatsion — sessiya 0)
 
 **Monorepo (npm workspaces):**
