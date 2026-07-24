@@ -391,40 +391,78 @@ export function useTeachDashboard() {
   return useQuery({ queryKey: ["teach-dashboard"], queryFn: () => api<TeachDashboard>("/api/v1/teach/dashboard") });
 }
 
-// ---------------- My Tasks hub ----------------
+// ---------------- My Tasks hub — bitta ustuvorlik-navbat ----------------
 
 export type TaskTone = "rose" | "amber" | "blue" | "brand" | "violet" | "emerald";
-export interface AutoTask {
-  type: string;
-  count: number;
+
+export type TeacherTaskKind =
+  | "cases_review"
+  | "material_missing"
+  | "digest_approve"
+  | "content_create"
+  | "content_publish"
+  | "factcheck"
+  | "attendance_unmarked"
+  | "students_behind"
+  | "assigned";
+
+export type TeacherQuickAction =
+  | { type: "attendance"; courseId: number; date: string; startTime: string; groupId: number | null }
+  | { type: "done"; taskId: number };
+
+/** Bitta konkret ish qatori — talaba/mavzu/dars ismi bilan, mavhum son emas. */
+export interface TeacherTaskItem {
+  id: string;
+  kind: TeacherTaskKind;
   tone: TaskTone;
-  link: string;
-}
-export interface AssignedTask {
-  id: number;
   title: string;
-  description: string | null;
-  dueDate: string | null;
-  priority: "LOW" | "NORMAL" | "HIGH";
-  createdByName: string;
-  createdAt: string;
-  linkUrl: string | null;
-}
-export interface TasksInbox {
-  auto: AutoTask[];
-  assigned: AssignedTask[];
+  subtitle: string;
+  description?: string | null;
+  sinceIso: string | null;
+  dueIso?: string | null;
+  link: string;
+  quickAction?: TeacherQuickAction;
 }
 
 export function useTeachTasks() {
-  return useQuery({ queryKey: ["teach-tasks"], queryFn: () => api<TasksInbox>("/api/v1/teach/tasks") });
+  return useQuery({ queryKey: ["teach-tasks"], queryFn: () => api<{ feed: TeacherTaskItem[] }>("/api/v1/teach/tasks") });
 }
 
 export function useSetTaskDone() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: number) => api(`/api/v1/tasks/${id}`, { method: "PATCH", body: JSON.stringify({ done: true }) }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["teach-tasks"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["teach-tasks"] });
+      qc.invalidateQueries({ queryKey: ["teach-tasks-history"] });
+    },
   });
+}
+
+// ---- Statistika: oxirgi oylarda bajarilgan (kafedradan / talabalarga bergan) ----
+
+export interface TaskHistoryBucket {
+  key: string;
+  count: number;
+}
+export interface CompletedTaskRow {
+  id: number;
+  title: string;
+  completedAt: string;
+  counterpart: string;
+}
+export interface TaskHistorySeries {
+  total: number;
+  months: TaskHistoryBucket[];
+  recent: CompletedTaskRow[];
+}
+export interface TeacherTaskHistory {
+  kafedra: TaskHistorySeries;
+  toStudents: TaskHistorySeries;
+}
+
+export function useTaskHistory() {
+  return useQuery({ queryKey: ["teach-tasks-history"], queryFn: () => api<TeacherTaskHistory>("/api/v1/teach/tasks/history") });
 }
 
 // Assignments the teacher created for students/groups.
@@ -717,11 +755,31 @@ export function useTeacherLessons(range: { from: string; to: string; search?: st
   if (range.search?.trim()) p.set("search", range.search.trim());
   return useQuery({ queryKey: ["teacher-lessons", range], queryFn: () => api<DerivedLesson[]>(`/api/v1/teach/lessons?${p}`), enabled: !!range.from && !!range.to });
 }
+export interface GroupTimetableCourse {
+  courseId: number;
+  courseName: string;
+  cycleStart: string | null; // YYYY-MM-DD
+  cycleEnd: string | null;
+  slots: { slotId: number; weekday: number; startTime: string; room: string | null }[];
+}
 export interface GroupTimetable {
-  slots: { slotId: number; courseId: number; courseName: string; weekday: number; startTime: string; room: string | null }[];
+  courses: GroupTimetableCourse[];
 }
 export function useGroupTimetable(groupId: number) {
   return useQuery({ queryKey: ["group-timetable", groupId], queryFn: () => api<GroupTimetable>(`/api/v1/teach/groups/${groupId}/timetable`) });
+}
+
+/** Sikl masteri — bir marta sana oralig'i + kunlar/vaqtlar → butun jadval. */
+export function useSetupCycle() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (b: { courseId: number; groupId: number; cycleStart: string; cycleEnd: string; days: { weekday: number; startTime: string; room?: string }[] }) =>
+      api<{ ok: boolean; days: number }>(`/api/v1/teach/courses/${b.courseId}/groups/${b.groupId}/cycle`, {
+        method: "POST",
+        body: JSON.stringify({ cycleStart: b.cycleStart, cycleEnd: b.cycleEnd, days: b.days }),
+      }),
+    onSuccess: () => invalidateSchedule(qc),
+  });
 }
 
 // Yo'qlama (kurs, sana) bo'yicha — sessiya lazy yaratiladi

@@ -105,7 +105,17 @@
     "noDoneYet": "Пока нет выполненных задач",
     "noMatchFilter": "По этому фильтру задач нет",
     "upcomingLessons": "Ближайшие занятия",
-    "noLessonsShort": "Занятий нет"
+    "noLessonsShort": "Занятий нет",
+    "assignedKind": "Назначенная задача",
+    "todayShort": "Сегодня",
+    "yesterdayShort": "Вчера",
+    "daysAgo": "{{n}} дн. назад",
+    "markAttendanceBtn": "Отметить",
+    "historyTitle": "Результаты",
+    "historyKafedra": "От кафедры",
+    "historyToStudents": "Заданные студентам",
+    "historyDoneLastMonths": "выполнено за посл. {{n}} мес.",
+    "historyEmpty": "За этот период выполненных задач нет"
   },
   "teachAssign": {
     "newBtn": "Новая задача",
@@ -229,7 +239,18 @@
     "time": "Время",
     "room": "Аудитория",
     "deleteSlotTitle": "Удалить из расписания",
-    "deleteSlotConfirm": "Удалить это повторяющееся занятие из расписания?"
+    "deleteSlotConfirm": "Удалить это повторяющееся занятие из расписания?",
+    "cycleHint": "Один раз: период цикла (начало–конец) + какие дни и время. Занятия создаются на весь цикл автоматически.",
+    "cyclePeriod": "Период цикла",
+    "cycleStart": "Начало",
+    "cycleEnd": "Конец",
+    "cycleWeeks": "{{n}} нед.",
+    "cycleDays": "Какие дни (у каждого своё время)",
+    "cycleDayOff": "нет занятия",
+    "cycleCreate": "Создать расписание",
+    "cycleCreated": "Расписание цикла создано ({{n}} дней/нед.)",
+    "cycleNeedDates": "Укажите начало и конец цикла",
+    "cycleNeedDays": "Выберите хотя бы один день"
   },
   "courseGroups": {
     "subtitle": "В каких группах ведётся этот курс. Нажмите на группу — её профиль (студенты, журнал, посещаемость).",
@@ -1294,6 +1315,7 @@
     "searchStudent": "Имя студента...",
     "markedOf": "отмечено {{marked}} из {{total}}",
     "loadError": "Не удалось загрузить список",
+    "close": "Закрыть",
     "student": "Студент",
     "absentShort": "Пропуски",
     "matrix": "Таблица",

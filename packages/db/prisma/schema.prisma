@@ -669,6 +669,10 @@ model CourseGroup {
   course   Course       @relation(fields: [courseId], references: [id])
   groupId  Int
   group    StudentGroup @relation(fields: [groupId], references: [id])
+  // Sikl (blok) davri: kurs shu guruhga qaysi sanalar oralig'ida o'tiladi.
+  // Darslar faqat shu oraliqda hosil bo'ladi (null = cheksiz/legacy).
+  cycleStart DateTime?
+  cycleEnd   DateTime?
 
   @@unique([courseId, groupId])
   @@map("course_groups")

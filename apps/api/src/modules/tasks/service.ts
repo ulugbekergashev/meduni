@@ -3,11 +3,14 @@ import { prisma } from "../../lib/prisma";
 import { badRequest, forbidden, notFound } from "../../lib/errors";
 import type { Role } from "../../lib/prisma";
 import { buildMatrix } from "../courses/progress";
+import { getTeacherLessons } from "../courses/timetable";
 import { computeTopics, enrolledCourseIds, loadCourse, studentFactsMap } from "../me/service";
 
 // An auto-derived task: computed live from existing data, disappears once resolved.
 // The frontend maps `type` → icon + label; `link` is where the teacher/student acts.
 export type TaskTone = "rose" | "amber" | "blue" | "brand" | "violet" | "emerald";
+
+const TONE_RANK: Record<TaskTone, number> = { rose: 0, amber: 1, blue: 2, violet: 3, brand: 4, emerald: 5 };
 
 /** Vazifaning aniq predmeti — "1 ta test" emas, QAYSI test, qaysi fandan. */
 export interface AutoTaskItem {
@@ -28,73 +31,182 @@ export interface AutoTask {
   items?: AutoTaskItem[];
 }
 
-// ---------- Teacher ----------
+// ---------- Teacher: bitta ustuvorlik-navbat ----------
+// Har qator KONKRET narsaga ishora qiladi (qaysi talaba, qaysi mavzu, qaysi dars) —
+// "3 ta narsa" degan mavhum son emas. Avto-hisoblangan + kafedra tayinlagan
+// vazifalar bitta navbatga birlashadi, muhimlik (tone) va eskilik bo'yicha saralanadi.
 
-export async function computeTeacherAutoTasks(teacherId: number): Promise<AutoTask[]> {
+export type TeacherTaskKind =
+  | "cases_review"
+  | "material_missing"
+  | "digest_approve"
+  | "content_create"
+  | "content_publish"
+  | "factcheck"
+  | "attendance_unmarked"
+  | "students_behind"
+  | "assigned";
+
+export type TeacherQuickAction =
+  | { type: "attendance"; courseId: number; date: string; startTime: string; groupId: number | null }
+  | { type: "done"; taskId: number };
+
+export interface TeacherTaskItem {
+  id: string;
+  kind: TeacherTaskKind;
+  tone: TaskTone;
+  title: string;
+  subtitle: string;
+  description?: string | null;
+  /** Ish qachondan beri kutmoqda — saralash va "N kun oldin" ko'rsatish uchun. */
+  sinceIso: string | null;
+  dueIso?: string | null;
+  link: string;
+  quickAction?: TeacherQuickAction;
+}
+
+const ATTENDANCE_LOOKBACK_DAYS = 21;
+
+function dayKeyOf(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+export async function computeTeacherTaskFeed(teacherId: number): Promise<TeacherTaskItem[]> {
+  const items: TeacherTaskItem[] = [];
+
+  // 1) Mavzu quvuri: material → konspekt → kontent → chop etish → faktcheck.
   const topics = await prisma.topic.findMany({
     where: { course: { teacherId } },
     select: {
       id: true,
+      title: true,
+      createdAt: true,
+      course: { select: { name: true } },
       materials: { select: { parseStatus: true } },
-      digest: { select: { approvedByTeacher: true } },
+      digest: { select: { approvedByTeacher: true, updatedAt: true } },
       contentItems: { select: { status: true, factcheckStatus: true } },
     },
     orderBy: { id: "asc" },
   });
 
-  const materialMissing: number[] = [];
-  const digestApprove: number[] = [];
-  const contentCreate: number[] = [];
-  const contentPublish: number[] = [];
-  const factcheck: number[] = [];
   for (const t of topics) {
     const hasDoneMaterial = t.materials.some((m) => m.parseStatus === "DONE");
     const digestApproved = t.digest?.approvedByTeacher === true;
     const hasContent = t.contentItems.length > 0;
-    if (!hasDoneMaterial) { materialMissing.push(t.id); continue; }
-    if (!digestApproved) { digestApprove.push(t.id); continue; }
-    if (!hasContent) { contentCreate.push(t.id); continue; }
-    if (t.contentItems.some((c) => c.status === "DRAFT" || c.status === "REVIEW")) contentPublish.push(t.id);
-    if (t.contentItems.some((c) => c.factcheckStatus === "FLAGGED")) factcheck.push(t.id);
+    if (!hasDoneMaterial) {
+      items.push({ id: `material:${t.id}`, kind: "material_missing", tone: "brand", title: t.title, subtitle: t.course.name, sinceIso: t.createdAt.toISOString(), link: `/teach/topics/${t.id}?step=material` });
+      continue;
+    }
+    if (!digestApproved) {
+      items.push({ id: `digest:${t.id}`, kind: "digest_approve", tone: "amber", title: t.title, subtitle: t.course.name, sinceIso: (t.digest?.updatedAt ?? t.createdAt).toISOString(), link: `/teach/topics/${t.id}?step=digest` });
+      continue;
+    }
+    if (!hasContent) {
+      items.push({ id: `content:${t.id}`, kind: "content_create", tone: "violet", title: t.title, subtitle: t.course.name, sinceIso: t.createdAt.toISOString(), link: `/teach/topics/${t.id}?step=generate` });
+      continue;
+    }
+    if (t.contentItems.some((c) => c.status === "DRAFT" || c.status === "REVIEW")) {
+      items.push({ id: `publish:${t.id}`, kind: "content_publish", tone: "blue", title: t.title, subtitle: t.course.name, sinceIso: t.createdAt.toISOString(), link: `/teach/topics/${t.id}?step=publish` });
+    }
+    if (t.contentItems.some((c) => c.factcheckStatus === "FLAGGED")) {
+      items.push({ id: `factcheck:${t.id}`, kind: "factcheck", tone: "amber", title: t.title, subtitle: t.course.name, sinceIso: t.createdAt.toISOString(), link: `/teach/topics/${t.id}?step=factcheck` });
+    }
   }
 
-  const [casesToReview, pastSessions, courses] = await Promise.all([
-    prisma.caseAttempt.count({ where: { reviewedAt: null, clinicalCase: { contentItem: { topic: { course: { teacherId } } } } } }),
-    prisma.lessonSession.findMany({
-      where: { course: { teacherId }, date: { lt: new Date() } },
-      select: { id: true, _count: { select: { attendance: true } }, course: { select: { courseGroups: { select: { groupId: true }, take: 1 } } } },
-      orderBy: { date: "asc" },
-    }),
-    prisma.course.findMany({ where: { teacherId }, select: { id: true }, orderBy: { id: "asc" } }),
-  ]);
+  // 2) Keys javoblarini tekshirish — har talaba/keys alohida qator, "N ta" emas.
+  const caseRows = await prisma.caseAttempt.findMany({
+    where: { reviewedAt: null, clinicalCase: { contentItem: { topic: { course: { teacherId } } } } },
+    orderBy: { submittedAt: "asc" },
+    select: {
+      id: true,
+      submittedAt: true,
+      student: { select: { fullName: true } },
+      clinicalCase: { select: { contentItem: { select: { topic: { select: { title: true, course: { select: { name: true } } } } } } } },
+    },
+  });
+  for (const r of caseRows) {
+    const topic = r.clinicalCase.contentItem.topic;
+    items.push({
+      id: `case:${r.id}`,
+      kind: "cases_review",
+      tone: "rose",
+      title: r.student.fullName,
+      subtitle: `${topic.title} · ${topic.course.name}`,
+      sinceIso: r.submittedAt.toISOString(),
+      link: `/teach/cases/review?open=${r.id}`,
+    });
+  }
 
-  const unmarked = pastSessions.filter((s) => s._count.attendance === 0);
+  // 3) Yo'qlama belgilanmagan darslar — slotlardan hosil bo'lgan HAQIQIY darslar
+  // (LessonSession birinchi belgilashda lazy yaratiladi — shuning uchun eski
+  // `lessonSession.findMany` bilan hisoblab bo'lmaydi, getTeacherLessons kerak).
+  const today = new Date();
+  const from = new Date(today);
+  from.setDate(from.getDate() - ATTENDANCE_LOOKBACK_DAYS);
+  const lessons = await getTeacherLessons(teacherId, { from: dayKeyOf(from), to: dayKeyOf(today) }).catch(() => []);
+  for (const l of lessons) {
+    if (l.status !== "UNMARKED" || new Date(l.date) >= today) continue;
+    items.push({
+      id: `attendance:${l.courseId}:${l.groupId ?? "x"}:${l.dayKey}`,
+      kind: "attendance_unmarked",
+      tone: "amber",
+      title: l.courseName,
+      subtitle: l.groupName ?? "",
+      sinceIso: l.date,
+      link: "/teach/schedule",
+      quickAction: { type: "attendance", courseId: l.courseId, date: l.dayKey, startTime: l.startTime, groupId: l.groupId },
+    });
+  }
 
-  // Students behind (reuses the same matrix the progress heatmap builds).
-  let behind = 0;
-  let behindCourseId: number | null = null;
+  // 4) Orqada qolgan talabalar — mavjud progress-matritsadan (ism bilan).
+  const courses = await prisma.course.findMany({ where: { teacherId }, select: { id: true } });
   for (const c of courses) {
     const loaded = await loadCourse(c.id).catch(() => null);
     if (!loaded) continue;
     const { students } = await buildMatrix(loaded);
-    const b = students.filter((s) => s.behind).length;
-    if (b > 0 && behindCourseId === null) behindCourseId = c.id;
-    behind += b;
+    for (const s of students.filter((x) => x.behind)) {
+      items.push({
+        id: `behind:${c.id}:${s.id}`,
+        kind: "students_behind",
+        tone: "rose",
+        title: s.fullName,
+        subtitle: loaded.name,
+        sinceIso: s.lastActiveAt,
+        link: `/teach/courses/${c.id}/progress`,
+      });
+    }
   }
 
-  const tasks: AutoTask[] = [];
-  if (casesToReview) tasks.push({ type: "cases_review", count: casesToReview, tone: "rose", link: "/teach/cases/review" });
-  if (materialMissing.length) tasks.push({ type: "material_missing", count: materialMissing.length, tone: "brand", link: `/teach/topics/${materialMissing[0]}?step=material` });
-  if (digestApprove.length) tasks.push({ type: "digest_approve", count: digestApprove.length, tone: "amber", link: `/teach/topics/${digestApprove[0]}?step=digest` });
-  if (contentCreate.length) tasks.push({ type: "content_create", count: contentCreate.length, tone: "violet", link: `/teach/topics/${contentCreate[0]}?step=generate` });
-  if (contentPublish.length) tasks.push({ type: "content_publish", count: contentPublish.length, tone: "blue", link: `/teach/topics/${contentPublish[0]}?step=publish` });
-  if (factcheck.length) tasks.push({ type: "factcheck", count: factcheck.length, tone: "amber", link: `/teach/topics/${factcheck[0]}?step=factcheck` });
-  if (unmarked.length) {
-    const gid = unmarked[0].course.courseGroups[0]?.groupId;
-    tasks.push({ type: "attendance_unmarked", count: unmarked.length, tone: "amber", link: gid ? `/teach/groups/${gid}?tab=sessions` : "/teach/groups" });
+  // 5) Kafedra/admin tayinlagan vazifalar — bitta navbatga qo'shiladi (ikkita
+  // ajralgan blok o'rniga), muddati o'tgan/HIGH → rose.
+  const assigned = await listAssigned(teacherId);
+  const now = Date.now();
+  for (const a of assigned) {
+    const overdue = a.dueDate ? new Date(a.dueDate).getTime() < now : false;
+    const tone: TaskTone = overdue || a.priority === "HIGH" ? "rose" : a.priority === "NORMAL" ? "amber" : "blue";
+    items.push({
+      id: `assigned:${a.id}`,
+      kind: "assigned",
+      tone,
+      title: a.title,
+      subtitle: a.createdByName,
+      description: a.description,
+      sinceIso: a.createdAt,
+      dueIso: a.dueDate,
+      link: a.linkUrl ?? "",
+      quickAction: { type: "done", taskId: a.id },
+    });
   }
-  if (behind) tasks.push({ type: "students_behind", count: behind, tone: "rose", link: behindCourseId ? `/teach/courses/${behindCourseId}/progress` : "/teach/courses" });
-  return tasks;
+
+  items.sort((a, b) => {
+    const r = TONE_RANK[a.tone] - TONE_RANK[b.tone];
+    if (r !== 0) return r;
+    const at = a.sinceIso ? new Date(a.sinceIso).getTime() : Infinity;
+    const bt = b.sinceIso ? new Date(b.sinceIso).getTime() : Infinity;
+    return at - bt;
+  });
+
+  return items;
 }
 
 // ---------- Student ----------
@@ -248,6 +360,93 @@ export async function listCreated(userId: number): Promise<CreatedTaskGroup[]> {
     g.taskIds.push(t.id);
   }
   return [...groups.values()];
+}
+
+// ---------- Statistika: oxirgi oylarda bajarilgan vazifalar ----------
+// Ikki oqim mustaqil: kafedradan MENGA kelgan (assignedToId=teacher) va MEN
+// talabalarga bergan (createdById=teacher, Task modeli faqat shu ikki yo'nalishni
+// biladi — @@ birlashtirish shart emas). Filtr talab qilinganda ("kafedradan"
+// vs "talabalarga bergan") shu ikkisi ustida ishlaydi.
+
+const TASK_HISTORY_MONTHS = 6;
+
+export interface TaskHistoryBucket {
+  key: string; // "YYYY-MM"
+  count: number;
+}
+
+export interface CompletedTaskRow {
+  id: number;
+  title: string;
+  completedAt: string;
+  /** kafedra oqimida — kim tayinlagan; talabalar oqimida — kimga tayinlangan. */
+  counterpart: string;
+}
+
+export interface TaskHistorySeries {
+  total: number;
+  months: TaskHistoryBucket[];
+  recent: CompletedTaskRow[];
+}
+
+export interface TeacherTaskHistory {
+  kafedra: TaskHistorySeries;
+  toStudents: TaskHistorySeries;
+}
+
+function monthKey(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function emptyMonthBuckets(now: Date): Map<string, number> {
+  const m = new Map<string, number>();
+  for (let i = TASK_HISTORY_MONTHS - 1; i >= 0; i--) {
+    m.set(monthKey(new Date(now.getFullYear(), now.getMonth() - i, 1)), 0);
+  }
+  return m;
+}
+
+/** Oxirgi 6 oyda bajarilgan vazifalar — kafedradan kelgan va talabalarga
+ *  berilgan ikki mustaqil qatorda, oylik son + so'nggi qatorlar bilan. */
+export async function getTeacherTaskHistory(teacherId: number): Promise<TeacherTaskHistory> {
+  const now = new Date();
+  const since = new Date(now.getFullYear(), now.getMonth() - (TASK_HISTORY_MONTHS - 1), 1);
+
+  const [kafedraDone, toStudentsDone] = await Promise.all([
+    prisma.task.findMany({
+      where: { assignedToId: teacherId, status: "DONE", completedAt: { gte: since } },
+      select: { id: true, title: true, completedAt: true, createdBy: { select: { fullName: true } } },
+      orderBy: { completedAt: "desc" },
+    }),
+    prisma.task.findMany({
+      where: { createdById: teacherId, status: "DONE", completedAt: { gte: since } },
+      select: { id: true, title: true, completedAt: true, assignedTo: { select: { fullName: true } } },
+      orderBy: { completedAt: "desc" },
+    }),
+  ]);
+
+  const toMonths = (rows: { completedAt: Date | null }[]): TaskHistoryBucket[] => {
+    const buckets = emptyMonthBuckets(now);
+    for (const r of rows) {
+      if (!r.completedAt) continue;
+      const k = monthKey(r.completedAt);
+      if (buckets.has(k)) buckets.set(k, (buckets.get(k) ?? 0) + 1);
+    }
+    return [...buckets.entries()].map(([key, count]) => ({ key, count }));
+  };
+
+  return {
+    kafedra: {
+      total: kafedraDone.length,
+      months: toMonths(kafedraDone),
+      recent: kafedraDone.slice(0, 8).map((r) => ({ id: r.id, title: r.title, completedAt: r.completedAt!.toISOString(), counterpart: r.createdBy.fullName })),
+    },
+    toStudents: {
+      total: toStudentsDone.length,
+      months: toMonths(toStudentsDone),
+      recent: toStudentsDone.slice(0, 8).map((r) => ({ id: r.id, title: r.title, completedAt: r.completedAt!.toISOString(), counterpart: r.assignedTo.fullName })),
+    },
+  };
 }
 
 export interface CreateTaskInput {

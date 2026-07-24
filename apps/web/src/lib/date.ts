@@ -16,6 +16,8 @@ const UZ_MONTHS = [
   "dekabr",
 ];
 
+const UZ_MONTHS_SHORT = ["yan", "fev", "mar", "apr", "may", "iyun", "iyul", "avg", "sen", "okt", "noy", "dek"];
+
 type Locale = "uz" | "ru";
 type Style = "long" | "short" | "shortYear";
 
@@ -44,4 +46,14 @@ export function formatDate(locale: Locale, date: Date | string | number, style: 
   if (style === "short") return `${day}-${month}`;
   if (style === "shortYear") return `${day}-${month}, ${d.getFullYear()}`;
   return `${day}-${month}, ${d.getFullYear()}-yil`;
+}
+
+/** "YYYY-MM" oy kaliti → qisqa oy nomi ("fev", "февр."). Statistika grafiklarida
+ *  (MiniBars) ustun yorlig'i sifatida ishlatiladi — uz-UZ ICU oy nomini
+ *  buzgani uchun (yuqoridagi izoh) uz qo'lda, ru native Intl bilan. */
+export function monthShortLabel(locale: Locale, key: string): string {
+  const [y, m] = key.split("-").map(Number);
+  if (!y || !m) return key;
+  if (locale === "ru") return new Date(y, m - 1, 1).toLocaleDateString("ru-RU", { month: "short" });
+  return UZ_MONTHS_SHORT[m - 1] ?? key;
 }

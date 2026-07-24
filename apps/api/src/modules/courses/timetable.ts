@@ -137,6 +137,9 @@ export async function getTeacherLessons(teacherId: number, opts: { from: string;
         // Slot qaysi guruh(lar)ga: ko'rsatilgan bo'lsa — o'sha; aks holda kursning barcha guruhlari.
         const targetGroups = slot.groupId != null ? [slot.groupId] : c.courseGroups.map((cg) => cg.groupId);
         for (const gid of targetGroups) {
+          // Sikl davri: kurs shu guruhga faqat oraliqda o'tiladi — tashqarisida dars yo'q.
+          const cg = c.courseGroups.find((x) => x.groupId === gid);
+          if (cg?.cycleStart && cg?.cycleEnd && (dk < dayKey(cg.cycleStart) || dk > dayKey(cg.cycleEnd))) continue;
           const gName = groupName(c, gid);
           if (q && !(c.name.toLowerCase().includes(q) || (gName?.toLowerCase().includes(q) ?? false))) continue;
           const rosterSize = rosterByCG.get(`${c.id}:${gid}`) ?? 0;
@@ -169,21 +172,58 @@ export async function getTeacherLessons(teacherId: number, opts: { from: string;
 
 /** Guruh profilida ko'rsatiladigan haftalik jadval: shu guruhga o'qituvchi
  *  o'qitadigan kurslarning slotlari, kun bo'yicha. */
+/** Guruh jadvali — kurslar bo'yicha: har kurs uchun sikl davri + kunlar/vaqtlar. */
 export async function getGroupTimetable(groupId: number, teacherId: number) {
   const cgs = await prisma.courseGroup.findMany({
     where: { groupId, course: { teacherId } },
     include: { course: { include: { scheduleSlots: true } } },
   });
-  const slots: { slotId: number; courseId: number; courseName: string; weekday: number; startTime: string; room: string | null }[] = [];
-  for (const cg of cgs) {
-    for (const s of cg.course.scheduleSlots) {
-      // Shu guruhga tegishli slotlar: aynan shu guruh uchun YOKI umumiy (null).
-      if (s.groupId != null && s.groupId !== groupId) continue;
-      slots.push({ slotId: s.id, courseId: cg.course.id, courseName: cg.course.name, weekday: s.weekday, startTime: s.startTime, room: s.room });
-    }
+  const courses = cgs.map((cg) => ({
+    courseId: cg.course.id,
+    courseName: cg.course.name,
+    cycleStart: cg.cycleStart ? dayKey(cg.cycleStart) : null,
+    cycleEnd: cg.cycleEnd ? dayKey(cg.cycleEnd) : null,
+    slots: cg.course.scheduleSlots
+      .filter((s) => s.groupId == null || s.groupId === groupId)
+      .map((s) => ({ slotId: s.id, weekday: s.weekday, startTime: s.startTime, room: s.room }))
+      .sort((a, b) => a.weekday - b.weekday || a.startTime.localeCompare(b.startTime)),
+  }));
+  return { courses };
+}
+
+/** Sikl MASTERI: bir marta sana oralig'i + har kun (o'z vaqti/xonasi) → butun sikl
+ *  jadvali yaratiladi. Kurs+guruh uchun eski slotlar almashtiriladi. */
+export async function setupCycle(
+  courseId: number,
+  groupId: number,
+  teacherId: number,
+  body: { cycleStart: string; cycleEnd: string; days: { weekday: number; startTime: string; room?: string }[] }
+) {
+  await ownCourse(courseId, teacherId);
+  const cg = await prisma.courseGroup.findFirst({ where: { courseId, groupId } });
+  if (!cg) throw badRequest("Guruh bu kursga biriktirilmagan", "Группа не привязана к курсу");
+  const start = new Date(body.cycleStart);
+  const end = new Date(body.cycleEnd);
+  if (isNaN(+start) || isNaN(+end)) throw badRequest("Sana notoʻgʻri", "Неверная дата");
+  if (end < start) throw badRequest("Tugash sanasi boshidan keyin boʻlsin", "Дата конца должна быть после начала");
+
+  const norm = (t: string) => {
+    const m = /^(\d{1,2}):(\d{2})$/.exec(t ?? "");
+    if (!m) throw badRequest("Vaqt HH:MM formatida", "Время в формате HH:MM");
+    const hh = Number(m[1]), mm = Number(m[2]);
+    if (hh > 23 || mm > 59) throw badRequest("Vaqt notoʻgʻri", "Неверное время");
+    return `${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
+  };
+  const days = (body.days ?? []).filter((d) => Number.isInteger(d.weekday) && d.weekday >= 0 && d.weekday <= 6);
+  if (days.length === 0) throw badRequest("Kamida bitta kun tanlang", "Выберите хотя бы один день");
+
+  // Sikl davrini o'rnatamiz + shu kurs+guruh slotlarini qayta yaratamiz.
+  await prisma.courseGroup.update({ where: { id: cg.id }, data: { cycleStart: start, cycleEnd: end } });
+  await prisma.scheduleSlot.deleteMany({ where: { courseId, groupId } });
+  for (const d of days) {
+    await prisma.scheduleSlot.create({ data: { courseId, groupId, weekday: d.weekday, startTime: norm(d.startTime), room: d.room?.trim() || null } });
   }
-  slots.sort((a, b) => a.weekday - b.weekday || a.startTime.localeCompare(b.startTime));
-  return { slots };
+  return { ok: true, days: days.length };
 }
 
 // ---------- Yo'qlama (kurs, sana) bo'yicha — sessiya lazy yaratiladi ----------
