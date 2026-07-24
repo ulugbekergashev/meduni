@@ -249,8 +249,25 @@ model Course {
   sessions              LessonSession[]
   chatMessages          CourseChatMessage[]
   topics                Topic[]
+  scheduleSlots         ScheduleSlot[]
 
   @@map("courses")
+}
+
+/// Haftalik TAKRORIY jadval: kurs har hafta shu kun+vaqtda o'tiladi. O'qituvchi
+/// bir marta sozlaydi — darslar avtomatik hosil bo'ladi (qo'lda yaratilmaydi).
+/// Yo'qlama belgilanganda o'sha (kurs, sana) uchun LessonSession lazy yaratiladi.
+model ScheduleSlot {
+  id        Int      @id @default(autoincrement())
+  courseId  Int
+  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  weekday   Int // 0=Dushanba .. 6=Yakshanba
+  startTime String // "09:00"
+  room      String?
+  createdAt DateTime @default(now())
+
+  @@index([courseId])
+  @@map("schedule_slots")
 }
 
 /// Kurs guruh chati (Modul 25) — kurs o'qituvchisi + shu kursga yozilgan

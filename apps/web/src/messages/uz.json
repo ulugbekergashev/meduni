@@ -199,7 +199,8 @@
       "students": "Talabalar",
       "journal": "Jurnal",
       "sessions": "Mashgʻulotlar",
-      "report": "Hisobot"
+      "report": "Hisobot",
+      "timetable": "Dars jadvali"
     },
     "avgProgress": "O‘rtacha progress",
     "avgAttendance": "O‘rtacha davomat",
@@ -213,7 +214,22 @@
     "activeYesterday": "Kecha faol",
     "rankHint": "Guruhdagi oʻrin",
     "assignToStudent": "Vazifa berish",
-    "assignToGroup": "Guruhga vazifa"
+    "assignToGroup": "Guruhga vazifa",
+    "today": "Bugun",
+    "setupTimetable": "Jadval sozlash",
+    "noTimetable": "Haftalik jadval hali sozlanmagan",
+    "noTimetableHint": "Jadvalni bir marta sozlang — darslar har hafta avtomatik chiqadi, qo'lda qo'shish shart emas.",
+    "rollCall": "Yo'qlama",
+    "editRollCall": "Tahrirlash",
+    "setupHint": "Kurs qaysi kun va vaqtda o'tilishini qo'shing. Shu asosda har haftaga darslar avtomatik hosil bo'ladi.",
+    "noSlots": "Hali jadval yo'q",
+    "addSlot": "Yangi qo'shish",
+    "course": "Kurs",
+    "weekday": "Hafta kuni",
+    "time": "Vaqt",
+    "room": "Xona",
+    "deleteSlotTitle": "Jadvaldan o'chirish",
+    "deleteSlotConfirm": "Bu takroriy darsni jadvaldan o'chirasizmi?"
   },
   "courseGroups": {
     "subtitle": "Bu kurs qaysi guruhlarda oʻtiladi. Guruhni bosing — profili (talabalar, jurnal, davomat).",
@@ -1763,6 +1779,9 @@
     "stUnmarked": "Belgilanmagan",
     "stPartial": "Qisman",
     "stFull": "Toʻliq",
-    "pickCourse": "Qaysi kursga mashgʻulot?"
+    "pickCourse": "Qaysi kursga mashgʻulot?",
+    "subtitleAuto": "Jadval bo'yicha darslar avtomatik. Kunni tanlab yo'qlama qiling.",
+    "noneThisWeek": "Bu haftada dars yo'q",
+    "noneHint": "Kurs jadvalini guruh profilida sozlang — darslar avtomatik chiqadi."
   }
 }

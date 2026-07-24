@@ -5,6 +5,7 @@ import * as svc from "./service";
 import * as progress from "./progress";
 import * as review from "./review";
 import * as attendance from "./attendance";
+import * as timetable from "./timetable";
 import * as mistakes from "./mistakes";
 import { computeTeacherAutoTasks, listAssigned } from "../tasks/service";
 import { teacherSearch } from "../search/service";
@@ -212,6 +213,23 @@ teachCoursesRouter.get(
   "/sessions",
   wrap(async (req, res) => res.json(await attendance.getTeacherSessions(req.user!.id, { from: qs(req.query.from), to: qs(req.query.to), search: qs(req.query.search) })))
 );
+
+// ---------- Haftalik takroriy jadval (slotlar) + avtomatik darslar ----------
+
+// Kurs jadval slotlari (haftalik takror — bir marta sozlanadi).
+teachCoursesRouter.get("/courses/:id/schedule-slots", wrap(async (req, res) => res.json(await timetable.listSlots(parseId(req.params.id), req.user!.id))));
+teachCoursesRouter.post("/courses/:id/schedule-slots", wrap(async (req, res) => res.status(201).json(await timetable.addSlot(parseId(req.params.id), req.user!.id, req.body ?? {}))));
+teachCoursesRouter.delete("/schedule-slots/:id", wrap(async (req, res) => res.json(await timetable.deleteSlot(parseId(req.params.id), req.user!.id))));
+
+// Slotlardan HOSIL bo'lgan darslar (oraliq) — Mashg'ulotlar hub/dashboard.
+teachCoursesRouter.get("/lessons", wrap(async (req, res) => res.json(await timetable.getTeacherLessons(req.user!.id, { from: qs(req.query.from) ?? "", to: qs(req.query.to) ?? "", search: qs(req.query.search) }))));
+
+// Guruh haftalik jadvali (guruh profilida).
+teachCoursesRouter.get("/groups/:id/timetable", wrap(async (req, res) => res.json(await timetable.getGroupTimetable(parseId(req.params.id), req.user!.id))));
+
+// Yo'qlama (kurs, sana) bo'yicha — sessiya lazy yaratiladi.
+teachCoursesRouter.get("/attendance-by-date", wrap(async (req, res) => res.json(await timetable.rosterByDate(req.user!.id, Number(req.query.courseId), qs(req.query.date) ?? "", qnum(req.query.groupId)))));
+teachCoursesRouter.post("/attendance-by-date", wrap(async (req, res) => res.json(await timetable.markByDate(req.user!.id, req.body ?? {}))));
 
 teachCoursesRouter.get("/sessions/:id/roster", wrap(async (req, res) => res.json(await attendance.getRoster(parseId(req.params.id), req.user!.id, qnum(req.query.groupId)))));
 
