@@ -76,6 +76,63 @@ export async function listSessions(courseId: number, teacherId: number, opts: { 
   });
 }
 
+/** Darslar hub: o'qituvchining BARCHA kurslaridagi darslar (sana oralig'i +
+ *  qidiruv) — tez yo'qlama uchun kurs/guruh/holat bilan. */
+export async function getTeacherSessions(teacherId: number, opts: { from?: string; to?: string; search?: string }) {
+  const range = dateRange(opts.from, opts.to);
+  const q = opts.search?.trim();
+  const sessions = await prisma.lessonSession.findMany({
+    where: {
+      course: { teacherId },
+      ...(range ? { date: range } : {}),
+      ...(q
+        ? {
+            OR: [
+              { title: { contains: q, mode: "insensitive" } },
+              { course: { name: { contains: q, mode: "insensitive" } } },
+              { topic: { title: { contains: q, mode: "insensitive" } } },
+              { course: { courseGroups: { some: { group: { name: { contains: q, mode: "insensitive" } } } } } },
+            ],
+          }
+        : {}),
+    },
+    include: {
+      topic: true,
+      course: { include: { courseGroups: { include: { group: true } } } },
+      _count: { select: { attendance: true } },
+    },
+    orderBy: { date: "asc" },
+  });
+
+  const courseIds = [...new Set(sessions.map((s) => s.courseId))];
+  const rosterByCourse = new Map<number, number>();
+  if (courseIds.length) {
+    const counts = await prisma.enrollment.groupBy({ by: ["courseId"], where: { courseId: { in: courseIds }, status: "ACTIVE" }, _count: true });
+    for (const c of counts) rosterByCourse.set(c.courseId, c._count);
+  }
+
+  return sessions.map((s) => {
+    const marked = s._count.attendance;
+    const rosterSize = rosterByCourse.get(s.courseId) ?? 0;
+    const status = marked === 0 ? "UNMARKED" : marked >= rosterSize ? "FULL" : "PARTIAL";
+    const group = s.course.courseGroups[0]?.group ?? null;
+    return {
+      id: s.id,
+      date: s.date,
+      title: s.title ?? s.topic?.title ?? null,
+      room: s.room,
+      courseId: s.courseId,
+      courseName: s.course.name,
+      topicTitle: s.topic?.title ?? null,
+      groupId: group?.id ?? null,
+      groupName: group?.name ?? null,
+      markedCount: marked,
+      rosterSize,
+      status,
+    };
+  });
+}
+
 export async function createSession(courseId: number, teacherId: number, body: { date?: string; title?: string; topicId?: number | null; room?: string }) {
   const course = await ownCourse(courseId, teacherId);
   if (!body.date) throw badRequest("Sana kiriting", "Введите дату");
