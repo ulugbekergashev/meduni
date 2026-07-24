@@ -1,3 +1,4 @@
+import { randomUUID } from "crypto";
 import type { SourceMaterial, Topic } from "../../lib/prisma";
 import { prisma } from "../../lib/prisma";
 import { ApiError, badRequest, notFound } from "../../lib/errors";
@@ -202,6 +203,18 @@ async function collectMaterialText(topicId: number): Promise<string> {
   return parts.join("\n\n---\n\n").slice(0, MAX_MATERIAL_CHARS);
 }
 
+/** Faza 0: har konspekt boʻlimiga barqaror ID beradi (slayd/segment shunga bogʻlanadi).
+ *  Mavjud (boʻsh boʻlmagan) ID saqlanadi — tahrirda slayd↔boʻlim bogʻi buzilmaydi.
+ *  Faqat yangi/boʻsh ID'li boʻlimlarga yangisi beriladi. Digest'ni joyida oʻzgartiradi. */
+function ensureSectionIds(digest: DigestJson): DigestJson {
+  const seen = new Set<string>();
+  for (const s of digest.sections ?? []) {
+    if (!s.id || seen.has(s.id)) s.id = `s_${randomUUID().slice(0, 8)}`;
+    seen.add(s.id);
+  }
+  return digest;
+}
+
 export async function generateDigest(topicId: number, teacherId: number) {
   await topicForTeacher(topicId, teacherId);
 
@@ -228,7 +241,7 @@ export async function generateDigest(topicId: number, teacherId: number) {
   });
 
   const parsed = digestSchema.safeParse(raw);
-  const digestJson: DigestJson = parsed.success ? parsed.data : raw;
+  const digestJson: DigestJson = ensureSectionIds(parsed.success ? parsed.data : raw);
 
   const existing = await prisma.topicDigest.findUnique({ where: { topicId } });
   const digest = await prisma.topicDigest.upsert({
@@ -262,9 +275,10 @@ export async function updateDigest(topicId: number, teacherId: number, input: un
   const existing = await prisma.topicDigest.findUnique({ where: { topicId } });
   if (!existing) throw notFound("Konspekt");
 
+  const digestJson = ensureSectionIds(parsed.data);
   const digest = await prisma.topicDigest.update({
     where: { topicId },
-    data: { digestJson: parsed.data as object, version: existing.version + 1, approvedByTeacher: false },
+    data: { digestJson: digestJson as object, version: existing.version + 1, approvedByTeacher: false },
   });
   return { digestJson: digest.digestJson as unknown as DigestJson, version: digest.version, approvedByTeacher: false };
 }

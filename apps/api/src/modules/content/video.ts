@@ -278,7 +278,7 @@ async function stageScript(videoId: number) {
   // Lecture is written from the approved digest (single source of truth), with
   // presentation section titles as an optional structural hint.
   const topic = await prisma.topic.findUnique({ where: { id: topicId }, include: { digest: true } });
-  const digest = (topic?.digest?.digestJson as unknown as DigestJson) ?? { objectives: [], concepts: [], terms: [], facts: [], dosages: [], imageIdeas: [] };
+  const digest = (topic?.digest?.digestJson as unknown as DigestJson) ?? { sections: [], objectives: [], concepts: [], terms: [], facts: [], dosages: [], imageIdeas: [] };
   const presContent = await prisma.contentItem.findUnique({
     where: { topicId_kind: { topicId, kind: "PRESENTATION" } },
     include: { presentation: true },
@@ -297,7 +297,16 @@ async function stageScript(videoId: number) {
   });
   const parsed = lectureScriptGenSchema.safeParse(gen);
   const segs = (parsed.success ? parsed.data : gen).segments;
-  const script: ScriptSegment[] = segs.map((s) => ({ narration: s.narration, visual: s.visual, durationSec: 0 }));
+  // Faza 0: AI qaytargan sectionIndex → digest boʻlimining barqaror ID'si (vaqt
+  // xaritasi + video rasm reuse uchun). Diapazondan tashqari → null (graceful).
+  const sections = digest.sections ?? [];
+  const sectionIdAt = (i: number): string | null => (i >= 0 && i < sections.length ? sections[i].id || null : null);
+  const script: ScriptSegment[] = segs.map((s) => ({
+    narration: s.narration,
+    visual: s.visual,
+    durationSec: 0,
+    sectionId: sectionIdAt(s.sectionIndex ?? -1),
+  }));
   await prisma.video.update({ where: { id: videoId }, data: { scriptJson: script as object } });
 }
 

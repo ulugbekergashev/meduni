@@ -67,6 +67,11 @@ export async function generatePresentation(
   const parsed = slidesGenSchema.safeParse(gen);
   const raw = (parsed.success ? parsed.data : gen).slides;
 
+  // Faza 0: AI qaytargan sectionIndex → digest boʻlimining barqaror ID'si (bogʻlanish
+  // uchun). Diapazondan tashqari/id'siz boʻlim → null (graceful).
+  const sections = digest.sections ?? [];
+  const sectionIdAt = (i: number): string | null => (i >= 0 && i < sections.length ? sections[i].id || null : null);
+
   const slides: Slide[] = raw.map((s) => ({
     id: randomUUID(),
     layout: s.layout,
@@ -74,6 +79,7 @@ export async function generatePresentation(
     bullets: s.bullets,
     speakerNotes: s.speakerNotes,
     imageSlots: s.imagePrompt?.trim() ? [{ prompt: s.imagePrompt.trim(), url: null, status: "PENDING" }] : [],
+    sectionId: sectionIdAt(s.sectionIndex ?? -1),
   }));
 
   const existing = await prisma.contentItem.findUnique({ where: { topicId_kind: { topicId, kind: "PRESENTATION" } } });

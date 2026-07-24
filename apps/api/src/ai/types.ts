@@ -24,6 +24,9 @@ export const digestBlockSchema = z.discriminatedUnion("type", [
 export type DigestBlock = z.infer<typeof digestBlockSchema>;
 
 export const digestSectionSchema = z.object({
+  /** Barqaror bo'lim ID — SERVER beradi (AI emas), slayd/segment shunga bog'lanadi.
+   *  Eski (id'siz) konspektlarda bo'sh — o'qish paytida indeks-fallback (`s0, s1...`). */
+  id: z.string().default(""),
   title: z.string(),
   minutes: z.number().int().min(1).max(30).default(3),
   /** Material ichidagi joy ("Ma'ruza, 6–9-betlar"). Noma'lum bo'lsa bo'sh. */
@@ -270,6 +273,8 @@ export interface Slide {
   bullets: string[];
   speakerNotes: string;
   imageSlots: ImageSlot[];
+  /** Faza 0: qaysi konspekt bo'limini yoritadi (digest.sections[].id). Eski slaydlarda yo'q. */
+  sectionId?: string | null;
 }
 
 // What Gemini returns (one image prompt per slide; empty => no image).
@@ -279,6 +284,8 @@ export const slideGenSchema = z.object({
   bullets: z.array(z.string()),
   speakerNotes: z.string(),
   imagePrompt: z.string(),
+  /** Faza 0: shu slayd yoritadigan konspekt bo'limi indeksi (0-asosli). Server sectionId'ga aylantiradi. */
+  sectionIndex: z.number().int().default(-1),
 });
 export const slidesGenSchema = z.object({ slides: z.array(slideGenSchema) });
 export type SlidesGen = z.infer<typeof slidesGenSchema>;
@@ -348,6 +355,8 @@ export interface ScriptSegment {
   visual?: VideoVisual;
   /** Cached Nano Banana illustration for this segment's card (set at render, reused on rebuild). */
   visualImageUrl?: string | null;
+  /** Faza 0: qaysi konspekt bo'limini yoritadi (digest.sections[].id). Vaqt xaritasi + rasm reuse uchun. */
+  sectionId?: string | null;
 }
 
 const videoVisualSchema = z.object({
@@ -358,6 +367,8 @@ const videoVisualSchema = z.object({
 export const lectureSegmentSchema = z.object({
   narration: z.string(),
   visual: videoVisualSchema,
+  /** Faza 0: shu segment yoritadigan konspekt bo'limi indeksi (0-asosli). Server sectionId'ga aylantiradi. */
+  sectionIndex: z.number().int().default(-1),
 });
 export const lectureScriptGenSchema = z.object({ segments: z.array(lectureSegmentSchema) });
 export type LectureScriptGen = z.infer<typeof lectureScriptGenSchema>;
@@ -380,8 +391,9 @@ export const videoScriptResponseSchema = {
             },
             required: ["kind", "title", "points"],
           },
+          sectionIndex: { type: Type.INTEGER },
         },
-        required: ["narration", "visual"],
+        required: ["narration", "visual", "sectionIndex"],
       },
     },
   },
@@ -401,8 +413,9 @@ export const slidesResponseSchema = {
           bullets: { type: Type.ARRAY, items: { type: Type.STRING } },
           speakerNotes: { type: Type.STRING },
           imagePrompt: { type: Type.STRING },
+          sectionIndex: { type: Type.INTEGER },
         },
-        required: ["layout", "title", "bullets", "speakerNotes", "imagePrompt"],
+        required: ["layout", "title", "bullets", "speakerNotes", "imagePrompt", "sectionIndex"],
       },
     },
   },
