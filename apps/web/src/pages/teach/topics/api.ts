@@ -35,7 +35,27 @@ export interface Term {
   lat: string;
 }
 
+/** Faza 1: bo'lim oxiri active-recall savoli (o'qituvchi tahrirlaydi/tasdiqlaydi). */
+export interface DigestCheckpoint {
+  question: string;
+  options: string[];
+  correctIndex: number;
+  explanation: string;
+}
+
+/** Bo'limli konspekt (v2). Editor faqat `checkpoint`ni tahrirlaydi; qolgan
+ *  maydonlar runtime'da round-trip bilan saqlanadi (blocks tahrir qilinmaydi). */
+export interface DigestSection {
+  id?: string;
+  title: string;
+  minutes: number;
+  sourceRef: string;
+  blocks: unknown[];
+  checkpoint?: DigestCheckpoint | null;
+}
+
 export interface DigestJson {
+  sections?: DigestSection[];
   objectives: string[];
   concepts: string[];
   terms: Term[];

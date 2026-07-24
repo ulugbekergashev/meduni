@@ -109,6 +109,17 @@ export async function getTopicLesson(studentId: number, topicId: number) {
       slideImages: s.id ? (slideImagesBySection.get(s.id) ?? []) : [],
       videoAt: s.id ? (videoAtBySection.get(s.id) ?? null) : null,
     },
+    // Faza 1: active-recall checkpoint (ungraded, self-check). To'liq yuboriladi —
+    // bahoga ta'sir qilmaydi, asosiy testdan mustaqil (client javobda ochadi).
+    checkpoint:
+      s.checkpoint && Array.isArray(s.checkpoint.options) && s.checkpoint.options.length >= 2
+        ? {
+            question: s.checkpoint.question,
+            options: s.checkpoint.options,
+            correctIndex: s.checkpoint.correctIndex,
+            explanation: s.checkpoint.explanation ?? "",
+          }
+        : null,
   }));
 
   const rule = state; // TopicOut carries elements; thresholds come from the course rule below

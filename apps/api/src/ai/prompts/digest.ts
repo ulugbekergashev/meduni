@@ -36,6 +36,12 @@ export function digestSystemPrompt(lang: "uz" | "ru"): string {
     "    · {type:'list'}    — sanab oʻtiladigan bosqich/tur/belgi. Har elementda",
     "      `lead` (qalin boshlanma, masalan 'Atriyal sistola') va `text` (izohi).",
     "- Har boʻlimda kamida 2 ta blok boʻlsin. Blok ichidagi matn material bilan mos.",
+    "- `checkpoint` — boʻlim oxiri OʻZINI-TEKSHIRISH savoli (active recall). Har",
+    "  MAZMUNLI boʻlim uchun 1 ta savol: `question` (aniq, shu boʻlim mazmunidan),",
+    "  `options` (4 ta variant), `correctIndex` (toʻgʻri variant 0-asosli), `explanation`",
+    "  (nega toʻgʻri — 1-2 jumla, materialdan). Savol FAQAT shu boʻlim matnidan javob",
+    "  beriladigan boʻlsin. Sof kirish yoki qisqa xulosa boʻlimida checkpoint",
+    "  boʻlmasligi mumkin (tashlab ket).",
     "",
     "Agar biror maydon uchun materialda maʼlumot yoʻq boʻlsa — oʻsha massivni boʻsh qoldir.",
   ].join("\n");
