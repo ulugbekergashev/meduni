@@ -1319,6 +1319,30 @@ Barcha modullar tugadi (1-17).
   dars qo'shildi. tsc+build ikkala tomonda toza. **Biznes o'zgarishi:** kurs yaratish
   endi admin+o'qituvchi (ikkalasi ham; teacher o'z kafedrasida).
 
+- **Haftalik takroriy jadval: darslar AVTO hosil bo'ladi + guruh profili qayta
+  qurildi (2026-07-24, buyurtmachi).** Muammo: o'qituvchi har dars uchun qo'lda
+  "yangi mashg'ulot" yaratardi — bu keraksiz. Yechim: **haftalik takroriy jadval**
+  (bir marta sozlanadi) → darslar avtomatik paydo bo'ladi; o'qituvchi faqat
+  yo'qlama/baho qo'yadi. Prisma: `ScheduleSlot` (courseId, weekday 0-6=Du..Ya,
+  startTime "HH:MM", room) — migratsiya `schedule_slots`. **Backend
+  `modules/courses/timetable.ts`:** slot CRUD (kurs egasi; dublikat kun+vaqt→400);
+  `getTeacherLessons` — slotlardan [from..to] darslarni **hosil qiladi** (qo'lda
+  yaratilmaydi) + yo'qlama holati; `getGroupTimetable` — guruh kurslari slotlari;
+  `rosterByDate`/`markByDate` — yo'qlama **(kurs, sana)** bo'yicha, `LessonSession`
+  birinchi belgilashda **LAZY** yaratiladi (ensureSession: o'sha kun bo'yicha
+  find-or-create). Routes: `/teach/courses/:id/schedule-slots` (GET/POST),
+  `/teach/schedule-slots/:id` (DELETE), `/teach/lessons`, `/teach/groups/:id/timetable`,
+  `/teach/attendance-by-date` (GET/POST). Smoke 10/10. **Frontend:** guruh profili
+  (GroupProfile) **radikal soddalashdi** — 2 tab: "Dars jadvali" (haftalik ko'rinish,
+  slotlardan avto darslar, bir bosishda yo'qlama `RollCallModal`, "Jadval sozlash"
+  `TimetableSetupModal`: kurs+kun+vaqt+xona) + "Talabalar" (best/behind, rank).
+  **Jurnal/Sessiyalar/Hisobot tablari OLIB TASHLANDI** (JournalView/SessionsView/
+  ReportView/AttendanceModal/SessionModal endi o'lik — ishlatilmaydi). Mashg'ulotlar
+  hub (TeachSchedulePage) + Dashboard "Bugungi mashg'ulotlar" endi `useTeacherLessons`
+  (hosil qilingan darslar) — **qo'lda yaratish YO'Q**. `demoTimetable.ts` (Kardiologiya
+  haftalik jadval). ⚠️ **Sana mahalliy** (dayKey lokal, slot vaqti mahalliy Date) —
+  prod TZ da tekshir. tsc+build ikkala tomonda toza.
+
 ## 9. Loyiha holati va ishga tushirish (operatsion — sessiya 0)
 
 **Monorepo (npm workspaces):**
