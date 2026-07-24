@@ -1296,6 +1296,29 @@ Barcha modullar tugadi (1-17).
   emas, mahalliy: `loadScheduleDates` `setDate(+1)` + `toISOString().slice(0,10)`;
   `computeTopics` `today` UTC ISO — dev'da mos, prod TZ farqi bo'lsa tekshir.
 
+- **O'qituvchi ish oqimi: kurs yaratish + Darslar hub (2026-07-24, foydalanuvchi
+  so'rovi).** Buyurtmachi: o'qituvchi kirib kurs yaratsin, yo'qlamani oson (bugungi
+  darslar/guruhlar orqali) qilsin. **(Faza 1) O'qituvchi o'zi kurs yaratadi** (ilgari
+  faqat admin): `service.ts::teacherCreateCourse` (kafedra o'qituvchi TeacherProfile'dan,
+  guruhlar shu FAKULTETdan — begona → 400; `createCourse` reuse, talabalar avto
+  yoziladi) + `teacherCourseFormOptions` (kafedra nomi + fakultet guruhlari). Route:
+  `GET /teach/course-form-options`, `POST /teach/courses`. Frontend: TeachCoursesPage
+  "+Yangi kurs" modal (nom + kafedra[avto] + semestr + yil + guruh chip) → yaratgach
+  kurs sahifasiga o'tadi. Smoke 6/6. **(Faza 2) Darslar hub** (`/teach/schedule`, nav
+  "Darslar"): `attendance.ts::getTeacherSessions` — o'qituvchining BARCHA kurslaridagi
+  darslar (sana oralig'i + qidiruv kurs/guruh/mavzu) + har dars kurs/guruh/holat
+  (UNMARKED/PARTIAL/FULL) + marked/roster. `GET /teach/sessions`. UI: hafta ko'rinishi
+  (‹hafta› + Bugun, bugun brand ring; bo'sh kunlar yashirin), qidiruvda barcha sanalar
+  yassi ro'yxat; har dars bir bosishda "Yo'qlama" → mavjud AttendanceModal; "Yangi dars"
+  → kurs tanlab SessionModal. `useMarkAttendance`/`useCreateSession` endi
+  `["teacher-sessions"]` ni ham invalidatsiya qiladi. ⚠️ i18n prefiksi **`teachSchedule`**
+  (talaba `schedule` band — Modul 28 dublikat-kalit sabog'i). Smoke 4/4. **(Faza 3)**
+  Dashboard "Bugungi darslar" bo'limi (login qilib darrov yo'qlama; `useTeacherSessions`
+  bugungi oraliq + AttendanceModal, "Barcha darslar →"); TeachGroupsPage qidiruv
+  (guruh/fakultet/kurs). Demo: `demoSchedule.ts` sessiyalari (07-20/22/28) + bugungi
+  dars qo'shildi. tsc+build ikkala tomonda toza. **Biznes o'zgarishi:** kurs yaratish
+  endi admin+o'qituvchi (ikkalasi ham; teacher o'z kafedrasida).
+
 ## 9. Loyiha holati va ishga tushirish (operatsion — sessiya 0)
 
 **Monorepo (npm workspaces):**
