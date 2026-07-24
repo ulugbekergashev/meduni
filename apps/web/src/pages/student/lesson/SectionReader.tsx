@@ -1,10 +1,18 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { motion, useReducedMotion, useScroll, useSpring } from "framer-motion";
-import { ArrowRight, Check, Clock, FileText, Minus, Plus } from "lucide-react";
+import { ArrowRight, Check, Clock, FileText, Minus, Play, Plus } from "lucide-react";
 import { Icon, cls } from "@meduni/ui";
+import { API_URL } from "../../../lib/api";
 import type { LessonSection, Term } from "../api";
 import { BlockView } from "./BlockView";
+
+/** Sekundni mm:ss ko'rinishiga. */
+function mmss(sec: number): string {
+  const m = Math.floor(sec / 60);
+  const s = Math.floor(sec % 60);
+  return `${m}:${s.toString().padStart(2, "0")}`;
+}
 
 /** O'qish shrifti — A−/A+ bilan boshqariladi, tanlov localStorage'da qoladi.
  *  2026-07-23 v3: buyurtmachi "shrift kichik" dedi → default 20px (katta).
@@ -46,6 +54,8 @@ export function SectionReader({
   onMarkRead,
   onFinished,
   finishedLabel,
+  hasVideo = false,
+  onSeekVideo,
 }: {
   sections: LessonSection[];
   /** Konspekt atamalari — matn ichida Smart Tooltip uchun. */
@@ -57,6 +67,10 @@ export function SectionReader({
   onMarkRead: (index: number) => void;
   onFinished?: () => void;
   finishedLabel?: string;
+  /** Faza 1: video mavjudmi (bo'lim media chipi uchun). */
+  hasVideo?: boolean;
+  /** Faza 1: "Videoda: mm:ss" chipi bosilganda video sekundiga sakraydi. */
+  onSeekVideo?: (sec: number) => void;
 }) {
   const { t } = useTranslation(undefined, { keyPrefix: "lesson" });
   const reduce = useReducedMotion();
@@ -193,6 +207,39 @@ export function SectionReader({
                   <BlockView key={i} block={b} terms={terms} />
                 ))}
               </div>
+
+              {/* Faza 1: bo'limga bog'langan media — diagramma(lar) + video sekundiga
+                  sakrash chipi. OVOZ IERARXIYASI: alohida karta emas — matn oqimida
+                  rasm + bitta chip. */}
+              {(section.media?.slideImages?.length || (hasVideo && section.media?.videoAt != null && onSeekVideo)) && (
+                <div className="mt-4 space-y-2.5">
+                  {section.media?.slideImages?.map((img) => (
+                    <a
+                      key={img.slideId}
+                      href={`${API_URL}${img.url}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="block overflow-hidden rounded-card border border-line bg-surface-raised transition-shadow hover:shadow-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                    >
+                      <img
+                        src={`${API_URL}${img.url}`}
+                        alt={section.title}
+                        loading="lazy"
+                        className="mx-auto max-h-[420px] w-auto max-w-full"
+                      />
+                    </a>
+                  ))}
+                  {hasVideo && section.media?.videoAt != null && onSeekVideo && (
+                    <button
+                      onClick={() => onSeekVideo(section.media!.videoAt!)}
+                      className="inline-flex items-center gap-1.5 rounded-pill border border-violet/40 bg-violet-soft px-3 py-1.5 text-micro font-bold text-violet transition-colors hover:bg-violet/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                    >
+                      <Icon icon={Play} size={13} />
+                      {t("videoAt")}: {mmss(section.media.videoAt)}
+                    </button>
+                  )}
+                </div>
+              )}
 
               {/* O'qildi sensori — bo'lim oxiri ko'ringanda belgilanadi */}
               <div data-end={section.index} className="h-px" />
