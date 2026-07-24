@@ -220,6 +220,9 @@ model StudentGroup {
   faculty     Faculty  @relation(fields: [facultyId], references: [id])
   name         String
   yearOfStudy  Int
+  // O'qituvchi yaratgan guruh — hali kursga biriktirilmagan bo'lsa ham "Mening
+  // guruhlarim"da ko'rinishi uchun (skalyar, relation shart emas).
+  createdById  Int?
   createdAt    DateTime      @default(now())
   students     User[]
   courseGroups CourseGroup[]

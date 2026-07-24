@@ -354,7 +354,7 @@ export async function teacherCreateGroup(teacherId: number, input: { name: strin
   const facultyId = profile.department.facultyId;
   const dup = await prisma.studentGroup.findFirst({ where: { facultyId, name } });
   if (dup) throw badRequest("Bu nomli guruh allaqachon bor", "Группа с таким названием уже есть");
-  const g = await prisma.studentGroup.create({ data: { facultyId, name, yearOfStudy } });
+  const g = await prisma.studentGroup.create({ data: { facultyId, name, yearOfStudy, createdById: teacherId } });
   return { id: g.id, name: g.name, yearOfStudy: g.yearOfStudy, studentCount: 0 };
 }
 
@@ -363,11 +363,13 @@ export async function getTeacherGroup(groupId: number, teacherId: number) {
     where: { groupId, course: { teacherId } },
     include: { course: true },
   });
-  if (cgs.length === 0) {
-    throw new ApiError(403, "forbidden", "Bu sizning guruhingiz emas", "Это не ваша группа");
-  }
   const group = await prisma.studentGroup.findUnique({ where: { id: groupId }, include: { faculty: true } });
   if (!group) throw notFound("Guruh");
+  // O'qituvchi guruhni O'QITADI yoki O'ZI YARATGAN bo'lsa ko'ra oladi (yangi,
+  // hali kursga biriktirilmagan guruh ham "meniki").
+  if (cgs.length === 0 && group.createdById !== teacherId) {
+    throw new ApiError(403, "forbidden", "Bu sizning guruhingiz emas", "Это не ваша группа");
+  }
 
   const students = await prisma.user.findMany({
     where: { role: "STUDENT", isActive: true, groupId },
@@ -460,6 +462,11 @@ export async function listTeacherGroups(teacherId: number) {
     if (!map.has(cg.groupId)) map.set(cg.groupId, { group: cg.group, courses: new Map() });
     map.get(cg.groupId)!.courses.set(cg.course.id, { id: cg.course.id, name: cg.course.name });
   }
+
+  // O'qituvchi O'ZI YARATGAN, lekin hali kursga biriktirilmagan guruhlar ham
+  // "Mening guruhlarim"da ko'rinadi.
+  const created = await prisma.studentGroup.findMany({ where: { createdById: teacherId }, include: { faculty: true } });
+  for (const g of created) if (!map.has(g.id)) map.set(g.id, { group: g, courses: new Map() });
 
   const groupIds = [...map.keys()];
   const students = groupIds.length
