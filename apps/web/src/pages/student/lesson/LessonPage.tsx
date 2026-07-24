@@ -140,6 +140,12 @@ export function LessonPage() {
   const onStage = (key: StageKey) => setView(stageToView(key, lesson));
   const stages = buildStages(lesson);
 
+  // Faza 1: konspekt bo'limidan "Videoda: mm:ss" chipi — video ko'rinishiga o'tib
+  // o'sha sekundga sakraydi (?t=). Rail'dan video ochilsa ?t bo'lmaydi → sakramaydi.
+  const seekRaw = params.get("t");
+  const seekTo = seekRaw !== null && seekRaw !== "" && Number.isFinite(Number(seekRaw)) ? Number(seekRaw) : null;
+  const seekVideo = (sec: number) => setParams({ view: "video", t: String(Math.max(0, Math.floor(sec))) }, { replace: true });
+
   // Konspekt endi butunlay ko'rinadi — `section` faqat TOC'dan sakrash uchun,
   // `visibleSection` esa skroll paytida qaysi bo'lim ko'rinayotganini bildiradi.
   const sections = lesson.sections ?? [];
@@ -252,6 +258,8 @@ export function LessonPage() {
               section={jumpTo}
               onVisibleSection={setVisibleSection}
               onMarkRead={(i) => markRead.mutate(i)}
+              seekTo={seekTo}
+              onSeekVideo={seekVideo}
             />
           )}
         </div>
@@ -306,6 +314,8 @@ export function LessonPage() {
               section={jumpTo}
               onVisibleSection={setVisibleSection}
               onMarkRead={(i) => markRead.mutate(i)}
+              seekTo={seekTo}
+              onSeekVideo={seekVideo}
             />
           </div>
 

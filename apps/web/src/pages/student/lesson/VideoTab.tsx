@@ -11,7 +11,18 @@ function srtToVtt(srt: string): string {
   return "WEBVTT\n\n" + srt.replace(/(\d\d:\d\d:\d\d),(\d\d\d)/g, "$1.$2");
 }
 
-export function VideoTab({ topicId, data, threshold }: { topicId: number; data: VideoTabData; threshold: number }) {
+export function VideoTab({
+  topicId,
+  data,
+  threshold,
+  seekTo = null,
+}: {
+  topicId: number;
+  data: VideoTabData;
+  threshold: number;
+  /** Faza 1: konspekt bo'lim chipidan kelgan boshlanish sekundi (?t=). */
+  seekTo?: number | null;
+}) {
   const { t } = useTranslation(undefined, { keyPrefix: "lesson" });
   const ref = useRef<HTMLVideoElement>(null);
   const progress = useVideoProgress(topicId);
@@ -105,7 +116,14 @@ export function VideoTab({ topicId, data, threshold }: { topicId: number; data: 
           crossOrigin="use-credentials"
           className="aspect-video w-full outline-none"
           onLoadedMetadata={(e) => {
-            if (data.positionSec > 0) e.currentTarget.currentTime = data.positionSec;
+            // Konspekt chipidan kelgan bo'lsa (?t=) — o'sha sekundga sakraydi va
+            // o'ynatadi; aks holda oxirgi ko'rilgan pozitsiyadan davom etadi.
+            if (seekTo !== null && Number.isFinite(seekTo)) {
+              e.currentTarget.currentTime = Math.max(0, Math.min(seekTo, e.currentTarget.duration || seekTo));
+              e.currentTarget.play().then(() => setIsPlaying(true)).catch(() => {});
+            } else if (data.positionSec > 0) {
+              e.currentTarget.currentTime = data.positionSec;
+            }
           }}
           onPlay={() => setIsPlaying(true)}
           onTimeUpdate={onTime}

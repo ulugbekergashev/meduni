@@ -36,6 +36,8 @@ export function ContentPanel({
   section,
   onVisibleSection,
   onMarkRead,
+  seekTo = null,
+  onSeekVideo,
 }: {
   lesson: Lesson;
   topicId: number;
@@ -47,6 +49,9 @@ export function ContentPanel({
   section: number | null;
   onVisibleSection: (index: number) => void;
   onMarkRead: (index: number) => void;
+  /** Faza 1: video sekundiga sakrash (konspekt media chipidan ?t=). */
+  seekTo?: number | null;
+  onSeekVideo?: (sec: number) => void;
 }) {
   const { t } = useTranslation(undefined, { keyPrefix: "lesson" });
   const hasSections = (lesson.sections?.length ?? 0) > 0;
@@ -175,13 +180,15 @@ export function ContentPanel({
             onMarkRead={onMarkRead}
             onFinished={nextAfterStudy ? () => onStage(nextAfterStudy.key) : undefined}
             finishedLabel={nextAfterStudy ? `${t("nextStage")}: ${t(`stage_${nextAfterStudy.key}`)}` : undefined}
+            hasVideo={!!lesson.tabs.video}
+            onSeekVideo={onSeekVideo}
           />
         ) : (
           lesson.digest && <DigestView digest={lesson.digest} />
         ))}
       {active === "video" && lesson.tabs.video && (
         <>
-          <VideoTab topicId={topicId} data={lesson.tabs.video} threshold={lesson.thresholds.video} />
+          <VideoTab topicId={topicId} data={lesson.tabs.video} threshold={lesson.thresholds.video} seekTo={seekTo} />
           {studyDone && <NextStageBar stages={stages} currentKey="study" onSelect={onStage} />}
         </>
       )}

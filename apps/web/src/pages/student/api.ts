@@ -293,6 +293,11 @@ export interface LessonSection {
   sourceRef: string | null;
   blocks: DigestBlock[];
   read: boolean;
+  /** Faza 1: bo'lim ichiga media — diagramma(lar) + videodagi boshlanish sekundi. */
+  media?: {
+    slideImages: { slideId: string; url: string }[];
+    videoAt: number | null;
+  };
 }
 
 export interface Lesson {

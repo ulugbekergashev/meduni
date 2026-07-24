@@ -2,7 +2,7 @@ import { Prisma, prisma } from "../../lib/prisma";
 import { ApiError, badRequest, notFound } from "../../lib/errors";
 import { readFileBuffer, readText } from "../../lib/storage";
 import { buildPdf } from "../content/presentation";
-import type { CaseJson, DigestJson, Slide } from "../../ai/types";
+import type { CaseJson, DigestJson, ScriptSegment, Slide } from "../../ai/types";
 import {
   assertTopicOpen,
   computeTopics,
@@ -58,6 +58,11 @@ export async function getTopicLesson(studentId: number, topicId: number) {
   });
   if (!topic) throw notFound("Mavzu");
 
+  const videoItem = topic.contentItems.find((c) => c.kind === "VIDEO");
+  const slidesItem = topic.contentItems.find((c) => c.kind === "PRESENTATION");
+  const quizItem = topic.contentItems.find((c) => c.kind === "QUIZ");
+  const caseItem = topic.contentItems.find((c) => c.kind === "CASE");
+
   // Konspekt bo'limlari + shu talaba qaysilarini o'qigani (1a "O'qildi n/N").
   const digestJson = topic.digest?.approvedByTeacher
     ? (topic.digest.digestJson as unknown as DigestJson)
@@ -70,6 +75,29 @@ export async function getTopicLesson(studentId: number, topicId: number) {
       })
     : [];
   const readSet = new Set(reads.map((r) => r.sectionIndex));
+
+  // Faza 1: bo'lim ichiga media — o'sha bo'limni yorituvchi slayd diagrammasi va
+  // videodagi boshlanish vaqti (Faza 0 sectionId xaritasi orqali). Bo'lim id'si
+  // bo'lmagan/mos slayd-segment bo'lmagan eski kontentda bo'sh (graceful).
+  const presId = slidesItem?.presentation?.id ?? null;
+  const presSlides = slidesItem?.presentation ? (slidesItem.presentation.slidesJson as unknown as Slide[]) : [];
+  const slideImagesBySection = new Map<string, { slideId: string; url: string }[]>();
+  presSlides.forEach((s, si) => {
+    if (!s.sectionId || s.imageSlots?.[0]?.status !== "DONE" || presId === null) return;
+    const arr = slideImagesBySection.get(s.sectionId) ?? [];
+    arr.push({ slideId: s.id, url: `/api/v1/me/presentations/${presId}/image/${si}/0` });
+    slideImagesBySection.set(s.sectionId, arr);
+  });
+  // Videodagi boshlanish sekundi = shu bo'limga tegishli BIRINCHI segmentgacha
+  // bo'lgan davomiyliklar yig'indisi. Faqat tayyor (mp4) videoda.
+  const videoSegs = videoItem?.video?.mp4Url ? ((videoItem.video.scriptJson as unknown as ScriptSegment[]) ?? []) : [];
+  const videoAtBySection = new Map<string, number>();
+  let segAcc = 0;
+  for (const seg of videoSegs) {
+    if (seg.sectionId && !videoAtBySection.has(seg.sectionId)) videoAtBySection.set(seg.sectionId, Math.floor(segAcc));
+    segAcc += seg.durationSec || 0;
+  }
+
   const sections = sectionsRaw.map((s, i) => ({
     index: i,
     title: s.title,
@@ -77,15 +105,14 @@ export async function getTopicLesson(studentId: number, topicId: number) {
     sourceRef: s.sourceRef || null,
     blocks: s.blocks,
     read: readSet.has(i),
+    media: {
+      slideImages: s.id ? (slideImagesBySection.get(s.id) ?? []) : [],
+      videoAt: s.id ? (videoAtBySection.get(s.id) ?? null) : null,
+    },
   }));
 
   const rule = state; // TopicOut carries elements; thresholds come from the course rule below
   const progress = await prisma.progress.findUnique({ where: { studentId_topicId: { studentId, topicId } } });
-
-  const videoItem = topic.contentItems.find((c) => c.kind === "VIDEO");
-  const slidesItem = topic.contentItems.find((c) => c.kind === "PRESENTATION");
-  const quizItem = topic.contentItems.find((c) => c.kind === "QUIZ");
-  const caseItem = topic.contentItems.find((c) => c.kind === "CASE");
 
   // Latest quiz attempt (for the intro/result state).
   let quizMeta = null;
