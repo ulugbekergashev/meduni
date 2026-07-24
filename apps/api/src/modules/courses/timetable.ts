@@ -44,17 +44,24 @@ export async function listSlots(courseId: number, teacherId: number) {
   return prisma.scheduleSlot.findMany({ where: { courseId }, orderBy: [{ weekday: "asc" }, { startTime: "asc" }] });
 }
 
-export async function addSlot(courseId: number, teacherId: number, body: { weekday: number; startTime: string; room?: string }) {
+export async function addSlot(courseId: number, teacherId: number, body: { weekday: number; startTime: string; room?: string; groupId?: number | null }) {
   await ownCourse(courseId, teacherId);
   if (!Number.isInteger(body.weekday) || body.weekday < 0 || body.weekday > 6) throw badRequest("Hafta kuni notoʻgʻri", "Неверный день недели");
   if (!/^\d{1,2}:\d{2}$/.test(body.startTime ?? "")) throw badRequest("Vaqt HH:MM formatida", "Время в формате HH:MM");
   const [hh, mm] = body.startTime.split(":").map(Number);
   if (hh > 23 || mm > 59) throw badRequest("Vaqt notoʻgʻri", "Неверное время");
   const time = `${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
-  // Dublikatni oldini olamiz (bir kun+vaqt bir marta)
-  const dup = await prisma.scheduleSlot.findFirst({ where: { courseId, weekday: body.weekday, startTime: time } });
-  if (dup) throw badRequest("Bu kun va vaqt allaqachon bor", "Этот день и время уже есть");
-  return prisma.scheduleSlot.create({ data: { courseId, weekday: body.weekday, startTime: time, room: body.room?.trim() || null } });
+  // Guruh ko'rsatilsa — u shu kursga biriktirilgan bo'lishi shart.
+  let groupId: number | null = null;
+  if (body.groupId != null) {
+    const cg = await prisma.courseGroup.findFirst({ where: { courseId, groupId: body.groupId } });
+    if (!cg) throw badRequest("Guruh bu kursga biriktirilmagan", "Группа не привязана к курсу");
+    groupId = body.groupId;
+  }
+  // Dublikat: bir (guruh, kun, vaqt) bir marta.
+  const dup = await prisma.scheduleSlot.findFirst({ where: { courseId, groupId, weekday: body.weekday, startTime: time } });
+  if (dup) throw badRequest("Bu guruh uchun shu kun va vaqt allaqachon bor", "Для этой группы этот день и время уже есть");
+  return prisma.scheduleSlot.create({ data: { courseId, groupId, weekday: body.weekday, startTime: time, room: body.room?.trim() || null } });
 }
 
 export async function deleteSlot(slotId: number, teacherId: number) {
@@ -95,52 +102,64 @@ export async function getTeacherLessons(teacherId: number, opts: { from: string;
 
   const fromB = dayBounds(opts.from).gte;
   const toB = dayBounds(opts.to).lt;
-
-  // Materializatsiya qilingan sessiyalar (oraliqda) — yo'qlama holati uchun
   const courseIds = courses.map((c) => c.id);
-  const rosterByCourse = new Map<number, number>();
-  const sessionByKey = new Map<string, { id: number; marked: number }>();
+
+  // Roster (kurs, guruh) bo'yicha — talaba o'z groupId'siga tegishli.
+  const rosterByCG = new Map<string, number>(); // `${courseId}:${groupId}` -> son
+  const sessionByKey = new Map<string, { id: number; marked: number }>(); // `${courseId}:${groupId}:${dayKey}`
   if (courseIds.length) {
-    const counts = await prisma.enrollment.groupBy({ by: ["courseId"], where: { courseId: { in: courseIds }, status: "ACTIVE" }, _count: true });
-    for (const c of counts) rosterByCourse.set(c.courseId, c._count);
+    const enrs = await prisma.enrollment.findMany({
+      where: { courseId: { in: courseIds }, status: "ACTIVE" },
+      include: { student: { select: { groupId: true } } },
+    });
+    for (const e of enrs) {
+      if (e.student.groupId == null) continue;
+      const k = `${e.courseId}:${e.student.groupId}`;
+      rosterByCG.set(k, (rosterByCG.get(k) ?? 0) + 1);
+    }
     const sessions = await prisma.lessonSession.findMany({
       where: { courseId: { in: courseIds }, date: { gte: fromB, lt: toB } },
       include: { _count: { select: { attendance: true } } },
     });
-    for (const s of sessions) sessionByKey.set(`${s.courseId}:${dayKey(s.date)}`, { id: s.id, marked: s._count.attendance });
+    for (const s of sessions) sessionByKey.set(`${s.courseId}:${s.groupId ?? "x"}:${dayKey(s.date)}`, { id: s.id, marked: s._count.attendance });
   }
+
+  const groupName = (c: (typeof courses)[number], gid: number) => c.courseGroups.find((cg) => cg.groupId === gid)?.group.name ?? null;
 
   const out: DerivedLesson[] = [];
   for (const c of courses) {
     if (c.scheduleSlots.length === 0) continue;
-    const group = c.courseGroups[0]?.group ?? null;
-    if (q && !(c.name.toLowerCase().includes(q) || (group?.name.toLowerCase().includes(q) ?? false))) continue;
-    const rosterSize = rosterByCourse.get(c.id) ?? 0;
-    // oraliqdagi har kun uchun mos slotlar
     for (let d = new Date(fromB); d < toB; d.setDate(d.getDate() + 1)) {
       const wd = mondayIdx(d);
       const dk = dayKey(d);
       for (const slot of c.scheduleSlots) {
         if (slot.weekday !== wd) continue;
-        const mat = sessionByKey.get(`${c.id}:${dk}`);
-        const marked = mat?.marked ?? 0;
-        const status = marked === 0 ? "UNMARKED" : marked >= rosterSize ? "FULL" : "PARTIAL";
-        out.push({
-          courseId: c.id,
-          courseName: c.name,
-          groupId: group?.id ?? null,
-          groupName: group?.name ?? null,
-          slotId: slot.id,
-          date: atTime(dk, slot.startTime).toISOString(),
-          dayKey: dk,
-          weekday: slot.weekday,
-          startTime: slot.startTime,
-          room: slot.room,
-          sessionId: mat?.id ?? null,
-          markedCount: marked,
-          rosterSize,
-          status,
-        });
+        // Slot qaysi guruh(lar)ga: ko'rsatilgan bo'lsa — o'sha; aks holda kursning barcha guruhlari.
+        const targetGroups = slot.groupId != null ? [slot.groupId] : c.courseGroups.map((cg) => cg.groupId);
+        for (const gid of targetGroups) {
+          const gName = groupName(c, gid);
+          if (q && !(c.name.toLowerCase().includes(q) || (gName?.toLowerCase().includes(q) ?? false))) continue;
+          const rosterSize = rosterByCG.get(`${c.id}:${gid}`) ?? 0;
+          const mat = sessionByKey.get(`${c.id}:${gid}:${dk}`);
+          const marked = mat?.marked ?? 0;
+          const status = marked === 0 ? "UNMARKED" : marked >= rosterSize ? "FULL" : "PARTIAL";
+          out.push({
+            courseId: c.id,
+            courseName: c.name,
+            groupId: gid,
+            groupName: gName,
+            slotId: slot.id,
+            date: atTime(dk, slot.startTime).toISOString(),
+            dayKey: dk,
+            weekday: slot.weekday,
+            startTime: slot.startTime,
+            room: slot.room,
+            sessionId: mat?.id ?? null,
+            markedCount: marked,
+            rosterSize,
+            status,
+          });
+        }
       }
     }
   }
@@ -158,6 +177,8 @@ export async function getGroupTimetable(groupId: number, teacherId: number) {
   const slots: { slotId: number; courseId: number; courseName: string; weekday: number; startTime: string; room: string | null }[] = [];
   for (const cg of cgs) {
     for (const s of cg.course.scheduleSlots) {
+      // Shu guruhga tegishli slotlar: aynan shu guruh uchun YOKI umumiy (null).
+      if (s.groupId != null && s.groupId !== groupId) continue;
       slots.push({ slotId: s.id, courseId: cg.course.id, courseName: cg.course.name, weekday: s.weekday, startTime: s.startTime, room: s.room });
     }
   }
@@ -167,12 +188,13 @@ export async function getGroupTimetable(groupId: number, teacherId: number) {
 
 // ---------- Yo'qlama (kurs, sana) bo'yicha — sessiya lazy yaratiladi ----------
 
-async function ensureSession(courseId: number, dateKey: string, startTime: string, teacherId: number): Promise<number> {
+async function ensureSession(courseId: number, groupId: number | null, dateKey: string, startTime: string, teacherId: number): Promise<number> {
   const { gte, lt } = dayBounds(dateKey);
-  const existing = await prisma.lessonSession.findFirst({ where: { courseId, date: { gte, lt } } });
+  // Yo'qlama sessiyasi (kurs, guruh, sana) bo'yicha ajratiladi.
+  const existing = await prisma.lessonSession.findFirst({ where: { courseId, groupId, date: { gte, lt } } });
   if (existing) return existing.id;
   const created = await prisma.lessonSession.create({
-    data: { courseId, date: atTime(dateKey, startTime), createdById: teacherId },
+    data: { courseId, groupId, date: atTime(dateKey, startTime), createdById: teacherId },
   });
   return created.id;
 }
@@ -185,7 +207,7 @@ export async function rosterByDate(teacherId: number, courseId: number, dateKey:
     orderBy: { student: { fullName: "asc" } },
   });
   const { gte, lt } = dayBounds(dateKey);
-  const session = await prisma.lessonSession.findFirst({ where: { courseId, date: { gte, lt } }, include: { attendance: true } });
+  const session = await prisma.lessonSession.findFirst({ where: { courseId, groupId: groupId ?? null, date: { gte, lt } }, include: { attendance: true } });
   const marks = new Map((session?.attendance ?? []).map((a) => [a.studentId, { status: a.status as Status, grade: a.grade }]));
   return {
     date: dateKey,
@@ -200,11 +222,11 @@ export async function rosterByDate(teacherId: number, courseId: number, dateKey:
 
 export async function markByDate(
   teacherId: number,
-  body: { courseId: number; date: string; startTime?: string; marks: { studentId: number; status: Status; grade?: number | null }[] }
+  body: { courseId: number; date: string; startTime?: string; groupId?: number | null; marks: { studentId: number; status: Status; grade?: number | null }[] }
 ) {
   await ownCourse(body.courseId, teacherId);
   const clean = (body.marks ?? []).filter((m) => STATUSES.includes(m.status) && Number.isInteger(m.studentId));
-  const sessionId = await ensureSession(body.courseId, body.date, body.startTime || "09:00", teacherId);
+  const sessionId = await ensureSession(body.courseId, body.groupId ?? null, body.date, body.startTime || "09:00", teacherId);
   for (const m of clean) {
     await prisma.attendance.upsert({
       where: { sessionId_studentId: { sessionId, studentId: m.studentId } },

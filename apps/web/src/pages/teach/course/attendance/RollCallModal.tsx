@@ -42,11 +42,11 @@ export function RollCallModal({
 
   const setOne = (stId: number, status: AttStatus) => {
     setMarks((m) => ({ ...m, [stId]: status }));
-    mark.mutate({ courseId, date, startTime, marks: [{ studentId: stId, status }] }, { onError: () => show(t("saveFailed")) });
+    mark.mutate({ courseId, date, startTime, groupId, marks: [{ studentId: stId, status }] }, { onError: () => show(t("saveFailed")) });
   };
   const allPresent = () => {
     setMarks(Object.fromEntries(students.map((s) => [s.id, "PRESENT" as AttStatus])));
-    mark.mutate({ courseId, date, startTime, marks: students.map((s) => ({ studentId: s.id, status: "PRESENT" as AttStatus })) }, { onError: () => show(t("saveFailed")) });
+    mark.mutate({ courseId, date, startTime, groupId, marks: students.map((s) => ({ studentId: s.id, status: "PRESENT" as AttStatus })) }, { onError: () => show(t("saveFailed")) });
   };
 
   return (
