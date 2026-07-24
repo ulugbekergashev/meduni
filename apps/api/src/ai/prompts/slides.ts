@@ -22,13 +22,27 @@ export function slidesSystemPrompt(lang: "uz" | "ru"): string {
     "4. Har slaydda: qisqa sarlavha, 2-5 ta tezis (bullets), maʼruzachi izohi (speakerNotes).",
     "5. imagePrompt (ENG MUHIM — ingliz tilida, BATAFSIL): shu slayd mazmunini TUSHUNTIRADIGAN aniq tibbiy diagramma/infografika tavsifi. Faqat 'rasm chiz' EMAS — NIMA chizilishini konkret yoz: qaysi anatomik tuzilmalar, oʻqlar (qon oqimi/mexanizm yoʻnalishi), belgilangan qismlar (callout labels), taqqoslash bloklari. Masalan: 'Cross-section diagram of the human heart showing all four chambers (right/left atrium, right/left ventricle) with blue arrows for deoxygenated and red arrows for oxygenated blood flow, valves labeled, aorta and pulmonary artery marked with callout lines'. TITLE/BODY_DIAGRAM/TWO_BLOCK/THREE_BLOCK/IMAGE_LEFT slaydlarida imagePrompt HAR DOIM toʻldiriladi. Faqat sof-matnli BULLETS slaydda boʻsh boʻlishi mumkin.",
     "6. imagePrompt ichidagi label/atamalar — mazmunni aks ettirsin; rasm oʻquv darsligi (textbook) sifatida boʻlsin.",
-    `7. Barcha koʻrinadigan matn (title, bullets, speakerNotes) — ${langLabel[lang]} tilida.`,
-    "8. Javobni FAQAT JSON schema boʻyicha beraman.",
+    "7. sectionIndex (MUHIM — bogʻlanish uchun): har slayd konspektning QAYSI boʻlimini yoritayotganini koʻrsat — quyidagi raqamlangan boʻlimlar roʻyxatidan 0-asosli indeks. Masalan slayd 'Yurak sikli' boʻlimini yoritsa va u roʻyxatda 2-boʻlim boʻlsa → sectionIndex=2. Kirish TITLE slaydi yoki bir necha boʻlimga tegishli slayd uchun eng mos boʻlimni tanla; hech biriga toʻgʻri kelmasa -1.",
+    `8. Barcha koʻrinadigan matn (title, bullets, speakerNotes) — ${langLabel[lang]} tilida.`,
+    "9. Javobni FAQAT JSON schema boʻyicha beraman.",
   ].join("\n");
 }
 
+function numberedSections(digest: DigestJson): string {
+  const secs = digest.sections ?? [];
+  if (!secs.length) return "(boʻlimlar yoʻq — imkoni boʻlsa sectionIndex=-1)";
+  return secs.map((s, i) => `[${i}] ${s.title}`).join("\n");
+}
+
 export function slidesUserContent(digest: DigestJson): string {
-  return ["Quyidagi konspektdan taqdimot slaydlarini tuz:", "", "=== KONSPEKT ===", JSON.stringify(digest, null, 2), "=== KONSPEKT TUGADI ==="].join(
-    "\n"
-  );
+  return [
+    "Quyidagi konspektdan taqdimot slaydlarini tuz.",
+    "",
+    "=== KONSPEKT BOʻLIMLARI (sectionIndex uchun 0-asosli raqamlangan) ===",
+    numberedSections(digest),
+    "",
+    "=== KONSPEKT (toʻliq) ===",
+    JSON.stringify(digest, null, 2),
+    "=== KONSPEKT TUGADI ===",
+  ].join("\n");
 }

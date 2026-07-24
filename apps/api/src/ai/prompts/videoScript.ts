@@ -34,6 +34,11 @@ export function videoScriptSystemPrompt(lang: "uz" | "ru"): string {
     "3) dozalar bor boʻlsa — alohida `warning` segment;",
     "4) `title`/`points` bilan qisqa, esda qoladigan yakuniy xulosa.",
     "",
+    "SEGMENT → BOʻLIM BOGʻLASH (sectionIndex — MUHIM):",
+    "- Har segment konspektning QAYSI boʻlimini yoritayotganini `sectionIndex` bilan koʻrsat — quyidagi raqamlangan boʻlimlar roʻyxatidan 0-asosli indeks.",
+    "- Kirish/xulosa segmentlari uchun eng mos boʻlimni tanla; boʻlimlar roʻyxati boʻsh boʻlsa yoki mos boʻlim yoʻq boʻlsa -1.",
+    "- Segmentlarni boʻlimlar tartibida yoz (0-boʻlim segmentlari avval, keyin 1-boʻlim...).",
+    "",
     "QATʼIY:",
     "- FAQAT konspektdagi maʼlumot. Oʻzingdan tibbiy fakt/doza/protokol QOʻSHMA.",
     `- TIL — ${langLabel[lang]}. BARCHA chiqish matni (narration, visual.title, visual.points) FAQAT shu tilda boʻlsin. Tillarni ARALASHTIRMA (masalan rus videosida oʻzbekcha sarlavha boʻlmasin). Xalqaro qisqartmalar (DCIS, in situ) oʻz holicha qolishi mumkin.`,
@@ -43,8 +48,12 @@ export function videoScriptSystemPrompt(lang: "uz" | "ru"): string {
 }
 
 export function videoScriptUserContent(digest: DigestJson, slideTitles?: string[]): string {
+  const sections = digest.sections ?? [];
   const parts = [
     "Quyidagi konspekt asosida video ssenariysini yoz:",
+    "",
+    "=== KONSPEKT BOʻLIMLARI (sectionIndex uchun 0-asosli raqamlangan) ===",
+    sections.length ? sections.map((s, i) => `[${i}] ${s.title}`).join("\n") : "(boʻlimlar yoʻq — sectionIndex=-1)",
     "",
     "=== MAQSADLAR ===",
     digest.objectives.map((o) => `- ${o}`).join("\n") || "(yoʻq)",
