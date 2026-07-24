@@ -50,6 +50,27 @@ teachCoursesRouter.get(
   wrap(async (req, res) => res.json(await svc.listTeacherCourses(req.user!.id)))
 );
 
+// O'qituvchi o'zi kurs yaratadi (o'z kafedrasida).
+teachCoursesRouter.get(
+  "/course-form-options",
+  wrap(async (req, res) => res.json(await svc.teacherCourseFormOptions(req.user!.id)))
+);
+teachCoursesRouter.post(
+  "/courses",
+  wrap(async (req, res) => {
+    const b = req.body ?? {};
+    res.status(201).json(
+      await svc.teacherCreateCourse(req.user!.id, {
+        name: typeof b.name === "string" ? b.name : "",
+        description: typeof b.description === "string" ? b.description : undefined,
+        groupIds: Array.isArray(b.groupIds) ? b.groupIds.map(Number).filter((n: number) => Number.isInteger(n) && n > 0) : [],
+        semester: Number(b.semester),
+        academicYear: typeof b.academicYear === "string" ? b.academicYear : "",
+      })
+    );
+  })
+);
+
 // Guruh xatolari xaritasi (Modul 28) — savol/qadam darajasidagi xato agregat.
 teachCoursesRouter.get(
   "/courses/:id/mistakes",
@@ -184,6 +205,12 @@ teachCoursesRouter.get(
       await attendance.attendanceReport(parseId(req.params.id), req.user!.id, { from: qs(req.query.from), to: qs(req.query.to), search: qs(req.query.search), groupId: qnum(req.query.groupId) })
     )
   )
+);
+
+// Darslar hub — o'qituvchining barcha kurslaridagi darslar (tez yo'qlama).
+teachCoursesRouter.get(
+  "/sessions",
+  wrap(async (req, res) => res.json(await attendance.getTeacherSessions(req.user!.id, { from: qs(req.query.from), to: qs(req.query.to), search: qs(req.query.search) })))
 );
 
 teachCoursesRouter.get("/sessions/:id/roster", wrap(async (req, res) => res.json(await attendance.getRoster(parseId(req.params.id), req.user!.id, qnum(req.query.groupId)))));

@@ -19,6 +19,7 @@ import { TeachShell } from "./pages/teach/TeachShell";
 import { TeachDashboard } from "./pages/teach/TeachDashboard";
 import { TeachTasksPage } from "./pages/teach/TeachTasksPage";
 import { TeachCoursesPage } from "./pages/teach/TeachCoursesPage";
+import { TeachSchedulePage } from "./pages/teach/TeachSchedulePage";
 import { TeachGroupsPage } from "./pages/teach/TeachGroupsPage";
 import { StudentDetailPage } from "./pages/teach/StudentDetailPage";
 import { TeacherCourseShell } from "./pages/teach/course/TeacherCourseShell";
@@ -86,6 +87,7 @@ export function App() {
         <Route path="tasks" element={<TeachTasksPage />} />
 
         <Route path="courses" element={<TeachCoursesPage />} />
+        <Route path="schedule" element={<TeachSchedulePage />} />
         <Route path="groups" element={<TeachGroupsPage />} />
         <Route path="groups/:id" element={<GroupProfile />} />
         <Route path="students/:id" element={<StudentDetailPage />} />

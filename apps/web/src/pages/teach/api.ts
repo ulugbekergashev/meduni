@@ -25,6 +25,28 @@ export function useTeachCourses() {
   });
 }
 
+// O'qituvchi o'zi kurs yaratadi
+export interface CourseFormOptions {
+  departmentId: number;
+  departmentName: string;
+  facultyName: string;
+  groups: { id: number; name: string; yearOfStudy: number; studentCount: number }[];
+}
+export function useCourseFormOptions() {
+  return useQuery({ queryKey: ["teach-course-form-options"], queryFn: () => api<CourseFormOptions>("/api/v1/teach/course-form-options") });
+}
+export function useCreateTeacherCourse() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: { name: string; description?: string; groupIds: number[]; semester: number; academicYear: string }) =>
+      api<TeachCourse & { enrolledCount: number }>("/api/v1/teach/courses", { method: "POST", body: JSON.stringify(body) }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["teach-courses"] });
+      qc.invalidateQueries({ queryKey: ["teach-dashboard"] });
+    },
+  });
+}
+
 export interface GroupStudent {
   id: number;
   fullName: string;
@@ -604,6 +626,29 @@ export interface DateRange {
   groupId?: number;
 }
 
+// Darslar hub — o'qituvchining barcha kurslaridagi darslar
+export interface TeacherSession {
+  id: number;
+  date: string;
+  title: string | null;
+  room: string | null;
+  courseId: number;
+  courseName: string;
+  topicTitle: string | null;
+  groupId: number | null;
+  groupName: string | null;
+  markedCount: number;
+  rosterSize: number;
+  status: "UNMARKED" | "PARTIAL" | "FULL";
+}
+export function useTeacherSessions(range: { from?: string; to?: string; search?: string }) {
+  const p = new URLSearchParams();
+  if (range.from) p.set("from", range.from);
+  if (range.to) p.set("to", range.to);
+  if (range.search?.trim()) p.set("search", range.search.trim());
+  return useQuery({ queryKey: ["teacher-sessions", range], queryFn: () => api<TeacherSession[]>(`/api/v1/teach/sessions?${p}`) });
+}
+
 export function useSessions(courseId: number, range: DateRange) {
   const p = new URLSearchParams();
   if (range.from) p.set("from", range.from);
@@ -620,6 +665,7 @@ export function useCreateSession(courseId: number) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["sessions", courseId] });
       qc.invalidateQueries({ queryKey: ["att-report", courseId] }); // journal columns
+      qc.invalidateQueries({ queryKey: ["teacher-sessions"] }); // Darslar hub
     },
   });
 }
@@ -665,6 +711,7 @@ export function useMarkAttendance(courseId: number) {
       qc.invalidateQueries({ queryKey: ["sessions", courseId] });
       qc.invalidateQueries({ queryKey: ["roster", b.sessionId] });
       qc.invalidateQueries({ queryKey: ["att-report", courseId] });
+      qc.invalidateQueries({ queryKey: ["teacher-sessions"] }); // Darslar hub
     },
   });
 }

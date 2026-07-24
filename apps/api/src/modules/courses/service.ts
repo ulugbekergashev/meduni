@@ -283,6 +283,55 @@ export async function teacherDetachGroup(courseId: number, teacherId: number, gr
   return { ok: true };
 }
 
+// ---- O'qituvchi o'zi kurs yaratadi (o'z kafedrasida) ----
+
+/** Yangi kurs formasi uchun: o'qituvchi kafedrasi + shu fakultetdagi guruhlar. */
+export async function teacherCourseFormOptions(teacherId: number) {
+  const profile = await prisma.teacherProfile.findUnique({
+    where: { userId: teacherId },
+    include: { department: { include: { faculty: true } } },
+  });
+  if (!profile) throw badRequest("Sizga kafedra biriktirilmagan", "Вам не назначена кафедра");
+  const groups = await prisma.studentGroup.findMany({
+    where: { facultyId: profile.department.facultyId },
+    orderBy: { name: "asc" },
+    include: { _count: { select: { students: true } } },
+  });
+  return {
+    departmentId: profile.departmentId,
+    departmentName: profile.department.name,
+    facultyName: profile.department.faculty.name,
+    groups: groups.map((g) => ({ id: g.id, name: g.name, yearOfStudy: g.yearOfStudy, studentCount: g._count.students })),
+  };
+}
+
+export async function teacherCreateCourse(
+  teacherId: number,
+  input: { name: string; description?: string; groupIds: number[]; semester: number; academicYear: string }
+) {
+  const profile = await prisma.teacherProfile.findUnique({ where: { userId: teacherId } });
+  if (!profile) throw badRequest("Sizga kafedra biriktirilmagan", "Вам не назначена кафедра");
+  if (!input.name.trim()) throw badRequest("Kurs nomi kerak", "Требуется название курса");
+  if (input.groupIds.length === 0) throw badRequest("Kamida bitta guruh tanlang", "Выберите хотя бы одну группу");
+  if (!(input.semester >= 1 && input.semester <= 8)) throw badRequest("Semestr 1–8", "Семестр 1–8");
+  if (!input.academicYear.trim()) throw badRequest("O'quv yili kerak", "Требуется учебный год");
+  // Guruhlar o'qituvchi fakultetidan bo'lishi shart (begona fakultetga yozib bo'lmaydi).
+  const groups = await prisma.studentGroup.findMany({ where: { id: { in: input.groupIds } }, select: { id: true, facultyId: true } });
+  const facultyId = (await prisma.department.findUniqueOrThrow({ where: { id: profile.departmentId }, select: { facultyId: true } })).facultyId;
+  if (groups.length !== input.groupIds.length || groups.some((g) => g.facultyId !== facultyId)) {
+    throw badRequest("Guruh sizning fakultetingizdan emas", "Группа не из вашего факультета");
+  }
+  return createCourse({
+    name: input.name,
+    description: input.description,
+    departmentId: profile.departmentId,
+    teacherId,
+    semester: input.semester,
+    academicYear: input.academicYear,
+    groupIds: input.groupIds,
+  });
+}
+
 export async function getTeacherGroup(groupId: number, teacherId: number) {
   const cgs = await prisma.courseGroup.findMany({
     where: { groupId, course: { teacherId } },

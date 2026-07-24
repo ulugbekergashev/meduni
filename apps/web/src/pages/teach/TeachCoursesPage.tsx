@@ -1,11 +1,88 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type FormEvent } from "react";
+import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { BookOpen, Search } from "lucide-react";
-import { Icon } from "@meduni/ui";
+import { BookOpen, Plus, Search } from "lucide-react";
+import { Button, ChipSelect, Icon, Input, Modal, Select, useToast } from "@meduni/ui";
 import { AsyncSection } from "../../components/AsyncSection";
+import { Field } from "../../components/Field";
+import { apiErrorMessage } from "../../lib/api";
+import { useLocale } from "../../lib/useLocale";
 import { PeriodFilter, PeriodSection, groupByPeriod, usePeriodOptions } from "../../components/PeriodGroups";
-import { useTeachCourses, useTeachDashboard, type TeachCourse } from "./api";
+import { useCourseFormOptions, useCreateTeacherCourse, useTeachCourses, useTeachDashboard, type TeachCourse } from "./api";
 import { CourseCard } from "./CourseCard";
+
+const SEMESTERS = [1, 2, 3, 4, 5, 6, 7, 8];
+
+/** O'qituvchi o'z kafedrasida yangi kurs yaratadi. */
+function NewCourseModal({ onClose }: { onClose: () => void }) {
+  const { t } = useTranslation(undefined, { keyPrefix: "teach" });
+  const { t: tc } = useTranslation(undefined, { keyPrefix: "common" });
+  const locale = useLocale();
+  const { show } = useToast();
+  const navigate = useNavigate();
+  const opts = useCourseFormOptions();
+  const create = useCreateTeacherCourse();
+
+  const [name, setName] = useState("");
+  const [semester, setSemester] = useState("1");
+  const [academicYear, setAcademicYear] = useState("");
+  const [groupIds, setGroupIds] = useState<number[]>([]);
+  const [err, setErr] = useState<string | null>(null);
+
+  const groups = opts.data?.groups ?? [];
+
+  const submit = (e: FormEvent) => {
+    e.preventDefault();
+    setErr(null);
+    if (groupIds.length === 0) return;
+    create.mutate(
+      { name: name.trim(), semester: Number(semester), academicYear: academicYear.trim(), groupIds },
+      {
+        onSuccess: (c) => {
+          show(t("courseCreated", { n: c.enrolledCount }));
+          onClose();
+          navigate(`/teach/courses/${c.id}`);
+        },
+        onError: (e2) => setErr(apiErrorMessage(e2, locale) ?? tc("genericError")),
+      }
+    );
+  };
+
+  return (
+    <Modal open onClose={onClose} title={t("newCourse")} className="max-w-2xl">
+      <form onSubmit={submit} className="space-y-4">
+        <Field label={t("courseNameLabel")}>
+          <Input value={name} onChange={(e) => setName(e.target.value)} placeholder={t("courseNamePlaceholder")} autoFocus required />
+        </Field>
+        <p className="text-[13.5px] text-ink-soft">
+          {t("courseDeptNote")}: <b className="text-ink">{opts.data?.departmentName ?? "…"}</b>
+        </p>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label={t("semester")}>
+            <Select value={semester} onChange={(e) => setSemester(e.target.value)}>
+              {SEMESTERS.map((s) => (<option key={s} value={s}>{s}</option>))}
+            </Select>
+          </Field>
+          <Field label={t("academicYear")}>
+            <Input value={academicYear} onChange={(e) => setAcademicYear(e.target.value)} placeholder="2026/2027" required />
+          </Field>
+        </div>
+        <Field label={t("groups")}>
+          {groups.length === 0 ? (
+            <p className="text-[13.5px] text-amber">{t("noFacultyGroups")}</p>
+          ) : (
+            <ChipSelect options={groups.map((g) => ({ id: g.id, label: g.name }))} selected={groupIds} onToggle={(id) => setGroupIds((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]))} />
+          )}
+        </Field>
+        {err && <p className="text-[14px] text-rose">{err}</p>}
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="ghost" onClick={onClose}>{tc("cancel")}</Button>
+          <Button type="submit" disabled={create.isPending || groupIds.length === 0}>{tc("add")}</Button>
+        </div>
+      </form>
+    </Modal>
+  );
+}
 
 export function TeachCoursesPage() {
   const { t } = useTranslation(undefined, { keyPrefix: "teach" });
@@ -17,6 +94,7 @@ export function TeachCoursesPage() {
   const [search, setSearch] = useState("");
   const [year, setYear] = useState("");
   const [semester, setSemester] = useState("");
+  const [addOpen, setAddOpen] = useState(false);
   const options = usePeriodOptions(courses);
 
   const filtered = useMemo(() => {
@@ -42,10 +120,17 @@ export function TeachCoursesPage() {
         <div className="absolute bottom-[10%] left-[-10%] h-[400px] w-[400px] rounded-full bg-violet-400/5 blur-[120px]" />
       </div>
 
-      <div className="flex flex-col gap-2">
-        <h1 className="text-[32px] font-black tracking-tight text-ink drop-shadow-sm sm:text-[40px]">{t("myCourses")}</h1>
-        <p className="text-[16px] font-medium text-ink-soft">{t("coursesSubtitle")}</p>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div className="flex flex-col gap-2">
+          <h1 className="text-[32px] font-black tracking-tight text-ink drop-shadow-sm sm:text-[40px]">{t("myCourses")}</h1>
+          <p className="text-[16px] font-medium text-ink-soft">{t("coursesSubtitle")}</p>
+        </div>
+        <Button icon={<Icon icon={Plus} size={16} />} onClick={() => setAddOpen(true)}>
+          {t("newCourse")}
+        </Button>
       </div>
+
+      {addOpen && <NewCourseModal onClose={() => setAddOpen(false)} />}
 
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-3 rounded-[24px] border border-line bg-surface p-4 shadow-sm ring-1 ring-line">

@@ -30,7 +30,8 @@
     "openProfile": "Profilni ochish",
     "myCourses": "Kurslar",
     "grades": "O'zlashtirish",
-    "schedule": "Jadval"
+    "schedule": "Jadval",
+    "lessons": "Darslar"
   },
   "theme": {
     "label": "Mavzu (rang)",
@@ -557,7 +558,15 @@
     "searchCourse": "Fan yoki guruh boʻyicha qidirish",
     "totalN": "Jami: {{n}}",
     "noMatch": "Mos kurs topilmadi",
-    "noMatchHint": "Filtrlarni oʻzgartiring yoki qidiruvni tozalang."
+    "noMatchHint": "Filtrlarni oʻzgartiring yoki qidiruvni tozalang.",
+    "newCourse": "Yangi kurs",
+    "courseCreated": "Kurs yaratildi — {{n}} talaba yozildi",
+    "courseNameLabel": "Kurs nomi",
+    "courseNamePlaceholder": "Masalan: Kardiologiya",
+    "courseDeptNote": "Kafedra",
+    "noFacultyGroups": "Fakultetingizda guruh yo'q — admin bilan bog'laning",
+    "academicYear": "Oʻquv yili",
+    "groups": "Guruhlar"
   },
   "topics": {
     "subjectShared": "Mavzular fanga tegishli — bu fandan ochilgan barcha kurslar (guruhlar) bir xil mavzularni ko‘radi.",
@@ -892,7 +901,8 @@
     "all": "Barchasi",
     "name": "Nomi",
     "genericError": "Xatolik yuz berdi",
-    "nameRequired": "Nomini kiriting"
+    "nameRequired": "Nomini kiriting",
+    "continue": "Davom etish"
   },
   "structure": {
     "title": "Xodimlar va tuzilma",
@@ -1732,5 +1742,21 @@
     "emptyNoUpcoming": "Kartalarni darsdagi Kartonkalar blokida oʻrganing — takror jadvali shu yerda paydo boʻladi.",
     "upcomingTitle": "Kelgusi takrorlar",
     "upcomingEmpty": "Rejalashtirilgan takror yoʻq."
+  },
+  "teachSchedule": {
+    "title": "Darslar",
+    "subtitle": "Barcha kurslaringiz darslari — bir joyda, tez yo'qlama uchun.",
+    "newLesson": "Yangi dars",
+    "searchPlaceholder": "Kurs, guruh yoki mavzu boʻyicha qidirish…",
+    "today": "Bugun",
+    "noMatch": "Mos dars topilmadi",
+    "noLessons": "Dars yoʻq",
+    "nLessons": "{{n}} ta dars",
+    "mark": "Yoʻqlama",
+    "edit": "Tahrirlash",
+    "stUnmarked": "Belgilanmagan",
+    "stPartial": "Qisman",
+    "stFull": "Toʻliq",
+    "pickCourse": "Qaysi kursga dars?"
   }
 }
