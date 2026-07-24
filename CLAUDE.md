@@ -1343,6 +1343,20 @@ Barcha modullar tugadi (1-17).
   haftalik jadval). ⚠️ **Sana mahalliy** (dayKey lokal, slot vaqti mahalliy Date) —
   prod TZ da tekshir. tsc+build ikkala tomonda toza.
 
+- **Jadval GURUH bo'yicha (2026-07-24).** Buyurtmachi savoli: bir o'qituvchi bir
+  guruhda bir necha kurs / bir kurs bir necha guruhda. Model ikkalasini qo'llaydi:
+  (1) bir guruh — ko'p kurs: alohida kurslar yaratib, o'sha guruhni biriktirasan
+  (allaqachon ishlardi); (2) bir kurs — ko'p guruh HAR XIL jadvalda: `ScheduleSlot
+  += groupId?` va `LessonSession += groupId?` (migratsiya `slot_session_group`,
+  null=legacy/barcha guruh). Slot AYNAN (kurs, guruh) uchun — guruh profilida
+  qo'shilgan slot o'sha guruhga bog'lanadi (`group.id`). `getTeacherLessons` har
+  slotni o'z guruhi uchun beradi, rosterSize+yo'qlama holati (kurs,guruh,kun)
+  kalitida; `ensureSession`/`markByDate` (kurs,guruh,sana) bo'yicha sessiya.
+  Smoke 9/9: Kardiologiya→301(Du 09:00)+302(Ch 14:00) alohida darslar, yo'qlama
+  ajratilgan. ⚠️ `teacherCreateGroup` guruhga `createdById` yozadi — o'qituvchi
+  o'zi yaratgan (kurssiz) guruh "Mening guruhlarim"da ko'rinadi (migratsiya
+  `group_created_by`). Kurs yaratishda **semestr formada YO'Q** (default 1).
+
 ## 9. Loyiha holati va ishga tushirish (operatsion — sessiya 0)
 
 **Monorepo (npm workspaces):**
