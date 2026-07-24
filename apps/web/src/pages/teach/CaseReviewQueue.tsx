@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ArrowLeft, CheckCircle2, ChevronDown, ClipboardCheck, Clock, FlaskConical, HeartPulse, ListPlus, Search, Sparkles, Stethoscope, User } from "lucide-react";
 import { Badge, Button, Card, Icon, Spinner, cls, useToast } from "@meduni/ui";
@@ -392,9 +392,13 @@ function ReviewPanel({ id, onSavedNext, onClose }: { id: number; onSavedNext: ()
 export function CaseReviewQueue() {
   const { t } = useTranslation(undefined, { keyPrefix: "review" });
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const [query, setQuery] = useState<QueueQuery>({ status: "PENDING", search: "", sort: "oldest" });
-  const [selected, setSelected] = useState<number | null>(null);
+  // Vazifalar navbatidan "?open=<id>" bilan kelinganda aynan o'sha yozuv ochilsin
+  // (ro'yxatdagi birinchisi emas — CLAUDE.md "konkret narsaga link" qoidasi).
+  const openId = Number(searchParams.get("open"));
+  const [selected, setSelected] = useState<number | null>(Number.isFinite(openId) && openId > 0 ? openId : null);
 
   const filtersQ = useReviewFilters();
   const queueQ = useReviewQueue(query);

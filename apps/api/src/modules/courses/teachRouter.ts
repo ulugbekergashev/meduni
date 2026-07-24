@@ -7,7 +7,7 @@ import * as review from "./review";
 import * as attendance from "./attendance";
 import * as timetable from "./timetable";
 import * as mistakes from "./mistakes";
-import { computeTeacherAutoTasks, listAssigned } from "../tasks/service";
+import { computeTeacherTaskFeed, getTeacherTaskHistory } from "../tasks/service";
 import { teacherSearch } from "../search/service";
 
 export const teachCoursesRouter = Router();
@@ -36,13 +36,16 @@ teachCoursesRouter.get(
   wrap(async (req, res) => res.json(await teacherSearch(req.user!.id, typeof req.query.q === "string" ? req.query.q : "")))
 );
 
-// My Tasks hub — auto-derived tasks (assigned tasks added in Phase 2).
+// My Tasks hub — bitta ustuvorlik-navbat (avto-hisoblangan + tayinlangan birlashgan).
 teachCoursesRouter.get(
   "/tasks",
-  wrap(async (req, res) => {
-    const [auto, assigned] = await Promise.all([computeTeacherAutoTasks(req.user!.id), listAssigned(req.user!.id)]);
-    res.json({ auto, assigned });
-  })
+  wrap(async (req, res) => res.json({ feed: await computeTeacherTaskFeed(req.user!.id) }))
+);
+
+// Oxirgi oylarda bajarilgan vazifalar statistikasi (kafedradan / talabalarga bergan).
+teachCoursesRouter.get(
+  "/tasks/history",
+  wrap(async (req, res) => res.json(await getTeacherTaskHistory(req.user!.id)))
 );
 
 // Own courses only.
@@ -240,6 +243,12 @@ teachCoursesRouter.get("/lessons", wrap(async (req, res) => res.json(await timet
 
 // Guruh haftalik jadvali (guruh profilida).
 teachCoursesRouter.get("/groups/:id/timetable", wrap(async (req, res) => res.json(await timetable.getGroupTimetable(parseId(req.params.id), req.user!.id))));
+
+// Sikl masteri: bir marta sana oralig'i + kunlar/vaqtlar → butun sikl jadvali.
+teachCoursesRouter.post(
+  "/courses/:id/groups/:groupId/cycle",
+  wrap(async (req, res) => res.json(await timetable.setupCycle(parseId(req.params.id), parseId(req.params.groupId), req.user!.id, req.body ?? {})))
+);
 
 // Yo'qlama (kurs, sana) bo'yicha — sessiya lazy yaratiladi.
 teachCoursesRouter.get("/attendance-by-date", wrap(async (req, res) => res.json(await timetable.rosterByDate(req.user!.id, Number(req.query.courseId), qs(req.query.date) ?? "", qnum(req.query.groupId)))));

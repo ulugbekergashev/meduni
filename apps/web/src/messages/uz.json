@@ -105,7 +105,17 @@
     "noDoneYet": "Hali bajarilgan topshiriq yoʻq",
     "noMatchFilter": "Bu filtrda vazifa yoʻq",
     "upcomingLessons": "Kelgusi darslar",
-    "noLessonsShort": "Dars yoʻq"
+    "noLessonsShort": "Dars yoʻq",
+    "assignedKind": "Tayinlangan vazifa",
+    "todayShort": "Bugun",
+    "yesterdayShort": "Kecha",
+    "daysAgo": "{{n}} kun oldin",
+    "markAttendanceBtn": "Belgilash",
+    "historyTitle": "Natijalar",
+    "historyKafedra": "Kafedradan",
+    "historyToStudents": "Talabalarga bergan",
+    "historyDoneLastMonths": "so'nggi {{n}} oyda bajarilgan",
+    "historyEmpty": "Bu davrda bajarilgan vazifa yoʻq"
   },
   "teachAssign": {
     "newBtn": "Yangi topshiriq",
@@ -229,7 +239,18 @@
     "time": "Vaqt",
     "room": "Xona",
     "deleteSlotTitle": "Jadvaldan o'chirish",
-    "deleteSlotConfirm": "Bu takroriy darsni jadvaldan o'chirasizmi?"
+    "deleteSlotConfirm": "Bu takroriy darsni jadvaldan o'chirasizmi?",
+    "cycleHint": "Bir marta: sikl davri (boshi–oxiri) + qaysi kunlar va vaqt. Darslar butun siklga avtomatik yaratiladi.",
+    "cyclePeriod": "Sikl davri",
+    "cycleStart": "Boshlanish",
+    "cycleEnd": "Tugash",
+    "cycleWeeks": "{{n}} hafta",
+    "cycleDays": "Qaysi kunlar (har kunga o'z vaqti)",
+    "cycleDayOff": "dars yo'q",
+    "cycleCreate": "Jadval yaratish",
+    "cycleCreated": "Sikl jadvali yaratildi ({{n}} kun/hafta)",
+    "cycleNeedDates": "Sikl boshi va oxirini kiriting",
+    "cycleNeedDays": "Kamida bitta kun tanlang"
   },
   "courseGroups": {
     "subtitle": "Bu kurs qaysi guruhlarda oʻtiladi. Guruhni bosing — profili (talabalar, jurnal, davomat).",
@@ -1294,6 +1315,7 @@
     "searchStudent": "Talaba ismi...",
     "markedOf": "{{total}} tadan {{marked}} tasi belgilandi",
     "loadError": "Roʻyxat yuklanmadi",
+    "close": "Yopish",
     "student": "Talaba",
     "absentShort": "Kelmadi",
     "matrix": "Jadval",

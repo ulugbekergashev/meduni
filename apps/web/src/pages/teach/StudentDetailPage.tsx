@@ -167,19 +167,18 @@ function ProfileCard({ d, onGroup, onAssign }: { d: StudentDetail; onGroup: () =
         </p>
 
         <div className="mb-6 flex flex-wrap items-center justify-center gap-2">
-          <Badge tone="emerald" className="px-3 py-1 text-[12px] shadow-sm">FAOL</Badge>
+          <Badge tone="emerald">FAOL</Badge>
           {d.student.groupName && (
             <button onClick={onGroup} className="transition-transform hover:scale-105">
-               <Badge tone="brand" className="flex items-center gap-1.5 px-3 py-1 text-[12px] shadow-sm"><Icon icon={Users} size={12}/> {d.student.groupName}</Badge>
+               <Badge tone="brand"><div className="flex items-center gap-1.5"><Icon icon={Users} size={12}/> {d.student.groupName}</div></Badge>
             </button>
           )}
         </div>
 
-        <div className="mb-6 flex items-center gap-4 rounded-[20px] bg-surface-glass p-4 text-left shadow-sm ring-1 ring-line">
-          <div className="shrink-0"><ProgressRing value={overall} tone="brand" /></div>
-          <div>
-            <p className="text-[11px] font-black uppercase tracking-widest text-ink-faint">O'ZLASHTIRISH</p>
-            <p className="text-[20px] font-black tabular-nums text-ink">{overall}%</p>
+        <div className="mb-6 rounded-[20px] bg-surface-glass p-5 text-center shadow-sm ring-1 ring-line">
+          <p className="text-[11px] font-black uppercase tracking-widest text-ink-faint mb-3">O'ZLASHTIRISH</p>
+          <div className="flex justify-center">
+            <ProgressRing value={overall} size={84} stroke={8} tone="brand" />
           </div>
         </div>
 
@@ -237,16 +236,120 @@ export function StudentDetailPage() {
                     {/* Top Stats Row */}
                     <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
                       <StatCard label={t("attendance")} value={attPct !== null ? `${attPct}%` : "—"} subtext="O'rtacha ko'rsatkich" icon={ClipboardList} tone="blue" />
-                      <StatCard label={t("practicePatient")} value={d.practiceSignals.patientSessions} subtext={`O'rtacha ball: ${d.practiceSignals.patientAvgScore ?? '—'}`} icon={Stethoscope} tone="rose" />
-                      <StatCard label={t("practiceCards")} value={d.practiceSignals.cardsReviewed} subtext={`O'zlashtirilgan: ${d.practiceSignals.cardsKnownPct ?? 0}%`} icon={Check} tone="emerald" />
-                      <StatCard label={t("practiceTutor")} value={d.practiceSignals.tutorQuestions} subtext="Barcha savollar" icon={BookOpen} tone="violet" />
+                      <StatCard 
+                        label={t("practicePatient")} 
+                        value={
+                          <span className="flex items-baseline gap-1.5">
+                            <span>{d.practiceSignals.patientSessions}</span>
+                            {d.practiceSignals.patientAvgScore !== null && (
+                              <span className="text-[13px] font-bold text-rose-600">Avg: {d.practiceSignals.patientAvgScore}</span>
+                            )}
+                          </span>
+                        } 
+                        subtext="Virtual bemor seansi" 
+                        icon={Stethoscope} 
+                        tone="rose" 
+                      />
+                      <StatCard 
+                        label={t("practiceCards")} 
+                        value={
+                          <span className="flex items-baseline gap-1.5">
+                            <span>{d.practiceSignals.cardsReviewed}</span>
+                            {d.practiceSignals.cardsKnownPct !== null && (
+                              <span className="text-[13px] font-bold text-emerald">{d.practiceSignals.cardsKnownPct}%</span>
+                            )}
+                          </span>
+                        } 
+                        subtext="Fleshkarta takrorlash" 
+                        icon={Check} 
+                        tone="emerald" 
+                      />
+                      <StatCard label={t("practiceTutor")} value={d.practiceSignals.tutorQuestions} subtext="Tutor savollari" icon={BookOpen} tone="violet" />
                     </div>
 
-                    {/* Courses */}
-                    <div className="space-y-4">
-                      {d.courses.map((c) => (
-                        <CourseSection key={c.courseId} course={c} onReview={() => navigate("/teach/cases/review")} />
-                      ))}
+                    {/* Split Content Area to utilize screen space */}
+                    <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+                      {/* Active Courses List (takes 2 cols) */}
+                      <div className="space-y-4 xl:col-span-2">
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-[14px] font-black uppercase tracking-widest text-ink-soft">FAOL KURSLAR</h3>
+                          <span className="text-[12px] font-bold text-ink-faint">{d.courses.length} ta kurs</span>
+                        </div>
+                        <div className="space-y-4">
+                          {d.courses.map((c) => (
+                            <CourseSection key={c.courseId} course={c} onReview={() => navigate("/teach/cases/review")} />
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Practice Details & Additional stats sidebar (takes 1 col) */}
+                      <div className="space-y-6">
+                        {/* Practice Signals detail list */}
+                        <div className="rounded-[24px] bg-surface p-6 ring-1 ring-line shadow-sm">
+                          <h3 className="text-[13px] font-black uppercase tracking-widest text-ink-soft mb-4">AMALIYOT FAOLLIGI</h3>
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between p-3 rounded-[16px] bg-surface-glass ring-1 ring-line">
+                              <div className="flex items-center gap-3">
+                                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-violet-100 text-violet-600 shadow-sm"><Icon icon={Check} size={15} /></span>
+                                <div>
+                                  <p className="text-[13px] font-bold text-ink">{t("practiceCards")}</p>
+                                  <p className="text-[10px] font-medium text-ink-faint">Ko'rib chiqilgan kartalar</p>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <p className="text-[14px] font-black text-ink">{d.practiceSignals.cardsReviewed}</p>
+                                {d.practiceSignals.cardsKnownPct !== null && <p className="text-[10px] font-bold text-emerald">{d.practiceSignals.cardsKnownPct}% biladi</p>}
+                              </div>
+                            </div>
+
+                            <div className="flex items-center justify-between p-3 rounded-[16px] bg-surface-glass ring-1 ring-line">
+                              <div className="flex items-center gap-3">
+                                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-rose-50 text-rose-600 shadow-sm"><Icon icon={Stethoscope} size={15} /></span>
+                                <div>
+                                  <p className="text-[13px] font-bold text-ink">{t("practicePatient")}</p>
+                                  <p className="text-[10px] font-medium text-ink-faint">Mashq seanslari</p>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <p className="text-[14px] font-black text-ink">{d.practiceSignals.patientSessions}</p>
+                                {d.practiceSignals.patientAvgScore !== null && <p className="text-[10px] font-bold text-brand-deep">O'rtacha: {d.practiceSignals.patientAvgScore}</p>}
+                              </div>
+                            </div>
+
+                            <div className="flex items-center justify-between p-3 rounded-[16px] bg-surface-glass ring-1 ring-line">
+                              <div className="flex items-center gap-3">
+                                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-50 text-blue-600 shadow-sm"><Icon icon={ClipboardList} size={15} /></span>
+                                <div>
+                                  <p className="text-[13px] font-bold text-ink">{t("practiceTutor")}</p>
+                                  <p className="text-[10px] font-medium text-ink-faint">Tutor savollari</p>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <p className="text-[14px] font-black text-ink">{d.practiceSignals.tutorQuestions}</p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Guruh details widget */}
+                        <div className="rounded-[24px] bg-surface p-6 ring-1 ring-line shadow-sm">
+                          <h3 className="text-[13px] font-black uppercase tracking-widest text-ink-soft mb-4">AKADEMIK HOLAT</h3>
+                          <div className="space-y-3 text-[13.5px]">
+                            <div className="flex justify-between py-1.5 border-b border-line/50">
+                              <span className="text-ink-faint">Guruh</span>
+                              <span className="font-bold text-ink">{d.student.groupName ?? 'Kiritilmagan'}</span>
+                            </div>
+                            <div className="flex justify-between py-1.5 border-b border-line/50">
+                              <span className="text-ink-faint">Kurslar soni</span>
+                              <span className="font-bold text-ink">{d.courses.length} ta kurs</span>
+                            </div>
+                            <div className="flex justify-between py-1.5">
+                              <span className="text-ink-faint">Davomat foizi</span>
+                              <span className="font-bold text-ink">{attPct !== null ? `${attPct}%` : '—'}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>

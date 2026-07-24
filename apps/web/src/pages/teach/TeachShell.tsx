@@ -19,7 +19,7 @@ export function TeachShell() {
   const { t } = useTranslation(undefined, { keyPrefix: "nav" });
   const locale = useLocale();
   const tasks = useTeachTasks();
-  const openTasks = tasks.data?.auto.length ?? 0;
+  const openTasks = tasks.data?.feed.length ?? 0;
 
   const search = useCallback(
     async (q: string): Promise<SearchSection[]> => {
