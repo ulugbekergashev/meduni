@@ -31,7 +31,7 @@
     "myCourses": "Kurslar",
     "grades": "O'zlashtirish",
     "schedule": "Jadval",
-    "lessons": "Darslar"
+    "lessons": "Mashgʻulotlar"
   },
   "theme": {
     "label": "Mavzu (rang)",
@@ -198,7 +198,7 @@
     "tabs": {
       "students": "Talabalar",
       "journal": "Jurnal",
-      "sessions": "Darslar",
+      "sessions": "Mashgʻulotlar",
       "report": "Hisobot"
     },
     "avgProgress": "O‘rtacha progress",
@@ -521,7 +521,7 @@
     "myGroups": "Mening guruhlarim",
     "coursesSubtitle": "Sizga biriktirilgan barcha kurslar.",
     "seeAll": "Barchasi",
-    "upcoming": "Yaqin darslar",
+    "upcoming": "Yaqin mashgʻulotlar",
     "allDone": "Hammasi bajarilgan! Vazifa yoʻq.",
     "casesToReview": "keys tekshiruvni kutmoqda",
     "contentToApprove": "kontent tasdiq kutmoqda",
@@ -537,7 +537,7 @@
       "syllabus": "Dastur",
       "groups": "Guruhlar",
       "results": "Natijalar",
-      "sessions": "Darslar",
+      "sessions": "Mashgʻulotlar",
       "progress": "Progress",
       "settings": "Sozlamalar"
     },
@@ -569,9 +569,9 @@
     "noFacultyGroups": "Fakultetingizda guruh yo'q — admin bilan bog'laning",
     "academicYear": "Oʻquv yili",
     "groups": "Guruhlar",
-    "todayLessons": "Bugungi darslar",
-    "noTodayLessons": "Bugun dars yoʻq",
-    "allLessons": "Barcha darslar",
+    "todayLessons": "Bugungi mashgʻulotlar",
+    "noTodayLessons": "Bugun mashgʻulot yoʻq",
+    "allLessons": "Barcha mashgʻulotlar",
     "markAttendance": "Yoʻqlama"
   },
   "topics": {
@@ -866,7 +866,7 @@
     "modeSequential": "Ketma-ketlik",
     "modeSequentialHint": "Har mavzu oldingisini tugatgach ochiladi (test/keys/video mezoni bo'yicha).",
     "modeSchedule": "Dars jadvali bo'yicha",
-    "modeScheduleHint": "Har mavzu O'Z dars kunidan keyin VA oldingi mavzu tugagach ochiladi (ikkala shart birga). Sessiyani mavzuga Davomat → Dars jadvalida bog'lang.",
+    "modeScheduleHint": "Har mavzu Oʻz mashgʻulot kunidan keyin VA oldingi mavzu tugagach ochiladi (ikkala shart birga). Mashgʻulotni mavzuga bogʻlang (Mashgʻulotlar boʻlimi yoki guruh jurnali).",
     "completionRule": "Tugash mezoni",
     "defaultRuleHint": "Mavzu qachon \"bajarildi\" hisoblanadi va keyingisi ochiladi.",
     "completionHintSchedule": "Ochilish dars jadvalidan; bu mezon mavzu \"bajarildi\" (progress/baho) uchun ishlatiladi."
@@ -1224,7 +1224,7 @@
     "patientDx": "Talabaning tashxisi"
   },
   "attendance": {
-    "tabSessions": "Darslar",
+    "tabSessions": "Mashgʻulotlar",
     "tabJournal": "Jurnal",
     "tabReport": "Hisobot",
     "avgGrade": "Oʻrtacha baho",
@@ -1240,7 +1240,7 @@
       "FULL": "Toʻliq"
     },
     "date": "Sana",
-    "lessonTitle": "Dars mavzusi",
+    "lessonTitle": "Mashgʻulot mavzusi",
     "room": "Xona",
     "marked": "Belgilangan",
     "statusCol": "Holat",
@@ -1248,13 +1248,13 @@
     "mark": "Belgilash",
     "edit": "Tahrirlash",
     "delete": "Oʻchirish",
-    "newSession": "Yangi dars",
-    "editSession": "Darsni tahrirlash",
-    "searchSession": "Dars mavzusi...",
-    "emptySessions": "Bu oraliqda dars yoʻq. Yangi dars qoʻshing.",
-    "deleteTitle": "Darsni oʻchirish",
-    "deleteConfirm": "Bu darsni oʻchirasizmi? Belgilangan yoʻqlama ham oʻchadi.",
-    "deleted": "Dars oʻchirildi",
+    "newSession": "Yangi mashgʻulot",
+    "editSession": "Mashgʻulotni tahrirlash",
+    "searchSession": "Mashgʻulot mavzusi...",
+    "emptySessions": "Bu oraliqda mashgʻulot yoʻq. Yangi mashgʻulot qoʻshing.",
+    "deleteTitle": "Mashgʻulotni oʻchirish",
+    "deleteConfirm": "Bu mashgʻulotni oʻchirasizmi? Belgilangan yoʻqlama ham oʻchadi.",
+    "deleted": "Mashgʻulot oʻchirildi",
     "asText": "matn",
     "fromTopic": "mavzudan",
     "titlePlaceholder": "Masalan: Sirroz. Klinik koʻrik",
@@ -1275,7 +1275,7 @@
     "summary": "Roʻyxat",
     "sortPct": "Davomat foizi boʻyicha",
     "sortName": "Ism boʻyicha",
-    "emptyReport": "Bu oraliqda dars yoʻq"
+    "emptyReport": "Bu oraliqda mashgʻulot yoʻq"
   },
   "progress": {
     "empty": "Hali talaba yoki mavzu yoʻq.",
@@ -1750,19 +1750,19 @@
     "upcomingEmpty": "Rejalashtirilgan takror yoʻq."
   },
   "teachSchedule": {
-    "title": "Darslar",
-    "subtitle": "Barcha kurslaringiz darslari — bir joyda, tez yo'qlama uchun.",
-    "newLesson": "Yangi dars",
+    "title": "Mashgʻulotlar",
+    "subtitle": "Barcha kurslaringiz mashgʻulotlari — bir joyda, tez yoʻqlama uchun.",
+    "newLesson": "Yangi mashgʻulot",
     "searchPlaceholder": "Kurs, guruh yoki mavzu boʻyicha qidirish…",
     "today": "Bugun",
-    "noMatch": "Mos dars topilmadi",
-    "noLessons": "Dars yoʻq",
-    "nLessons": "{{n}} ta dars",
+    "noMatch": "Mos mashgʻulot topilmadi",
+    "noLessons": "Mashgʻulot yoʻq",
+    "nLessons": "{{n}} ta mashgʻulot",
     "mark": "Yoʻqlama",
     "edit": "Tahrirlash",
     "stUnmarked": "Belgilanmagan",
     "stPartial": "Qisman",
     "stFull": "Toʻliq",
-    "pickCourse": "Qaysi kursga dars?"
+    "pickCourse": "Qaysi kursga mashgʻulot?"
   }
 }
