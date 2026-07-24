@@ -649,6 +649,89 @@ export function useTeacherSessions(range: { from?: string; to?: string; search?:
   return useQuery({ queryKey: ["teacher-sessions", range], queryFn: () => api<TeacherSession[]>(`/api/v1/teach/sessions?${p}`) });
 }
 
+// ---- Haftalik takroriy jadval (slotlar) → darslar AVTOMATIK ----
+export interface ScheduleSlot {
+  id: number;
+  courseId: number;
+  weekday: number; // 0=Dushanba..6=Yakshanba
+  startTime: string;
+  room: string | null;
+}
+export interface DerivedLesson {
+  courseId: number;
+  courseName: string;
+  groupId: number | null;
+  groupName: string | null;
+  slotId: number;
+  date: string;
+  dayKey: string;
+  weekday: number;
+  startTime: string;
+  room: string | null;
+  sessionId: number | null;
+  markedCount: number;
+  rosterSize: number;
+  status: "UNMARKED" | "PARTIAL" | "FULL";
+}
+
+export function useScheduleSlots(courseId: number, enabled = true) {
+  return useQuery({ queryKey: ["schedule-slots", courseId], queryFn: () => api<ScheduleSlot[]>(`/api/v1/teach/courses/${courseId}/schedule-slots`), enabled });
+}
+function invalidateSchedule(qc: ReturnType<typeof useQueryClient>) {
+  qc.invalidateQueries({ queryKey: ["schedule-slots"] });
+  qc.invalidateQueries({ queryKey: ["teacher-lessons"] });
+  qc.invalidateQueries({ queryKey: ["group-timetable"] });
+}
+export function useAddSlot() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (b: { courseId: number; weekday: number; startTime: string; room?: string }) =>
+      api<ScheduleSlot>(`/api/v1/teach/courses/${b.courseId}/schedule-slots`, { method: "POST", body: JSON.stringify({ weekday: b.weekday, startTime: b.startTime, room: b.room }) }),
+    onSuccess: () => invalidateSchedule(qc),
+  });
+}
+export function useDeleteSlot() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (slotId: number) => api(`/api/v1/teach/schedule-slots/${slotId}`, { method: "DELETE" }),
+    onSuccess: () => invalidateSchedule(qc),
+  });
+}
+export function useTeacherLessons(range: { from: string; to: string; search?: string }) {
+  const p = new URLSearchParams({ from: range.from, to: range.to });
+  if (range.search?.trim()) p.set("search", range.search.trim());
+  return useQuery({ queryKey: ["teacher-lessons", range], queryFn: () => api<DerivedLesson[]>(`/api/v1/teach/lessons?${p}`), enabled: !!range.from && !!range.to });
+}
+export interface GroupTimetable {
+  slots: { slotId: number; courseId: number; courseName: string; weekday: number; startTime: string; room: string | null }[];
+}
+export function useGroupTimetable(groupId: number) {
+  return useQuery({ queryKey: ["group-timetable", groupId], queryFn: () => api<GroupTimetable>(`/api/v1/teach/groups/${groupId}/timetable`) });
+}
+
+// Yo'qlama (kurs, sana) bo'yicha — sessiya lazy yaratiladi
+export interface DateRoster {
+  date: string;
+  students: { id: number; fullName: string; status: AttStatus | null; grade: number | null }[];
+}
+export function useRosterByDate(courseId: number, date: string, groupId?: number) {
+  const p = new URLSearchParams({ courseId: String(courseId), date });
+  if (groupId) p.set("groupId", String(groupId));
+  return useQuery({ queryKey: ["roster-by-date", courseId, date, groupId], queryFn: () => api<DateRoster>(`/api/v1/teach/attendance-by-date?${p}`), enabled: !!courseId && !!date });
+}
+export function useMarkByDate() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (b: { courseId: number; date: string; startTime?: string; marks: { studentId: number; status: AttStatus; grade?: number | null }[] }) =>
+      api<{ ok: boolean; sessionId: number; marked: number }>("/api/v1/teach/attendance-by-date", { method: "POST", body: JSON.stringify(b) }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["teacher-lessons"] });
+      qc.invalidateQueries({ queryKey: ["roster-by-date"] });
+      qc.invalidateQueries({ queryKey: ["teach-group"] });
+    },
+  });
+}
+
 export function useSessions(courseId: number, range: DateRange) {
   const p = new URLSearchParams();
   if (range.from) p.set("from", range.from);

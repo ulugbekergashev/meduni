@@ -18,8 +18,8 @@ import { AsyncSection } from "../../components/AsyncSection";
 import { useLocale } from "../../lib/useLocale";
 import { formatDate } from "../../lib/date";
 import { useMe } from "../../lib/auth";
-import { useTeacherSessions, useTeachCourses, useTeachDashboard, type RankedStudent, type TeacherSession } from "./api";
-import { AttendanceModal } from "./course/attendance/AttendanceModal";
+import { useTeacherLessons, useTeachCourses, useTeachDashboard, type DerivedLesson, type RankedStudent } from "./api";
+import { RollCallModal } from "./course/attendance/RollCallModal";
 import { CourseCard } from "./CourseCard";
 
 function dayKeyLocal(d: Date): string {
@@ -142,8 +142,8 @@ export function TeachDashboard() {
   const list = useTeachCourses();
   const courses = list.data ?? [];
   const todayKey = dayKeyLocal(new Date());
-  const todaySessions = useTeacherSessions({ from: todayKey, to: todayKey });
-  const [mark, setMark] = useState<TeacherSession | null>(null);
+  const todaySessions = useTeacherLessons({ from: todayKey, to: todayKey });
+  const [mark, setMark] = useState<DerivedLesson | null>(null);
   const tasks = dash.data?.tasks;
   const stats = dash.data?.stats;
   const today = formatDate(locale === "ru" ? "ru" : "uz", new Date(), "long");
@@ -209,13 +209,13 @@ export function TeachDashboard() {
         ) : (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {todaySessions.data!.map((s) => (
-              <div key={s.id} className="flex items-center gap-3 rounded-[20px] border border-line bg-surface p-4 shadow-sm ring-1 ring-line">
+              <div key={s.slotId + s.dayKey} className="flex items-center gap-3 rounded-[20px] border border-line bg-surface p-4 shadow-sm ring-1 ring-line">
                 <div className={cls("flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px]", s.status === "FULL" ? "bg-emerald-soft text-emerald" : s.status === "PARTIAL" ? "bg-amber-soft text-amber" : "bg-brand-soft text-brand-deep")}>
                   <Icon icon={CalendarDays} size={20} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-[15px] font-bold text-ink">{s.title ?? s.courseName}</p>
-                  <p className="truncate text-[13px] text-ink-soft">{s.courseName}{s.groupName ? ` · ${s.groupName}` : ""} · {s.markedCount}/{s.rosterSize}</p>
+                  <p className="truncate text-[15px] font-bold text-ink">{s.startTime} · {s.courseName}</p>
+                  <p className="truncate text-[13px] text-ink-soft">{s.groupName ? `${s.groupName} · ` : ""}{s.room ? `${s.room} · ` : ""}{s.markedCount}/{s.rosterSize}</p>
                 </div>
                 <Button size="sm" variant={s.status === "FULL" ? "ghost" : "primary"} icon={<Icon icon={ClipboardCheck} size={15} />} onClick={() => setMark(s)}>
                   {t("markAttendance")}
@@ -227,7 +227,14 @@ export function TeachDashboard() {
       </section>
 
       {mark && (
-        <AttendanceModal courseId={mark.courseId} sessionId={mark.id} groupId={mark.groupId ?? undefined} onClose={() => setMark(null)} />
+        <RollCallModal
+          courseId={mark.courseId}
+          date={mark.dayKey}
+          startTime={mark.startTime}
+          groupId={mark.groupId ?? undefined}
+          heading={`${mark.startTime} · ${mark.courseName}${mark.groupName ? ` · ${mark.groupName}` : ""}`}
+          onClose={() => setMark(null)}
+        />
       )}
 
       {/* Tasks */}
