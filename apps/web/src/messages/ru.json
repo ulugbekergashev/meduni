@@ -588,7 +588,16 @@
     "todayLessons": "Занятия сегодня",
     "noTodayLessons": "Сегодня занятий нет",
     "allLessons": "Все занятия",
-    "markAttendance": "Отметить"
+    "markAttendance": "Отметить",
+    "noFacultyGroupsHint": "На факультете нет групп — создайте новую ниже.",
+    "newGroup": "Новая группа",
+    "groupNamePlaceholder": "301-группа",
+    "programNote": "Литература, темы и часы заполняются после создания курса — в разделах «Программа» и «Темы».",
+    "yearN": "{{n}} курс",
+    "newGroupTitle": "Новая группа",
+    "createGroupBtn": "Новая группа",
+    "groupYear": "Курс",
+    "groupNameLabel": "Название группы"
   },
   "topics": {
     "subjectShared": "Темы принадлежат предмету — все курсы (группы) по этому предмету видят одни и те же темы.",

@@ -65,8 +65,22 @@ teachCoursesRouter.post(
         name: typeof b.name === "string" ? b.name : "",
         description: typeof b.description === "string" ? b.description : undefined,
         groupIds: Array.isArray(b.groupIds) ? b.groupIds.map(Number).filter((n: number) => Number.isInteger(n) && n > 0) : [],
-        semester: Number(b.semester),
-        academicYear: typeof b.academicYear === "string" ? b.academicYear : "",
+        semester: b.semester !== undefined ? Number(b.semester) : undefined,
+        academicYear: typeof b.academicYear === "string" ? b.academicYear : undefined,
+      })
+    );
+  })
+);
+
+// O'qituvchi o'z fakultetida yangi guruh yaratadi.
+teachCoursesRouter.post(
+  "/groups",
+  wrap(async (req, res) => {
+    const b = req.body ?? {};
+    res.status(201).json(
+      await svc.teacherCreateGroup(req.user!.id, {
+        name: typeof b.name === "string" ? b.name : "",
+        yearOfStudy: Number(b.yearOfStudy) || 1,
       })
     );
   })

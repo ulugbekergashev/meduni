@@ -1,12 +1,57 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { GraduationCap, Search, Users2 } from "lucide-react";
-import { Card, Icon } from "@meduni/ui";
+import { GraduationCap, Plus, Search, Users2 } from "lucide-react";
+import { Button, Card, Icon, Input, Modal, Select, useToast } from "@meduni/ui";
 import { AsyncSection } from "../../components/AsyncSection";
-import { useTeachGroups } from "./api";
+import { Field } from "../../components/Field";
+import { apiErrorMessage } from "../../lib/api";
+import { useLocale } from "../../lib/useLocale";
+import { useCreateTeacherGroup, useTeachGroups } from "./api";
 
-// Group cards with search — click opens the group profile (attendance/journal).
+/** O'qituvchi yangi guruh yaratadi (o'z fakultetida). */
+function NewGroupModal({ onClose }: { onClose: () => void }) {
+  const { t } = useTranslation(undefined, { keyPrefix: "teach" });
+  const { t: tc } = useTranslation(undefined, { keyPrefix: "common" });
+  const locale = useLocale();
+  const { show } = useToast();
+  const create = useCreateTeacherGroup();
+  const [name, setName] = useState("");
+  const [year, setYear] = useState("3");
+  const [err, setErr] = useState<string | null>(null);
+
+  return (
+    <Modal open onClose={onClose} title={t("newGroupTitle")}>
+      <div className="space-y-4">
+        <Field label={t("groupNameLabel")}>
+          <Input value={name} onChange={(e) => setName(e.target.value)} placeholder={t("groupNamePlaceholder")} autoFocus />
+        </Field>
+        <Field label={t("groupYear")}>
+          <Select value={year} onChange={(e) => setYear(e.target.value)}>
+            {[1, 2, 3, 4, 5, 6].map((y) => (<option key={y} value={y}>{t("yearN", { n: y })}</option>))}
+          </Select>
+        </Field>
+        {err && <p className="text-[14px] text-rose">{err}</p>}
+        <div className="flex justify-end gap-2">
+          <Button variant="ghost" onClick={onClose}>{tc("cancel")}</Button>
+          <Button
+            disabled={create.isPending || !name.trim()}
+            onClick={() =>
+              create.mutate(
+                { name: name.trim(), yearOfStudy: Number(year) },
+                { onSuccess: () => { show(tc("added")); onClose(); }, onError: (e) => setErr(apiErrorMessage(e, locale) ?? tc("genericError")) }
+              )
+            }
+          >
+            {tc("add")}
+          </Button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+// Group cards with search — click opens the group profile (schedule/roll-call).
 export function TeachGroupsPage() {
   const { t } = useTranslation(undefined, { keyPrefix: "groups" });
   const { t: tc } = useTranslation(undefined, { keyPrefix: "teach" });
@@ -14,6 +59,7 @@ export function TeachGroupsPage() {
   const q = useTeachGroups();
   const groups = q.data ?? [];
   const [search, setSearch] = useState("");
+  const [addOpen, setAddOpen] = useState(false);
 
   const filtered = useMemo(() => {
     const needle = search.trim().toLowerCase();
@@ -28,8 +74,15 @@ export function TeachGroupsPage() {
 
   return (
     <div>
-      <h1 className="text-h1 font-bold text-ink">{t("title")}</h1>
-      <p className="mt-1 text-[14px] text-ink-soft">{t("subtitle")}</p>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="text-h1 font-bold text-ink">{t("title")}</h1>
+          <p className="mt-1 text-[14px] text-ink-soft">{t("subtitle")}</p>
+        </div>
+        <Button icon={<Icon icon={Plus} size={16} />} onClick={() => setAddOpen(true)}>{tc("createGroupBtn")}</Button>
+      </div>
+
+      {addOpen && <NewGroupModal onClose={() => setAddOpen(false)} />}
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <div className="relative min-w-[220px] flex-1">

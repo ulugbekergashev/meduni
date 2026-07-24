@@ -38,11 +38,25 @@ export function useCourseFormOptions() {
 export function useCreateTeacherCourse() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: { name: string; description?: string; groupIds: number[]; semester: number; academicYear: string }) =>
+    // Semestr endi formada yo'q — backend default beradi (buyurtmachi qarori).
+    mutationFn: (body: { name: string; description?: string; groupIds: number[]; academicYear?: string }) =>
       api<TeachCourse & { enrolledCount: number }>("/api/v1/teach/courses", { method: "POST", body: JSON.stringify(body) }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["teach-courses"] });
       qc.invalidateQueries({ queryKey: ["teach-dashboard"] });
+    },
+  });
+}
+
+/** O'qituvchi o'z fakultetida yangi guruh yaratadi. */
+export function useCreateTeacherGroup() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: { name: string; yearOfStudy: number }) =>
+      api<{ id: number; name: string; yearOfStudy: number; studentCount: number }>("/api/v1/teach/groups", { method: "POST", body: JSON.stringify(body) }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["teach-groups"] });
+      qc.invalidateQueries({ queryKey: ["teach-course-form-options"] });
     },
   });
 }

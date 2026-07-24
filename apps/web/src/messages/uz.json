@@ -588,7 +588,16 @@
     "todayLessons": "Bugungi mashgʻulotlar",
     "noTodayLessons": "Bugun mashgʻulot yoʻq",
     "allLessons": "Barcha mashgʻulotlar",
-    "markAttendance": "Yoʻqlama"
+    "markAttendance": "Yoʻqlama",
+    "noFacultyGroupsHint": "Fakultetda guruh yo'q — pastda yangi guruh yarating.",
+    "newGroup": "Yangi guruh",
+    "groupNamePlaceholder": "301-guruh",
+    "programNote": "Adabiyot, mavzular va soatlar — kurs yaratilgach kurs ichidagi «Dastur» va «Mavzular» boʻlimlarida toʻldiriladi.",
+    "yearN": "{{n}}-kurs",
+    "newGroupTitle": "Yangi guruh",
+    "createGroupBtn": "Yangi guruh",
+    "groupYear": "Kurs",
+    "groupNameLabel": "Guruh nomi"
   },
   "topics": {
     "subjectShared": "Mavzular fanga tegishli — bu fandan ochilgan barcha kurslar (guruhlar) bir xil mavzularni ko‘radi.",
