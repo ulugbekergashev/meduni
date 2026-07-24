@@ -111,7 +111,7 @@ export function computeTopics(course: CourseWithTopics, factsByTopic: Map<number
         } else {
           reason = unlockDate
             ? { uz: `${dmyDate(unlockDate)} dan ochiladi`, ru: `Откроется ${dmyDate(unlockDate)}` }
-            : { uz: "Dars jadvaliga hali qoʻshilmagan", ru: "Ещё не добавлено в расписание" };
+            : { uz: "Mavzu mashgʻulotga hali bogʻlanmagan", ru: "Тема ещё не привязана к занятию" };
         }
       }
     } else {
