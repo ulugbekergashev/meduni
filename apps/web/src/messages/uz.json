@@ -185,7 +185,9 @@
     "subtitle": "Guruhni bosing — profili ochiladi: talabalar, jurnal, davomat.",
     "empty": "Sizga hali guruh biriktirilmagan.",
     "yearN": "{{n}}-kurs",
-    "studentsN": "{{n}} talaba"
+    "studentsN": "{{n}} talaba",
+    "searchPlaceholder": "Guruh, fakultet yoki kurs boʻyicha…",
+    "noMatch": "Mos guruh topilmadi"
   },
   "groupProfile": {
     "back": "← Guruhlar",
@@ -566,7 +568,11 @@
     "courseDeptNote": "Kafedra",
     "noFacultyGroups": "Fakultetingizda guruh yo'q — admin bilan bog'laning",
     "academicYear": "Oʻquv yili",
-    "groups": "Guruhlar"
+    "groups": "Guruhlar",
+    "todayLessons": "Bugungi darslar",
+    "noTodayLessons": "Bugun dars yoʻq",
+    "allLessons": "Barcha darslar",
+    "markAttendance": "Yoʻqlama"
   },
   "topics": {
     "subjectShared": "Mavzular fanga tegishli — bu fandan ochilgan barcha kurslar (guruhlar) bir xil mavzularni ko‘radi.",

@@ -12,13 +12,19 @@ import {
   UserX,
   type LucideIcon,
 } from "lucide-react";
-import { BarRow, Icon, ProgressBar, ProgressRing, Spinner, cls } from "@meduni/ui";
+import { useState } from "react";
+import { BarRow, Button, Icon, ProgressBar, ProgressRing, Spinner, cls } from "@meduni/ui";
 import { AsyncSection } from "../../components/AsyncSection";
 import { useLocale } from "../../lib/useLocale";
 import { formatDate } from "../../lib/date";
 import { useMe } from "../../lib/auth";
-import { useTeachCourses, useTeachDashboard, type RankedStudent } from "./api";
+import { useTeacherSessions, useTeachCourses, useTeachDashboard, type RankedStudent, type TeacherSession } from "./api";
+import { AttendanceModal } from "./course/attendance/AttendanceModal";
 import { CourseCard } from "./CourseCard";
+
+function dayKeyLocal(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
 
 function QuickAction({ icon, label, chip, onClick }: { icon: LucideIcon; label: string; chip: string; onClick: () => void }) {
   return (
@@ -135,6 +141,9 @@ export function TeachDashboard() {
   const dash = useTeachDashboard();
   const list = useTeachCourses();
   const courses = list.data ?? [];
+  const todayKey = dayKeyLocal(new Date());
+  const todaySessions = useTeacherSessions({ from: todayKey, to: todayKey });
+  const [mark, setMark] = useState<TeacherSession | null>(null);
   const tasks = dash.data?.tasks;
   const stats = dash.data?.stats;
   const today = formatDate(locale === "ru" ? "ru" : "uz", new Date(), "long");
@@ -179,6 +188,47 @@ export function TeachDashboard() {
         <QuickAction icon={BookOpen} label={t("qaCourses")} chip="bg-gradient-to-br from-blue-400 to-blue-600" onClick={() => navigate("/teach/courses")} />
         <QuickAction icon={Users2} label={t("qaGroups")} chip="bg-gradient-to-br from-violet-400 to-violet-600" onClick={() => navigate("/teach/groups")} />
       </div>
+
+      {/* Bugungi darslar — login qilib srazu yo'qlama qilish uchun */}
+      <section>
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-[22px] font-black text-ink drop-shadow-sm">{t("todayLessons")}</h2>
+          <button onClick={() => navigate("/teach/schedule")} className="rounded-full bg-surface-raised px-5 py-2 text-[14.5px] font-bold text-brand shadow-sm ring-1 ring-line transition-all hover:bg-brand-soft hover:ring-brand/20">
+            {t("allLessons")} &rarr;
+          </button>
+        </div>
+        {todaySessions.isLoading ? (
+          <div className="flex h-24 items-center justify-center"><Spinner size={24} /></div>
+        ) : (todaySessions.data?.length ?? 0) === 0 ? (
+          <div className="flex items-center gap-4 rounded-[24px] border border-line bg-surface p-6 shadow-sm ring-1 ring-line">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[16px] bg-bg text-ink-faint">
+              <Icon icon={CalendarDays} size={24} />
+            </div>
+            <p className="text-[15px] font-semibold text-ink-soft">{t("noTodayLessons")}</p>
+          </div>
+        ) : (
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {todaySessions.data!.map((s) => (
+              <div key={s.id} className="flex items-center gap-3 rounded-[20px] border border-line bg-surface p-4 shadow-sm ring-1 ring-line">
+                <div className={cls("flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px]", s.status === "FULL" ? "bg-emerald-soft text-emerald" : s.status === "PARTIAL" ? "bg-amber-soft text-amber" : "bg-brand-soft text-brand-deep")}>
+                  <Icon icon={CalendarDays} size={20} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[15px] font-bold text-ink">{s.title ?? s.courseName}</p>
+                  <p className="truncate text-[13px] text-ink-soft">{s.courseName}{s.groupName ? ` · ${s.groupName}` : ""} · {s.markedCount}/{s.rosterSize}</p>
+                </div>
+                <Button size="sm" variant={s.status === "FULL" ? "ghost" : "primary"} icon={<Icon icon={ClipboardCheck} size={15} />} onClick={() => setMark(s)}>
+                  {t("markAttendance")}
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {mark && (
+        <AttendanceModal courseId={mark.courseId} sessionId={mark.id} groupId={mark.groupId ?? undefined} onClose={() => setMark(null)} />
+      )}
 
       {/* Tasks */}
       <section>
