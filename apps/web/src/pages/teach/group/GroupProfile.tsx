@@ -255,8 +255,9 @@ function TimetableSetupModal({ group, onClose }: { group: TeachGroup; onClose: (
 
   const submit = () => {
     setErr(null);
+    // Slot AYNAN shu guruh uchun — bir kurs bir necha guruhga har xil kunda o'tilishi mumkin.
     add.mutate(
-      { courseId: Number(courseId), weekday: Number(weekday), startTime: time, room: room.trim() || undefined },
+      { courseId: Number(courseId), groupId: group.id, weekday: Number(weekday), startTime: time, room: room.trim() || undefined },
       { onSuccess: () => { setRoom(""); show(tc("added")); }, onError: (e) => setErr((e as Error).message || tc("genericError")) }
     );
   };

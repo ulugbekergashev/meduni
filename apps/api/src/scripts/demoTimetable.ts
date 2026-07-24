@@ -8,6 +8,8 @@ import { prisma } from "../lib/prisma";
 async function main() {
   const teacher = await prisma.user.findFirstOrThrow({ where: { email: "teacher.m11demo@meduni.uz" } });
   const cardio = await prisma.course.findFirstOrThrow({ where: { name: "Kardiologiya", teacherId: teacher.id } });
+  const cg = await prisma.courseGroup.findFirstOrThrow({ where: { courseId: cardio.id } });
+  const groupId = cg.groupId; // 301-guruh
 
   await prisma.scheduleSlot.deleteMany({ where: { courseId: cardio.id } });
 
@@ -17,13 +19,13 @@ async function main() {
     { weekday: (todayWeekday + 2) % 7, startTime: "14:00", room: "301-xona" },
     { weekday: (todayWeekday + 4) % 7, startTime: "11:00", room: "204-xona" },
   ];
-  // Dublikatga tushmaslik uchun unique kun-vaqt
+  // Dublikatga tushmaslik uchun unique kun-vaqt; slotlar 301-guruhga bog'lanadi
   const seen = new Set<string>();
   for (const s of slots) {
     const k = `${s.weekday}:${s.startTime}`;
     if (seen.has(k)) continue;
     seen.add(k);
-    await prisma.scheduleSlot.create({ data: { courseId: cardio.id, ...s } });
+    await prisma.scheduleSlot.create({ data: { courseId: cardio.id, groupId, ...s } });
   }
 
   const wd = ["Dushanba", "Seshanba", "Chorshanba", "Payshanba", "Juma", "Shanba", "Yakshanba"];

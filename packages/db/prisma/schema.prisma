@@ -264,6 +264,9 @@ model ScheduleSlot {
   id        Int      @id @default(autoincrement())
   courseId  Int
   course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  // Qaysi GURUH uchun — bir kurs bir necha guruhga har xil kunda o'tilishi mumkin.
+  // null = kursning barcha guruhlariga (eski/legacy).
+  groupId   Int?
   weekday   Int // 0=Dushanba .. 6=Yakshanba
   startTime String // "09:00"
   room      String?
@@ -335,6 +338,8 @@ model LessonSession {
   id          Int          @id @default(autoincrement())
   courseId    Int
   course      Course       @relation(fields: [courseId], references: [id])
+  // Yo'qlama qaysi GURUH uchun (bir kurs bir necha guruhga o'tilsa ajratiladi).
+  groupId     Int?
   topicId     Int?
   topic       Topic?       @relation(fields: [topicId], references: [id])
   date        DateTime

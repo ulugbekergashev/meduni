@@ -667,6 +667,7 @@ export function useTeacherSessions(range: { from?: string; to?: string; search?:
 export interface ScheduleSlot {
   id: number;
   courseId: number;
+  groupId: number | null;
   weekday: number; // 0=Dushanba..6=Yakshanba
   startTime: string;
   room: string | null;
@@ -699,8 +700,8 @@ function invalidateSchedule(qc: ReturnType<typeof useQueryClient>) {
 export function useAddSlot() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (b: { courseId: number; weekday: number; startTime: string; room?: string }) =>
-      api<ScheduleSlot>(`/api/v1/teach/courses/${b.courseId}/schedule-slots`, { method: "POST", body: JSON.stringify({ weekday: b.weekday, startTime: b.startTime, room: b.room }) }),
+    mutationFn: (b: { courseId: number; groupId?: number | null; weekday: number; startTime: string; room?: string }) =>
+      api<ScheduleSlot>(`/api/v1/teach/courses/${b.courseId}/schedule-slots`, { method: "POST", body: JSON.stringify({ groupId: b.groupId ?? null, weekday: b.weekday, startTime: b.startTime, room: b.room }) }),
     onSuccess: () => invalidateSchedule(qc),
   });
 }
@@ -736,7 +737,7 @@ export function useRosterByDate(courseId: number, date: string, groupId?: number
 export function useMarkByDate() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (b: { courseId: number; date: string; startTime?: string; marks: { studentId: number; status: AttStatus; grade?: number | null }[] }) =>
+    mutationFn: (b: { courseId: number; date: string; startTime?: string; groupId?: number | null; marks: { studentId: number; status: AttStatus; grade?: number | null }[] }) =>
       api<{ ok: boolean; sessionId: number; marked: number }>("/api/v1/teach/attendance-by-date", { method: "POST", body: JSON.stringify(b) }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["teacher-lessons"] });
