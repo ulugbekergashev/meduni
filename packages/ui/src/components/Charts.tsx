@@ -29,7 +29,7 @@ export function ProgressRing({
   tone?: ToneKey;
   label?: ReactNode;
 }) {
-  const v = Math.max(0, Math.min(100, value));
+  const v = Math.max(0, Math.min(100, Number.isFinite(value) ? value : 0));
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
   const dash = (v / 100) * c;
@@ -158,7 +158,7 @@ export function LegendRow({
 
 /** Thin horizontal progress bar (0–100). */
 export function ProgressBar({ value, tone = "brand", className = "" }: { value: number; tone?: ToneKey; className?: string }) {
-  const v = Math.max(0, Math.min(100, value));
+  const v = Math.max(0, Math.min(100, Number.isFinite(value) ? value : 0));
   return (
     <div className={`h-2.5 w-full overflow-hidden rounded-pill bg-bg ${className}`}>
       <div className="h-full rounded-pill transition-all" style={{ width: `${Math.max(v, 2)}%`, background: toneVar[tone] }} />
@@ -178,7 +178,7 @@ export function BarRow({
   tone?: ToneKey;
   onClick?: () => void;
 }) {
-  const v = Math.max(0, Math.min(100, value));
+  const v = Math.max(0, Math.min(100, Number.isFinite(value) ? value : 0));
   return (
     <button
       onClick={onClick}

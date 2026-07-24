@@ -289,7 +289,7 @@ export function StudentTasksPage() {
                   <div className="divide-y divide-line">
                     {schedule.slice(0, 3).map((s) => (
                       <button
-                        key={s.id}
+                        key={s.key}
                         onClick={() => navigate("/app/schedule")}
                         className="flex w-full items-center gap-3 px-5 py-3 text-left transition-colors hover:bg-surface-raised"
                       >

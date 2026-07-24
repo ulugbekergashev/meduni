@@ -7,7 +7,7 @@ import { RoleShell } from "../../components/RoleShell";
 import { GlobalSearch, type SearchSection } from "../../components/GlobalSearch";
 import { api } from "../../lib/api";
 import { useLocale } from "../../lib/useLocale";
-import { useTeachTasks } from "./api";
+import { useTaskBoard } from "./api";
 
 interface TeachSearchResp {
   students: { id: number; fullName: string; groupName: string | null }[];
@@ -18,8 +18,8 @@ interface TeachSearchResp {
 export function TeachShell() {
   const { t } = useTranslation(undefined, { keyPrefix: "nav" });
   const locale = useLocale();
-  const tasks = useTeachTasks();
-  const openTasks = tasks.data?.feed.length ?? 0;
+  const tasks = useTaskBoard();
+  const openTasks = tasks.data?.stats.toDo ?? 0;
 
   const search = useCallback(
     async (q: string): Promise<SearchSection[]> => {

@@ -323,7 +323,7 @@ export function StudentDashboard() {
                       <div className="divide-y divide-line">
                         {sched.sessions.map((s) => (
                           <button
-                            key={s.id}
+                            key={s.key}
                             onClick={() => navigate("/app/schedule")}
                             className={cls(
                               "group flex w-full items-center gap-3 px-4 py-3.5 text-left transition-all duration-200 hover:bg-surface-raised hover:pl-5",

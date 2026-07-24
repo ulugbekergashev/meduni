@@ -252,8 +252,8 @@ interface ReportStudent {
   avgGrade: number | null;
 }
 
-async function buildReport(courseId: number, teacherId: number, opts: { from?: string; to?: string; groupId?: number }) {
-  await ownCourse(courseId, teacherId);
+// Access (o'qituvchi egaligi YOKI admin scope) chaqiruvchida tekshiriladi.
+async function buildReport(courseId: number, opts: { from?: string; to?: string; groupId?: number }) {
   const range = dateRange(opts.from, opts.to);
   const sessions = await prisma.lessonSession.findMany({
     where: { courseId, ...(range ? { date: range } : {}) },
@@ -297,7 +297,8 @@ async function buildReport(courseId: number, teacherId: number, opts: { from?: s
 }
 
 export async function attendanceReport(courseId: number, teacherId: number, opts: { from?: string; to?: string; search?: string; groupId?: number }) {
-  const report = await buildReport(courseId, teacherId, opts);
+  await ownCourse(courseId, teacherId);
+  const report = await buildReport(courseId, opts);
   let students = report.students;
   if (opts.search?.trim()) students = students.filter((s) => s.fullName.toLowerCase().includes(opts.search!.trim().toLowerCase()));
   return { sessions: report.sessions, students };
@@ -305,9 +306,10 @@ export async function attendanceReport(courseId: number, teacherId: number, opts
 
 const shortLabel: Record<Status, string> = { PRESENT: "K", ABSENT: "KM", LATE: "KCH", EXCUSED: "S" };
 
-export async function exportAttendance(courseId: number, teacherId: number, view: "matrix" | "list", opts: { from?: string; to?: string; groupId?: number }): Promise<Buffer> {
-  const course = await ownCourse(courseId, teacherId);
-  const report = await buildReport(courseId, teacherId, opts);
+type BuiltReport = Awaited<ReturnType<typeof buildReport>>;
+
+/** Yo'qlama hisobotini xlsx workbook'ga aylantiradi (o'qituvchi va admin — bir xil). */
+async function buildAttendanceWorkbook(report: BuiltReport, view: "matrix" | "list"): Promise<Buffer> {
   const wb = new ExcelJS.Workbook();
   const ws = wb.addWorksheet("Yoqlama");
   const fmt = (d: Date) => new Date(d).toLocaleDateString("ru-RU");
@@ -336,4 +338,16 @@ export async function exportAttendance(courseId: number, teacherId: number, view
   ws.columns.forEach((c) => (c.width = 16));
   const buf = await wb.xlsx.writeBuffer();
   return Buffer.from(buf as ArrayBuffer);
+}
+
+/** Admin: kurs yo'qlama hisobotini eksport qiladi (egalik yo'q — scope chaqiruvchida). */
+export async function exportAttendanceReport(courseId: number, view: "matrix" | "list", opts: { from?: string; to?: string; groupId?: number }): Promise<Buffer> {
+  const report = await buildReport(courseId, opts);
+  return buildAttendanceWorkbook(report, view);
+}
+
+export async function exportAttendance(courseId: number, teacherId: number, view: "matrix" | "list", opts: { from?: string; to?: string; groupId?: number }): Promise<Buffer> {
+  await ownCourse(courseId, teacherId);
+  const report = await buildReport(courseId, opts);
+  return buildAttendanceWorkbook(report, view);
 }

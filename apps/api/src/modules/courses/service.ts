@@ -214,11 +214,44 @@ export async function listCourseStudents(id: number) {
   }));
 }
 
+const WD_LEN = 7;
+function dayKeyLocal(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
 export async function getCourseDetail(id: number) {
   const out = await getCourseOut(id);
   const students = await listCourseStudents(id);
   const topicCount = await prisma.topic.count({ where: { courseId: id } });
-  return { ...out, students, topicCount };
+
+  // Haftalik jadval (read-only) — guruh bo'yicha slotlar (kun+vaqt+xona) + sikl davri.
+  const [slots, cgs] = await Promise.all([
+    prisma.scheduleSlot.findMany({ where: { courseId: id }, orderBy: [{ weekday: "asc" }, { startTime: "asc" }] }),
+    prisma.courseGroup.findMany({ where: { courseId: id }, include: { group: { select: { name: true } } } }),
+  ]);
+  const schedule = cgs.map((cg) => ({
+    groupId: cg.groupId,
+    groupName: cg.group.name,
+    cycleStart: cg.cycleStart ? dayKeyLocal(cg.cycleStart) : null,
+    cycleEnd: cg.cycleEnd ? dayKeyLocal(cg.cycleEnd) : null,
+    slots: slots
+      .filter((s) => s.groupId == null || s.groupId === cg.groupId)
+      .map((s) => ({ weekday: ((s.weekday % WD_LEN) + WD_LEN) % WD_LEN, startTime: s.startTime, room: s.room })),
+  }));
+
+  // Davomat xulosasi — kurs bo'yicha (barcha guruhlar).
+  const attRows = await prisma.attendance.groupBy({ by: ["status"], where: { session: { courseId: id } }, _count: true });
+  let present = 0, absent = 0, late = 0, excused = 0;
+  for (const a of attRows) {
+    if (a.status === "PRESENT") present += a._count;
+    else if (a.status === "ABSENT") absent += a._count;
+    else if (a.status === "LATE") late += a._count;
+    else if (a.status === "EXCUSED") excused += a._count;
+  }
+  const marked = present + absent + late + excused;
+  const attendanceSummary = { present, absent, late, excused, marked, pct: marked ? Math.round(((present + late) / marked) * 100) : null };
+
+  return { ...out, students, topicCount, schedule, attendanceSummary };
 }
 
 export async function listTeacherCourses(teacherId: number) {
@@ -379,13 +412,30 @@ export async function getTeacherGroup(groupId: number, teacherId: number) {
   const studentIds = students.map((s) => s.id);
   const courseIds = cgs.map((cg) => cg.course.id);
 
+  const studentIdSet = new Set(studentIds);
   const metric = new Map<number, { pcts: number[]; quiz: number[]; last: number; behind: boolean }>();
   for (const s of students) metric.set(s.id, { pcts: [], quiz: [], last: 0, behind: false });
-  for (const cid of courseIds) {
+  // Har kurs bo'yicha shu guruh talabalarining o'zlashtirish hisoboti (profil pastida).
+  const courseReport: {
+    id: number;
+    name: string;
+    studentCount: number;
+    topicsTotal: number;
+    avgProgress: number;
+    avgQuizScore: number | null;
+    behindCount: number;
+  }[] = [];
+  for (const cg of cgs) {
+    const cid = cg.course.id;
     const loaded = await loadCourse(cid).catch(() => null);
-    if (!loaded) continue;
-    const { students: rows } = await buildMatrix(loaded);
-    for (const r of rows) {
+    if (!loaded) {
+      courseReport.push({ id: cid, name: cg.course.name, studentCount: 0, topicsTotal: 0, avgProgress: 0, avgQuizScore: null, behindCount: 0 });
+      continue;
+    }
+    const { students: rows, topics } = await buildMatrix(loaded);
+    // Faqat SHU guruh talabalari (kurs bir necha guruhga o'tilishi mumkin).
+    const groupRows = rows.filter((r) => studentIdSet.has(r.id));
+    for (const r of groupRows) {
       const m = metric.get(r.id);
       if (!m) continue;
       m.pcts.push(r.overallPct);
@@ -393,6 +443,17 @@ export async function getTeacherGroup(groupId: number, teacherId: number) {
       if (r.lastActiveAt) m.last = Math.max(m.last, new Date(r.lastActiveAt).getTime());
       if (r.behind) m.behind = true;
     }
+    const cPcts = groupRows.map((r) => r.overallPct);
+    const cQuiz = groupRows.map((r) => r.avgQuizScore).filter((x): x is number => x !== null);
+    courseReport.push({
+      id: cid,
+      name: cg.course.name,
+      studentCount: groupRows.length,
+      topicsTotal: topics.length,
+      avgProgress: cPcts.length ? Math.round(cPcts.reduce((a, b) => a + b, 0) / cPcts.length) : 0,
+      avgQuizScore: cQuiz.length ? Math.round(cQuiz.reduce((a, b) => a + b, 0) / cQuiz.length) : null,
+      behindCount: groupRows.filter((r) => r.behind).length,
+    });
   }
 
   const attRows = studentIds.length
@@ -443,6 +504,7 @@ export async function getTeacherGroup(groupId: number, teacherId: number) {
     yearOfStudy: group.yearOfStudy,
     facultyName: group.faculty.name,
     courses: cgs.map((cg) => ({ id: cg.course.id, name: cg.course.name })),
+    courseReport,
     students: studentsRanked,
     studentCount: students.length,
     avgProgress,
@@ -501,7 +563,7 @@ export async function getTeacherCourseMeta(courseId: number, teacherId: number) 
   if (c.teacherId !== teacherId) {
     throw new ApiError(403, "forbidden", "Bu sizning kursingiz emas", "Это не ваш курс");
   }
-  return { ...toCourseOut(c), defaultUnlockRuleJson: c.defaultUnlockRuleJson ?? null, scheduleUnlock: c.scheduleUnlock };
+  return { ...toCourseOut(c), defaultUnlockRuleJson: c.defaultUnlockRuleJson ?? null, scheduleUnlock: c.scheduleUnlock, sequentialUnlock: c.sequentialUnlock };
 }
 
 interface SyllabusMeta {
@@ -577,7 +639,7 @@ export async function saveSyllabus(
 export async function updateCourseSettings(
   courseId: number,
   teacherId: number,
-  body: { defaultUnlockRuleJson?: unknown; scheduleUnlock?: boolean }
+  body: { defaultUnlockRuleJson?: unknown; scheduleUnlock?: boolean; sequentialUnlock?: boolean }
 ) {
   const c = await prisma.course.findUnique({ where: { id: courseId } });
   if (!c) throw notFound("Kurs");
@@ -588,9 +650,8 @@ export async function updateCourseSettings(
   if (body.defaultUnlockRuleJson !== undefined) {
     data.defaultUnlockRuleJson = (body.defaultUnlockRuleJson ?? null) as object;
   }
-  if (typeof body.scheduleUnlock === "boolean") {
-    data.scheduleUnlock = body.scheduleUnlock;
-  }
+  if (typeof body.scheduleUnlock === "boolean") data.scheduleUnlock = body.scheduleUnlock;
+  if (typeof body.sequentialUnlock === "boolean") data.sequentialUnlock = body.sequentialUnlock;
   await prisma.course.update({ where: { id: courseId }, data });
   return { ok: true };
 }

@@ -146,17 +146,11 @@ export function TeachCoursesPage() {
   const groups = useMemo(() => groupByPeriod<TeachCourse>(filtered), [filtered]);
 
   return (
-    <div className="relative z-0 min-h-[80vh] space-y-6 pb-10">
-      {/* Background blobs for premium feel */}
-      <div className="pointer-events-none fixed left-0 top-0 -z-10 h-full w-full overflow-hidden bg-bg">
-        <div className="absolute right-[5%] top-[10%] h-[500px] w-[500px] rounded-full bg-brand/5 blur-[100px]" />
-        <div className="absolute bottom-[10%] left-[-10%] h-[400px] w-[400px] rounded-full bg-violet-400/5 blur-[120px]" />
-      </div>
-
+    <div className="space-y-3 pb-8">
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <div className="flex flex-col gap-2">
-          <h1 className="text-[32px] font-black tracking-tight text-ink drop-shadow-sm sm:text-[40px]">{t("myCourses")}</h1>
-          <p className="text-[16px] font-medium text-ink-soft">{t("coursesSubtitle")}</p>
+        <div>
+          <h1 className="text-h1 font-bold text-ink">{t("myCourses")}</h1>
+          <p className="mt-1 text-note text-ink-soft">{t("coursesSubtitle")}</p>
         </div>
         <Button icon={<Icon icon={Plus} size={16} />} onClick={() => setAddOpen(true)}>
           {t("newCourse")}
@@ -166,59 +160,53 @@ export function TeachCoursesPage() {
       {addOpen && <NewCourseModal onClose={() => setAddOpen(false)} />}
 
       {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-3 rounded-[24px] border border-line bg-surface p-4 shadow-sm ring-1 ring-line">
-        <div className="relative min-w-[240px] flex-1">
-          <Icon icon={Search} size={18} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-ink-faint" />
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative min-w-[220px] flex-1">
+          <Icon icon={Search} size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-faint" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={t("searchCourse")}
-            className="w-full rounded-[16px] border-none bg-surface-raised py-3 pl-11 pr-4 text-[15px] font-semibold text-ink shadow-sm ring-1 ring-line transition-all focus:bg-surface-glass focus:outline-none focus:ring-2 focus:ring-brand/50"
+            className="w-full rounded-control border border-line bg-surface py-2 pl-9 pr-3 text-note outline-none focus:border-brand focus:ring-[3px] focus:ring-brand/10"
           />
         </div>
-        <div className="flex items-center gap-3">
-          <PeriodFilter
-            years={options.years}
-            semesters={options.semesters}
-            year={year}
-            semester={semester}
-            onYear={setYear}
-            onSemester={setSemester}
-          />
-          <span className="hidden rounded-full bg-surface-raised px-4 py-2 text-[14px] font-bold text-brand-deep shadow-sm ring-1 ring-line sm:inline-block">
-            {t("totalN", { n: filtered.length })}
-          </span>
-        </div>
+        <PeriodFilter
+          years={options.years}
+          semesters={options.semesters}
+          year={year}
+          semester={semester}
+          onYear={setYear}
+          onSemester={setSemester}
+        />
+        <span className="text-note font-semibold text-ink-soft">{t("totalN", { n: filtered.length })}</span>
       </div>
 
-      <div className="mt-6">
-        <AsyncSection
-          isLoading={list.isLoading}
-          isError={list.isError}
-          isEmpty={filtered.length === 0}
-          emptyIcon={<Icon icon={BookOpen} size={28} className="text-brand-soft" />}
-          emptyText={courses.length === 0 ? t("empty") : t("noMatch")}
-          emptyHint={courses.length === 0 ? undefined : t("noMatchHint")}
-          onRetry={() => list.refetch()}
-        >
-          {groups.map((g, i) => (
-            <PeriodSection
-              key={g.year}
-              group={g}
-              defaultOpen={i === 0 || !!year || !!semester || !!search.trim()}
-              renderRows={(rows) => (
-                <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                  {rows.map((c) => (
-                    <li key={c.id}>
-                      <CourseCard course={c} avgProgress={avg(c.id)} />
-                    </li>
-                  ))}
-                </ul>
-              )}
-            />
-          ))}
-        </AsyncSection>
-      </div>
+      <AsyncSection
+        isLoading={list.isLoading}
+        isError={list.isError}
+        isEmpty={filtered.length === 0}
+        emptyIcon={<Icon icon={BookOpen} size={28} className="text-brand-soft" />}
+        emptyText={courses.length === 0 ? t("empty") : t("noMatch")}
+        emptyHint={courses.length === 0 ? undefined : t("noMatchHint")}
+        onRetry={() => list.refetch()}
+      >
+        {groups.map((g, i) => (
+          <PeriodSection
+            key={g.year}
+            group={g}
+            defaultOpen={i === 0 || !!year || !!semester || !!search.trim()}
+            renderRows={(rows) => (
+              <ul className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {rows.map((c) => (
+                  <li key={c.id}>
+                    <CourseCard course={c} avgProgress={avg(c.id)} />
+                  </li>
+                ))}
+              </ul>
+            )}
+          />
+        ))}
+      </AsyncSection>
     </div>
   );
 }

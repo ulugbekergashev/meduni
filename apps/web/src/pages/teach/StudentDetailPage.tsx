@@ -1,371 +1,446 @@
-import { useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useMemo, useState } from "react";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, Check, ClipboardList, ListPlus, Mail, Stethoscope, Users, BookOpen } from "lucide-react";
-import { Badge, Icon, ProgressBar, ProgressRing, Spinner, StackedBar, cls, type BadgeTone } from "@meduni/ui";
+import {
+  AlertTriangle, ArrowLeft, BookOpen, Check, ClipboardList, GraduationCap, ListPlus,
+  Lock, LockOpen, Mail, MessageCircle, Stethoscope, Users, X,
+} from "lucide-react";
+import {
+  Badge, Button, Card, Icon, Input, ProgressBar, ProgressRing, Spinner, StackedBar, StatCard,
+  cls, useToast, type BadgeTone,
+} from "@meduni/ui";
 import { AsyncSection } from "../../components/AsyncSection";
-import { QuickTaskModal } from "../../components/QuickTaskModal";
-import { useStudentDetail, type CellState, type StudentDetail, type StudentDetailCourse } from "./api";
+import { QuickTaskModal, type QuickTaskPrefill } from "../../components/QuickTaskModal";
+import { formatDate } from "../../lib/date";
+import { useLocale } from "../../lib/useLocale";
+import { apiErrorMessage } from "../../lib/api";
+import {
+  useGradeSession, useStudentDetail, useUnlockForStudent,
+  type AttStatus, type CellState, type StudentDetailCourse,
+  type StudentDetailSession, type StudentDetailTopic,
+} from "./api";
 
 const stateTone: Record<CellState, BadgeTone> = { COMPLETED: "emerald", IN_PROGRESS: "amber", AVAILABLE: "blue", LOCKED: "slate" };
+const attTone: Record<AttStatus, string> = {
+  PRESENT: "bg-emerald-soft text-emerald",
+  ABSENT: "bg-rose-soft text-rose",
+  LATE: "bg-amber-soft text-amber",
+  EXCUSED: "bg-blue-soft text-blue",
+};
 
-function CourseSection({ course, onReview }: { course: StudentDetailCourse; onReview: () => void }) {
-  const { t } = useTranslation(undefined, { keyPrefix: "studentDetail" });
-  const a = course.attendance;
+type TabKey = "overview" | "courses" | "journal";
 
+/* ============================ Amaliyot faolligi ============================ */
+function PracticeRow({ icon, tone, label, hint, value, sub }: {
+  icon: any; tone: string; label: string; hint: string; value: React.ReactNode; sub?: React.ReactNode;
+}) {
   return (
-    <div className="group/course space-y-7 rounded-[28px] border border-line bg-surface p-6 shadow-sm ring-1 ring-line transition-all duration-300 hover:bg-surface-raised hover:shadow-md sm:p-8">
-      <div>
-        <div className="flex flex-wrap items-end justify-between gap-5">
+    <div className="flex items-center gap-3 rounded-control bg-bg px-3 py-2.5">
+      <span className={cls("flex h-9 w-9 shrink-0 items-center justify-center rounded-control", tone)}><Icon icon={icon} size={16} /></span>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-note font-semibold text-ink">{label}</p>
+        <p className="truncate text-micro text-ink-faint">{hint}</p>
+      </div>
+      <div className="shrink-0 text-right">
+        <p className="text-body font-bold tabular-nums text-ink">{value}</p>
+        {sub && <p className="text-micro font-semibold text-ink-soft">{sub}</p>}
+      </div>
+    </div>
+  );
+}
+
+/* ============================ Diqqat talab qiladigan ishlar ============================ */
+interface Attention {
+  courseId: number; courseName: string; topic: StudentDetailTopic;
+  kind: "grade" | "unlock";
+}
+
+function AttentionList({ items, onGrade, onUnlock, onAssign, unlockPending }: {
+  items: Attention[];
+  onGrade: (caseAttemptId: number) => void;
+  onUnlock: (courseId: number, topicId: number) => void;
+  onAssign: (p: QuickTaskPrefill) => void;
+  unlockPending: number | null;
+}) {
+  const { t } = useTranslation(undefined, { keyPrefix: "studentDetail" });
+  const locale = useLocale();
+  if (items.length === 0) {
+    return (
+      <div className="flex items-center gap-3 rounded-control bg-emerald-soft px-4 py-3">
+        <Icon icon={Check} size={18} className="text-emerald" />
+        <p className="text-note font-semibold text-emerald">{t("noAttention")}</p>
+      </div>
+    );
+  }
+  return (
+    <div className="divide-y divide-line">
+      {items.map((a) => (
+        <div key={`${a.kind}-${a.courseId}-${a.topic.id}`} className="flex flex-wrap items-center gap-2 py-2.5">
+          <span className={cls("flex h-8 w-8 shrink-0 items-center justify-center rounded-control", a.kind === "grade" ? "bg-rose-soft text-rose" : "bg-slate-100 text-ink-soft")}>
+            <Icon icon={a.kind === "grade" ? Stethoscope : Lock} size={15} />
+          </span>
           <div className="min-w-0 flex-1">
-            <h2 className="text-[24px] font-black tracking-tight text-ink drop-shadow-sm transition-colors group-hover/course:text-brand-deep sm:text-[28px]">{course.subjectName}</h2>
-            <p className="mt-2 flex items-center gap-2 text-[14px] font-bold text-ink-soft">
-              <span className="rounded-full bg-brand-soft px-3 py-1 text-[13px] text-brand-deep shadow-sm ring-1 ring-brand/10">{course.completedCount}/{course.topicsTotal}</span>
-              {t("topicsDone")}
+            <p className="truncate text-note font-semibold text-ink">{a.topic.title}</p>
+            <p className="truncate text-micro text-ink-faint">
+              {a.courseName} · {a.kind === "grade" ? t("caseWaiting") : a.topic.reason ? a.topic.reason[locale] : t("state.LOCKED")}
             </p>
           </div>
-          <div className="flex w-full flex-col gap-2 sm:w-[40%]">
-            <div className="flex items-center justify-between text-[14px] font-black text-ink-soft">
-              <span>{t("progress")}</span>
-              <span className="text-[16px] text-brand-deep">{course.overallPct}%</span>
-            </div>
-            <div className="relative h-2.5 w-full overflow-hidden rounded-full bg-black/5 shadow-inner">
-              <div className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-brand via-brand-tint to-violet transition-all duration-700 ease-out" style={{ width: `${Math.max(course.overallPct, 2)}%` }} />
-            </div>
+          <div className="flex shrink-0 items-center gap-1.5">
+            {a.kind === "grade" ? (
+              <Button size="sm" variant="danger" onClick={() => a.topic.caseAttemptId && onGrade(a.topic.caseAttemptId)}>{t("gradeNow")}</Button>
+            ) : (
+              <Button size="sm" variant="soft" icon={<Icon icon={LockOpen} size={14} />} disabled={unlockPending === a.topic.id} onClick={() => onUnlock(a.courseId, a.topic.id)}>{t("unlock")}</Button>
+            )}
+            <Button size="sm" variant="ghost" icon={<Icon icon={ListPlus} size={14} />} onClick={() => onAssign({ title: a.topic.title })}>{t("task")}</Button>
           </div>
         </div>
-      </div>
+      ))}
+    </div>
+  );
+}
 
-      {/* Attendance — stacked bar + breakdown */}
-      <div className="rounded-[20px] bg-surface-glass p-5 ring-1 ring-line">
-        <div className="mb-3 flex items-center justify-between">
-          <h3 className="flex items-center gap-2 text-[14px] font-black uppercase tracking-widest text-ink-soft">
-            <Icon icon={ClipboardList} size={16} className="text-brand-soft" /> {t("attendance")}
-          </h3>
-          <span className={cls("flex items-center justify-center rounded-full bg-surface px-4 py-1.5 text-[15.5px] font-black tabular-nums shadow-sm ring-1 ring-line", a.pct !== null && a.pct < 75 ? "text-rose" : "text-brand-deep")}>{a.pct !== null ? `${a.pct}%` : "—"}</span>
-        </div>
-        <div className="h-3 rounded-full shadow-inner overflow-hidden">
-          <StackedBar
-            segments={[
-              { value: a.present, tone: "emerald" },
-              { value: a.late, tone: "amber" },
-              { value: a.excused, tone: "blue" },
-              { value: a.absent, tone: "rose" },
-            ]}
-          />
-        </div>
-        <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-[13px] font-bold">
-          <span className="flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-emerald-700 ring-1 ring-emerald/20"><div className="h-2 w-2 rounded-full bg-emerald shadow-sm" /> {t("att.present")}: {a.present}</span>
-          <span className="flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1 text-amber-700 ring-1 ring-amber/20"><div className="h-2 w-2 rounded-full bg-amber shadow-sm" /> {t("att.late")}: {a.late}</span>
-          <span className="flex items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1 text-blue-700 ring-1 ring-blue/20"><div className="h-2 w-2 rounded-full bg-blue shadow-sm" /> {t("att.excused")}: {a.excused}</span>
-          <span className="flex items-center gap-1.5 rounded-full bg-rose-50 px-3 py-1 text-rose-700 ring-1 ring-rose/20"><div className="h-2 w-2 rounded-full bg-rose shadow-sm" /> {t("att.absent")}: {a.absent}</span>
-          {a.avgGrade !== null && <span className="ml-auto flex items-center gap-2 rounded-full bg-surface px-3 py-1 text-ink-soft ring-1 ring-line">{t("att.avgGrade")}: <b className="text-[14px] tabular-nums text-ink">{a.avgGrade}</b></span>}
+/* ============================ Kurs → mavzular ro'yxati ============================ */
+function TopicRow({ tp, courseId, onGrade, onUnlock, onAssign, unlockPending }: {
+  tp: StudentDetailTopic; courseId: number;
+  onGrade: (id: number) => void;
+  onUnlock: (courseId: number, topicId: number) => void;
+  onAssign: (p: QuickTaskPrefill) => void;
+  unlockPending: number | null;
+}) {
+  const { t } = useTranslation(undefined, { keyPrefix: "studentDetail" });
+  const locale = useLocale();
+  const needsReview = tp.hasCase && tp.caseSubmitted && !tp.caseReviewed;
+  return (
+    <div className="px-3 py-3 transition-colors hover:bg-bg">
+      <div className="flex flex-wrap items-center gap-2">
+        <p className="min-w-0 flex-1 truncate text-note font-semibold text-ink">{tp.title}</p>
+        <Badge tone={stateTone[tp.state]}>{t(`state.${tp.state}`)}</Badge>
+      </div>
+      <div className="mt-2 flex items-center gap-2">
+        <ProgressBar value={tp.pct} className="flex-1" tone={tp.state === "COMPLETED" ? "emerald" : "brand"} />
+        <span className="w-9 shrink-0 text-right text-micro font-bold tabular-nums text-ink-soft">{tp.pct}%</span>
+      </div>
+      {tp.state === "LOCKED" && tp.reason && (
+        <p className="mt-1.5 flex items-center gap-1.5 text-micro text-ink-faint"><Icon icon={Lock} size={12} /> {tp.reason[locale]}</p>
+      )}
+      <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+        {tp.hasQuiz && (
+          <span className={cls("inline-flex items-center gap-1 rounded-pill px-2.5 py-0.5 text-micro font-semibold", tp.quizScore !== null ? "bg-blue-soft text-blue" : "bg-bg text-ink-faint")}>
+            <Icon icon={ClipboardList} size={12} /> {t("quiz")}: {tp.quizScore !== null ? `${tp.quizScore}%` : "—"}
+          </span>
+        )}
+        {tp.hasCase && (
+          <span className={cls("inline-flex items-center gap-1 rounded-pill px-2.5 py-0.5 text-micro font-semibold", tp.caseReviewed ? "bg-emerald-soft text-emerald" : tp.caseSubmitted ? "bg-amber-soft text-amber" : "bg-bg text-ink-faint")}>
+            <Icon icon={tp.caseReviewed ? Check : Stethoscope} size={12} /> {t("case")}: {tp.caseReviewed ? tp.caseScore : tp.caseSubmitted ? t("underReview") : "—"}
+          </span>
+        )}
+        <div className="ml-auto flex items-center gap-1">
+          {needsReview && <Button size="sm" variant="danger" onClick={() => tp.caseAttemptId && onGrade(tp.caseAttemptId)}>{t("gradeNow")}</Button>}
+          {tp.state === "LOCKED" && (
+            <Button size="sm" variant="soft" icon={<Icon icon={LockOpen} size={13} />} disabled={unlockPending === tp.id} onClick={() => onUnlock(courseId, tp.id)}>{t("unlock")}</Button>
+          )}
+          <button onClick={() => onAssign({ title: tp.title })} title={t("task")} className="rounded-control p-1.5 text-ink-soft transition-colors hover:bg-brand-soft hover:text-brand-deep">
+            <Icon icon={ListPlus} size={15} />
+          </button>
         </div>
       </div>
+      {tp.caseReviewed && tp.caseFeedback && (
+        <div className="mt-2 flex gap-2 rounded-control bg-emerald-soft/60 px-3 py-2">
+          <Icon icon={MessageCircle} size={14} className="mt-0.5 shrink-0 text-emerald" />
+          <p className="text-micro leading-relaxed text-ink">{tp.caseFeedback}</p>
+        </div>
+      )}
+    </div>
+  );
+}
 
-      {/* Topics */}
-      <div>
-        <h3 className="mb-4 flex items-center gap-2 text-[14px] font-black uppercase tracking-widest text-ink-soft">
-          <Icon icon={BookOpen} size={16} className="text-violet-400" /> {t("work")}
-        </h3>
-        {course.topics.length === 0 ? (
-          <p className="rounded-[16px] border border-dashed border-line bg-surface-glass py-8 text-center text-[15px] font-medium text-ink-faint">{t("noTopics")}</p>
-        ) : (
-          <div className="space-y-3">
-            {course.topics.map((tp) => {
-              const needsReview = tp.hasCase && tp.caseSubmitted && !tp.caseReviewed;
-              return (
-                <div key={tp.id} className="group/topic overflow-hidden rounded-[20px] border border-line bg-surface px-5 py-5 shadow-sm ring-1 ring-line transition-all hover:-translate-y-1 hover:bg-surface-glass hover:shadow-md hover:ring-brand/20">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <p className="min-w-0 flex-1 truncate text-[17px] font-bold text-ink transition-colors group-hover/topic:text-brand-deep">{tp.title}</p>
-                    <Badge tone={stateTone[tp.state]}>{t(`state.${tp.state}`)}</Badge>
-                  </div>
-                  <div className="mt-3 flex items-center gap-3">
-                    <ProgressBar value={tp.pct} className="flex-1 h-2 shadow-inner" tone={tp.state === "COMPLETED" ? "emerald" : "brand"} />
-                    <span className="w-10 shrink-0 text-right text-[13.5px] font-bold tabular-nums text-ink-soft">{tp.pct}%</span>
-                  </div>
-                  <div className="mt-4 flex flex-wrap items-center gap-2.5 text-[13px]">
-                    {tp.hasQuiz && (
-                      <span className={cls("inline-flex items-center gap-1.5 rounded-full px-3 py-1 font-bold shadow-sm ring-1", tp.quizScore !== null ? "bg-blue-50 text-blue-700 ring-blue/20" : "bg-bg text-ink-faint ring-line")}>
-                        <Icon icon={ClipboardList} size={14} /> {t("quiz")}: {tp.quizScore !== null ? `${tp.quizScore}%` : "—"}
-                      </span>
-                    )}
-                    {tp.hasCase && (
-                      <span className={cls("inline-flex items-center gap-1.5 rounded-full px-3 py-1 font-bold shadow-sm ring-1", tp.caseReviewed ? "bg-emerald-50 text-emerald-700 ring-emerald/20" : tp.caseSubmitted ? "bg-amber-50 text-amber-700 ring-amber/20" : "bg-bg text-ink-faint ring-line")}>
-                        <Icon icon={tp.caseReviewed ? Check : Stethoscope} size={14} /> {t("case")}: {tp.caseReviewed ? tp.caseScore : tp.caseSubmitted ? t("underReview") : "—"}
-                      </span>
-                    )}
-                    {needsReview && (
-                      <button onClick={onReview} className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-rose px-4 py-1 font-bold text-white shadow-sm ring-1 ring-rose/50 transition-all hover:-translate-y-0.5 hover:bg-rose-600 hover:shadow-md">
-                        {t("gradeNow")} &rarr;
-                      </button>
-                    )}
-                  </div>
-                  {tp.caseReviewed && tp.caseFeedback && (
-                    <div className="mt-4 flex gap-3 rounded-[16px] bg-emerald-50/50 p-4 ring-1 ring-emerald/10">
-                      <Icon icon={Check} size={18} className="shrink-0 text-emerald" />
-                      <p className="text-[14px] font-medium leading-relaxed text-emerald-900">{tp.caseFeedback}</p>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+function CourseBlock({ course, children, right }: { course: StudentDetailCourse; children: React.ReactNode; right?: React.ReactNode }) {
+  const { t } = useTranslation(undefined, { keyPrefix: "studentDetail" });
+  return (
+    <Card className="!p-0">
+      <div className="flex flex-wrap items-center gap-3 border-b border-line px-4 py-3">
+        <div className="min-w-0 flex-1">
+          <h3 className="truncate text-section font-bold text-ink">{course.subjectName}</h3>
+          <p className="text-micro text-ink-soft">{course.completedCount}/{course.topicsTotal} {t("topicsDone")}</p>
+        </div>
+        {right ?? (
+          <div className="flex w-40 items-center gap-2">
+            <ProgressBar value={course.overallPct} className="flex-1" />
+            <span className="w-9 shrink-0 text-right text-note font-bold tabular-nums text-brand-deep">{course.overallPct}%</span>
           </div>
+        )}
+      </div>
+      {children}
+    </Card>
+  );
+}
+
+/* ============================ Davomat jurnali (inline baho) ============================ */
+function JournalRow({ s, studentId, courseId }: { s: StudentDetailSession; studentId: number; courseId: number }) {
+  const { t } = useTranslation(undefined, { keyPrefix: "studentDetail" });
+  const { t: tc } = useTranslation(undefined, { keyPrefix: "common" });
+  const locale = useLocale();
+  const { show } = useToast();
+  const grade = useGradeSession(studentId);
+  const [editing, setEditing] = useState(false);
+  const [val, setVal] = useState(s.grade === null ? "" : String(s.grade));
+
+  const save = () => {
+    const n = val.trim() === "" ? null : Number(val);
+    if (n !== null && (!Number.isFinite(n) || n < 0 || n > 100)) { show(t("gradeRange"), "warn"); return; }
+    grade.mutate(
+      { courseId, date: s.date, startTime: s.time, groupId: s.groupId, status: s.status, grade: n },
+      { onSuccess: () => { show(t("gradeSaved")); setEditing(false); }, onError: (e) => show(apiErrorMessage(e, locale) ?? tc("genericError"), "warn") }
+    );
+  };
+
+  return (
+    <div className="flex flex-wrap items-center gap-2 px-4 py-2.5">
+      <div className="w-24 shrink-0">
+        <p className="text-note font-semibold text-ink">{formatDate(locale === "ru" ? "ru" : "uz", s.date, "short")}</p>
+        <p className="text-micro tabular-nums text-ink-faint">{s.time}</p>
+      </div>
+      <p className="min-w-0 flex-1 truncate text-micro text-ink-soft">{s.topicTitle ?? "—"}</p>
+      <span className={cls("shrink-0 rounded-pill px-2.5 py-0.5 text-micro font-semibold", attTone[s.status])}>{t(`att.${s.status}`)}</span>
+      {editing ? (
+        <div className="flex shrink-0 items-center gap-1">
+          <Input value={val} onChange={(e) => setVal(e.target.value)} inputMode="numeric" placeholder="0–100" className="w-16 !py-1 text-center" autoFocus onKeyDown={(e) => e.key === "Enter" && save()} />
+          <button onClick={save} disabled={grade.isPending} className="rounded-control p-1.5 text-emerald transition-colors hover:bg-emerald-soft" aria-label={t("gradeSaveBtn")}><Icon icon={Check} size={15} /></button>
+          <button onClick={() => { setEditing(false); setVal(s.grade === null ? "" : String(s.grade)); }} className="rounded-control p-1.5 text-ink-faint transition-colors hover:bg-bg" aria-label="cancel"><Icon icon={X} size={15} /></button>
+        </div>
+      ) : (
+        <button onClick={() => setEditing(true)} className="flex w-16 shrink-0 items-center justify-end gap-1 rounded-control px-2 py-1 text-note font-bold tabular-nums text-ink transition-colors hover:bg-brand-soft hover:text-brand-deep">
+          {s.grade === null ? <span className="text-micro font-semibold text-ink-faint">{t("setGrade")}</span> : s.grade}
+        </button>
+      )}
+    </div>
+  );
+}
+
+function AttendanceSummary({ course }: { course: StudentDetailCourse }) {
+  const { t } = useTranslation(undefined, { keyPrefix: "studentDetail" });
+  const a = course.attendance;
+  const legend: { tone: string; label: string; value: number }[] = [
+    { tone: "bg-emerald", label: t("att.PRESENT"), value: a.present },
+    { tone: "bg-amber", label: t("att.LATE"), value: a.late },
+    { tone: "bg-blue", label: t("att.EXCUSED"), value: a.excused },
+    { tone: "bg-rose", label: t("att.ABSENT"), value: a.absent },
+  ];
+  return (
+    <div className="px-4 py-3">
+      <div className="mb-2.5 flex items-center justify-between gap-2">
+        <span className="text-micro font-semibold uppercase tracking-wider text-ink-soft">{t("attendance")}</span>
+        <span className={cls("text-note font-bold tabular-nums", a.pct !== null && a.pct < 75 ? "text-rose" : "text-emerald")}>{a.pct !== null ? `${a.pct}%` : "—"}</span>
+      </div>
+      <div className="h-2.5 overflow-hidden rounded-full">
+        <StackedBar segments={[{ value: a.present, tone: "emerald" }, { value: a.late, tone: "amber" }, { value: a.excused, tone: "blue" }, { value: a.absent, tone: "rose" }]} />
+      </div>
+      <div className="mt-2.5 flex flex-wrap gap-x-3 gap-y-1">
+        {legend.map((l) => (
+          <span key={l.label} className="inline-flex items-center gap-1.5 text-micro font-semibold text-ink-soft">
+            <span className={cls("h-2 w-2 rounded-full", l.tone)} /> {l.label}: <span className="tabular-nums text-ink">{l.value}</span>
+          </span>
+        ))}
+        {a.avgGrade !== null && (
+          <span className="ml-auto inline-flex items-center gap-1.5 text-micro font-semibold text-ink-soft">
+            {t("att.avgGrade")}: <span className="text-note font-bold tabular-nums text-ink">{a.avgGrade}</span>
+          </span>
         )}
       </div>
     </div>
   );
 }
 
-function StatCard({ label, value, subtext, icon, tone }: { label: string; value: React.ReactNode; subtext?: string; icon: any; tone: "brand" | "emerald" | "amber" | "rose" | "blue" | "violet" }) {
-  const tones: Record<string, string> = {
-    brand: "bg-brand-soft text-brand-deep",
-    emerald: "bg-emerald-50 text-emerald-600",
-    amber: "bg-amber-50 text-amber-600",
-    rose: "bg-rose-50 text-rose-600",
-    blue: "bg-blue-50 text-blue-600",
-    violet: "bg-violet-50 text-violet-600",
-  };
-  return (
-    <div className="flex flex-col justify-between rounded-[24px] bg-surface p-5 shadow-sm ring-1 ring-line transition-all hover:shadow-md">
-      <div className="flex items-start justify-between gap-2">
-        <div>
-          <p className="text-[11px] font-black uppercase tracking-widest text-ink-faint">{label}</p>
-          <p className="mt-1 text-[24px] font-black tabular-nums text-ink sm:text-[28px]">{value}</p>
-        </div>
-        <div className={cls("flex h-10 w-10 shrink-0 items-center justify-center rounded-full shadow-sm ring-1 ring-black/5", tones[tone])}>
-          <Icon icon={icon} size={20} />
-        </div>
-      </div>
-      {subtext && <p className="mt-4 text-[12px] font-bold text-ink-soft">{subtext}</p>}
-    </div>
-  );
-}
-
-function ProfileCard({ d, onGroup, onAssign }: { d: StudentDetail; onGroup: () => void; onAssign: () => void }) {
-  const { t } = useTranslation(undefined, { keyPrefix: "studentDetail" });
-  const initials = d.student.fullName.split(" ").filter(Boolean).slice(0, 2).map((s) => s[0]?.toUpperCase()).join("");
-  const overall = d.courses.length ? Math.round(d.courses.reduce((a, c) => a + c.overallPct, 0) / d.courses.length) : 0;
-
-  return (
-    <div className="overflow-hidden rounded-[32px] bg-surface shadow-sm ring-1 ring-line">
-      {/* Top Banner */}
-      <div className="h-[140px] w-full bg-gradient-to-br from-brand via-brand-tint to-violet-500" />
-      
-      {/* Profile Details */}
-      <div className="px-6 pb-8 text-center">
-        {/* Avatar */}
-        <div className="mx-auto -mt-[60px] mb-5 flex h-[120px] w-[120px] items-center justify-center rounded-[36px] bg-surface p-2 shadow-sm ring-1 ring-line">
-          <div className="flex h-full w-full items-center justify-center rounded-[28px] bg-gradient-to-br from-brand-soft to-violet-100 text-[40px] font-black text-brand-deep shadow-inner ring-1 ring-brand/20">
-            {initials}
-          </div>
-        </div>
-
-        <h1 className="text-[22px] font-black tracking-tight text-ink drop-shadow-sm">{d.student.fullName}</h1>
-        <p className="mb-5 mt-1 flex items-center justify-center gap-1.5 text-[14px] font-bold text-ink-faint">
-          <Icon icon={Mail} size={14} /> {d.student.email}
-        </p>
-
-        <div className="mb-6 flex flex-wrap items-center justify-center gap-2">
-          <Badge tone="emerald">FAOL</Badge>
-          {d.student.groupName && (
-            <button onClick={onGroup} className="transition-transform hover:scale-105">
-               <Badge tone="brand"><div className="flex items-center gap-1.5"><Icon icon={Users} size={12}/> {d.student.groupName}</div></Badge>
-            </button>
-          )}
-        </div>
-
-        <div className="mb-6 rounded-[20px] bg-surface-glass p-5 text-center shadow-sm ring-1 ring-line">
-          <p className="text-[11px] font-black uppercase tracking-widest text-ink-faint mb-3">O'ZLASHTIRISH</p>
-          <div className="flex justify-center">
-            <ProgressRing value={overall} size={84} stroke={8} tone="brand" />
-          </div>
-        </div>
-
-        <button onClick={onAssign} className="flex w-full items-center justify-center gap-2 rounded-full bg-brand px-5 py-3.5 text-[14.5px] font-bold text-white shadow-sm ring-1 ring-brand/50 transition-all hover:-translate-y-1 hover:bg-brand-deep hover:shadow-md hover:ring-brand">
-          <Icon icon={ListPlus} size={18} /> {t("assignTask")}
-        </button>
-      </div>
-    </div>
-  );
-}
-
+/* ============================ Sahifa ============================ */
 export function StudentDetailPage() {
   const { id } = useParams();
   const studentId = Number(id);
   const { t } = useTranslation(undefined, { keyPrefix: "studentDetail" });
   const navigate = useNavigate();
+  const [params, setParams] = useSearchParams();
   const q = useStudentDetail(studentId);
   const d = q.data;
-  const [assign, setAssign] = useState(false);
+
+  const [assign, setAssign] = useState<QuickTaskPrefill | null>(null);
+  const unlock = useUnlockForStudent(studentId);
+  const { show } = useToast();
+  const locale = useLocale();
+  const { t: tc } = useTranslation(undefined, { keyPrefix: "common" });
+
+  const tab: TabKey = ((): TabKey => {
+    const r = params.get("tab");
+    return r === "courses" || r === "journal" ? r : "overview";
+  })();
+  const setTab = (k: TabKey) => setParams({ tab: k }, { replace: true });
+
+  const doGrade = (caseAttemptId: number) => navigate(`/teach/cases/review?open=${caseAttemptId}`);
+  const doUnlock = (courseId: number, topicId: number) =>
+    unlock.mutate({ courseId, topicId }, {
+      onSuccess: () => show(t("unlocked")),
+      onError: (e) => show(apiErrorMessage(e, locale) ?? tc("genericError"), "warn"),
+    });
+
+  const overall = d && d.courses.length ? Math.round(d.courses.reduce((a, c) => a + c.overallPct, 0) / d.courses.length) : 0;
+  const attPct = useMemo(() => {
+    if (!d) return null;
+    const vals = d.courses.map((c) => c.attendance.pct).filter((x): x is number => x !== null);
+    return vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : null;
+  }, [d]);
+  const completedTotal = d ? d.courses.reduce((a, c) => a + c.completedCount, 0) : 0;
+  const topicsTotal = d ? d.courses.reduce((a, c) => a + c.topicsTotal, 0) : 0;
+
+  const attention: Attention[] = useMemo(() => {
+    if (!d) return [];
+    const out: Attention[] = [];
+    for (const c of d.courses) {
+      for (const tp of c.topics) {
+        if (tp.hasCase && tp.caseSubmitted && !tp.caseReviewed) out.push({ courseId: c.courseId, courseName: c.subjectName, topic: tp, kind: "grade" });
+        else if (tp.state === "LOCKED") out.push({ courseId: c.courseId, courseName: c.subjectName, topic: tp, kind: "unlock" });
+      }
+    }
+    // Baholash (rose) yuqorida, keyin qulflar.
+    return out.sort((a, b) => (a.kind === b.kind ? 0 : a.kind === "grade" ? -1 : 1));
+  }, [d]);
+
+  const initials = d ? d.student.fullName.split(" ").filter(Boolean).slice(0, 2).map((s) => s[0]?.toUpperCase()).join("") : "";
+  const gradeCount = attention.filter((a) => a.kind === "grade").length;
+
+  const TABS: { key: TabKey; icon: typeof BookOpen }[] = [
+    { key: "overview", icon: GraduationCap },
+    { key: "courses", icon: BookOpen },
+    { key: "journal", icon: ClipboardList },
+  ];
 
   return (
-    <div className="relative z-0 min-h-[80vh] pb-10">
-      {/* Background blobs for premium feel */}
-      <div className="pointer-events-none fixed left-0 top-0 -z-10 h-full w-full overflow-hidden bg-bg">
-        <div className="absolute right-[5%] top-[10%] h-[500px] w-[500px] rounded-full bg-brand/5 blur-[100px]" />
-        <div className="absolute bottom-[10%] left-[5%] h-[400px] w-[400px] rounded-full bg-violet-400/5 blur-[120px]" />
-      </div>
+    <div className="pb-8">
+      <button onClick={() => navigate("/teach/groups")} className="mb-3 inline-flex items-center gap-1.5 text-note font-medium text-brand-deep transition-colors hover:text-brand">
+        <Icon icon={ArrowLeft} size={15} /> {t("back")}
+      </button>
 
-      <div className="mx-auto max-w-[1400px] px-4 sm:px-6">
-        <button onClick={() => navigate("/teach/groups")} className="mb-6 inline-flex items-center gap-2 rounded-full bg-surface-raised px-4 py-2 text-[14px] font-bold text-ink-soft shadow-sm ring-1 ring-line transition-all hover:-translate-x-1 hover:bg-surface-glass hover:text-brand hover:shadow-md hover:ring-brand/30">
-          <Icon icon={ArrowLeft} size={16} /> {t("back")}
-        </button>
-
-        {q.isLoading ? (
-          <div className="flex min-h-[40vh] items-center justify-center"><Spinner size={32} className="text-brand" /></div>
-        ) : (
-          <AsyncSection isLoading={false} isError={q.isError} isEmpty={false} emptyText="" onRetry={() => q.refetch()}>
-            {d && (() => {
-              const attVals = d.courses.map((c) => c.attendance.pct).filter((x): x is number => x !== null);
-              const attPct = attVals.length ? Math.round(attVals.reduce((a, b) => a + b, 0) / attVals.length) : null;
-              
-              return (
-                <div className="flex flex-col items-start gap-6 lg:flex-row lg:gap-8">
-                  {/* Left Column: Profile Card */}
-                  <div className="w-full shrink-0 lg:w-[320px] xl:w-[360px]">
-                    <ProfileCard
-                      d={d}
-                      onGroup={() => d.student.groupId && navigate(`/teach/groups/${d.student.groupId}`)}
-                      onAssign={() => setAssign(true)}
-                    />
-                  </div>
-
-                  {/* Right Column: Stats and Courses */}
-                  <div className="min-w-0 flex-1 space-y-6 w-full">
-                    {/* Top Stats Row */}
-                    <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
-                      <StatCard label={t("attendance")} value={attPct !== null ? `${attPct}%` : "—"} subtext="O'rtacha ko'rsatkich" icon={ClipboardList} tone="blue" />
-                      <StatCard 
-                        label={t("practicePatient")} 
-                        value={
-                          <span className="flex items-baseline gap-1.5">
-                            <span>{d.practiceSignals.patientSessions}</span>
-                            {d.practiceSignals.patientAvgScore !== null && (
-                              <span className="text-[13px] font-bold text-rose-600">Avg: {d.practiceSignals.patientAvgScore}</span>
-                            )}
-                          </span>
-                        } 
-                        subtext="Virtual bemor seansi" 
-                        icon={Stethoscope} 
-                        tone="rose" 
-                      />
-                      <StatCard 
-                        label={t("practiceCards")} 
-                        value={
-                          <span className="flex items-baseline gap-1.5">
-                            <span>{d.practiceSignals.cardsReviewed}</span>
-                            {d.practiceSignals.cardsKnownPct !== null && (
-                              <span className="text-[13px] font-bold text-emerald">{d.practiceSignals.cardsKnownPct}%</span>
-                            )}
-                          </span>
-                        } 
-                        subtext="Fleshkarta takrorlash" 
-                        icon={Check} 
-                        tone="emerald" 
-                      />
-                      <StatCard label={t("practiceTutor")} value={d.practiceSignals.tutorQuestions} subtext="Tutor savollari" icon={BookOpen} tone="violet" />
-                    </div>
-
-                    {/* Split Content Area to utilize screen space */}
-                    <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-                      {/* Active Courses List (takes 2 cols) */}
-                      <div className="space-y-4 xl:col-span-2">
-                        <div className="flex items-center justify-between">
-                          <h3 className="text-[14px] font-black uppercase tracking-widest text-ink-soft">FAOL KURSLAR</h3>
-                          <span className="text-[12px] font-bold text-ink-faint">{d.courses.length} ta kurs</span>
-                        </div>
-                        <div className="space-y-4">
-                          {d.courses.map((c) => (
-                            <CourseSection key={c.courseId} course={c} onReview={() => navigate("/teach/cases/review")} />
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Practice Details & Additional stats sidebar (takes 1 col) */}
-                      <div className="space-y-6">
-                        {/* Practice Signals detail list */}
-                        <div className="rounded-[24px] bg-surface p-6 ring-1 ring-line shadow-sm">
-                          <h3 className="text-[13px] font-black uppercase tracking-widest text-ink-soft mb-4">AMALIYOT FAOLLIGI</h3>
-                          <div className="space-y-3">
-                            <div className="flex items-center justify-between p-3 rounded-[16px] bg-surface-glass ring-1 ring-line">
-                              <div className="flex items-center gap-3">
-                                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-violet-100 text-violet-600 shadow-sm"><Icon icon={Check} size={15} /></span>
-                                <div>
-                                  <p className="text-[13px] font-bold text-ink">{t("practiceCards")}</p>
-                                  <p className="text-[10px] font-medium text-ink-faint">Ko'rib chiqilgan kartalar</p>
-                                </div>
-                              </div>
-                              <div className="text-right">
-                                <p className="text-[14px] font-black text-ink">{d.practiceSignals.cardsReviewed}</p>
-                                {d.practiceSignals.cardsKnownPct !== null && <p className="text-[10px] font-bold text-emerald">{d.practiceSignals.cardsKnownPct}% biladi</p>}
-                              </div>
-                            </div>
-
-                            <div className="flex items-center justify-between p-3 rounded-[16px] bg-surface-glass ring-1 ring-line">
-                              <div className="flex items-center gap-3">
-                                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-rose-50 text-rose-600 shadow-sm"><Icon icon={Stethoscope} size={15} /></span>
-                                <div>
-                                  <p className="text-[13px] font-bold text-ink">{t("practicePatient")}</p>
-                                  <p className="text-[10px] font-medium text-ink-faint">Mashq seanslari</p>
-                                </div>
-                              </div>
-                              <div className="text-right">
-                                <p className="text-[14px] font-black text-ink">{d.practiceSignals.patientSessions}</p>
-                                {d.practiceSignals.patientAvgScore !== null && <p className="text-[10px] font-bold text-brand-deep">O'rtacha: {d.practiceSignals.patientAvgScore}</p>}
-                              </div>
-                            </div>
-
-                            <div className="flex items-center justify-between p-3 rounded-[16px] bg-surface-glass ring-1 ring-line">
-                              <div className="flex items-center gap-3">
-                                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-50 text-blue-600 shadow-sm"><Icon icon={ClipboardList} size={15} /></span>
-                                <div>
-                                  <p className="text-[13px] font-bold text-ink">{t("practiceTutor")}</p>
-                                  <p className="text-[10px] font-medium text-ink-faint">Tutor savollari</p>
-                                </div>
-                              </div>
-                              <div className="text-right">
-                                <p className="text-[14px] font-black text-ink">{d.practiceSignals.tutorQuestions}</p>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Guruh details widget */}
-                        <div className="rounded-[24px] bg-surface p-6 ring-1 ring-line shadow-sm">
-                          <h3 className="text-[13px] font-black uppercase tracking-widest text-ink-soft mb-4">AKADEMIK HOLAT</h3>
-                          <div className="space-y-3 text-[13.5px]">
-                            <div className="flex justify-between py-1.5 border-b border-line/50">
-                              <span className="text-ink-faint">Guruh</span>
-                              <span className="font-bold text-ink">{d.student.groupName ?? 'Kiritilmagan'}</span>
-                            </div>
-                            <div className="flex justify-between py-1.5 border-b border-line/50">
-                              <span className="text-ink-faint">Kurslar soni</span>
-                              <span className="font-bold text-ink">{d.courses.length} ta kurs</span>
-                            </div>
-                            <div className="flex justify-between py-1.5">
-                              <span className="text-ink-faint">Davomat foizi</span>
-                              <span className="font-bold text-ink">{attPct !== null ? `${attPct}%` : '—'}</span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+      {q.isLoading ? (
+        <div className="flex min-h-[40vh] items-center justify-center"><Spinner size={28} className="text-brand" /></div>
+      ) : (
+        <AsyncSection isLoading={false} isError={q.isError} isEmpty={false} emptyText="" onRetry={() => q.refetch()}>
+          {d && (
+            <div className="space-y-3">
+              {/* ===== Identity + o'zlashtirish ===== */}
+              <Card className="flex flex-wrap items-center gap-4">
+                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-card bg-brand-soft text-h1 font-extrabold text-brand-deep">{initials}</div>
+                <div className="min-w-0 flex-1">
+                  <h1 className="truncate text-h1 font-bold text-ink">{d.student.fullName}</h1>
+                  <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-note text-ink-soft">
+                    <span className="inline-flex items-center gap-1.5"><Icon icon={Mail} size={14} /> {d.student.email}</span>
+                    {d.student.groupName && (
+                      <button onClick={() => d.student.groupId && navigate(`/teach/groups/${d.student.groupId}`)} className="inline-flex items-center gap-1 rounded-pill bg-brand-soft px-2.5 py-0.5 text-micro font-semibold text-brand-deep transition-colors hover:bg-brand/10">
+                        <Icon icon={Users} size={12} /> {d.student.groupName}
+                      </button>
+                    )}
                   </div>
                 </div>
-              );
-            })()}
-          </AsyncSection>
-        )}
+                <div className="flex shrink-0 items-center gap-4">
+                  <div className="flex flex-col items-center">
+                    <ProgressRing value={overall} size={64} stroke={7} tone="brand" />
+                    <span className="mt-1 text-micro font-semibold text-ink-soft">{t("overallShort")}</span>
+                  </div>
+                  <Button icon={<Icon icon={ListPlus} size={17} />} onClick={() => setAssign({ studentId: d.student.id, studentName: d.student.fullName })}>{t("assignTask")}</Button>
+                </div>
+              </Card>
 
-      {d && (
-        <QuickTaskModal
-          open={assign}
-          onClose={() => setAssign(false)}
-          prefill={{ studentId: d.student.id, studentName: d.student.fullName }}
-        />
+              {/* ===== Stat strip ===== */}
+              <div className="grid grid-cols-2 gap-2.5 md:grid-cols-4 xl:grid-cols-5">
+                <StatCard compact icon={ClipboardList} tone="bg-blue-soft text-blue" value={attPct !== null ? `${attPct}%` : "—"} label={t("attendance")} hint={t("avgHint")} />
+                <StatCard compact icon={BookOpen} tone="bg-brand-soft text-brand-deep" value={`${completedTotal}/${topicsTotal}`} label={t("topicsCompleted")} hint={t("coursesN", { n: d.courses.length })} />
+                <StatCard compact icon={AlertTriangle} tone={gradeCount > 0 ? "bg-rose-soft text-rose" : "bg-bg text-ink-faint"} value={attention.length} label={t("attentionShort")} hint={t("gradeN", { n: gradeCount })} onClick={() => setTab("overview")} selected={tab === "overview"} />
+                <StatCard compact icon={Stethoscope} tone="bg-rose-soft text-rose" value={d.practiceSignals.patientSessions} label={t("practicePatient")} hint={d.practiceSignals.patientAvgScore !== null ? t("avgN", { n: d.practiceSignals.patientAvgScore }) : "—"} />
+                <StatCard compact icon={Check} tone="bg-emerald-soft text-emerald" value={d.practiceSignals.cardsReviewed} label={t("practiceCards")} hint={d.practiceSignals.cardsKnownPct !== null ? `${d.practiceSignals.cardsKnownPct}% ${t("known")}` : "—"} />
+              </div>
+
+              {/* ===== Tab bar ===== */}
+              <div className="inline-flex max-w-full gap-1 overflow-x-auto rounded-control border border-line bg-surface p-1 shadow-card">
+                {TABS.map((x) => (
+                  <button key={x.key} onClick={() => setTab(x.key)} className={cls("flex shrink-0 items-center gap-2 whitespace-nowrap rounded-[8px] px-4 py-2 text-note font-semibold transition-all", tab === x.key ? "bg-brand-soft text-brand-deep" : "text-ink-soft hover:bg-bg hover:text-ink")}>
+                    <Icon icon={x.icon} size={16} /> {t(`tabs.${x.key}`)}
+                    {x.key === "overview" && attention.length > 0 && <span className={cls("rounded-pill px-1.5 text-micro font-bold tabular-nums", gradeCount > 0 ? "bg-rose text-white" : "bg-ink-faint text-white")}>{attention.length}</span>}
+                  </button>
+                ))}
+              </div>
+
+              {/* ===== Tab content ===== */}
+              {tab === "overview" && (
+                <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1fr_340px]">
+                  <Card className="!p-0">
+                    <div className="flex items-center gap-2 border-b border-line px-4 py-3">
+                      <Icon icon={AlertTriangle} size={16} className="text-amber" />
+                      <h3 className="text-section font-bold text-ink">{t("attention")}</h3>
+                      {attention.length > 0 && <span className="text-micro font-semibold text-ink-faint">{attention.length}</span>}
+                    </div>
+                    <div className="px-4 py-2">
+                      <AttentionList items={attention} onGrade={doGrade} onUnlock={doUnlock} onAssign={setAssign} unlockPending={unlock.isPending ? unlock.variables?.topicId ?? null : null} />
+                    </div>
+                  </Card>
+                  <Card className="!p-0">
+                    <div className="border-b border-line px-4 py-3">
+                      <h3 className="text-section font-bold text-ink">{t("practiceTitle")}</h3>
+                    </div>
+                    <div className="space-y-2 p-3">
+                      <PracticeRow icon={Check} tone="bg-emerald-soft text-emerald" label={t("practiceCards")} hint={t("practiceCardsHint")} value={d.practiceSignals.cardsReviewed} sub={d.practiceSignals.cardsKnownPct !== null ? `${d.practiceSignals.cardsKnownPct}% ${t("known")}` : undefined} />
+                      <PracticeRow icon={Stethoscope} tone="bg-rose-soft text-rose" label={t("practicePatient")} hint={t("practicePatientHint")} value={d.practiceSignals.patientSessions} sub={d.practiceSignals.patientAvgScore !== null ? t("avgN", { n: d.practiceSignals.patientAvgScore }) : undefined} />
+                      <PracticeRow icon={BookOpen} tone="bg-violet-soft text-violet" label={t("practiceTutor")} hint={t("practiceTutorHint")} value={d.practiceSignals.tutorQuestions} />
+                    </div>
+                  </Card>
+                </div>
+              )}
+
+              {tab === "courses" && (
+                <div className="space-y-3">
+                  {d.courses.length === 0 ? (
+                    <Card><p className="py-6 text-center text-note text-ink-soft">{t("noCourses")}</p></Card>
+                  ) : d.courses.map((c) => (
+                    <CourseBlock key={c.courseId} course={c}>
+                      {c.topics.length === 0 ? (
+                        <p className="px-4 py-6 text-center text-note text-ink-faint">{t("noTopics")}</p>
+                      ) : (
+                        <div className="divide-y divide-line">
+                          {c.topics.map((tp) => (
+                            <TopicRow key={tp.id} tp={tp} courseId={c.courseId} onGrade={doGrade} onUnlock={doUnlock} onAssign={setAssign} unlockPending={unlock.isPending ? unlock.variables?.topicId ?? null : null} />
+                          ))}
+                        </div>
+                      )}
+                    </CourseBlock>
+                  ))}
+                </div>
+              )}
+
+              {tab === "journal" && (
+                <div className="space-y-3">
+                  {d.courses.length === 0 ? (
+                    <Card><p className="py-6 text-center text-note text-ink-soft">{t("noCourses")}</p></Card>
+                  ) : d.courses.map((c) => (
+                    <CourseBlock key={c.courseId} course={c} right={<span />}>
+                      <AttendanceSummary course={c} />
+                      {c.sessions.length === 0 ? (
+                        <p className="border-t border-line px-4 py-6 text-center text-note text-ink-faint">{t("noSessions")}</p>
+                      ) : (
+                        <div className="divide-y divide-line border-t border-line">
+                          {c.sessions.map((s, i) => (
+                            <JournalRow key={`${c.courseId}-${s.date}-${i}`} s={s} studentId={studentId} courseId={c.courseId} />
+                          ))}
+                        </div>
+                      )}
+                    </CourseBlock>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </AsyncSection>
       )}
-      </div>
+
+      <QuickTaskModal
+        open={assign !== null}
+        onClose={() => setAssign(null)}
+        prefill={{ studentId: d?.student.id, studentName: d?.student.fullName, ...(assign ?? {}) }}
+      />
     </div>
   );
 }

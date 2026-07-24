@@ -18,6 +18,9 @@ const META: Record<AttStatus, { icon: typeof Check; chip: string }> = {
 const MONTHS_UZ = ["yanvar", "fevral", "mart", "aprel", "may", "iyun", "iyul", "avgust", "sentabr", "oktabr", "noyabr", "dekabr"];
 const MONTHS_RU = ["январь", "февраль", "март", "апрель", "май", "июнь", "июль", "август", "сентябрь", "октябрь", "ноябрь", "декабрь"];
 
+/** Dars vaqti "HH:MM" — sessiya/dars sanasidan (bir kunda bir necha dars bo'lishi mumkin). */
+const hhmm = (d: Date) => `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+
 /** "2026-07" → "Iyul 2026" (uz ICU oy nomlari buzuq — qo'lda). */
 function monthLabel(key: string, locale: string) {
   const [y, m] = key.split("-");
@@ -235,7 +238,7 @@ export function AttendanceSection() {
                                   <div key={m.id} className="flex items-center gap-2 text-note">
                                     <Icon icon={X} size={12} className="shrink-0 text-rose" />
                                     <span className="shrink-0 font-semibold tabular-nums text-ink">
-                                      {formatDate(locale === "ru" ? "ru" : "uz", m.date, "short")}
+                                      {formatDate(locale === "ru" ? "ru" : "uz", m.date, "short")} · {hhmm(new Date(m.date))}
                                     </span>
                                     <span className="min-w-0 truncate text-ink-soft">{m.title ?? c.courseName}</span>
                                   </div>
@@ -255,7 +258,7 @@ export function AttendanceSection() {
                                     <Icon icon={cm.icon} size={11} />
                                   </span>
                                   <span className="shrink-0 font-semibold tabular-nums text-ink">
-                                    {formatDate(locale === "ru" ? "ru" : "uz", cs.date, "short")}
+                                    {formatDate(locale === "ru" ? "ru" : "uz", cs.date, "short")} · {hhmm(new Date(cs.date))}
                                   </span>
                                   <span className="min-w-0 flex-1 truncate text-ink-soft">{cs.title ?? c.courseName}</span>
                                   <span className={cls("shrink-0 rounded-pill px-2 py-0.5 text-note font-semibold", cm.chip)}>
@@ -287,7 +290,7 @@ export function AttendanceSection() {
           </div>
           <div className="divide-y divide-line">
             {schedule.slice(0, 5).map((s) => (
-              <div key={s.id} className="flex items-center gap-3 px-5 py-3 transition-colors hover:bg-surface-raised">
+              <div key={s.key} className="flex items-center gap-3 px-5 py-3 transition-colors hover:bg-surface-raised">
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-body font-semibold text-ink">{s.title ?? s.courseName}</p>
                   <p className="truncate text-note text-ink-faint">
@@ -296,7 +299,7 @@ export function AttendanceSection() {
                   </p>
                 </div>
                 <span className="shrink-0 rounded-pill bg-brand-soft px-2.5 py-1 text-note font-semibold text-brand-tint">
-                  {formatDate(locale === "ru" ? "ru" : "uz", s.date, "short")}
+                  {formatDate(locale === "ru" ? "ru" : "uz", s.date, "short")} · {hhmm(new Date(s.date))}
                 </span>
               </div>
             ))}
@@ -363,7 +366,7 @@ export function AttendanceSection() {
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-body font-semibold text-ink">{s.title ?? s.courseName}</p>
                           <p className="truncate text-note text-ink-soft mt-0.5">
-                            {formatDate(locale === "ru" ? "ru" : "uz", s.date, "short")} · {s.courseName}
+                            {formatDate(locale === "ru" ? "ru" : "uz", s.date, "short")} · {hhmm(new Date(s.date))} · {s.courseName}
                           </p>
                         </div>
                         <span className={cls("shrink-0 rounded-pill px-3 py-1 text-note font-semibold shadow-sm border border-transparent", m.chip)}>

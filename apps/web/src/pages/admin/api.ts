@@ -120,6 +120,68 @@ export function useUserProfile(id: number) {
   return useQuery({ queryKey: ["user-profile", id], queryFn: () => api<UserProfile>(`/api/v1/users/${id}/profile`), retry: false });
 }
 
+// ---------------- Group oversight (admin) ----------------
+export interface AdminGroupStudent {
+  id: number;
+  fullName: string;
+  email: string;
+  overallPct: number;
+  avgQuizScore: number | null;
+  attendancePct: number | null;
+  lastActiveAt: string | null;
+  behind: boolean;
+  rank: number;
+}
+export interface AdminGroupCourse {
+  id: number;
+  name: string;
+  teacherName: string;
+  studentCount: number;
+  topicsTotal: number;
+  avgProgress: number;
+  avgQuizScore: number | null;
+  attendancePct: number | null;
+  behindCount: number;
+}
+export interface AdminGroup {
+  id: number;
+  name: string;
+  yearOfStudy: number;
+  facultyName: string;
+  courses: { id: number; name: string; teacherName: string }[];
+  courseReport: AdminGroupCourse[];
+  students: AdminGroupStudent[];
+  studentCount: number;
+  avgProgress: number;
+  avgAttendance: number | null;
+  behindCount: number;
+}
+export function useAdminGroup(id: number) {
+  return useQuery({ queryKey: ["admin-group", id], queryFn: () => api<AdminGroup>(`/api/v1/admin/groups/${id}`), retry: false });
+}
+
+export interface AdminGroupLesson {
+  courseId: number;
+  courseName: string;
+  groupId: number | null;
+  slotId: number;
+  date: string;
+  dayKey: string;
+  weekday: number;
+  startTime: string;
+  room: string | null;
+  markedCount: number;
+  rosterSize: number;
+  status: "UNMARKED" | "PARTIAL" | "FULL";
+}
+export function useAdminGroupLessons(id: number, range: { from: string; to: string }) {
+  return useQuery({
+    queryKey: ["admin-group-lessons", id, range],
+    queryFn: () => api<AdminGroupLesson[]>(`/api/v1/admin/groups/${id}/lessons?from=${range.from}&to=${range.to}`),
+    enabled: !!range.from && !!range.to,
+  });
+}
+
 // ---------------- Dashboard stats ----------------
 export interface AdminStats {
   counts: { students: number; teachers: number; courses: number; publishedTopics: number; publishedContent: number };
