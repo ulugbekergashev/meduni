@@ -286,6 +286,14 @@ export type DigestBlock =
   | { type: "callout"; tone: "important" | "warning"; text: string }
   | { type: "list"; ordered: boolean; items: { lead?: string; text: string }[] };
 
+/** Faza 1: bo'lim oxiri active-recall savoli (ungraded self-check). */
+export interface LessonCheckpoint {
+  question: string;
+  options: string[];
+  correctIndex: number;
+  explanation: string;
+}
+
 export interface LessonSection {
   index: number;
   title: string;
@@ -298,6 +306,8 @@ export interface LessonSection {
     slideImages: { slideId: string; url: string }[];
     videoAt: number | null;
   };
+  /** Faza 1: bo'lim oxiri o'zini-tekshirish savoli (bo'lsa). */
+  checkpoint?: LessonCheckpoint | null;
 }
 
 export interface Lesson {

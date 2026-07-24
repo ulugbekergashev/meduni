@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { motion, useReducedMotion, useScroll, useSpring } from "framer-motion";
-import { ArrowRight, Check, Clock, FileText, Minus, Play, Plus } from "lucide-react";
+import { ArrowRight, Check, Clock, FileText, HelpCircle, Minus, Play, Plus, X } from "lucide-react";
 import { Icon, cls } from "@meduni/ui";
 import { API_URL } from "../../../lib/api";
-import type { LessonSection, Term } from "../api";
+import type { LessonCheckpoint, LessonSection, Term } from "../api";
 import { BlockView } from "./BlockView";
 
 /** Sekundni mm:ss ko'rinishiga. */
@@ -12,6 +12,69 @@ function mmss(sec: number): string {
   const m = Math.floor(sec / 60);
   const s = Math.floor(sec % 60);
   return `${m}:${s.toString().padStart(2, "0")}`;
+}
+
+/** Faza 1: bo'lim oxiri active-recall savoli. Javob berilganda darhol izoh
+ *  (bahoga TA'SIR QILMAYDI — asosiy testdan mustaqil) va bo'lim o'qilgan deb
+ *  belgilanadi (scroll emas — javob). */
+function Checkpoint({ cp, onAnswered }: { cp: LessonCheckpoint; onAnswered: () => void }) {
+  const { t } = useTranslation(undefined, { keyPrefix: "lesson" });
+  const reduce = useReducedMotion();
+  const [chosen, setChosen] = useState<number | null>(null);
+  const answered = chosen !== null;
+  const pick = (i: number) => {
+    if (answered) return;
+    setChosen(i);
+    onAnswered();
+  };
+  return (
+    <div className="mt-5 rounded-card border border-line bg-surface-raised/50 p-4">
+      <div className="mb-2 inline-flex items-center gap-1.5 text-micro font-extrabold uppercase tracking-wider text-brand-tint">
+        <Icon icon={HelpCircle} size={13} /> {t("checkpointLabel")}
+      </div>
+      <p className="mb-3 text-[0.95em] font-bold text-ink">{cp.question}</p>
+      <div className="space-y-1.5">
+        {cp.options.map((opt, i) => {
+          const isCorrect = i === cp.correctIndex;
+          const isChosen = i === chosen;
+          const tone = !answered
+            ? "border-line hover:border-brand hover:bg-brand-soft"
+            : isCorrect
+              ? "border-emerald/60 bg-emerald-soft text-emerald"
+              : isChosen
+                ? "border-rose/60 bg-rose-soft text-rose"
+                : "border-line opacity-60";
+          return (
+            <button
+              key={i}
+              onClick={() => pick(i)}
+              disabled={answered}
+              className={cls(
+                "flex w-full items-center gap-2 rounded-control border px-3 py-2 text-left text-[0.9em] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
+                tone
+              )}
+            >
+              <span className="flex-1">{opt}</span>
+              {answered && isCorrect && <Icon icon={Check} size={15} className="shrink-0 text-emerald" strokeWidth={3} />}
+              {answered && isChosen && !isCorrect && <Icon icon={X} size={15} className="shrink-0 text-rose" strokeWidth={3} />}
+            </button>
+          );
+        })}
+      </div>
+      {answered && (
+        <motion.div
+          initial={reduce ? false : { opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: "auto" }}
+          className="overflow-hidden"
+        >
+          <p className="mt-2.5 rounded-control bg-blue-soft px-3 py-2 text-[0.85em] leading-relaxed text-ink-soft">
+            {chosen === cp.correctIndex ? `✓ ${t("checkpointRight")}` : t("checkpointWrong")}
+            {cp.explanation ? ` — ${cp.explanation}` : ""}
+          </p>
+        </motion.div>
+      )}
+    </div>
+  );
 }
 
 /** O'qish shrifti — A−/A+ bilan boshqariladi, tanlov localStorage'da qoladi.
@@ -102,7 +165,9 @@ export function SectionReader({
         for (const e of entries) {
           if (!e.isIntersecting) continue;
           const i = Number((e.target as HTMLElement).dataset.end);
-          if (Number.isInteger(i) && !markedRef.current.has(i) && !sections[i]?.read) {
+          // Checkpoint'li bo'lim scroll bilan EMAS, javob berilganda belgilanadi
+          // (active recall) — bu yerda o'tkazib yuboriladi.
+          if (Number.isInteger(i) && !markedRef.current.has(i) && !sections[i]?.read && !sections[i]?.checkpoint) {
             markedRef.current.add(i);
             onMarkRead(i);
           }
@@ -239,6 +304,19 @@ export function SectionReader({
                     </button>
                   )}
                 </div>
+              )}
+
+              {/* Faza 1: bo'lim oxiri checkpoint — javob berilganda o'qildi. */}
+              {section.checkpoint && (
+                <Checkpoint
+                  cp={section.checkpoint}
+                  onAnswered={() => {
+                    if (!markedRef.current.has(section.index) && !section.read) {
+                      markedRef.current.add(section.index);
+                      onMarkRead(section.index);
+                    }
+                  }}
+                />
               )}
 
               {/* O'qildi sensori — bo'lim oxiri ko'ringanda belgilanadi */}

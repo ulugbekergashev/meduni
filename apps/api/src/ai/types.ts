@@ -23,6 +23,18 @@ export const digestBlockSchema = z.discriminatedUnion("type", [
 ]);
 export type DigestBlock = z.infer<typeof digestBlockSchema>;
 
+// Faza 1: bo'lim oxiridagi active-recall "checkpoint" savoli — ALOHIDA AI
+// chaqiruvisiz (digest generatsiyasining o'zida chiqadi). Bahoga TA'SIR QILMAYDI,
+// asosiy testdan MUSTAQIL (sizdirish yo'q). Ixtiyoriy — kirish/xulosa bo'limi
+// bo'lmasligi mumkin; eski konspektlarda umuman yo'q.
+export const checkpointSchema = z.object({
+  question: z.string(),
+  options: z.array(z.string()),
+  correctIndex: z.number().int(),
+  explanation: z.string().default(""),
+});
+export type Checkpoint = z.infer<typeof checkpointSchema>;
+
 export const digestSectionSchema = z.object({
   /** Barqaror bo'lim ID — SERVER beradi (AI emas), slayd/segment shunga bog'lanadi.
    *  Eski (id'siz) konspektlarda bo'sh — o'qish paytida indeks-fallback (`s0, s1...`). */
@@ -32,6 +44,8 @@ export const digestSectionSchema = z.object({
   /** Material ichidagi joy ("Ma'ruza, 6–9-betlar"). Noma'lum bo'lsa bo'sh. */
   sourceRef: z.string().default(""),
   blocks: z.array(digestBlockSchema),
+  /** Faza 1: bo'lim oxiri active-recall savoli (ixtiyoriy). */
+  checkpoint: checkpointSchema.optional(),
 });
 export type DigestSection = z.infer<typeof digestSectionSchema>;
 
@@ -83,6 +97,16 @@ export const digestResponseSchema = {
           minutes: { type: Type.INTEGER },
           sourceRef: { type: Type.STRING },
           blocks: { type: Type.ARRAY, items: digestBlockResponseSchema },
+          checkpoint: {
+            type: Type.OBJECT,
+            properties: {
+              question: { type: Type.STRING },
+              options: { type: Type.ARRAY, items: { type: Type.STRING } },
+              correctIndex: { type: Type.INTEGER },
+              explanation: { type: Type.STRING },
+            },
+            required: ["question", "options", "correctIndex", "explanation"],
+          },
         },
         required: ["title", "minutes", "blocks"],
       },

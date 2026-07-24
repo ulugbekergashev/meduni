@@ -8,7 +8,9 @@ import {
   useApproveDigest,
   useGenerateDigest,
   useUpdateDigest,
+  type DigestCheckpoint,
   type DigestJson,
+  type DigestSection as DigestSectionData,
   type Term,
   type TopicDetail,
 } from "./api";
@@ -83,6 +85,103 @@ function TermsTable({ terms, onChange }: { terms: Term[]; onChange: (next: Term[
   );
 }
 
+/** Bitta bo'lim checkpoint savolini tahrirlash — savol, 4 variant (to'g'risi
+ *  radio bilan), izoh. O'qituvchi AI savolini ko'radi/tuzatadi/o'chiradi. */
+function CheckpointCard({
+  title,
+  cp,
+  onChange,
+}: {
+  title: string;
+  cp: DigestCheckpoint | null;
+  onChange: (next: DigestCheckpoint | null) => void;
+}) {
+  const { t } = useTranslation(undefined, { keyPrefix: "digest" });
+  const cell = "w-full rounded-control border border-line px-2.5 py-1.5 text-body outline-none focus:border-brand";
+
+  if (!cp) {
+    return (
+      <div className="flex items-center justify-between gap-2 rounded-control border border-dashed border-line px-3 py-2">
+        <span className="truncate text-note font-semibold text-ink-soft">{title}</span>
+        <button
+          onClick={() => onChange({ question: "", options: ["", "", "", ""], correctIndex: 0, explanation: "" })}
+          className="inline-flex shrink-0 items-center gap-1 text-note font-medium text-brand-deep hover:underline"
+        >
+          <Icon icon={Plus} size={13} /> {t("checkpointAdd")}
+        </button>
+      </div>
+    );
+  }
+
+  const set = (p: Partial<DigestCheckpoint>) => onChange({ ...cp, ...p });
+  return (
+    <div className="space-y-2 rounded-control border border-line bg-bg/40 p-3">
+      <div className="flex items-center justify-between gap-2">
+        <span className="truncate text-note font-bold text-ink">{title}</span>
+        <button
+          onClick={() => onChange(null)}
+          className="rounded-control p-1 text-ink-faint transition-colors hover:bg-rose-soft hover:text-rose"
+          aria-label={t("checkpointRemove")}
+          title={t("checkpointRemove")}
+        >
+          <Icon icon={Trash2} size={14} />
+        </button>
+      </div>
+      <input
+        value={cp.question}
+        onChange={(e) => set({ question: e.target.value })}
+        placeholder={t("checkpointQuestion")}
+        className={cls(cell, "font-semibold")}
+      />
+      <div className="space-y-1.5">
+        {cp.options.map((opt, oi) => (
+          <div key={oi} className="group flex items-center gap-1.5">
+            <input
+              type="radio"
+              checked={cp.correctIndex === oi}
+              onChange={() => set({ correctIndex: oi })}
+              className="h-4 w-4 shrink-0 accent-emerald"
+              aria-label={t("checkpointCorrect")}
+            />
+            <input
+              value={opt}
+              onChange={(e) => set({ options: cp.options.map((x, j) => (j === oi ? e.target.value : x)) })}
+              placeholder={`${t("checkpointOption")} ${oi + 1}`}
+              className={cls(cell, cp.correctIndex === oi && "border-emerald/50")}
+            />
+            <button
+              onClick={() => {
+                const nextOpts = cp.options.filter((_, j) => j !== oi);
+                set({ options: nextOpts, correctIndex: Math.max(0, Math.min(cp.correctIndex, nextOpts.length - 1)) });
+              }}
+              disabled={cp.options.length <= 2}
+              className="rounded-control p-1 text-ink-faint opacity-0 transition-opacity hover:bg-rose-soft hover:text-rose group-hover:opacity-100 disabled:opacity-0"
+              aria-label="remove"
+            >
+              <Icon icon={Trash2} size={13} />
+            </button>
+          </div>
+        ))}
+        {cp.options.length < 6 && (
+          <button
+            onClick={() => set({ options: [...cp.options, ""] })}
+            className="inline-flex items-center gap-1 text-note font-medium text-brand-deep hover:underline"
+          >
+            <Icon icon={Plus} size={13} /> {t("checkpointOption")}
+          </button>
+        )}
+      </div>
+      <textarea
+        value={cp.explanation}
+        onChange={(e) => set({ explanation: e.target.value })}
+        placeholder={t("checkpointExplanation")}
+        rows={2}
+        className={cls(cell, "resize-none")}
+      />
+    </div>
+  );
+}
+
 /** Collapsible block: header shows title + item count; closed by default. */
 function Block({ title, count, defaultOpen = false, children }: { title: string; count: number; defaultOpen?: boolean; children: React.ReactNode }) {
   const [open, setOpen] = useState(defaultOpen);
@@ -148,6 +247,12 @@ export function DigestSection({ topic }: { topic: TopicDetail }) {
   const patch = (p: Partial<DigestJson>) => setDraft({ ...draft, ...p });
   const approved = server.approvedByTeacher && !dirty;
 
+  // Faza 1: bo'limlar (runtime'da to'liq keladi; tip ixtiyoriy) — checkpoint tahriri.
+  const sections = (draft.sections ?? []) as DigestSectionData[];
+  const setCheckpoint = (i: number, cp: DigestCheckpoint | null) =>
+    setDraft({ ...draft, sections: sections.map((s, j) => (j === i ? { ...s, checkpoint: cp } : s)) });
+  const checkpointCount = sections.filter((s) => s.checkpoint).length;
+
   return (
     <Card className="p-0">
       {/* Collapsible content blocks — one screen, open what you need */}
@@ -167,6 +272,16 @@ export function DigestSection({ topic }: { topic: TopicDetail }) {
         <Block title={t("imageIdeas")} count={draft.imageIdeas.length}>
           <EditableList items={draft.imageIdeas} onChange={(v) => patch({ imageIdeas: v })} />
         </Block>
+        {sections.length > 0 && (
+          <Block title={t("checkpoints")} count={checkpointCount}>
+            <p className="mb-2 text-note text-ink-soft">{t("checkpointsHint")}</p>
+            <div className="space-y-2">
+              {sections.map((s, i) => (
+                <CheckpointCard key={s.id ?? i} title={s.title} cp={s.checkpoint ?? null} onChange={(cp) => setCheckpoint(i, cp)} />
+              ))}
+            </div>
+          </Block>
+        )}
       </div>
 
       {/* Dosages — medically sensitive, always visible */}
