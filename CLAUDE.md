@@ -1343,73 +1343,47 @@ Barcha modullar tugadi (1-17).
   haftalik jadval). ⚠️ **Sana mahalliy** (dayKey lokal, slot vaqti mahalliy Date) —
   prod TZ da tekshir. tsc+build ikkala tomonda toza.
 
-- **O'qituvchi "Mening vazifalarim" — bitta ustuvorlik-navbat (2026-07-24,
-  buyurtmachi: "xuyoviy, mavhum kartalar hech narsani ko'rsatmaydi").** Eski sahifa
-  8 turdagi ish uchun faqat **son** ko'rsatardi ("3 ta mavzu", "2 ta dars"), link
-  faqat BIRINCHISIGA olib borardi — qolganini ko'rish yo'li yo'q edi. Shu paytda
-  **haqiqiy bug topildi**: `attendance_unmarked` eski `LessonSession.findMany`
-  bilan hisoblanardi, lekin haftalik-jadval rejimida (yuqoridagi yozuv) sessiya
-  **birinchi belgilashgacha umuman yaratilmaydi** — demak eski hisob slot-asosli
-  kurslarda har doim 0/noto'g'ri edi (butunlay ko'rinmas edi).
-  **Backend** (`modules/tasks/service.ts`): `computeTeacherAutoTasks` →
-  **`computeTeacherTaskFeed`** — har tur endi KONKRET qatorlar qaytaradi (`TeacherTaskItem[]`:
-  id/kind/tone/title/subtitle/sinceIso/link/quickAction), mavhum son emas: mavzu
-  quvuri (material/konspekt/kontent/chop etish/faktcheck) — mavzu nomi+kurs;
-  keys tekshiruvi — talaba ismi+mavzu, link `?open=<attemptId>` bilan aynan o'sha
-  yozuvga; yo'qlama — **`getTeacherLessons` orqali** (yuqoridagi bugni tuzatib,
-  slotlardan hosil bo'lgan haqiqiy darslar) + `quickAction:{type:"attendance",...}`
-  bevosita `RollCallModal`ni ochish uchun; orqada qolgan talabalar — ism+kurs.
-  **Kafedra tayinlagan vazifalar shu BITTA navbatga qo'shildi** (ilgari alohida
-  "Kafedra topshiriqlari" bloki edi) — muddati o'tgan/HIGH→rose, NORMAL→amber,
-  LOW→blue; hammasi tone (rose→amber→blue→violet→brand) so'ng eskilik (sinceIso)
-  bo'yicha saralanadi — eng muhim/eng eski tepada. `/teach/tasks` endi
-  `{feed: TeacherTaskItem[]}` qaytaradi (eski `{auto,assigned}` emas).
-  `CaseReviewQueue.tsx` += `?open=<id>` deep-link (`useSearchParams`, ilgari
-  navbatning birinchisi avto tanlanardi, endi aynan so'ralgan yozuv).
-  **Frontend:** `TaskFeedRow.tsx` (yangi umumiy komponent — ikonka-chip + UPPERCASE
-  kicker (tur nomi, CLAUDE.md "OVOZ IERARXIYASI" qoidasiga mos: faqat eyebrow'da
-  UPPERCASE) + title/subtitle/description + yosh("N kun oldin")/muddat + trailing
-  amal), `TeachTasksPage.tsx` qayta yozildi — bitta zich Card (`divide-y`, ZICHLIK
-  QOIDASI: bo'sh joy yo'q, panel to'ladi), yo'qlama qatorida **"Belgilash" tugmasi
-  RollCallModal'ni to'g'ridan-to'g'ri sahifada ochadi** (boshqa sahifaga
-  tashlamaydi), kafedra vazifasida **"Bajardim" tugmasi**. Eski `TaskCard`/
-  `AssignedTaskList` (endi ishlatilmaydi) — `AssignedTaskList.tsx` o'chirildi.
-  **Yo'l-yo'lakay tuzatilgan bug**: `RollCallModal`ning "Yopish" tugmasi
-  `attendance.close` i18n kaliti umuman yo'qligi sabab xom kalit matnini
-  ko'rsatardi (uz+ru qo'shildi).
-  **Chrome+Playwright bilan real login orqali tekshirildi** (chromium-cli bu
-  Windows muhitida yo'q edi — `playwright` npm paketi vaqtinchalik scratchpad'ga
-  o'rnatilib, `channel:"chrome"` bilan mavjud brauzerdan foydalanildi): 14 ta
-  konkret qator (1 rose keys + 10 amber yo'qlama + 3 brand material), "Belgilash"
-  bosilganda modal to'g'ri kurs/guruh bilan ochildi, "Keldi" belgilangach o'sha
-  dars navbatdan **darhol yo'qoldi** (14→13), keys qatori bosilganda
-  `/teach/cases/review?open=1` orqali aynan o'sha talaba/keys ochildi. tsc+build
+- **O'qituvchi "Mening vazifalarim" — VAZIFA BORTI (filtr + statistika) (2026-07-24,
+  buyurtmachi bir necha marta: "xuyoviy, mavhum kartalar", keyin "hammasini bitta
+  qilib filtrlarga bo'l, statistika qo'sh").** Eski sahifa 8 tur uchun faqat **son**
+  ko'rsatardi va faqat birinchi elementga link berardi. Bosqichma-bosqich to'liq
+  qayta qurildi; **oxirgi holat — bitta ma'lumot borti, ikki o'lchamda filtrlash**.
+  Yo'l-yo'lakay **haqiqiy bug**: `attendance_unmarked` eski `LessonSession.findMany`
+  bilan hisoblanardi, lekin haftalik-jadval rejimida sessiya birinchi belgilashgacha
+  yaratilmaydi → slot-asosli kurslarda hisob har doim noto'g'ri edi;
+  `getTeacherLessons`ga o'tkazildi.
+  **Backend** (`modules/tasks/service.ts`): `getTeacherTaskBoard(teacherId)` — bitta
+  endpoint hammasini beradi. Uch MANBA (`TaskSource`): **auto** (avto-hisoblangan
+  ish — mavzu quvuri/keys/yo'qlama/orqada qolganlar; "bajarilgan" holati saqlanmaydi,
+  hal bo'lsa o'zi tushadi), **kafedra** (`assignedToId`=o'qituvchi — admin tayinlagani),
+  **students** (`createdById`=o'qituvchi — guruh-topshiriq, k/N bilan). Har qatorda
+  HOLAT (`TaskBoardStatus`): **open / overdue** (muddati o'tgan kafedra) **/ done**
+  (bajarilgan). Konkret qatorlar (ism/mavzu/dars), mavhum son emas; keys → `?open=<id>`,
+  yo'qlama → `quickAction:{type:"attendance"}`, kafedra → `quickAction:{type:"done"}`,
+  students-batch → `deletableTaskIds`. Javob: `{stats:{toDo,overdue,waiting,done},
+  counts:{auto,kafedra,students,done,overdue,all}, items[], months[]}` (months —
+  so'nggi 6 oy bajarilgan grafigi). `/teach/tasks` shu borni qaytaradi (eski
+  `computeTeacherTaskFeed`/`getTeacherTaskHistory` OLIB TASHLANDI). `CaseReviewQueue.tsx`
+  += `?open=<id>` deep-link.
+  **Frontend** (`TeachTasksPage.tsx` to'liq qayta yozildi): (1) **4 bosiladigan
+  stat-karta** (`@meduni/ui::StatCard`, `selected`=filtr) = "сколько осталось / не
+  сделал / сделал" so'roviga javob: **Bajarilishi kerak** (toDo, brand) · **Muddati
+  o'tgan** (overdue, rose) · **Talabalar kutmoqda** (waiting, blue) · **Bajarilgan
+  (6 oy)** (done, emerald). (2) **Filtr chiplari** (Hammasi/Kafedradan/Talabalarga/
+  Bajarilgan — sonlar bilan). (3) Filtr bo'yicha **bitta zich ro'yxat** (`TaskFeedRow`
+  += `badge`[Bajarildi/Muddati o'tgan] + `done` strikethrough uslubi); done qator
+  susaygan, kafedra qatorida "Bajardim", students-batch da o'chirish, yo'qlamada
+  "Belgilash"→RollCallModal shu sahifada. (4) **Oylik "Bajarilganlar dinamikasi"**
+  (`MiniBars`, `lib/date.ts::monthShortLabel`). Nav badge = `stats.toDo`. Eski
+  `TaskCard`/`AssignedTaskList` o'chirildi; `CreatedTaskList` faqat admin sahifasida
+  qoldi. Yo'l-yo'lakay `attendance.close` i18n kaliti (yo'q edi) qo'shildi.
+  **Chrome+Playwright bilan real login orqali to'liq tekshirildi** (chromium-cli
+  Windows'da yo'q — `playwright` scratchpad'ga o'rnatilib `channel:"chrome"` bilan):
+  auto (7) + seed qilingan kafedra (2, biri muddati o'tgan) + students (1) →
+  `stats:{toDo:9,overdue:1,waiting:1,done:0}`; talaba+kafedra vazifasi bajarilgach
+  `done:2`, iyul ustuni=2, "Bajarilgan" filtri strikethrough+yashil badge bilan
+  ikkalasini ko'rsatdi; seed yozuvlari keyin o'chirildi (demo toza). tsc+build
   ikkala tomonda toza.
-
-- **Vazifalar sahifasi — "Natijalar" statistikasi + manba filtri (2026-07-24,
-  buyurtmachi).** Yuqoridagi navbatga qo'shimcha: sahifa pastida **"Natijalar"**
-  bo'limi — oxirgi 6 oyda BAJARILGAN vazifalar, ikki mustaqil oqim orasida
-  filtr bilan (`Task` modeli tabiiy ravishda ikkitasini bilib turadi —
-  qo'shimcha maydon shart emas): **"Kafedradan"** (`assignedToId`=o'qituvchi —
-  admin/kafedra tayinlagani) va **"Talabalarga bergan"** (`createdById`=
-  o'qituvchi — TEACHER faqat talaba/guruhga yaratadi, boshqa qabul qiluvchi
-  yo'q). Backend `tasks/service.ts::getTeacherTaskHistory` — `status:"DONE"` +
-  `completedAt` oxirgi 6 oy oynasida, oylik son (`months:[{key:"YYYY-MM",count}]`)
-  + so'nggi 8 ta bajarilgan qator (`recent:[{title,completedAt,counterpart}]`,
-  counterpart — kafedra oqimida kim tayinlagan, talaba oqimida kimga). Route
-  `GET /teach/tasks/history`. Frontend: segmented filtr (bitta vaqtda bitta
-  oqim ko'rinadi — ZICHLIK QOIDASI, ikkalasini yonma-yon qo'ymaslik), jami son +
-  `MiniBars` oylik grafik (kafedra=blue, talabalarga=emerald) + so'nggi bajarilgan
-  ro'yxati. `lib/date.ts::monthShortLabel` qo'shildi (uz qo'lda — ICU uz-UZ oy
-  nomini buzgani uchun yuqoridagi eslatmaga mos, ru native `Intl`). **Tekshirildi**
-  (real DB round-trip): vazifa yaratildi→talaba bajardi→o'qituvchi tarafida
-  "Talabalarga bergan" oqimida darhol 0→1 (iyul ustuni + ro'yxatda ism bilan)
-  chiqdi, "Kafedradan" bo'sh holatni to'g'ri ko'rsatdi; test yozuvi keyin
-  o'chirildi (demo toza qoladi). tsc+build ikkala tomonda toza. ⚠️ Bu tekshiruv
-  paytida `apps/web/src/pages/teach/group/GroupProfile.tsx`da **BOSHQA, ushbu
-  ishga aloqasi yo'q** tsc xatosi paydo bo'ldi (foydalanuvchi shu faylni parallel
-  tahrirlayotgan edi — `GroupTimetable.slots`→`.courses` o'zgargan, GroupProfile
-  hali moslanmagan) — tegilmadi, bu alohida tugallanmagan ish.
 
 - **Jadval GURUH bo'yicha (2026-07-24).** Buyurtmachi savoli: bir o'qituvchi bir
   guruhda bir necha kurs / bir kurs bir necha guruhda. Model ikkalasini qo'llaydi:
@@ -1437,6 +1411,175 @@ Barcha modullar tugadi (1-17).
   /teach/courses/:id/groups/:groupId/cycle`. Frontend: `TimetableSetupModal` endi
   SIKL MASTERI (kurs → sana oralig'i + haftalik kunlar checkbox + vaqt/xona →
   «Jadval yaratish»), mavjud sikl prefill; `useSetupCycle`. Smoke 6/6.
+
+- **Dars jadvali: OYLIK kalendar ko'rinishi (2026-07-24, buyurtmachi: "za месяц и
+  за неделю, календарь чтобы был — какое время, какой урок").** Ilgari faqat HAFTA
+  ko'rinishi bor edi (o'qituvchida vaqt×kun to'ri, talabada vaqt×kun to'ri). Endi
+  ikkalasiga **Hafta / Oy tanlagichi** qo'shildi. **Backend O'ZGARMADI** — mavjud
+  `getTeacherLessons(from,to)` / `getMySchedule(from,to)` istalgan oraliqni qabul
+  qiladi; oy ko'rinishi shunchaki oy oralig'ini (6 hafta = qo'shni oy kunlari bilan)
+  so'raydi. **Yangi umumiy komponent `components/MonthCalendar.tsx`** — 6 hafta × 7
+  kun to'ri, har katakda darslar "pill" ko'rinishida (vaqt + fan, rang holat
+  bo'yicha), ko'p bo'lsa "+N"; bugun brand doira, qo'shni oy kunlari xira; kun
+  bosilsa `onSelectDay` (ota-komponent o'sha kun tafsilotini pastda ko'rsatadi).
+  `CalEntry{key,time,title,tone,onClick}`. **O'qituvchi** (`TeachSchedulePage`): oy
+  katagida dars pill'i yoki tanlangan kun ro'yxatida "Yo'qlama" tugmasi →
+  `RollCallModal` (hafta to'ridagi bir xil amal). **Talaba** (`SchedulePage`): oy
+  pill'lari yo'qlama holati rangida (keldi=emerald/kechikdi=amber/kelmadi=rose/
+  sababli=blue/bo'ladi=brand/o'tgan-belgilanmagan=line), tanlangan kun tafsiloti
+  vaqt+fan+holat bilan. `lib/date.ts` MONTHS_UZ oy nomlari (ICU uz-UZ buzuq — qo'lda),
+  i18n `teachSchedule.viewWeek/viewMonth/noneThisDay` + `schedule.viewWeek/viewMonth`.
+  **Chrome (Playwright) bilan ikkala rol tekshirildi**: o'qituvchi oy (iyul 2026,
+  Du 09:00 / Ju 12:00 Kardiologiya pill'lari, kun 20 bosilsa detal + Yo'qlama),
+  talaba oy (keldi=yashil pill, bugun 24 belgilangan) — konsol toza. tsc+build toza.
+  ⚠️ `TeachSchedulePage` foydalanuvchi tomonidan parallel qayta yozilgan edi (hafta
+  vaqt×kun to'ri + stat kartalar) — uning ishi SAQLANDI, oy ko'rinishi qo'shimcha
+  sifatida ustiga qo'shildi.
+
+- **Guruh profili (GroupProfile) — oylik jadval + bo'sh holatlar (2026-07-24,
+  buyurtmachi "upgrade qilish kerak").** Guruh profilining "Dars jadvali" tabi
+  ham HAFTA-only edi → yuqoridagi `MonthCalendar` shu yerda ham qo'llandi: Hafta/Oy
+  tanlagichi, oy oralig'i so'rovi (guruh `groupId` bo'yicha filtr), kun bosilsa
+  tafsilot + `RollCallModal` (yo'qlama). Haftalik ro'yxat saqlandi (kunlik kartalar).
+  **Bo'sh holatlar boyitildi** (buyurtmachi bo'sh guruhni ko'rsatgan edi): jadval
+  yo'q → `EmptyState` (ikonka+hint+"Jadval sozlash"), talaba yo'q → `EmptyState`
+  ("admin biriktiradi" hinti) — ilgari quruq bir qatorli `Card` edi. i18n
+  `groupProfile.viewWeek/viewMonth/noneThisDay/noStudentsHint`. **Yo'l-yo'lakay
+  bug**: `packages/ui/Charts.tsx` `ProgressRing`/`ProgressBar`/`BarRow` NaN qiymat
+  kelганда `NaN%` ni bola sifatida render qilib React ogohlantirishi ("Received NaN
+  for children") berardi — uchtasiga `Number.isFinite(value) ? value : 0` qo'riqchisi
+  qo'shildi (butun ilova bo'ylab himoya). **Chrome (Playwright) bilan tekshirildi**:
+  301-guruh oy jadvali (Kardiologiya pill'lari), bo'sh 1-guruh ikkala tab
+  EmptyState, konsol TOZA (NaN ogohlantirishi yo'qoldi). tsc+build toza.
+
+- **Guruh profili: kurslar bo'yicha HISOBOT tabi (2026-07-25, buyurtmachi: shapkadagi
+  kurs chiplari bosilsa kursga o'tkazib yubormasin — SHU guruhda o'sha kurslar
+  bo'yicha hisobot ko'rsatilsin; kursga o'tish faqat aniq "ko'rish" tugmasi bilan).**
+  Backend `getTeacherGroup` endi `courseReport[]` qaytaradi: har kurs uchun SHU
+  guruh talabalarining o'zlashtirishi — `avgProgress`, `avgQuizScore`, `topicsTotal`,
+  `studentCount`, `behindCount` (mavjud `loadCourse`+`buildMatrix` sikliga
+  birlashtirildi; `groupRows` — kurs bir necha guruhga o'tilса faqat shu guruh
+  talabalari filtrlanadi). Frontend `GroupProfile`: yangi **"Kurslar" tabi**
+  (`CoursesTab` + `CourseReportCard` — ProgressRing + progress/test barlari + mavzu/
+  talaba/orqada + **"Kursni ko'rish"** tugmasi kursga o'tadi; tepada "Barcha kurslar").
+  **Shapkadagi kurs chiplari endi `setTab("courses")` qiladi** (ilgari
+  `navigate(/teach/courses/:id)` edi — buyurtmachi shikoyati) — kursga o'tkazmaydi,
+  hisobot tabini ochadi. i18n `groupProfile.tabs.courses` + `report*`/`allCourses`/
+  `openReport`/`noCoursesHint`. **Tekshirildi (Playwright)**: chip bosilsa
+  `?tab=courses` ochiladi (kursga o'tmaydi), 301-guruh hisoboti real
+  (Kardiologiya test 67%, 2 mavzu, 1 talaba), konsol toza. tsc+build toza.
+
+- **"Darslarim" (eski "Mashg'ulotlar") + guruh filtri (2026-07-25, buyurtmachi).**
+  (1) Nav `nav.lessons` va `teachSchedule.title` "Mashg'ulotlar" → **"Darslarim"**
+  (uz), "Занятия" → "Мои занятия" (ru); yon matnlar "dars" ga moslandi. Sahifa
+  allaqachon o'qituvchining O'Z darslarini ko'rsatadi (`useTeacherLessons` teacher-
+  scoped). (2) **Guruh bo'yicha filtr** (`TeachSchedulePage`): toolbar'ga `Select`
+  (`useTeachGroups` dan o'qituvchining guruhlari) qo'shildi, "Barcha guruhlar" +
+  har guruh; tanlansa darslar mijoz tomonda `l.groupId === groupId` bo'yicha
+  filtrlanadi (stats/hafta-to'ri/oy-kalendar hammasi shu `lessons`dan hosil
+  bo'lgani uchun avtomatik mos ishlaydi). Bo'sh holat matni endi qidiruv YOKI
+  guruh filtri bo'yicha (`filtered`). i18n `teachSchedule.allGroups`. **Tekshirildi
+  (Playwright)**: nav+title "Darslarim", filtr dropdown guruhlar (1-guruh/301-guruh/
+  guruh), 301-guruh tanlanganda faqat shu guruh darslari (Kardiologiya 09:00+12:00)
+  qoldi, konsol toza. tsc+build toza.
+
+- **Kontent taqdimoti 2.0 — Faza 0: bo'lim↔slayd↔segment xaritasi (2026-07-25).**
+  Reja: `.claude/plans/content-flow-mindmap-cost-2026-07.md` (4 faza: (0) poydevor,
+  (1) kanonik o'quv oqimi — konspekt ichiga media + checkpoint savol + audio,
+  (2) mindmap AI'siz hosila, (3) AI xarajat — rasm opt-in/video rasm reuse/kontekst
+  keshlash/model tiering/TTS keshi). **Bu faza — poydevor:** uchala keyingi fazaning
+  kaliti bitta texnik bog'lanish. Kod tekshirilib aniqlandi: konspekt bo'limlarida
+  barqaror `id` yo'q, slayd/segment bo'limga bog'lanmagan. Qo'shildi (migratsiyasiz,
+  hammasi mavjud JSON ichida): (a) `ai/types.ts` — `digestSectionSchema += id`
+  (AI EMAS, **server beradi**; `digestResponseSchema`ga qo'shilmadi), `Slide +=
+  sectionId?`, `slideGenSchema += sectionIndex` (+ responseSchema/required),
+  `ScriptSegment += sectionId?`, `lectureSegmentSchema += sectionIndex`. (b)
+  `prompts/slides.ts` + `videoScript.ts` — userContent'da bo'limlar **0-asosli
+  raqamlangan** ro'yxat, AI har slayd/segment `sectionIndex` qaytaradi (mos bo'lim
+  yo'q → -1). (c) `topics/service.ts::ensureSectionIds` — generate+update digest'da
+  har bo'limga `s_<uuid8>` id beradi; **mavjud id SAQLANADI** (tahrirda slayd↔bo'lim
+  bog'i buzilmaydi; frontend to'liq JSON round-trip qiladi — DigestSection.tsx
+  sections'ni tahrir qilmaydi lekin runtime spread bilan saqlaydi → frontend
+  o'zgarishi shart emas). (d) `presentation.ts`/`video.ts` — AI `sectionIndex` →
+  `sections[i].id` (diapazondan tashqari → null, graceful). **Eski kontent:** id'siz
+  bo'lim/sectionId'siz slayd/segment hamma joyda null fallback — buzilmaydi. **Smoke
+  15/15** (Gemini'siz mantiqiy: sxema parse, id barqarorlik, tahrirda id saqlanishi,
+  resolyutsiya, diapazon fallback, eski digest regress). tsc+build ikkala tomonda
+  toza. ⚠️ Real Gemini uchi-uchiga generatsiya smoke KEYIN (kalit pulli/skompro —
+  o'qituvchi keyingi generatsiyasida AI haqiqatan sectionIndex qaytarishini tekshir).
+  **Keyingi: Faza 1 (kanonik o'quv oqimi).**
+
+- **Talaba paneli slot-modeliga moslandi (2026-07-25, buyurtmachi: "o'quvchi
+  panelini yangiliklarga moslash").** Reja: `.claude/plans/playful-purring-moler.md`
+  (Faza 1 talaba — bajarildi; Faza 2 admin to'liq nazorat — keyingi). Muammo (kod
+  bilan isbotlandi): o'qituvchi tomoni slot-asosli jadvalga o'tgan, talaba tomoni
+  esa eski modelda qolgan. **(1) Talaba jadvali endi SLOTLARDAN** — `timetable.ts::
+  getStudentLessons(studentId, from, to)` (yangi; `getTeacherLessons` strukturasini
+  ko'zgu qiladi, private helper `atTime/dayKey/mondayIdx/dayBounds/timeOf` reuse):
+  talabaning ACTIVE enrollmentlari + O'Z guruhi (`user.groupId`) bo'yicha slotlardan
+  darslar hosil qiladi, sikl oynasini (`CourseGroup.cycleStart/End`) hisobga oladi,
+  yo'qlamani (`Attendance` → `myStatus`) join qiladi. `me/profile.ts::getMySchedule`
+  endi shunga delegatsiya qiladi (ilgari `lessonSession.findMany` — sessiya lazy
+  bo'lgani uchun o'qituvchi belgilamagan dars UMUMAN ko'rinmasdi; endi kelgusi/
+  belgilanmagan darslar ham ko'rinadi). **`ScheduleItem` payload**: numeric `id`
+  o'rniga `key: string` ("courseId-groupId-dayKey-startTime", materializatsiya
+  qilinmagan darsda ham noyob) + `sessionId: number|null` + `groupId`. Frontend
+  `s.id`→`s.key` (SchedulePage/AttendanceSection/StudentDashboard/StudentTasksPage).
+  **(2) To'g'ri O'Z guruhi** — `me/service.ts` `courseGroups[0]` (noto'g'ri, kursning
+  birinchi guruhi) o'rniga `ownGroupName(course, myGroupId)` (talabaning `user.groupId`
+  bo'yicha), 3 chaqiruv joyi (listMyCourses/getMyCourse/getDashboard) `studentGroupId`
+  bilan. **(3) Dars-darajali davomat** — bir kunda bir necha dars bo'lgani uchun
+  `AttendanceSection` ro'yxatlari (kelgusi/jurnal/qoldirilgan/oylik) endi sana yoniga
+  **vaqt** (`HH:MM`) ko'rsatadi — 09:00/11:00/14:00 darslari farqlanadi. **Tekshirildi
+  (real talaba HTTP + Chrome)**: kelajakdagi hafta (07-27..31) endi jadval/davomatda
+  ko'rinadi (`session:null, myStatus:null` — ilgari ko'rinmasdi), guruh "301-guruh"
+  (o'z guruhi), bir kunda 3 dars alohida key bilan, davomat ro'yxatida vaqt. Konsol
+  toza; tsc+build ikkala tomonda toza.
+  ⚠️ **Faza 2 (admin) qilinmadi** — rejada: admin Guruh detali (jadval+davomat),
+  kurs/guruh davomat hisoboti, admin kurs detalida read-only jadval.
+
+- **Admin paneli: Guruh nazorati sahifasi (2026-07-25, Faza 2 — yuqoridagi rejaning
+  davomi).** Admin panelida guruh detali UMUMAN yo'q edi (o'qituvchida boy
+  `getTeacherGroup` bor, admin faqat guruhni yaratardi/nomlardi). Endi to'liq nazorat:
+  **Backend** `modules/admin/groups.ts::getAdminGroup(groupId, scope)` —
+  `getTeacherGroup` naqshini ko'zgu qiladi, lekin: guruhning BARCHA kurslari
+  (o'qituvchi filtri yo'q), **fakultet-scope** (`assertFacultyScope`; DEPT admin →
+  403, guruhlar fakultet darajasida), har kurs uchun **o'qituvchi nomi + davomat
+  foizi**. `loadCourse`+`buildMatrix` reuse. `timetable.ts::getGroupLessons(groupId,
+  from, to)` — guruhning barcha kurslari slotlaridan darslar (admin jadvali;
+  markedCount/rosterSize bilan). Route'lar: `GET /admin/groups/:id`,
+  `GET /admin/groups/:id/lessons?from&to` (`assertGroupInScope`). **Frontend**
+  `pages/admin/groups/AdminGroupProfile.tsx` (`/admin/groups/:id`, read-only) —
+  o'qituvchi GroupProfile'ga o'xshash: 4 stat karta (progress/davomat/orqada/
+  talabalar) + 3 tab: **Talabalar** (rank+progress+test+davomat, klik→talaba profili),
+  **Kurslar** (per-kurs hisobot: o'qituvchi+progress/davomat/test barlari, klik→kurs),
+  **Dars jadvali** (`MonthCalendar` hafta/oy, slotlardan). Guruh linklari ulandi:
+  FacultyPage guruh qatori + global qidiruv (ilgari `/admin/structure/groups` o'lik
+  redirect edi) → `/admin/groups/:id`. i18n yangi `adminGroup` bo'limi + `structure.
+  openGroup`. **Tekshirildi (admin login + Chrome)**: 301-guruh 8 talaba (davomat
+  65-100%), 3 kurs hisoboti (Kardiologiya davomat 87%/test 67%, o'qituvchi nomi),
+  oy jadvali (Kardiologiya 09:00/11:00/14:00, o'tgan=marked/kelgusi=unmarked); scope
+  — o'qituvchi tokeni→403, admin→200. Konsol toza; tsc+build ikkala tomonda toza.
+  ⚠️ Reja qoldig'i (ixtiyoriy): admin kurs detalida read-only jadval + davomat xulosasi
+  (guruh sahifasi asosiy nazoratni allaqachon beradi).
+
+- **Admin kurs detali: jadval + davomat + Excel eksport (2026-07-25, Faza 2 yakuni).**
+  Admin kurs detali (`CourseDetail.tsx`) endi guruhlar/talabalar/mavzu sonidan tashqari
+  ikki yangi bo'lim ko'rsatadi. **Backend** `service.ts::getCourseDetail` payloadiga
+  qo'shildi: **`schedule`** (guruh bo'yicha haftalik slotlar — kun+vaqt+xona + sikl
+  davri, `getGroupTimetable` naqshi) va **`attendanceSummary`** (kurs bo'yicha
+  present/absent/late/excused + `pct`). **Excel eksport** — o'qituvchining mavjud
+  `exportAttendance` refaktor qilindi: `buildReport(courseId, opts)` endi egalikni
+  TEKSHIRMAYDI (chaqiruvchi tekshiradi), workbook qurish `buildAttendanceWorkbook`ga
+  ajratildi; yangi `exportAttendanceReport(courseId, view, opts)` (egaliksiz).
+  Route `GET /api/v1/courses/:id/attendance.xlsx?view=list|matrix` (admin,
+  `assertCourseInScope` — kafedra scope). Frontend: davomat kartasi shapkasida
+  "Excel" yuklab olish linki (`<a href>`, cookie-auth). **Tekshirildi**: admin kurs
+  detali — davomat xulosasi (87%, StackedBar breakdown), haftalik jadval (301-guruh
+  Du 09:00/11:00/14:00...), eksport → 200 valid xlsx; o'qituvchi (non-admin) → 403;
+  **regressiya**: o'qituvchining o'z `attendance-report.xlsx`+JSON hali ishlaydi.
+  Konsol toza; tsc+build ikkala tomonda toza. **Faza 2 to'liq yopildi** (guruh
+  sahifasi + kurs detali + davomat eksport).
 
 ## 9. Loyiha holati va ishga tushirish (operatsion — sessiya 0)
 

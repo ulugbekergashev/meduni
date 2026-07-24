@@ -8,6 +8,7 @@ import { AdminDashboard } from "./pages/admin/AdminDashboard";
 import { StructurePage } from "./pages/admin/structure/StructurePage";
 import { FacultyPage } from "./pages/admin/structure/FacultyPage";
 import { DepartmentPage } from "./pages/admin/structure/DepartmentPage";
+import { AdminGroupProfile } from "./pages/admin/groups/AdminGroupProfile";
 import { StudentsPage } from "./pages/admin/students/StudentsPage";
 import { UserProfilePage } from "./pages/admin/users/UserProfilePage";
 import { CoursesPage } from "./pages/admin/courses/CoursesPage";
@@ -62,6 +63,7 @@ export function App() {
         <Route path="staff" element={<StructurePage />} />
         <Route path="staff/f/:id" element={<FacultyPage />} />
         <Route path="staff/d/:id" element={<DepartmentPage />} />
+        <Route path="groups/:id" element={<AdminGroupProfile />} />
         {/* Legacy URLs → the new modules */}
         <Route path="structure" element={<Navigate to="/admin/staff" replace />} />
         <Route path="structure/*" element={<Navigate to="/admin/staff" replace />} />

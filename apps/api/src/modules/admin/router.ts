@@ -6,6 +6,8 @@ import { prisma } from "../../lib/prisma";
 import * as monitoring from "./monitoring";
 import * as audit from "./audit";
 import * as students from "./students";
+import { getAdminGroup, assertGroupInScope } from "./groups";
+import { getGroupLessons } from "../courses/timetable";
 import { adminStats } from "./stats";
 import { adminSearch } from "../search/service";
 
@@ -55,6 +57,23 @@ adminRouter.get("/students/stats", wrap(async (req, res) => {
   const scope = await adminScope(req);
   if (scope.level === "DEPT") throw forbidden();
   res.json(await students.studentStats(scope));
+}));
+
+// ---------- Group oversight (courses + schedule + attendance/progress; faculty-scoped) ----------
+
+adminRouter.get("/groups/:id", wrap(async (req, res) => {
+  res.json(await getAdminGroup(parseId(req.params.id), await adminScope(req)));
+}));
+
+// Guruhning [from..to] darslari — slotlardan (admin nazorati uchun jadval).
+adminRouter.get("/groups/:id/lessons", wrap(async (req, res) => {
+  const scope = await adminScope(req);
+  const id = parseId(req.params.id);
+  await assertGroupInScope(id, scope);
+  const from = qstr(req.query.from) ?? "";
+  const to = qstr(req.query.to) ?? "";
+  if (!from || !to) throw notFound();
+  res.json(await getGroupLessons(id, from, to));
 }));
 
 adminRouter.get("/ai-usage", wrap(async (req, res) => {

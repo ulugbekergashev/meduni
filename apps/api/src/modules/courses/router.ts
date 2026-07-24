@@ -5,6 +5,7 @@ import { requireRoles } from "../../middleware/rbac";
 import { ADMIN_ROLES, adminScope, assertDeptScope, type AdminScope } from "../../middleware/adminScope";
 import { prisma, type Prisma } from "../../lib/prisma";
 import * as svc from "./service";
+import { exportAttendanceReport } from "./attendance";
 
 export const coursesRouter = Router();
 coursesRouter.use(requireRoles(...ADMIN_ROLES));
@@ -115,6 +116,24 @@ coursesRouter.get(
     const id = parseId(req.params.id);
     await assertCourseInScope(scope, id);
     res.json(await svc.listCourseStudents(id));
+  })
+);
+
+// Kurs yo'qlama hisoboti — xlsx (admin, scoped). `.xlsx` literal `:id` dan oldin mos keladi.
+coursesRouter.get(
+  "/:id/attendance.xlsx",
+  wrap(async (req, res) => {
+    const scope = await adminScope(req);
+    const id = parseId(req.params.id);
+    await assertCourseInScope(scope, id);
+    const view = req.query.view === "matrix" ? "matrix" : "list";
+    const buf = await exportAttendanceReport(id, view, {
+      from: typeof req.query.from === "string" ? req.query.from : undefined,
+      to: typeof req.query.to === "string" ? req.query.to : undefined,
+    });
+    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    res.setHeader("Content-Disposition", `attachment; filename="attendance-${id}.xlsx"`);
+    res.send(buf);
   })
 );
 

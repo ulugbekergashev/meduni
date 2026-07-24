@@ -7,7 +7,7 @@ import * as review from "./review";
 import * as attendance from "./attendance";
 import * as timetable from "./timetable";
 import * as mistakes from "./mistakes";
-import { computeTeacherTaskFeed, getTeacherTaskHistory } from "../tasks/service";
+import { getTeacherTaskBoard } from "../tasks/service";
 import { teacherSearch } from "../search/service";
 
 export const teachCoursesRouter = Router();
@@ -36,16 +36,10 @@ teachCoursesRouter.get(
   wrap(async (req, res) => res.json(await teacherSearch(req.user!.id, typeof req.query.q === "string" ? req.query.q : "")))
 );
 
-// My Tasks hub — bitta ustuvorlik-navbat (avto-hisoblangan + tayinlangan birlashgan).
+// My Tasks hub — butun vazifa borti (uch manba + holat + statistika + oylik grafik).
 teachCoursesRouter.get(
   "/tasks",
-  wrap(async (req, res) => res.json({ feed: await computeTeacherTaskFeed(req.user!.id) }))
-);
-
-// Oxirgi oylarda bajarilgan vazifalar statistikasi (kafedradan / talabalarga bergan).
-teachCoursesRouter.get(
-  "/tasks/history",
-  wrap(async (req, res) => res.json(await getTeacherTaskHistory(req.user!.id)))
+  wrap(async (req, res) => res.json(await getTeacherTaskBoard(req.user!.id)))
 );
 
 // Own courses only.
@@ -251,8 +245,11 @@ teachCoursesRouter.post(
 );
 
 // Yo'qlama (kurs, sana) bo'yicha — sessiya lazy yaratiladi.
-teachCoursesRouter.get("/attendance-by-date", wrap(async (req, res) => res.json(await timetable.rosterByDate(req.user!.id, Number(req.query.courseId), qs(req.query.date) ?? "", qnum(req.query.groupId)))));
+teachCoursesRouter.get("/attendance-by-date", wrap(async (req, res) => res.json(await timetable.rosterByDate(req.user!.id, Number(req.query.courseId), qs(req.query.date) ?? "", qnum(req.query.groupId), qs(req.query.time)))));
 teachCoursesRouter.post("/attendance-by-date", wrap(async (req, res) => res.json(await timetable.markByDate(req.user!.id, req.body ?? {}))));
+
+// Davomat matritsasi (talaba × dars-kuni + %) — kurs+guruh, sana oralig'i.
+teachCoursesRouter.get("/attendance-matrix", wrap(async (req, res) => res.json(await timetable.getAttendanceMatrix(req.user!.id, Number(req.query.courseId), Number(req.query.groupId), qs(req.query.from) ?? "", qs(req.query.to) ?? ""))));
 
 teachCoursesRouter.get("/sessions/:id/roster", wrap(async (req, res) => res.json(await attendance.getRoster(parseId(req.params.id), req.user!.id, qnum(req.query.groupId)))));
 
@@ -315,6 +312,7 @@ teachCoursesRouter.put(
       await svc.updateCourseSettings(parseId(req.params.id), req.user!.id, {
         defaultUnlockRuleJson: req.body?.defaultUnlockRuleJson,
         scheduleUnlock: req.body?.scheduleUnlock,
+        sequentialUnlock: req.body?.sequentialUnlock,
       })
     )
   )

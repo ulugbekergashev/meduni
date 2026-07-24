@@ -68,9 +68,14 @@ export interface TopicOut {
 /** The heart of the module: walk the topics in order, unlocking each only after
  *  the previous one is COMPLETED. Every LOCKED topic carries a concrete reason. */
 export function computeTopics(course: CourseWithTopics, factsByTopic: Map<number, FullFacts>): TopicOut[] {
-  // Sana-rejimi: kurs `scheduleUnlock` bo'lsa loadCourse `scheduleDates` biriktiradi —
-  // mavzu ketma-ketlik-tugatish emas, DARS JADVALI sanasi bo'yicha ochiladi.
+  // Ochilish shartlari MUSTAQIL va birga ishlaydi:
+  //  - ketma-ketlik (sequentialUnlock): oldingi mavzu tugagan bo'lsin;
+  //  - jadval (scheduleUnlock → scheduleDates): mavzuning dars kuni kelgan bo'lsin.
+  // Ikkalasi yoniq bo'lsa har ikkala shart, biri yoniq bo'lsa faqat o'sha shart,
+  // ikkalasi o'chiq bo'lsa mavzular erkin ochiq.
   const scheduleDates = course.scheduleDates ?? null;
+  const requireSchedule = scheduleDates != null;
+  const requireSequential = course.sequentialUnlock;
   const today = new Date().toISOString().slice(0, 10);
 
   const out: TopicOut[] = [];
@@ -89,40 +94,36 @@ export function computeTopics(course: CourseWithTopics, factsByTopic: Map<number
     let state: TopicOut["state"];
     let reason: Reason | null = null;
 
-    if (scheduleDates) {
-      // IKKI shart birga: (1) mavzuning dars kuni kelgan bo'lsin (jadval sanasi),
-      // (2) oldingi mavzu ham tugagan bo'lsin (ketma-ketlik). Ikkalasi ham bajarilsa
-      // ochiladi.
-      const unlockDate = scheduleDates.get(topic.id) ?? null;
-      const dateOk = (unlockDate !== null && today >= unlockDate) || facts.forceComplete;
-      if (completed) {
-        state = "COMPLETED";
-      } else if (prevCompleted && dateOk) {
-        state = pct > 0 ? "IN_PROGRESS" : "AVAILABLE";
-      } else {
-        state = "LOCKED";
-        // Sabab: avval AKTUAL qadam — oldingi mavzu tugamagan bo'lsa shuni ko'rsat
-        // (talaba hozir tugatishi mumkin), aks holda dars sanasi.
-        if (!prevCompleted) {
-          reason =
-            prevUnmet.length > 0
-              ? { uz: `Oldingi mavzu: ${prevUnmet[0].uz.toLowerCase()}`, ru: `Предыдущая тема: ${prevUnmet[0].ru.toLowerCase()}` }
-              : { uz: "Oldingi mavzuni tugating", ru: "Завершите предыдущую тему" };
-        } else {
-          reason = unlockDate
-            ? { uz: `${dmyDate(unlockDate)} dan ochiladi`, ru: `Откроется ${dmyDate(unlockDate)}` }
-            : { uz: "Mavzu mashgʻulotga hali bogʻlanmagan", ru: "Тема ещё не привязана к занятию" };
-        }
-      }
+    // Ketma-ketlik sharti (yoqilgan bo'lsa oldingi mavzu tugashi kerak).
+    const seqOk = !requireSequential || prevCompleted || facts.forceComplete;
+    // Jadval sharti (yoqilgan bo'lsa mavzuning dars kuni kelishi kerak).
+    let scheduleOk = true;
+    let unlockDate: string | null = null;
+    if (requireSchedule) {
+      unlockDate = scheduleDates!.get(topic.id) ?? null;
+      scheduleOk = (unlockDate !== null && today >= unlockDate) || facts.forceComplete;
+    }
+    // Qo'lda o'rnatilgan sana (rule.notBeforeDate) — har doim amal qiladi.
+    const ruleDateOk = evaluated.dateOk || facts.forceComplete;
+
+    if (completed) {
+      state = "COMPLETED";
+    } else if (seqOk && scheduleOk && ruleDateOk) {
+      state = pct > 0 ? "IN_PROGRESS" : "AVAILABLE";
     } else {
-      // Klassik ketma-ketlik: N-mavzu (N-1) tugagach ochiladi.
-      const dateOk = evaluated.dateOk || facts.forceComplete;
-      if (completed) {
-        state = "COMPLETED";
-      } else if (prevCompleted && dateOk) {
-        state = pct > 0 ? "IN_PROGRESS" : "AVAILABLE";
+      state = "LOCKED";
+      // Sabab tartibi: avval AKTUAL qadam (oldingi mavzu — talaba hozir bajaradi),
+      // keyin dars sanasi, keyin qo'lda sana.
+      if (!seqOk) {
+        reason =
+          prevUnmet.length > 0
+            ? { uz: `Oldingi mavzu: ${prevUnmet[0].uz.toLowerCase()}`, ru: `Предыдущая тема: ${prevUnmet[0].ru.toLowerCase()}` }
+            : { uz: "Oldingi mavzuni tugating", ru: "Завершите предыдущую тему" };
+      } else if (!scheduleOk) {
+        reason = unlockDate
+          ? { uz: `${dmyDate(unlockDate)} dan ochiladi`, ru: `Откроется ${dmyDate(unlockDate)}` }
+          : { uz: "Mavzu mashgʻulotga hali bogʻlanmagan", ru: "Тема ещё не привязана к занятию" };
       } else {
-        state = "LOCKED";
         reason = lockedReason(rule, prevUnmet);
       }
     }
@@ -237,7 +238,19 @@ export async function studentFactsMap(studentId: number, course: CourseWithTopic
   return map;
 }
 
-function courseSummary(course: CourseWithTopics, topics: TopicOut[]) {
+/** Talabaning O'Z guruh nomi shu kursda (kurs bir necha guruhga o'tilishi mumkin —
+ *  courseGroups[0] emas, aynan talabaning groupId'si). Topilmasa birinchisiga tushadi. */
+function ownGroupName(course: CourseWithTopics, myGroupId: number | null): string | null {
+  const own = myGroupId != null ? course.courseGroups.find((cg) => cg.groupId === myGroupId) : undefined;
+  return (own ?? course.courseGroups[0])?.group.name ?? null;
+}
+
+async function studentGroupId(studentId: number): Promise<number | null> {
+  const u = await prisma.user.findUnique({ where: { id: studentId }, select: { groupId: true } });
+  return u?.groupId ?? null;
+}
+
+function courseSummary(course: CourseWithTopics, topics: TopicOut[], myGroupId: number | null) {
   const total = topics.length;
   const completed = topics.filter((t) => t.state === "COMPLETED").length;
   const next = topics.find((t) => t.state === "AVAILABLE" || t.state === "IN_PROGRESS") ?? null;
@@ -245,7 +258,7 @@ function courseSummary(course: CourseWithTopics, topics: TopicOut[]) {
     id: course.id,
     subjectName: course.name,
     teacherName: course.teacher.fullName,
-    groupName: course.courseGroups[0]?.group.name ?? null,
+    groupName: ownGroupName(course, myGroupId),
     // Davr — talabada kurslar semestrlar bo'ylab ko'payadi, guruhlash uchun.
     semester: course.semester,
     academicYear: course.academicYear,
@@ -283,11 +296,12 @@ export async function loadCourse(courseId: number): Promise<CourseWithTopics> {
 /** GET /me/courses — enrolled courses with a progress summary each. */
 export async function listMyCourses(studentId: number) {
   const ids = await enrolledCourseIds(studentId);
+  const myGroupId = await studentGroupId(studentId);
   const summaries = [];
   for (const id of ids) {
     const course = await loadCourse(id);
     const pm = await studentFactsMap(studentId, course);
-    summaries.push(courseSummary(course, computeTopics(course, pm)));
+    summaries.push(courseSummary(course, computeTopics(course, pm), myGroupId));
   }
   return summaries;
 }
@@ -307,7 +321,7 @@ export async function getMyCourse(studentId: number, courseId: number) {
     id: course.id,
     subjectName: course.name,
     teacherName: course.teacher.fullName,
-    groupName: course.courseGroups[0]?.group.name ?? null,
+    groupName: ownGroupName(course, await studentGroupId(studentId)),
     semester: course.semester,
     academicYear: course.academicYear,
     topicsTotal: topics.length,
@@ -319,7 +333,8 @@ export async function getMyCourse(studentId: number, courseId: number) {
 
 /** GET /me/dashboard — the "continue" block + course cards. */
 export async function getDashboard(studentId: number) {
-  const me = await prisma.user.findUnique({ where: { id: studentId }, select: { fullName: true } });
+  const me = await prisma.user.findUnique({ where: { id: studentId }, select: { fullName: true, groupId: true } });
+  const myGroupId = me?.groupId ?? null;
   const ids = await enrolledCourseIds(studentId);
 
   const courses = [];
@@ -335,7 +350,7 @@ export async function getDashboard(studentId: number) {
     const course = await loadCourse(id);
     const pm = await studentFactsMap(studentId, course);
     const topics = computeTopics(course, pm);
-    courses.push(courseSummary(course, topics));
+    courses.push(courseSummary(course, topics, myGroupId));
 
     if (!resume) {
       // Prefer an in-progress topic; otherwise the first available one.

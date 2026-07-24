@@ -59,7 +59,7 @@ function StudentModal({ student, topics, courseId, onClose, onAssign }: { studen
 
   return (
     <Modal open onClose={onClose} title={student.fullName} className="max-w-xl">
-      <div className="mb-3 flex flex-wrap items-center gap-3 text-[14px]">
+      <div className="mb-3 flex flex-wrap items-center gap-3 text-note">
         <span className="text-ink-soft">{t("overall")}: <span className="font-bold text-ink">{student.overallPct}%</span></span>
         <span className="text-ink-soft">{t("avgTest")}: <span className="font-bold text-ink">{student.avgQuizScore ?? "—"}%</span></span>
         <LastActive iso={student.lastActiveAt} />
@@ -80,19 +80,19 @@ function StudentModal({ student, topics, courseId, onClose, onAssign }: { studen
           return (
             <div key={tp.id} className="rounded-control border border-line p-3">
               <div className="flex items-center justify-between gap-2">
-                <p className="text-[14.5px] font-semibold text-ink">
+                <p className="text-note font-semibold text-ink">
                   {tp.orderIndex}. {tp.title}
                 </p>
                 <Badge tone={c.state === "COMPLETED" ? "emerald" : c.state === "IN_PROGRESS" ? "amber" : c.state === "LOCKED" ? "slate" : "blue"}>
                   {t(`state.${c.state}`)}
                 </Badge>
               </div>
-              <p className="mt-1 text-[13.5px] text-ink-soft">{cellSummary(c, t)}</p>
+              <p className="mt-1 text-micro text-ink-soft">{cellSummary(c, t)}</p>
               {c.state !== "COMPLETED" && (
                 <button
                   onClick={() => unlock.mutate({ studentId: student.id, topicId: tp.id }, { onSuccess: () => show(t("unlocked")) })}
                   disabled={unlock.isPending}
-                  className="mt-2 inline-flex items-center gap-1 rounded-control border border-amber/40 bg-amber-soft px-2.5 py-1 text-[13px] font-semibold text-amber transition-colors hover:bg-amber/10"
+                  className="mt-2 inline-flex items-center gap-1 rounded-control border border-amber/40 bg-amber-soft px-2.5 py-1 text-micro font-semibold text-amber transition-colors hover:bg-amber/10"
                 >
                   <Icon icon={Unlock} size={13} /> {t("manualUnlock")}
                 </button>
@@ -119,7 +119,7 @@ function Heatmap({ data, students, onPick }: { data: CourseProgress; students: P
 
   return (
     <div className="overflow-x-auto rounded-card border border-line">
-      <table className="border-collapse text-[13.5px]">
+      <table className="border-collapse text-micro">
         <thead>
           <tr>
             <th className="sticky left-0 z-10 min-w-[160px] border-b border-r border-line bg-surface px-3 py-2 text-left font-bold text-ink-soft">
@@ -153,7 +153,7 @@ function Heatmap({ data, students, onPick }: { data: CourseProgress; students: P
                       <button
                         onClick={() => onPick(s)}
                         title={c ? `${s.fullName} · ${t("topic")} ${tp.orderIndex}: ${cellSummary(c, t)}` : ""}
-                        className={cls("flex h-8 w-full items-center justify-center rounded text-[11px] font-bold transition-transform hover:scale-110", cellClass[c?.state ?? "LOCKED"])}
+                        className={cls("flex h-8 w-full items-center justify-center rounded text-micro font-bold transition-transform hover:scale-110", cellClass[c?.state ?? "LOCKED"])}
                       >
                         {c?.state === "COMPLETED" ? "✓" : c?.state === "IN_PROGRESS" ? `${c.pct}` : ""}
                       </button>
@@ -166,11 +166,11 @@ function Heatmap({ data, students, onPick }: { data: CourseProgress; students: P
           })}
           {/* group average row */}
           <tr className="bg-bg">
-            <td className="sticky left-0 z-10 border-r border-line bg-bg px-3 py-2 text-[12.5px] font-bold uppercase text-ink-faint">{t("groupAvg")}</td>
+            <td className="sticky left-0 z-10 border-r border-line bg-bg px-3 py-2 text-micro font-bold uppercase text-ink-faint">{t("groupAvg")}</td>
             {data.topics.map((tp) => (
-              <td key={tp.id} className="px-1 py-2 text-center text-[12px] font-semibold text-ink-soft">{avgByTopic.get(tp.id)}%</td>
+              <td key={tp.id} className="px-1 py-2 text-center text-micro font-semibold text-ink-soft">{avgByTopic.get(tp.id)}%</td>
             ))}
-            <td className="border-l border-line px-2 py-2 text-center text-[12px] font-bold text-ink-soft">{data.stats.avgProgress}%</td>
+            <td className="border-l border-line px-2 py-2 text-center text-micro font-bold text-ink-soft">{data.stats.avgProgress}%</td>
           </tr>
         </tbody>
       </table>
@@ -185,21 +185,21 @@ function ListView({ students, onPick }: { students: ProgressStudent[]; onPick: (
       {students.map((s) => (
         <Card key={s.id} className={cls("flex flex-wrap items-center gap-4", s.behind && "border-rose/40")}>
           <div className="min-w-[140px] flex-1">
-            <p className={cls("text-[15px] font-semibold", s.behind ? "text-rose" : "text-ink")}>{s.fullName}</p>
+            <p className={cls("text-note font-semibold", s.behind ? "text-rose" : "text-ink")}>{s.fullName}</p>
             <div className="mt-1 flex items-center gap-2">
               <div className="h-1.5 w-28 overflow-hidden rounded-pill bg-bg">
                 <div className="h-full rounded-pill bg-brand" style={{ width: `${Math.max(s.overallPct, 2)}%` }} />
               </div>
-              <span className="text-[13px] font-semibold text-ink-soft">{s.overallPct}%</span>
+              <span className="text-micro font-semibold text-ink-soft">{s.overallPct}%</span>
             </div>
           </div>
-          <div className="text-[13.5px] text-ink-soft">
+          <div className="text-micro text-ink-soft">
             {t("completedN", { n: s.completedCount })}
           </div>
-          <div className="text-[13.5px]">
+          <div className="text-micro">
             <LastActive iso={s.lastActiveAt} />
           </div>
-          <div className="text-[13.5px] text-ink-soft">
+          <div className="text-micro text-ink-soft">
             {t("avgTest")}: <span className="font-semibold text-ink">{s.avgQuizScore ?? "—"}%</span>
           </div>
           <Button variant="ghost" size="sm" onClick={() => onPick(s)}>
@@ -270,22 +270,22 @@ export function ProgressTab() {
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     placeholder={t("searchStudent")}
-                    className="w-full rounded-control border border-line bg-surface py-2 pl-9 pr-3 text-[14.5px] outline-none focus:border-brand"
+                    className="w-full rounded-control border border-line bg-surface py-2 pl-9 pr-3 text-note outline-none focus:border-brand"
                   />
                 </div>
-                <select value={sort} onChange={(e) => setSort(e.target.value as "progress" | "name")} className="rounded-control border border-line bg-surface px-2 py-2 text-[14px] outline-none focus:border-brand">
+                <select value={sort} onChange={(e) => setSort(e.target.value as "progress" | "name")} className="rounded-control border border-line bg-surface px-2 py-2 text-note outline-none focus:border-brand">
                   <option value="progress">{t("sortProgress")}</option>
                   <option value="name">{t("sortName")}</option>
                 </select>
                 <div className="flex overflow-hidden rounded-control border border-line">
-                  <button onClick={() => setView("heatmap")} className={cls("flex items-center gap-1 px-3 py-2 text-[14px] font-medium", view === "heatmap" ? "bg-brand-soft text-brand-deep" : "text-ink-soft hover:bg-bg")}>
+                  <button onClick={() => setView("heatmap")} className={cls("flex items-center gap-1 px-3 py-2 text-note font-medium", view === "heatmap" ? "bg-brand-soft text-brand-deep" : "text-ink-soft hover:bg-bg")}>
                     <Icon icon={LayoutGrid} size={15} /> {t("heatmap")}
                   </button>
-                  <button onClick={() => setView("list")} className={cls("flex items-center gap-1 px-3 py-2 text-[14px] font-medium", view === "list" ? "bg-brand-soft text-brand-deep" : "text-ink-soft hover:bg-bg")}>
+                  <button onClick={() => setView("list")} className={cls("flex items-center gap-1 px-3 py-2 text-note font-medium", view === "list" ? "bg-brand-soft text-brand-deep" : "text-ink-soft hover:bg-bg")}>
                     <Icon icon={List} size={15} /> {t("list")}
                   </button>
                 </div>
-                <a href={`${API_URL}/api/v1/teach/courses/${courseId}/progress/export?view=${view}`} className="inline-flex items-center gap-1.5 rounded-control border border-line px-3 py-2 text-[14px] font-medium text-ink-soft transition-colors hover:bg-bg">
+                <a href={`${API_URL}/api/v1/teach/courses/${courseId}/progress/export?view=${view}`} className="inline-flex items-center gap-1.5 rounded-control border border-line px-3 py-2 text-note font-medium text-ink-soft transition-colors hover:bg-bg">
                   <Icon icon={Download} size={15} /> Excel
                 </a>
               </div>
@@ -293,7 +293,7 @@ export function ProgressTab() {
               {/* View */}
               <div className="mt-4">
                 {students.length === 0 ? (
-                  <Card><p className="py-6 text-center text-[14.5px] text-ink-soft">{t("noMatch")}</p></Card>
+                  <Card><p className="py-6 text-center text-note text-ink-soft">{t("noMatch")}</p></Card>
                 ) : view === "heatmap" ? (
                   <Heatmap data={data} students={students} onPick={setPicked} />
                 ) : (
@@ -302,7 +302,7 @@ export function ProgressTab() {
               </div>
 
               {view === "heatmap" && (
-                <div className="mt-3 flex flex-wrap gap-3 text-[12.5px] text-ink-soft">
+                <div className="mt-3 flex flex-wrap gap-3 text-micro text-ink-soft">
                   <span className="flex items-center gap-1"><span className="h-3 w-3 rounded bg-emerald" /> {t("state.COMPLETED")}</span>
                   <span className="flex items-center gap-1"><span className="h-3 w-3 rounded bg-amber-soft" /> {t("state.IN_PROGRESS")}</span>
                   <span className="flex items-center gap-1"><span className="h-3 w-3 rounded bg-bg" /> {t("state.AVAILABLE")}</span>

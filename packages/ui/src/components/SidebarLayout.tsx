@@ -121,7 +121,7 @@ export function SidebarLayout({ brand, items, children, headerSlot, rightSlot, f
           // ichida skroll; mobilda sahifa skroll qiladi (panellar ustma-ust).
           <div className="min-h-0 flex-1 overflow-y-auto lg:overflow-hidden">{children}</div>
         ) : (
-          <div className="mx-auto w-full max-w-[1280px] flex-1 px-4 py-4 sm:px-6 sm:py-5">{children}</div>
+          <div className="mx-auto w-full max-w-[1760px] flex-1 px-4 py-4 sm:px-6 sm:py-5 2xl:px-8">{children}</div>
         )}
       </main>
     </div>

@@ -24,7 +24,8 @@ export function RollCallModal({
 }) {
   const { t } = useTranslation(undefined, { keyPrefix: "attendance" });
   const { show } = useToast();
-  const rosterQ = useRosterByDate(courseId, date, groupId);
+  // Vaqt ham uzatiladi: bir kunda bir necha dars bo'lsa, har biri O'Z sessiyasini oladi.
+  const rosterQ = useRosterByDate(courseId, date, groupId, startTime);
   const mark = useMarkByDate();
   const [marks, setMarks] = useState<Record<number, AttStatus | null>>({});
   const [search, setSearch] = useState("");
@@ -71,9 +72,9 @@ export function RollCallModal({
 
           <div className="max-h-[50vh] space-y-2 overflow-y-auto pr-1">
             {filtered.map((st) => (
-              <div key={st.id} className="flex flex-col justify-between gap-3 rounded-[12px] border border-line bg-surface p-3 transition-all hover:border-brand/30 sm:flex-row sm:items-center">
-                <span className="truncate pl-1 text-[15.5px] font-bold text-ink">{st.fullName}</span>
-                <div className="flex w-full shrink-0 gap-1.5 sm:w-auto">
+              <div key={st.id} className="flex flex-col gap-2 rounded-[12px] border border-line bg-surface p-3 transition-all hover:border-brand/30 sm:flex-row sm:items-center sm:gap-3">
+                <span className="min-w-0 flex-1 truncate pl-1 text-[15.5px] font-bold text-ink">{st.fullName}</span>
+                <div className="flex shrink-0 gap-1.5">
                   {STATUSES.map((status) => {
                     const on = marks[st.id] === status;
                     const meta = STATUS_META[status];

@@ -243,8 +243,11 @@ model Course {
   academicYear          String
   defaultUnlockRuleJson Json?
   syllabusJson          Json?
-  // Sana-rejimi: yoniq bo'lsa mavzular ketma-ketlik-tugatish emas, DARS JADVALI
-  // bo'yicha ochiladi (mavzuning oxirgi dars kunidan keyin).
+  // Ochilish shartlari — MUSTAQIL, birga ishlashi mumkin:
+  //  sequentialUnlock: mavzu oldingisi tugagach ochiladi (ketma-ketlik).
+  //  scheduleUnlock:   mavzu o'z dars kunidan keyin ochiladi (jadval).
+  // Ikkalasi yoniq bo'lsa — HAR IKKALA shart bajarilishi kerak.
+  sequentialUnlock      Boolean       @default(true)
   scheduleUnlock        Boolean       @default(false)
   createdAt             DateTime      @default(now())
   courseGroups          CourseGroup[]

@@ -14,8 +14,9 @@ export interface TeachCourse {
   groups: { id: number; name: string }[];
   studentCount: number;
   defaultUnlockRuleJson?: UnlockRule | null;
-  /** Sana-rejimi: mavzular dars jadvali bo'yicha ochiladi. */
+  /** Ochilish shartlari (mustaqil, birga ishlaydi). */
   scheduleUnlock?: boolean;
+  sequentialUnlock?: boolean;
 }
 
 export function useTeachCourses() {
@@ -73,12 +74,24 @@ export interface GroupStudent {
   /** Guruh ichidagi o'rin (progress, teng bo'lsa test balli bo'yicha). */
   rank: number;
 }
+/** Guruhning bitta kurs bo'yicha hisoboti (profil pastida ko'rsatiladi). */
+export interface GroupCourseReport {
+  id: number;
+  name: string;
+  studentCount: number;
+  topicsTotal: number;
+  avgProgress: number;
+  avgQuizScore: number | null;
+  behindCount: number;
+}
 export interface TeachGroup {
   id: number;
   name: string;
   yearOfStudy: number;
   facultyName: string;
   courses: { id: number; name: string }[];
+  /** Guruhning har kurs bo'yicha o'zlashtirish hisoboti. */
+  courseReport: GroupCourseReport[];
   students: GroupStudent[];
   studentCount: number;
   avgProgress: number;
@@ -149,6 +162,7 @@ export interface StudentDetailTopic {
   title: string;
   state: CellState;
   pct: number;
+  reason: { uz: string; ru: string } | null;
   hasQuiz: boolean;
   quizScore: number | null;
   hasCase: boolean;
@@ -158,6 +172,15 @@ export interface StudentDetailTopic {
   caseFeedback: string | null;
   caseAttemptId: number | null;
 }
+export interface StudentDetailSession {
+  date: string;
+  /** Dars vaqti "HH:MM" — baho aynan shu darsga yoziladi (bir kunda bir necha dars). */
+  time: string;
+  groupId: number | null;
+  status: AttStatus;
+  grade: number | null;
+  topicTitle: string | null;
+}
 export interface StudentDetailCourse {
   courseId: number;
   subjectName: string;
@@ -165,6 +188,7 @@ export interface StudentDetailCourse {
   completedCount: number;
   overallPct: number;
   attendance: { present: number; absent: number; late: number; excused: number; pct: number | null; avgGrade: number | null };
+  sessions: StudentDetailSession[];
   topics: StudentDetailTopic[];
 }
 export interface PracticeSignals {
@@ -184,6 +208,36 @@ export interface StudentDetail {
 
 export function useStudentDetail(studentId: number) {
   return useQuery({ queryKey: ["student-detail", studentId], queryFn: () => api<StudentDetail>(`/api/v1/teach/students/${studentId}`), retry: false });
+}
+
+/** Talaba profilidan bitta mavzuni qo'lda ochish (qulfdagi mavzuni COMPLETED qiladi). */
+export function useUnlockForStudent(studentId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (b: { courseId: number; topicId: number }) =>
+      api(`/api/v1/teach/courses/${b.courseId}/unlock`, { method: "POST", body: JSON.stringify({ studentId, topicId: b.topicId }) }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["student-detail", studentId] });
+      qc.invalidateQueries({ queryKey: ["course-progress"] });
+    },
+  });
+}
+
+/** Talaba profilidan bitta darsga baho qo'yish (yo'qlama holati saqlanadi). */
+export function useGradeSession(studentId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (b: { courseId: number; date: string; startTime: string; groupId: number | null; status: AttStatus; grade: number | null }) =>
+      api("/api/v1/teach/attendance-by-date", {
+        method: "POST",
+        body: JSON.stringify({ courseId: b.courseId, date: b.date, startTime: b.startTime, groupId: b.groupId, marks: [{ studentId, status: b.status, grade: b.grade }] }),
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["student-detail", studentId] });
+      qc.invalidateQueries({ queryKey: ["roster-by-date"] });
+      qc.invalidateQueries({ queryKey: ["teacher-lessons"] });
+    },
+  });
 }
 
 export interface SyllabusTopic {
@@ -280,7 +334,7 @@ export function useCourseMistakes(courseId: number) {
 export function useUpdateCourseSettings(courseId: number) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: { defaultUnlockRuleJson?: UnlockRule; scheduleUnlock?: boolean }) =>
+    mutationFn: (body: { defaultUnlockRuleJson?: UnlockRule; scheduleUnlock?: boolean; sequentialUnlock?: boolean }) =>
       api(`/api/v1/teach/courses/${courseId}/settings`, { method: "PUT", body: JSON.stringify(body) }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["teach-course", courseId] }),
   });
@@ -391,7 +445,7 @@ export function useTeachDashboard() {
   return useQuery({ queryKey: ["teach-dashboard"], queryFn: () => api<TeachDashboard>("/api/v1/teach/dashboard") });
 }
 
-// ---------------- My Tasks hub — bitta ustuvorlik-navbat ----------------
+// ---------------- My Tasks hub — vazifa borti (3 manba + holat + statistika) ----------------
 
 export type TaskTone = "rose" | "amber" | "blue" | "brand" | "violet" | "emerald";
 
@@ -404,7 +458,11 @@ export type TeacherTaskKind =
   | "factcheck"
   | "attendance_unmarked"
   | "students_behind"
-  | "assigned";
+  | "assigned"
+  | "students_assignment";
+
+export type TaskSource = "auto" | "kafedra" | "students";
+export type TaskBoardStatus = "open" | "overdue" | "done";
 
 export type TeacherQuickAction =
   | { type: "attendance"; courseId: number; date: string; startTime: string; groupId: number | null }
@@ -413,6 +471,8 @@ export type TeacherQuickAction =
 /** Bitta konkret ish qatori — talaba/mavzu/dars ismi bilan, mavhum son emas. */
 export interface TeacherTaskItem {
   id: string;
+  source: TaskSource;
+  status: TaskBoardStatus;
   kind: TeacherTaskKind;
   tone: TaskTone;
   title: string;
@@ -420,65 +480,35 @@ export interface TeacherTaskItem {
   description?: string | null;
   sinceIso: string | null;
   dueIso?: string | null;
+  completedIso?: string | null;
   link: string;
   quickAction?: TeacherQuickAction;
+  progress?: { done: number; total: number };
+  deletableTaskIds?: number[];
 }
 
-export function useTeachTasks() {
-  return useQuery({ queryKey: ["teach-tasks"], queryFn: () => api<{ feed: TeacherTaskItem[] }>("/api/v1/teach/tasks") });
+export interface TaskHistoryBucket {
+  key: string;
+  count: number;
+}
+
+export interface TaskBoard {
+  stats: { toDo: number; overdue: number; waiting: number; done: number };
+  counts: { auto: number; kafedra: number; students: number; done: number; overdue: number; all: number };
+  items: TeacherTaskItem[];
+  months: TaskHistoryBucket[];
+}
+
+export function useTaskBoard() {
+  return useQuery({ queryKey: ["teach-tasks"], queryFn: () => api<TaskBoard>("/api/v1/teach/tasks") });
 }
 
 export function useSetTaskDone() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: number) => api(`/api/v1/tasks/${id}`, { method: "PATCH", body: JSON.stringify({ done: true }) }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["teach-tasks"] });
-      qc.invalidateQueries({ queryKey: ["teach-tasks-history"] });
-    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["teach-tasks"] }),
   });
-}
-
-// ---- Statistika: oxirgi oylarda bajarilgan (kafedradan / talabalarga bergan) ----
-
-export interface TaskHistoryBucket {
-  key: string;
-  count: number;
-}
-export interface CompletedTaskRow {
-  id: number;
-  title: string;
-  completedAt: string;
-  counterpart: string;
-}
-export interface TaskHistorySeries {
-  total: number;
-  months: TaskHistoryBucket[];
-  recent: CompletedTaskRow[];
-}
-export interface TeacherTaskHistory {
-  kafedra: TaskHistorySeries;
-  toStudents: TaskHistorySeries;
-}
-
-export function useTaskHistory() {
-  return useQuery({ queryKey: ["teach-tasks-history"], queryFn: () => api<TeacherTaskHistory>("/api/v1/teach/tasks/history") });
-}
-
-// Assignments the teacher created for students/groups.
-export interface CreatedTaskGroup {
-  key: string;
-  title: string;
-  description: string | null;
-  dueDate: string | null;
-  createdAt: string;
-  total: number;
-  done: number;
-  assignees: string[];
-  taskIds: number[];
-}
-export function useMyCreatedTasks() {
-  return useQuery({ queryKey: ["teach-created-tasks"], queryFn: () => api<CreatedTaskGroup[]>("/api/v1/tasks/created") });
 }
 
 export interface AssignTaskBody {
@@ -492,14 +522,14 @@ export function useAssignTask() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (body: AssignTaskBody) => api<{ count: number }>("/api/v1/tasks", { method: "POST", body: JSON.stringify(body) }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["teach-created-tasks"] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["teach-tasks"] }),
   });
 }
 export function useDeleteMyTask() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: number) => api(`/api/v1/tasks/${id}`, { method: "DELETE" }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["teach-created-tasks"] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["teach-tasks"] }),
   });
 }
 
@@ -787,10 +817,11 @@ export interface DateRoster {
   date: string;
   students: { id: number; fullName: string; status: AttStatus | null; grade: number | null }[];
 }
-export function useRosterByDate(courseId: number, date: string, groupId?: number) {
+export function useRosterByDate(courseId: number, date: string, groupId?: number, time?: string) {
   const p = new URLSearchParams({ courseId: String(courseId), date });
   if (groupId) p.set("groupId", String(groupId));
-  return useQuery({ queryKey: ["roster-by-date", courseId, date, groupId], queryFn: () => api<DateRoster>(`/api/v1/teach/attendance-by-date?${p}`), enabled: !!courseId && !!date });
+  if (time) p.set("time", time); // dars = sana+vaqt (bir kunda bir necha dars bo'lishi mumkin)
+  return useQuery({ queryKey: ["roster-by-date", courseId, date, groupId, time], queryFn: () => api<DateRoster>(`/api/v1/teach/attendance-by-date?${p}`), enabled: !!courseId && !!date });
 }
 export function useMarkByDate() {
   const qc = useQueryClient();
@@ -801,7 +832,30 @@ export function useMarkByDate() {
       qc.invalidateQueries({ queryKey: ["teacher-lessons"] });
       qc.invalidateQueries({ queryKey: ["roster-by-date"] });
       qc.invalidateQueries({ queryKey: ["teach-group"] });
+      qc.invalidateQueries({ queryKey: ["attendance-matrix"] });
     },
+  });
+}
+
+// Davomat matritsasi (talaba × DARS + %) — kurs+guruh, sana oralig'i.
+// Ustun = alohida dars (sana+vaqt): bir kunda bir necha dars bo'lishi mumkin.
+export interface MatrixColumn {
+  key: string;   // "YYYY-MM-DD|HH:MM"
+  date: string;
+  time: string;
+  room: string | null;
+}
+export interface AttendanceMatrix {
+  columns: MatrixColumn[];
+  todayKey: string;
+  students: { id: number; fullName: string; pct: number | null; cells: Record<string, AttStatus> }[];
+}
+export function useAttendanceMatrix(courseId: number | null, groupId: number, from: string, to: string) {
+  const p = new URLSearchParams({ courseId: String(courseId), groupId: String(groupId), from, to });
+  return useQuery({
+    queryKey: ["attendance-matrix", courseId, groupId, from, to],
+    queryFn: () => api<AttendanceMatrix>(`/api/v1/teach/attendance-matrix?${p}`),
+    enabled: !!courseId && !!groupId && !!from && !!to,
   });
 }
 

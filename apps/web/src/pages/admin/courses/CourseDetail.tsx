@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { BookOpen, GraduationCap, Users } from "lucide-react";
-import { Badge, Button, Card, ChipSelect, Icon, Spinner, useToast } from "@meduni/ui";
+import { BookOpen, CalendarDays, ClipboardCheck, DoorClosed, Download, GraduationCap, Users } from "lucide-react";
+import { Badge, Button, Card, ChipSelect, Icon, LegendRow, Spinner, StackedBar, cls, useToast } from "@meduni/ui";
 import { Avatar } from "../../../components/Avatar";
 import { DataTable } from "../../../components/DataTable";
-import { apiErrorMessage } from "../../../lib/api";
+import { API_URL, apiErrorMessage } from "../../../lib/api";
 import { useList } from "../../../lib/crud";
 import { useLocale } from "../../../lib/useLocale";
 import { useCourse, useUpdateCourse } from "./api";
@@ -14,6 +14,9 @@ interface GroupLite {
   id: number;
   name: string;
 }
+
+const WEEKDAYS_UZ = ["Dushanba", "Seshanba", "Chorshanba", "Payshanba", "Juma", "Shanba", "Yakshanba"];
+const WEEKDAYS_RU = ["Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье"];
 
 function StatItem({ icon, label, value }: { icon: React.ReactNode; label: string; value: string | number }) {
   return (
@@ -126,6 +129,73 @@ export function CourseDetail() {
           </Button>
         </div>
       </Card>
+
+      {/* Attendance summary + read-only weekly schedule */}
+      <div className="mt-3 grid gap-3 lg:grid-cols-2">
+        <Card>
+          <div className="mb-3 flex items-center gap-2">
+            <Icon icon={ClipboardCheck} size={16} className="text-blue" />
+            <h2 className="text-section font-bold text-ink">{t("detail.attendanceTitle")}</h2>
+            {c.attendanceSummary.pct !== null && (
+              <span className={cls("rounded-pill px-2.5 py-1 text-note font-bold tabular-nums", c.attendanceSummary.pct < 75 ? "bg-rose-soft text-rose" : "bg-emerald-soft text-emerald")}>
+                {c.attendanceSummary.pct}%
+              </span>
+            )}
+            {c.attendanceSummary.marked > 0 && (
+              <a href={`${API_URL}/api/v1/courses/${courseId}/attendance.xlsx?view=list`} className="ml-auto inline-flex items-center gap-1.5 rounded-control border border-line px-3 py-1.5 text-note font-medium text-ink-soft transition-colors hover:bg-bg">
+                <Icon icon={Download} size={15} /> {t("detail.exportExcel")}
+              </a>
+            )}
+          </div>
+          {c.attendanceSummary.marked === 0 ? (
+            <p className="py-4 text-center text-note text-ink-faint">{t("detail.noAttendance")}</p>
+          ) : (
+            <>
+              <StackedBar
+                segments={[
+                  { value: c.attendanceSummary.present, tone: "emerald" },
+                  { value: c.attendanceSummary.late, tone: "amber" },
+                  { value: c.attendanceSummary.excused, tone: "blue" },
+                  { value: c.attendanceSummary.absent, tone: "rose" },
+                ]}
+              />
+              <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1.5">
+                <LegendRow tone="emerald" label={t("detail.attPresent")} value={c.attendanceSummary.present} />
+                <LegendRow tone="amber" label={t("detail.attLate")} value={c.attendanceSummary.late} />
+                <LegendRow tone="blue" label={t("detail.attExcused")} value={c.attendanceSummary.excused} />
+                <LegendRow tone="rose" label={t("detail.attAbsent")} value={c.attendanceSummary.absent} />
+              </div>
+            </>
+          )}
+        </Card>
+
+        <Card>
+          <div className="mb-3 flex items-center gap-2">
+            <Icon icon={CalendarDays} size={16} className="text-brand-deep" />
+            <h2 className="text-section font-bold text-ink">{t("detail.scheduleTitle")}</h2>
+          </div>
+          {c.schedule.every((g) => g.slots.length === 0) ? (
+            <p className="py-4 text-center text-note text-ink-faint">{t("detail.noSchedule")}</p>
+          ) : (
+            <div className="space-y-3">
+              {c.schedule.filter((g) => g.slots.length > 0).map((g) => (
+                <div key={g.groupId}>
+                  <p className="mb-1 text-note font-bold text-ink">{g.groupName}</p>
+                  <div className="space-y-1">
+                    {g.slots.map((s, i) => (
+                      <div key={i} className="flex items-center gap-3 rounded-control border border-line bg-surface px-3 py-1.5 text-note">
+                        <span className="w-24 shrink-0 font-semibold text-ink">{(locale === "ru" ? WEEKDAYS_RU : WEEKDAYS_UZ)[s.weekday]}</span>
+                        <span className="shrink-0 font-bold tabular-nums text-brand-deep">{s.startTime}</span>
+                        {s.room && <span className="inline-flex items-center gap-1 text-ink-faint"><Icon icon={DoorClosed} size={12} /> {s.room}</span>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+      </div>
 
       {/* Enrolled students */}
       <div className="mt-3">

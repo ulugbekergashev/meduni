@@ -153,12 +153,15 @@ export function FacultyPage() {
           <div>
             {f.groups.map((g) => (
               <div key={g.id} className="group flex items-center gap-3 border-b border-line px-5 py-3 last:border-0">
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-[15px] font-semibold text-ink">{g.name}</p>
-                  <p className="text-[13px] text-ink-faint">
-                    {t("nthYear", { n: g.yearOfStudy })} · {t("nStudents", { n: g.studentCount })}
-                  </p>
-                </div>
+                <button onClick={() => navigate(`/admin/groups/${g.id}`)} className="flex min-w-0 flex-1 items-center gap-2 text-left" title={t("openGroup")}>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[15px] font-semibold text-ink">{g.name}</p>
+                    <p className="text-[13px] text-ink-faint">
+                      {t("nthYear", { n: g.yearOfStudy })} · {t("nStudents", { n: g.studentCount })}
+                    </p>
+                  </div>
+                  <Icon icon={ChevronRight} size={15} className="shrink-0 text-ink-faint" />
+                </button>
                 {canDeptGroup && (
                   <div className="flex shrink-0 items-center gap-0.5">
                     <button

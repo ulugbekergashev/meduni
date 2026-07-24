@@ -2,6 +2,7 @@ import argon2 from "argon2";
 import type { Prisma } from "../../lib/prisma";
 import { prisma } from "../../lib/prisma";
 import { ApiError, badRequest, notFound } from "../../lib/errors";
+import { getStudentLessons } from "../courses/timetable";
 
 type Status = "PRESENT" | "ABSENT" | "LATE" | "EXCUSED";
 
@@ -251,43 +252,18 @@ export async function getMyProfile(studentId: number) {
  *  Diapazon berilmasa: bugundan +7 kun (dashboard "Bugun" bloki).
  *  Jadval moduli hafta oralig'ini beradi — o'tgan darslar O'Z yo'qlama
  *  holati bilan qaytadi (keldi/kelmadi/... yoki hali belgilanmagan). */
+/** "YYYY-MM-DD" (mahalliy) — getStudentLessons dayKey formatida. */
+function dayKeyLocal(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+/** Talaba jadvali — endi haftalik SLOTLARDAN hosil qilinadi (o'qituvchinikiga
+ *  o'xshab). O'qituvchi yo'qlama belgilamagan bo'lsa ham kelgusi darslar ko'rinadi.
+ *  Diapazon berilmasa — dashboard uchun 7 kun. */
 export async function getMySchedule(studentId: number, opts: { from?: string; to?: string } = {}) {
-  const from = opts.from ? new Date(opts.from) : new Date();
-  from.setHours(0, 0, 0, 0);
-  const to = opts.to ? new Date(opts.to) : new Date(from.getTime() + 7 * 86_400_000);
-  to.setHours(23, 59, 59, 999);
-
-  const sessions = await prisma.lessonSession.findMany({
-    where: {
-      date: { gte: from, lte: to },
-      course: { enrollments: { some: { studentId, status: "ACTIVE" } } },
-    },
-    include: { course: true, topic: { select: { title: true } } },
-    orderBy: { date: "asc" },
-    take: 60,
-  });
-
-  // O'z yo'qlama belgilarim (faqat shu sessiyalar bo'yicha).
-  const myMarks = sessions.length
-    ? await prisma.attendance.findMany({
-        where: { studentId, sessionId: { in: sessions.map((s) => s.id) } },
-        select: { sessionId: true, status: true },
-      })
-    : [];
-  const markBySession = new Map(myMarks.map((m) => [m.sessionId, m.status as Status]));
-
-  const now = new Date();
-  return sessions.map((s) => ({
-    id: s.id,
-    date: s.date,
-    room: s.room,
-    courseId: s.courseId,
-    courseName: s.course.name,
-    title: s.title ?? s.topic?.title ?? null,
-    isPast: s.date < now,
-    /** O'tgan dars uchun mening holatim; belgilanmagan bo'lsa null. */
-    myStatus: markBySession.get(s.id) ?? null,
-  }));
+  const fromD = opts.from ? new Date(opts.from) : new Date();
+  const toD = opts.to ? new Date(opts.to) : new Date(fromD.getTime() + 7 * 86_400_000);
+  return getStudentLessons(studentId, dayKeyLocal(fromD), dayKeyLocal(toD));
 }
 
 export type ActivityEvent = {

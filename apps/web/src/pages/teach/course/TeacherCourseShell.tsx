@@ -39,12 +39,12 @@ export function TeacherCourseShell() {
       <div>
         <button
           onClick={() => navigate("/teach")}
-          className="text-[14.5px] font-medium text-brand-deep hover:underline"
+          className="text-note font-medium text-brand-deep hover:underline"
         >
           {t("backToCourses")}
         </button>
         <Card className="mt-4">
-          <p className="py-6 text-center text-[14.5px] text-rose">{t("notFound")}</p>
+          <p className="py-6 text-center text-note text-rose">{t("notFound")}</p>
         </Card>
       </div>
     );
@@ -58,12 +58,12 @@ export function TeacherCourseShell() {
       {/* Header — stable across tab navigation */}
       <button
         onClick={() => navigate("/teach")}
-        className="text-[14.5px] font-medium text-brand-deep hover:underline"
+        className="text-note font-medium text-brand-deep hover:underline"
       >
         {t("backToCourses")}
       </button>
       <h1 className="mt-3 text-h1 font-bold text-ink">{c.subjectName}</h1>
-      <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[14.5px] text-ink-soft">
+      <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-note text-ink-soft">
         {c.groups.length > 0 && (
           <>
             <span className="inline-flex items-center gap-1">

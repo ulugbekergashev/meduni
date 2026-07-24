@@ -237,7 +237,11 @@ export async function getStudentDetail(teacherId: number, studentId: number) {
     const topicIds = topicOuts.map((t) => t.id);
 
     const [attendance, caseAttempts] = await Promise.all([
-      prisma.attendance.findMany({ where: { studentId, session: { courseId: enr.courseId } } }),
+      prisma.attendance.findMany({
+        where: { studentId, session: { courseId: enr.courseId } },
+        include: { session: { select: { date: true, groupId: true, topic: { select: { title: true } } } } },
+        orderBy: { session: { date: "desc" } },
+      }),
       topicIds.length
         ? prisma.caseAttempt.findMany({
             where: { studentId, clinicalCase: { contentItem: { topicId: { in: topicIds } } } },
@@ -259,6 +263,19 @@ export async function getStudentDetail(teacherId: number, studentId: number) {
     const caseByTopic = new Map(caseAttempts.map((ca) => [ca.clinicalCase.contentItem.topicId, ca]));
 
     const completedCount = topicOuts.filter((t) => t.state === "COMPLETED").length;
+    // Davomat jurnali — sanalar bo'yicha (baho qo'yish/ko'rish uchun).
+    const sessions = attendance.map((a) => {
+      const d = a.session.date;
+      return {
+        // Mahalliy sana+vaqt — findSession atTime() mahalliy Date bilan solishtiradi.
+        date: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`,
+        time: `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`,
+        groupId: a.session.groupId,
+        status: a.status,
+        grade: a.grade,
+        topicTitle: a.session.topic?.title ?? null,
+      };
+    });
     courses.push({
       courseId: course.id,
       subjectName: course.name,
@@ -273,6 +290,7 @@ export async function getStudentDetail(teacherId: number, studentId: number) {
         pct: marked === 0 ? null : Math.round(((present + late) / marked) * 100),
         avgGrade: grades.length === 0 ? null : Math.round(grades.reduce((a, b) => a + b, 0) / grades.length),
       },
+      sessions,
       topics: topicOuts.map((t) => {
         const ca = caseByTopic.get(t.id);
         return {
@@ -280,6 +298,8 @@ export async function getStudentDetail(teacherId: number, studentId: number) {
           title: t.title,
           state: t.state,
           pct: t.pct,
+          // Nega qulf/qayerda qolgan — o'qituvchi ko'radi.
+          reason: t.reason,
           hasQuiz: t.elements.quiz.exists,
           quizScore: t.elements.quiz.score,
           hasCase: t.elements.case.exists,

@@ -880,11 +880,16 @@ export function useMyGrades() {
 // ---- Jadval / faollik / o'rin (Modul 21) ----
 
 export interface ScheduleItem {
-  id: number;
+  /** Barqaror React kaliti — dars endi slotlardan hosil bo'ladi (materializatsiya
+   *  qilinmagan bo'lsa ham noyob): "courseId-groupId-dayKey-startTime". */
+  key: string;
+  /** Materializatsiya qilingan LessonSession id (bo'lsa), aks holda null. */
+  sessionId: number | null;
   date: string;
   room: string | null;
   courseId: number;
   courseName: string;
+  groupId: number | null;
   title: string | null;
   isPast: boolean;
   /** O'tgan dars uchun mening yo'qlama holatim (belgilanmagan — null). */

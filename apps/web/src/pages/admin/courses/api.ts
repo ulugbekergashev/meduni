@@ -25,9 +25,26 @@ export interface CourseStudent {
   status: "ACTIVE" | "DROPPED";
 }
 
+export interface CourseScheduleGroup {
+  groupId: number;
+  groupName: string;
+  cycleStart: string | null;
+  cycleEnd: string | null;
+  slots: { weekday: number; startTime: string; room: string | null }[];
+}
+export interface CourseAttendanceSummary {
+  present: number;
+  absent: number;
+  late: number;
+  excused: number;
+  marked: number;
+  pct: number | null;
+}
 export interface CourseDetail extends CourseRow {
   students: CourseStudent[];
   topicCount: number;
+  schedule: CourseScheduleGroup[];
+  attendanceSummary: CourseAttendanceSummary;
 }
 
 export interface CreatedCourse extends CourseRow {

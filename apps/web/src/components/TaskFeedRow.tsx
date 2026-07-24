@@ -21,7 +21,9 @@ const kickerTone: Record<string, string> = {
 
 /** Bitta ustuvorlik-navbat qatori — KONKRET narsaga ishora qiladi (kim/qaysi
  *  mavzu/qaysi dars), mavhum son emas. `kicker` — qaysi TUR ekanini bildiruvchi
- *  kichik yorliq (CLAUDE.md "UPPERCASE dietasi": faqat eyebrow/yorliq uchun). */
+ *  kichik yorliq (CLAUDE.md "UPPERCASE dietasi": faqat eyebrow/yorliq uchun).
+ *  `badge` — holat belgisi (bajarilgan/muddati o'tgan). `done` — butun qator
+ *  bajarilgan ko'rinishi (ohangi susayadi, sarlavha chizib tashlanadi). */
 export function TaskFeedRow({
   icon,
   tone,
@@ -31,6 +33,8 @@ export function TaskFeedRow({
   description,
   meta,
   metaTone,
+  badge,
+  done = false,
   onClick,
   trailing,
 }: {
@@ -42,20 +46,25 @@ export function TaskFeedRow({
   description?: string | null;
   meta?: string | null;
   metaTone?: "rose" | null;
+  badge?: ReactNode;
+  done?: boolean;
   onClick?: () => void;
-  trailing: ReactNode;
+  trailing?: ReactNode;
 }) {
   return (
     <div
       onClick={onClick}
-      className={cls("flex items-start gap-3 px-3.5 py-3 transition-colors", onClick && "cursor-pointer hover:bg-bg")}
+      className={cls("flex items-start gap-3 px-3.5 py-3 transition-colors", onClick && "cursor-pointer hover:bg-bg", done && "opacity-70")}
     >
       <div className={cls("flex h-9 w-9 shrink-0 items-center justify-center rounded-full", chipTone[tone] ?? chipTone.brand)}>
         <Icon icon={icon} size={16} />
       </div>
       <div className="min-w-0 flex-1">
-        <p className={cls("text-micro font-bold uppercase tracking-wider", kickerTone[tone] ?? kickerTone.brand)}>{kicker}</p>
-        <p className="truncate text-body font-semibold text-ink">{title}</p>
+        <div className="flex items-center gap-2">
+          <p className={cls("text-micro font-bold uppercase tracking-wider", kickerTone[tone] ?? kickerTone.brand)}>{kicker}</p>
+          {badge}
+        </div>
+        <p className={cls("truncate text-body font-semibold text-ink", done && "line-through decoration-ink-faint")}>{title}</p>
         {subtitle && <p className="truncate text-note text-ink-soft">{subtitle}</p>}
         {description && <p className="mt-0.5 line-clamp-2 text-note text-ink-faint">{description}</p>}
       </div>

@@ -44,7 +44,7 @@ export function AdminShell() {
         {
           key: "groups",
           icon: Users2,
-          items: r.groups.map((g) => ({ key: `g${g.id}`, label: g.name, sub: `${g.studentCount}`, link: `/admin/structure/groups` })),
+          items: r.groups.map((g) => ({ key: `g${g.id}`, label: g.name, sub: `${g.studentCount}`, link: `/admin/groups/${g.id}` })),
         },
         {
           key: "courses",

@@ -4,9 +4,22 @@ import { motion, AnimatePresence, type Variants } from "framer-motion";
 import { CalendarDays, Check, ChevronLeft, ChevronRight, Clock, DoorOpen, Minus, X } from "lucide-react";
 import { Card, Icon, Spinner, cls } from "@meduni/ui";
 import { HeroCard, HeroTile } from "../../components/HeroStats";
+import { MonthCalendar, type CalEntry } from "../../components/MonthCalendar";
 import { formatDate } from "../../lib/date";
 import { useLocale } from "../../lib/useLocale";
 import { useMySchedule, type AttStatus, type ScheduleItem } from "./api";
+
+const WD_SHORT_MON_UZ = ["Dush", "Sesh", "Chor", "Pay", "Juma", "Shan", "Yak"];
+const WD_SHORT_MON_RU = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
+const MONTHS_UZ = ["Yanvar", "Fevral", "Mart", "Aprel", "May", "Iyun", "Iyul", "Avgust", "Sentabr", "Oktabr", "Noyabr", "Dekabr"];
+
+function schedTone(s: ScheduleItem): CalEntry["tone"] {
+  if (s.myStatus === "PRESENT") return "emerald";
+  if (s.myStatus === "LATE") return "amber";
+  if (s.myStatus === "ABSENT") return "rose";
+  if (s.myStatus === "EXCUSED") return "blue";
+  return s.isPast ? "line" : "brand";
+}
 
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
@@ -81,7 +94,11 @@ export function SchedulePage() {
   const { t } = useTranslation(undefined, { keyPrefix: "schedule" });
   const { t: ta } = useTranslation(undefined, { keyPrefix: "attendanceMe" });
   const locale = useLocale();
+  const ru = locale === "ru";
+  const [view, setView] = useState<"week" | "month">("week");
   const [weekStart, setWeekStart] = useState(() => mondayOf(new Date()));
+  const [monthDate, setMonthDate] = useState(() => { const n = new Date(); return new Date(n.getFullYear(), n.getMonth(), 1); });
+  const [selectedDay, setSelectedDay] = useState<string | null>(null);
 
   const weekEnd = useMemo(() => {
     const e = new Date(weekStart);
@@ -89,8 +106,41 @@ export function SchedulePage() {
     return e;
   }, [weekStart]);
 
-  const q = useMySchedule({ from: dayKey(weekStart), to: dayKey(weekEnd) });
+  // Oy diapazoni — to'r 6 hafta bo'lgani uchun qo'shni oy kunlarini ham qamraydi.
+  const monthRange = useMemo(() => {
+    const first = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1);
+    const start = new Date(first);
+    start.setDate(first.getDate() - ((first.getDay() + 6) % 7));
+    const end = new Date(start);
+    end.setDate(start.getDate() + 41);
+    return { from: dayKey(start), to: dayKey(end) };
+  }, [monthDate]);
+
+  const range = view === "week" ? { from: dayKey(weekStart), to: dayKey(weekEnd) } : monthRange;
+  const q = useMySchedule(range);
   const sessions = q.data ?? [];
+
+  const entriesByDay = useMemo(() => {
+    const m = new Map<string, CalEntry[]>();
+    for (const s of sessions) {
+      const k = dayKey(new Date(s.date));
+      const entry: CalEntry = { key: s.key, time: hhmm(new Date(s.date)), title: s.title ?? s.courseName, tone: schedTone(s) };
+      (m.get(k) ?? m.set(k, []).get(k)!).push(entry);
+    }
+    for (const list of m.values()) list.sort((a, b) => a.time.localeCompare(b.time));
+    return m;
+  }, [sessions]);
+
+  const monthLabel = ru
+    ? monthDate.toLocaleDateString("ru-RU", { month: "long", year: "numeric" })
+    : `${MONTHS_UZ[monthDate.getMonth()]} ${monthDate.getFullYear()}`;
+  const shiftMonth = (dir: -1 | 1) => {
+    setSelectedDay(null);
+    setMonthDate((d) => new Date(d.getFullYear(), d.getMonth() + dir, 1));
+  };
+  const selectedSessions = selectedDay
+    ? sessions.filter((s) => dayKey(new Date(s.date)) === selectedDay).sort((a, b) => a.date.localeCompare(b.date))
+    : [];
 
   const days = useMemo(() => {
     const names = locale === "ru" ? WEEKDAYS_RU : WEEKDAYS_UZ;
@@ -135,19 +185,34 @@ export function SchedulePage() {
           subtitle={t("subtitle")}
           left={
             <div className="flex flex-wrap items-center gap-2.5">
+              {/* Hafta / Oy tanlagich */}
+              <div className="flex items-center rounded-control border border-line bg-surface-raised p-1">
+                {(["week", "month"] as const).map((v) => (
+                  <button
+                    key={v}
+                    onClick={() => setView(v)}
+                    className={cls(
+                      "rounded-[6px] px-3.5 py-1.5 text-body font-bold transition-colors",
+                      view === v ? "bg-surface text-ink shadow-sm" : "text-ink-soft hover:text-ink"
+                    )}
+                  >
+                    {t(v === "week" ? "viewWeek" : "viewMonth")}
+                  </button>
+                ))}
+              </div>
               <div className="flex items-center rounded-control border border-line bg-surface-raised p-1">
                 <button
-                  onClick={() => shift(-1)}
+                  onClick={() => (view === "week" ? shift(-1) : shiftMonth(-1))}
                   aria-label={t("prevWeek")}
                   className="flex h-8 w-8 items-center justify-center rounded-[6px] text-ink-soft transition-colors hover:bg-surface hover:text-ink"
                 >
                   <Icon icon={ChevronLeft} size={16} />
                 </button>
-                <span className="min-w-[180px] text-center text-body font-bold tracking-wide text-ink">
-                  {fmt(weekStart)} — {fmt(weekEnd)}
+                <span className="min-w-[180px] text-center text-body font-bold capitalize tracking-wide text-ink">
+                  {view === "week" ? `${fmt(weekStart)} — ${fmt(weekEnd)}` : monthLabel}
                 </span>
                 <button
-                  onClick={() => shift(1)}
+                  onClick={() => (view === "week" ? shift(1) : shiftMonth(1))}
                   aria-label={t("nextWeek")}
                   className="flex h-8 w-8 items-center justify-center rounded-[6px] text-ink-soft transition-colors hover:bg-surface hover:text-ink"
                 >
@@ -155,7 +220,7 @@ export function SchedulePage() {
                 </button>
               </div>
               <button
-                onClick={() => setWeekStart(mondayOf(new Date()))}
+                onClick={() => (view === "week" ? setWeekStart(mondayOf(new Date())) : (setMonthDate(new Date(new Date().getFullYear(), new Date().getMonth(), 1)), setSelectedDay(null)))}
                 className="rounded-control border border-line bg-surface-raised px-4 py-1.5 text-body font-bold text-ink-soft transition-colors hover:bg-surface hover:text-ink"
               >
                 {t("today")}
@@ -193,6 +258,47 @@ export function SchedulePage() {
         <div className="mt-4 flex justify-center">
           <Spinner size={26} />
         </div>
+      ) : view === "month" ? (
+        <motion.div variants={itemVariants} className="space-y-3">
+          <Card className="p-0 shadow-sm border border-line bg-surface">
+            <MonthCalendar
+              monthDate={monthDate}
+              weekdayNames={ru ? WD_SHORT_MON_RU : WD_SHORT_MON_UZ}
+              entriesByDay={entriesByDay}
+              selectedKey={selectedDay}
+              onSelectDay={(k) => setSelectedDay((cur) => (cur === k ? null : k))}
+            />
+          </Card>
+          {selectedDay && (
+            <Card className="p-0 overflow-hidden border border-line bg-surface">
+              <div className="flex items-center gap-2 bg-surface-raised px-4 py-2.5">
+                <Icon icon={CalendarDays} size={15} className="text-ink-soft" />
+                <span className="text-body font-bold text-ink">{formatDate(ru ? "ru" : "uz", new Date(selectedDay), "long")}</span>
+                <span className="ml-auto text-note text-ink-faint">{t("statLessons")}: {selectedSessions.length}</span>
+              </div>
+              {selectedSessions.length === 0 ? (
+                <p className="px-4 py-6 text-center text-body text-ink-faint">{t("emptyWeek")}</p>
+              ) : (
+                <div className="divide-y divide-line">
+                  {selectedSessions.map((s) => {
+                    const meta = s.myStatus ? STATUS_CELL[s.myStatus] : null;
+                    return (
+                      <div key={s.key} className="flex items-center gap-3 px-4 py-2.5">
+                        <span className="w-12 shrink-0 text-body font-bold tabular-nums text-ink">{hhmm(new Date(s.date))}</span>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-body font-bold text-ink">{s.title ?? s.courseName}</p>
+                          <p className="truncate text-note text-ink-soft">{s.courseName}{s.room ? ` · ${s.room}` : ""}</p>
+                        </div>
+                        {meta && <Icon icon={meta.icon} size={16} className={meta.chip} strokeWidth={2.5} />}
+                        {!meta && !s.isPast && <span className="rounded-pill bg-brand-soft px-2 py-0.5 text-micro font-bold text-brand-tint">{t("upcomingBadge")}</span>}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </Card>
+          )}
+        </motion.div>
       ) : slots.length === 0 ? (
         <motion.div variants={itemVariants}>
           <Card className="mt-2 border-dashed bg-surface">
@@ -241,7 +347,7 @@ export function SchedulePage() {
                       >
                         <div className="flex h-full flex-col justify-start space-y-1.5">
                           {rows.map((s) => (
-                            <LessonCell key={s.id} s={s} />
+                            <LessonCell key={s.key} s={s} />
                           ))}
                         </div>
                       </div>

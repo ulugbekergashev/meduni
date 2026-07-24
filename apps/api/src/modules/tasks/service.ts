@@ -51,9 +51,18 @@ export type TeacherQuickAction =
   | { type: "attendance"; courseId: number; date: string; startTime: string; groupId: number | null }
   | { type: "done"; taskId: number };
 
+// Vazifa MANBASI (uch mustaqil oqim) va HOLATI. Frontend bitta ro'yxatni shu
+// ikki o'lcham bo'yicha filtrlaydi (bajarilmagan / muddati o'tgan / bajarilgan /
+// kafedradan / talabalarga).
+export type TaskSource = "auto" | "kafedra" | "students";
+export type TaskBoardStatus = "open" | "overdue" | "done";
+export type BoardKind = TeacherTaskKind | "students_assignment";
+
 export interface TeacherTaskItem {
   id: string;
-  kind: TeacherTaskKind;
+  source: TaskSource;
+  status: TaskBoardStatus;
+  kind: BoardKind;
   tone: TaskTone;
   title: string;
   subtitle: string;
@@ -61,18 +70,63 @@ export interface TeacherTaskItem {
   /** Ish qachondan beri kutmoqda — saralash va "N kun oldin" ko'rsatish uchun. */
   sinceIso: string | null;
   dueIso?: string | null;
+  completedIso?: string | null;
   link: string;
   quickAction?: TeacherQuickAction;
+  /** Talabalarga berilgan guruh-topshiriq bajarilishi (k/N). */
+  progress?: { done: number; total: number };
+  /** Talabalarga berilgan topshiriqni o'chirish uchun (creator). */
+  deletableTaskIds?: number[];
+}
+
+export interface TaskBoard {
+  stats: {
+    /** O'qituvchi bajarishi kerak (auto + kafedra, hali bajarilmagan). */
+    toDo: number;
+    /** Muddati o'tgan (kafedra topshiriqlari). */
+    overdue: number;
+    /** Talabalarga berilgan, hali bajarilishi kutilayotgan guruh-topshiriqlar. */
+    waiting: number;
+    /** So'nggi 6 oyda bajarilgan (kafedra + talabalar). */
+    done: number;
+  };
+  /** Manba bo'yicha aktiv sonlar (filtr chiplarida ko'rsatiladi). */
+  counts: { auto: number; kafedra: number; students: number; done: number; overdue: number; all: number };
+  items: TeacherTaskItem[];
+  /** So'nggi 6 oy — bajarilgan vazifalar oylik grafigi. */
+  months: TaskHistoryBucket[];
+}
+
+export interface TaskHistoryBucket {
+  key: string; // "YYYY-MM"
+  count: number;
 }
 
 const ATTENDANCE_LOOKBACK_DAYS = 21;
+const TASK_HISTORY_MONTHS = 6;
 
 function dayKeyOf(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-export async function computeTeacherTaskFeed(teacherId: number): Promise<TeacherTaskItem[]> {
+function monthKey(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function emptyMonthBuckets(now: Date): Map<string, number> {
+  const m = new Map<string, number>();
+  for (let i = TASK_HISTORY_MONTHS - 1; i >= 0; i--) {
+    m.set(monthKey(new Date(now.getFullYear(), now.getMonth() - i, 1)), 0);
+  }
+  return m;
+}
+
+/** Avto-hisoblangan ishlar (source="auto"): mavzu quvuri, keys tekshiruvi,
+ *  yo'qlama, orqada qolganlar. Bularning "bajarilgan" holati saqlanmaydi —
+ *  ish hal bo'lsa ro'yxatdan o'zi tushadi (shuning uchun doim status="open"). */
+async function computeAutoItems(teacherId: number): Promise<TeacherTaskItem[]> {
   const items: TeacherTaskItem[] = [];
+  const auto = (i: Omit<TeacherTaskItem, "source" | "status">): TeacherTaskItem => ({ ...i, source: "auto", status: "open" });
 
   // 1) Mavzu quvuri: material → konspekt → kontent → chop etish → faktcheck.
   const topics = await prisma.topic.findMany({
@@ -94,22 +148,22 @@ export async function computeTeacherTaskFeed(teacherId: number): Promise<Teacher
     const digestApproved = t.digest?.approvedByTeacher === true;
     const hasContent = t.contentItems.length > 0;
     if (!hasDoneMaterial) {
-      items.push({ id: `material:${t.id}`, kind: "material_missing", tone: "brand", title: t.title, subtitle: t.course.name, sinceIso: t.createdAt.toISOString(), link: `/teach/topics/${t.id}?step=material` });
+      items.push(auto({ id: `material:${t.id}`, kind: "material_missing", tone: "brand", title: t.title, subtitle: t.course.name, sinceIso: t.createdAt.toISOString(), link: `/teach/topics/${t.id}?step=material` }));
       continue;
     }
     if (!digestApproved) {
-      items.push({ id: `digest:${t.id}`, kind: "digest_approve", tone: "amber", title: t.title, subtitle: t.course.name, sinceIso: (t.digest?.updatedAt ?? t.createdAt).toISOString(), link: `/teach/topics/${t.id}?step=digest` });
+      items.push(auto({ id: `digest:${t.id}`, kind: "digest_approve", tone: "amber", title: t.title, subtitle: t.course.name, sinceIso: (t.digest?.updatedAt ?? t.createdAt).toISOString(), link: `/teach/topics/${t.id}?step=digest` }));
       continue;
     }
     if (!hasContent) {
-      items.push({ id: `content:${t.id}`, kind: "content_create", tone: "violet", title: t.title, subtitle: t.course.name, sinceIso: t.createdAt.toISOString(), link: `/teach/topics/${t.id}?step=generate` });
+      items.push(auto({ id: `content:${t.id}`, kind: "content_create", tone: "violet", title: t.title, subtitle: t.course.name, sinceIso: t.createdAt.toISOString(), link: `/teach/topics/${t.id}?step=generate` }));
       continue;
     }
     if (t.contentItems.some((c) => c.status === "DRAFT" || c.status === "REVIEW")) {
-      items.push({ id: `publish:${t.id}`, kind: "content_publish", tone: "blue", title: t.title, subtitle: t.course.name, sinceIso: t.createdAt.toISOString(), link: `/teach/topics/${t.id}?step=publish` });
+      items.push(auto({ id: `publish:${t.id}`, kind: "content_publish", tone: "blue", title: t.title, subtitle: t.course.name, sinceIso: t.createdAt.toISOString(), link: `/teach/topics/${t.id}?step=publish` }));
     }
     if (t.contentItems.some((c) => c.factcheckStatus === "FLAGGED")) {
-      items.push({ id: `factcheck:${t.id}`, kind: "factcheck", tone: "amber", title: t.title, subtitle: t.course.name, sinceIso: t.createdAt.toISOString(), link: `/teach/topics/${t.id}?step=factcheck` });
+      items.push(auto({ id: `factcheck:${t.id}`, kind: "factcheck", tone: "amber", title: t.title, subtitle: t.course.name, sinceIso: t.createdAt.toISOString(), link: `/teach/topics/${t.id}?step=factcheck` }));
     }
   }
 
@@ -126,7 +180,7 @@ export async function computeTeacherTaskFeed(teacherId: number): Promise<Teacher
   });
   for (const r of caseRows) {
     const topic = r.clinicalCase.contentItem.topic;
-    items.push({
+    items.push(auto({
       id: `case:${r.id}`,
       kind: "cases_review",
       tone: "rose",
@@ -134,7 +188,7 @@ export async function computeTeacherTaskFeed(teacherId: number): Promise<Teacher
       subtitle: `${topic.title} · ${topic.course.name}`,
       sinceIso: r.submittedAt.toISOString(),
       link: `/teach/cases/review?open=${r.id}`,
-    });
+    }));
   }
 
   // 3) Yo'qlama belgilanmagan darslar — slotlardan hosil bo'lgan HAQIQIY darslar
@@ -146,7 +200,7 @@ export async function computeTeacherTaskFeed(teacherId: number): Promise<Teacher
   const lessons = await getTeacherLessons(teacherId, { from: dayKeyOf(from), to: dayKeyOf(today) }).catch(() => []);
   for (const l of lessons) {
     if (l.status !== "UNMARKED" || new Date(l.date) >= today) continue;
-    items.push({
+    items.push(auto({
       id: `attendance:${l.courseId}:${l.groupId ?? "x"}:${l.dayKey}`,
       kind: "attendance_unmarked",
       tone: "amber",
@@ -155,7 +209,7 @@ export async function computeTeacherTaskFeed(teacherId: number): Promise<Teacher
       sinceIso: l.date,
       link: "/teach/schedule",
       quickAction: { type: "attendance", courseId: l.courseId, date: l.dayKey, startTime: l.startTime, groupId: l.groupId },
-    });
+    }));
   }
 
   // 4) Orqada qolgan talabalar — mavjud progress-matritsadan (ism bilan).
@@ -165,7 +219,7 @@ export async function computeTeacherTaskFeed(teacherId: number): Promise<Teacher
     if (!loaded) continue;
     const { students } = await buildMatrix(loaded);
     for (const s of students.filter((x) => x.behind)) {
-      items.push({
+      items.push(auto({
         id: `behind:${c.id}:${s.id}`,
         kind: "students_behind",
         tone: "rose",
@@ -173,19 +227,66 @@ export async function computeTeacherTaskFeed(teacherId: number): Promise<Teacher
         subtitle: loaded.name,
         sinceIso: s.lastActiveAt,
         link: `/teach/courses/${c.id}/progress`,
-      });
+      }));
     }
   }
 
-  // 5) Kafedra/admin tayinlagan vazifalar — bitta navbatga qo'shiladi (ikkita
-  // ajralgan blok o'rniga), muddati o'tgan/HIGH → rose.
-  const assigned = await listAssigned(teacherId);
+  return items;
+}
+
+function sortBoard(items: TeacherTaskItem[]): TeacherTaskItem[] {
+  const statusRank: Record<TaskBoardStatus, number> = { overdue: 0, open: 1, done: 2 };
+  return items.sort((a, b) => {
+    const sr = statusRank[a.status] - statusRank[b.status];
+    if (sr !== 0) return sr;
+    // Bajarilganlar — eng yangi tepada; aktivlar — muhimlik + eskilik.
+    if (a.status === "done") {
+      const ac = a.completedIso ? new Date(a.completedIso).getTime() : 0;
+      const bc = b.completedIso ? new Date(b.completedIso).getTime() : 0;
+      return bc - ac;
+    }
+    const tr = TONE_RANK[a.tone] - TONE_RANK[b.tone];
+    if (tr !== 0) return tr;
+    const at = a.sinceIso ? new Date(a.sinceIso).getTime() : Infinity;
+    const bt = b.sinceIso ? new Date(b.sinceIso).getTime() : Infinity;
+    return at - bt;
+  });
+}
+
+/** Butun vazifa borti: uch manba (avto / kafedradan / talabalarga) bitta
+ *  ro'yxatda, holati (bajarilmagan / muddati o'tgan / bajarilgan) bilan +
+ *  statistika + oylik grafik. Frontend shu bittasidan hamma filtrlarni quradi. */
+export async function getTeacherTaskBoard(teacherId: number): Promise<TaskBoard> {
   const now = Date.now();
+  const historySince = new Date(new Date().getFullYear(), new Date().getMonth() - (TASK_HISTORY_MONTHS - 1), 1);
+
+  const [autoItems, assigned, createdGroups, doneAssigned, doneCreated] = await Promise.all([
+    computeAutoItems(teacherId),
+    listAssigned(teacherId), // faqat OPEN
+    listCreated(teacherId), // barcha (open+done), batch bo'yicha
+    // So'nggi 6 oyda bajarilgan — oylik grafik va "bajarilgan" filtri uchun.
+    prisma.task.findMany({
+      where: { assignedToId: teacherId, status: "DONE", completedAt: { gte: historySince } },
+      select: { id: true, title: true, description: true, completedAt: true, createdBy: { select: { fullName: true } } },
+      orderBy: { completedAt: "desc" },
+    }),
+    prisma.task.findMany({
+      where: { createdById: teacherId, status: "DONE", completedAt: { gte: historySince } },
+      select: { id: true, title: true, completedAt: true, batchId: true, assignedTo: { select: { fullName: true } } },
+      orderBy: { completedAt: "desc" },
+    }),
+  ]);
+
+  const items: TeacherTaskItem[] = [...autoItems];
+
+  // Kafedradan — MENGA tayinlangan (aktiv). Muddati o'tgan → status="overdue".
   for (const a of assigned) {
     const overdue = a.dueDate ? new Date(a.dueDate).getTime() < now : false;
     const tone: TaskTone = overdue || a.priority === "HIGH" ? "rose" : a.priority === "NORMAL" ? "amber" : "blue";
     items.push({
       id: `assigned:${a.id}`,
+      source: "kafedra",
+      status: overdue ? "overdue" : "open",
       kind: "assigned",
       tone,
       title: a.title,
@@ -198,15 +299,84 @@ export async function computeTeacherTaskFeed(teacherId: number): Promise<Teacher
     });
   }
 
-  items.sort((a, b) => {
-    const r = TONE_RANK[a.tone] - TONE_RANK[b.tone];
-    if (r !== 0) return r;
-    const at = a.sinceIso ? new Date(a.sinceIso).getTime() : Infinity;
-    const bt = b.sinceIso ? new Date(b.sinceIso).getTime() : Infinity;
-    return at - bt;
-  });
+  // Kafedradan — bajarilganlari (so'nggi 6 oy).
+  for (const d of doneAssigned) {
+    items.push({
+      id: `assigned-done:${d.id}`,
+      source: "kafedra",
+      status: "done",
+      kind: "assigned",
+      tone: "emerald",
+      title: d.title,
+      subtitle: d.createdBy.fullName,
+      description: d.description,
+      sinceIso: d.completedAt?.toISOString() ?? null,
+      completedIso: d.completedAt?.toISOString() ?? null,
+      link: "",
+    });
+  }
 
-  return items;
+  // Talabalarga berilgan — guruh-topshiriq (batch), k/N bilan. Hammasi bajarilsa
+  // status="done" (completedIso — eng oxirgi), aks holda "open" (kutilmoqda).
+  const doneByBatch = new Map<string, Date | null>();
+  for (const d of doneCreated) {
+    const key = d.batchId ?? `id:${d.id}`;
+    const cur = doneByBatch.get(key);
+    if (!cur || (d.completedAt && d.completedAt > cur)) doneByBatch.set(key, d.completedAt ?? cur ?? null);
+  }
+  for (const g of createdGroups) {
+    const allDone = g.total > 0 && g.done === g.total;
+    const assigneesText = g.assignees.slice(0, 3).join(", ") + (g.assignees.length > 3 ? ` +${g.assignees.length - 3}` : "");
+    items.push({
+      id: `created:${g.key}`,
+      source: "students",
+      status: allDone ? "done" : "open",
+      kind: "students_assignment",
+      tone: allDone ? "emerald" : "blue",
+      title: g.title,
+      subtitle: assigneesText,
+      description: g.description,
+      sinceIso: g.createdAt,
+      dueIso: g.dueDate,
+      completedIso: allDone ? doneByBatch.get(g.key)?.toISOString() ?? null : null,
+      link: "",
+      progress: { done: g.done, total: g.total },
+      deletableTaskIds: g.taskIds,
+    });
+  }
+
+  sortBoard(items);
+
+  // Statistika.
+  const active = items.filter((i) => i.status !== "done");
+  const toDo = active.filter((i) => i.source === "auto" || i.source === "kafedra").length;
+  const overdue = items.filter((i) => i.status === "overdue").length;
+  const waiting = items.filter((i) => i.source === "students" && i.status !== "done").length;
+  const doneItems = items.filter((i) => i.status === "done");
+
+  // Oylik grafik (bajarilgan — kafedra + talabalar).
+  const buckets = emptyMonthBuckets(new Date());
+  const bump = (d: Date | null | undefined) => {
+    if (!d) return;
+    const k = monthKey(d);
+    if (buckets.has(k)) buckets.set(k, (buckets.get(k) ?? 0) + 1);
+  };
+  for (const d of doneAssigned) bump(d.completedAt);
+  for (const d of doneCreated) bump(d.completedAt);
+
+  return {
+    stats: { toDo, overdue, waiting, done: doneItems.length },
+    counts: {
+      auto: active.filter((i) => i.source === "auto").length,
+      kafedra: active.filter((i) => i.source === "kafedra").length,
+      students: active.filter((i) => i.source === "students").length,
+      done: doneItems.length,
+      overdue,
+      all: items.length,
+    },
+    items,
+    months: [...buckets.entries()].map(([key, count]) => ({ key, count })),
+  };
 }
 
 // ---------- Student ----------
@@ -360,93 +530,6 @@ export async function listCreated(userId: number): Promise<CreatedTaskGroup[]> {
     g.taskIds.push(t.id);
   }
   return [...groups.values()];
-}
-
-// ---------- Statistika: oxirgi oylarda bajarilgan vazifalar ----------
-// Ikki oqim mustaqil: kafedradan MENGA kelgan (assignedToId=teacher) va MEN
-// talabalarga bergan (createdById=teacher, Task modeli faqat shu ikki yo'nalishni
-// biladi — @@ birlashtirish shart emas). Filtr talab qilinganda ("kafedradan"
-// vs "talabalarga bergan") shu ikkisi ustida ishlaydi.
-
-const TASK_HISTORY_MONTHS = 6;
-
-export interface TaskHistoryBucket {
-  key: string; // "YYYY-MM"
-  count: number;
-}
-
-export interface CompletedTaskRow {
-  id: number;
-  title: string;
-  completedAt: string;
-  /** kafedra oqimida — kim tayinlagan; talabalar oqimida — kimga tayinlangan. */
-  counterpart: string;
-}
-
-export interface TaskHistorySeries {
-  total: number;
-  months: TaskHistoryBucket[];
-  recent: CompletedTaskRow[];
-}
-
-export interface TeacherTaskHistory {
-  kafedra: TaskHistorySeries;
-  toStudents: TaskHistorySeries;
-}
-
-function monthKey(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-}
-
-function emptyMonthBuckets(now: Date): Map<string, number> {
-  const m = new Map<string, number>();
-  for (let i = TASK_HISTORY_MONTHS - 1; i >= 0; i--) {
-    m.set(monthKey(new Date(now.getFullYear(), now.getMonth() - i, 1)), 0);
-  }
-  return m;
-}
-
-/** Oxirgi 6 oyda bajarilgan vazifalar — kafedradan kelgan va talabalarga
- *  berilgan ikki mustaqil qatorda, oylik son + so'nggi qatorlar bilan. */
-export async function getTeacherTaskHistory(teacherId: number): Promise<TeacherTaskHistory> {
-  const now = new Date();
-  const since = new Date(now.getFullYear(), now.getMonth() - (TASK_HISTORY_MONTHS - 1), 1);
-
-  const [kafedraDone, toStudentsDone] = await Promise.all([
-    prisma.task.findMany({
-      where: { assignedToId: teacherId, status: "DONE", completedAt: { gte: since } },
-      select: { id: true, title: true, completedAt: true, createdBy: { select: { fullName: true } } },
-      orderBy: { completedAt: "desc" },
-    }),
-    prisma.task.findMany({
-      where: { createdById: teacherId, status: "DONE", completedAt: { gte: since } },
-      select: { id: true, title: true, completedAt: true, assignedTo: { select: { fullName: true } } },
-      orderBy: { completedAt: "desc" },
-    }),
-  ]);
-
-  const toMonths = (rows: { completedAt: Date | null }[]): TaskHistoryBucket[] => {
-    const buckets = emptyMonthBuckets(now);
-    for (const r of rows) {
-      if (!r.completedAt) continue;
-      const k = monthKey(r.completedAt);
-      if (buckets.has(k)) buckets.set(k, (buckets.get(k) ?? 0) + 1);
-    }
-    return [...buckets.entries()].map(([key, count]) => ({ key, count }));
-  };
-
-  return {
-    kafedra: {
-      total: kafedraDone.length,
-      months: toMonths(kafedraDone),
-      recent: kafedraDone.slice(0, 8).map((r) => ({ id: r.id, title: r.title, completedAt: r.completedAt!.toISOString(), counterpart: r.createdBy.fullName })),
-    },
-    toStudents: {
-      total: toStudentsDone.length,
-      months: toMonths(toStudentsDone),
-      recent: toStudentsDone.slice(0, 8).map((r) => ({ id: r.id, title: r.title, completedAt: r.completedAt!.toISOString(), counterpart: r.assignedTo.fullName })),
-    },
-  };
 }
 
 export interface CreateTaskInput {
