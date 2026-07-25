@@ -110,24 +110,26 @@ export const SCENARIO_VARIATIONS = {
 
 export function patientScenarioSystemPrompt(lang: "uz" | "ru"): string {
   return [
-    "Sen tibbiy ta'lim uchun VIRTUAL BEMOR ssenariysini yaratuvchi assistentsan.",
+    "Sen tibbiy ta'lim uchun VIRTUAL BEMOR (AMALIYOT — baholanmaydigan mashq) ssenariysini yaratuvchi assistentsan.",
     "Berilgan MAVZU KONSPEKTI asosida roleplay uchun bitta realistik bemor 'haqiqatini' tuzasan.",
     "",
-    "QAT'IY QOIDALAR:",
-    "1. Klinik FAKTLAR (belgilar, obyektiv holat, laboratoriya, to'g'ri TASHXIS, dozalar)",
-    "   FAQAT konspektdan bo'lsin — konspektда yo'q kasallik/mexanizm/preparatni O'YLAB TOPMA.",
-    "2. Bemor 'qobig'ini' MASHQ UCHUN XILMA-XIL qil: realistik ism, yosh, jins, og'irlik",
+    "QOIDALAR:",
+    "1. TASHXIS mavzu/konspekt DOIRASIDA bo'lsin (mavzu qamragan kasalliklardan) —",
+    "   mavzuga aloqasiz kasallik tanlama.",
+    "2. Klinik DETALLARNI (vitallar, laboratoriya qiymatlari, tekshiruv topilmalari, obyektiv",
+    "   holat) realistik va tashxisga IZCHIL to'ldir: konspektда bor bo'lsa o'shandan, aks",
+    "   holda STANDART tibbiy bilimдан (referens me'yorlar bilan). Bu — amaliyot bemori,",
+    "   shuning uchun klinik detal to'liq va realistik bo'lsin (raqamlar mantiqiy).",
+    "3. Bemor 'qobig'ini' MASHQ UCHUN XILMA-XIL qil: realistik ism, yosh, jins, og'irlik",
     "   darajasi, tipik yoki atipik ko'rinish. Bu qism har safar boshqacha bo'lsin.",
-    "3. Agar konspekt BIR NECHA holat/kasallikni qamrasa — ulardан BIRINI tanla (tashxis",
-    "   turlanadi — differensial mashq). Agar bitta kasallik bo'lsa — tashxis o'sha bo'ladi,",
-    "   faqat ko'rinishi/parametrlari turlanadi. Konspekt qamrovidan CHIQMA.",
-    "4. `complaints`/`anamnesis` — bemor tilida (subyektiv shikoyat/tarix).",
-    "   `objectiveStatus`/`labData` — tekshiruvда chiqadigan obyektiv topilmalar.",
-    "   `vitals` — realistik hayotiy ko'rsatkichlar (holatga mos).",
-    "5. `referenceAnswer` — TO'G'RI tashxis + qisqa asoslash (BAHOLASH uchun; talabaga",
+    "4. Agar konspekt BIR NECHA holat/kasallikni qamrasa — ulardан BIRINI tanla (tashxis",
+    "   turlanadi — differensial mashq). Bitta kasallik bo'lsa — tashxis o'sha, ko'rinishi turlanadi.",
+    "5. `complaints`/`anamnesis` — bemor tilida (subyektiv). `objectiveStatus`/`labData` —",
+    "   tekshiruvда chiqadigan obyektiv topilmalar. `vitals` — realistik hayotiy ko'rsatkichlar.",
+    "6. `referenceAnswer` — TO'G'RI tashxis + qisqa asoslash (BAHOLASH uchun; talabaga",
     "   ko'rsatilmaydi). `patientName` realistik, `patientInfo` — \"NN yosh, jins\".",
-    "6. `steps` va `questions` — bo'sh massiv (roleplay uchun kerak emas).",
-    `7. Til — ${langLabel[lang]}. Javobni FAQAT JSON schema bo'yicha ber.`,
+    "7. `steps` va `questions` — bo'sh massiv (roleplay uchun kerak emas).",
+    `8. Til — ${langLabel[lang]}. Javobni FAQAT JSON schema bo'yicha ber.`,
   ].join("\n");
 }
 
@@ -148,6 +150,96 @@ export function patientScenarioUserContent(digest: DigestJson, variation: string
   return parts.join("\n");
 }
 
+// ---------- Tekshiruv (test) natijasi — buyurtirilgan tahlil/instrumental ----------
+// Yashirin tashxisga IZCHIL realistik natija (referens me'yorlar bilan).
+
+export function testResultSystemPrompt(lang: "uz" | "ru"): string {
+  return [
+    "Sen tibbiy laboratoriya/instrumental natijalar generatorisan (AMALIYOT bemori uchun).",
+    "Berilgan bemorning YASHIRIN tashxisiga MOS, realistik qisqa natija berasan.",
+    "Referens me'yorlar bilan (masalan: \"Troponin I: 5.2 ng/mL (me'yor <0.04)\").",
+    "Natija 2–4 qator, klinik ko'rsatkichlar bilan. Yashirin tashxisni SO'Z bilan aytma —",
+    "faqat obyektiv topilmalarни ber (talaba o'zi xulosa qilsin).",
+    `Til — ${langLabel[lang]}. Javobni FAQAT JSON schema bo'yicha ber ({\"result\": \"...\"}).`,
+  ].join("\n");
+}
+
+export function testResultUserContent(c: CaseJson, testType: string): string {
+  return [
+    "=== BEMOR HAQIDA (yashirin — talabaga ko'rsatilmaydi) ===",
+    caseTruth(c),
+    "=== TUGADI ===",
+    "",
+    `BUYURILGAN TEKSHIRUV: ${testType}`,
+    "Shu tekshiruv natijasini ber — yashirin tashxisga izchil, realistik.",
+  ].join("\n");
+}
+
+export const testResultResponseSchema = {
+  type: Type.OBJECT,
+  properties: { result: { type: Type.STRING } },
+  required: ["result"],
+};
+
+// ---------- Differensial tashxis (DDx) — MAVJUD dalillar asosida (jonli) ----------
+// ⚠️ Yashirin tashxisdан hisoblanMAYDI (aks holda javobни sizdirardi) — faqat
+// talaba ochgan dalillardan (suhbat + test natijalari).
+
+export interface DDxItem {
+  diagnosis: string;
+  probability: number;
+  keyFinding: string;
+}
+
+export function ddxSystemPrompt(lang: "uz" | "ru"): string {
+  return [
+    "Sen klinik diagnostika eksperti-yordamchisan. Talabaning virtual bemor bilan suhbati",
+    "va buyurgan tekshiruv natijalari asosida 3–4 ta eng ehtimoliy DIFFERENSIAL TASHXISNI",
+    "foizда baholaysan (yig'indi ~100%). Har biriga qisqa 'kalit topilma' (nega shu tashxis).",
+    "MUHIM: FAQAT talaba ochgan dalillarga asoslan (suhbat + test natijalari). Bemorning",
+    "asl javobini bilmaysan — ehtimollikni faqat mavjud ma'lumotдан chiqar (real differensial).",
+    `Til — ${langLabel[lang]}. Javobni FAQAT JSON schema bo'yicha ber.`,
+  ].join("\n");
+}
+
+export function ddxUserContent(
+  patientBasics: string,
+  history: { role: string; text: string }[],
+  tests: string[]
+): string {
+  const conv = history.map((m) => `${m.role === "student" ? "SHIFOKOR" : "BEMOR"}: ${m.text}`).join("\n");
+  return [
+    `BEMOR: ${patientBasics}`,
+    "",
+    "SUHBAT:",
+    conv || "(hali yo'q)",
+    "",
+    "TEST NATIJALARI:",
+    tests.length ? tests.join("\n") : "(hali yo'q)",
+    "",
+    "Mavjud dalillar asosida 3–4 ta differensial tashxis (foiz + kalit topilma).",
+  ].join("\n");
+}
+
+export const ddxResponseSchema = {
+  type: Type.OBJECT,
+  properties: {
+    ddx: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          diagnosis: { type: Type.STRING },
+          probability: { type: Type.INTEGER },
+          keyFinding: { type: Type.STRING },
+        },
+        required: ["diagnosis", "probability", "keyFinding"],
+      },
+    },
+  },
+  required: ["ddx"],
+};
+
 // ---------- Baholash ----------
 
 export function evalSystemPrompt(lang: "uz" | "ru", c: CaseJson): string {
@@ -155,15 +247,17 @@ export function evalSystemPrompt(lang: "uz" | "ru", c: CaseJson): string {
     "Sen tibbiyot o'qituvchisisan. Talaba virtual bemor bilan suhbat o'tkazdi",
     "(anamnez yig'di) va tashxis taklif qildi. Uni ADOLATLI baholaysan.",
     "",
-    "Baholash mezoni:",
-    "1. Tashxis to'g'rimi — talabaning taxminи keysдаги haqiqiy tashxisga mos keladimi.",
-    "2. Anamnez sifati (0–100) — muhim savollarni berdimi (shikoyat tafsiloti,",
-    "   boshlanish vaqti, kuchayish, o'tган kasalliklar, tekshiruv/analiz buyurishi).",
-    "3. Muloqot (0–100) — savollar mantiqiy ketma-ketlikda, aniq va hurmatли bo'lдими.",
-    "4. Umumiy ball (0–100).",
+    "Baholash mezoni (har biri 0–100):",
+    "1. Tashxis to'g'rimi (correct) — talabaning taxminи haqiqiy tashxisga mos keladimi.",
+    "2. anamnesisScore — muhim savollarni berdimi (shikoyat tafsiloti, boshlanish, kuchayish, tarix).",
+    "3. examinationScore — obyektiv tekshiruv/analiz/instrumental TO'G'RI buyurdimi (kerakli testlar).",
+    "4. treatmentScore — davolash/keyingi qadam rejasi asosli va to'g'rimi (bergan bo'lsa).",
+    "5. safetyScore — xavfli holatni ('qizil bayroq') payqadimi, xavfsiz yondashdimi.",
+    "6. communicationScore — savollar mantiqiy, aniq va hurmatли bo'lдими.",
+    "7. overallScore — umumiy ball (yuqoridagilarning muvozanatli o'rtachasi).",
     "strengths — talaba nimani yaxshi qildi (1–2 jumla).",
     "improvements — nimani o'tkazib yubordi / yaxshилаши kerak (1–2 jumla).",
-    "diagnosis — keysдаги TO'G'RI tashxis (qisqa).",
+    "diagnosis — TO'G'RI tashxis (qisqa).",
     `Barcha matn — ${langLabel[lang]} tilida. Javobni FAQAT JSON schema bo'yicha ber.`,
     "",
     "=== KLINIK KEYS (haqiqiy ma'lumot + to'g'ri tashxis shu yerда) ===",
@@ -196,6 +290,9 @@ export interface PatientEval {
   diagnosis: string;
   correct: boolean;
   anamnesisScore: number;
+  examinationScore: number;
+  treatmentScore: number;
+  safetyScore: number;
   communicationScore: number;
   overallScore: number;
   strengths: string;
@@ -208,10 +305,24 @@ export const evalResponseSchema = {
     diagnosis: { type: Type.STRING },
     correct: { type: Type.BOOLEAN },
     anamnesisScore: { type: Type.INTEGER },
+    examinationScore: { type: Type.INTEGER },
+    treatmentScore: { type: Type.INTEGER },
+    safetyScore: { type: Type.INTEGER },
     communicationScore: { type: Type.INTEGER },
     overallScore: { type: Type.INTEGER },
     strengths: { type: Type.STRING },
     improvements: { type: Type.STRING },
   },
-  required: ["diagnosis", "correct", "anamnesisScore", "communicationScore", "overallScore", "strengths", "improvements"],
+  required: [
+    "diagnosis",
+    "correct",
+    "anamnesisScore",
+    "examinationScore",
+    "treatmentScore",
+    "safetyScore",
+    "communicationScore",
+    "overallScore",
+    "strengths",
+    "improvements",
+  ],
 };

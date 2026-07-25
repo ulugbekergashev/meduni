@@ -4,16 +4,34 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import {
   Activity,
   Check,
+  CheckCircle2,
+  FlaskConical,
+  Loader2,
   MessageCircleQuestion,
+  RefreshCw,
   RotateCcw,
   SendHorizontal,
+  Sparkles,
   Stethoscope,
   ThumbsUp,
   TriangleAlert,
   User,
 } from "lucide-react";
 import { Button, Icon, Modal, ProgressRing, Spinner, cls } from "@meduni/ui";
-import { usePatient, useSendPatient, useFinishPatient, useResetPatient, type PatientEval, type PatientMsg } from "../api";
+import {
+  usePatient,
+  useSendPatient,
+  useFinishPatient,
+  useResetPatient,
+  useOrderTest,
+  usePatientDDx,
+  type DDxItem,
+  type PatientEval,
+  type PatientMsg,
+} from "../api";
+
+const TEST_ORDERS = ["EKG", "Umumiy qon tahlili", "Biokimyoviy tahlil", "Rentgen", "UZI", "Troponin", "EKO-KG"];
+const STEP_KEYS = ["stepAnamnesis", "stepExam", "stepDdx", "stepDx"] as const;
 
 function Bubble({ m, animate }: { m: PatientMsg; animate: boolean }) {
   const mine = m.role === "student";
@@ -70,10 +88,12 @@ function EvalView({ ev, onReset }: { ev: PatientEval; onReset: () => void }) {
         </span>
       </div>
 
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
         <ScorePill label={t("anamnesis")} value={ev.anamnesisScore} />
+        <ScorePill label={t("examination")} value={ev.examinationScore} />
+        <ScorePill label={t("treatment")} value={ev.treatmentScore} />
+        <ScorePill label={t("safety")} value={ev.safetyScore} />
         <ScorePill label={t("communication")} value={ev.communicationScore} />
-        <ScorePill label={t("overall")} value={ev.overallScore} />
       </div>
 
       <div className="rounded-control border-l-2 border-brand bg-brand-soft px-3.5 py-2.5">
@@ -111,8 +131,21 @@ function EvalView({ ev, onReset }: { ev: PatientEval; onReset: () => void }) {
   );
 }
 
-/** Virtual bemor roleplay (Modul 26) — talaba anamnez yig'adi, AI bemor javob
- *  beradi, yakunda AI baholaydi. Fokus rejim (yon panellar yo'q). */
+/** Buyurilgan tekshiruv natijasi — chatда alohida (monospace) karta. */
+function TestResult({ m }: { m: PatientMsg }) {
+  const [name, ...rest] = m.text.split("\n");
+  return (
+    <div className="rounded-card rounded-bl-control border border-blue/30 bg-blue-soft/50 px-3 py-2">
+      <p className="mb-0.5 flex items-center gap-1.5 text-micro font-extrabold uppercase tracking-wider text-blue">
+        <Icon icon={FlaskConical} size={11} /> {name}
+      </p>
+      <p className="whitespace-pre-wrap font-mono text-note leading-relaxed text-ink-strong">{rest.join("\n")}</p>
+    </div>
+  );
+}
+
+/** Virtual bemor roleplay (Modul 26) — talaba anamnez yig'adi, tekshiruv buyuradi,
+ *  DDx tuzadi, tashxis qo'yadi; yakunda AI 5 mezon bo'yicha baholaydi. Fokus rejim. */
 export function PatientTab({ topicId }: { topicId: number }) {
   const { t } = useTranslation(undefined, { keyPrefix: "patient" });
   const reduce = useReducedMotion();
@@ -120,10 +153,13 @@ export function PatientTab({ topicId }: { topicId: number }) {
   const send = useSendPatient(topicId);
   const finish = useFinishPatient(topicId);
   const reset = useResetPatient(topicId);
+  const order = useOrderTest(topicId);
+  const ddxMut = usePatientDDx(topicId);
 
   const [draft, setDraft] = useState("");
   const [dx, setDx] = useState("");
   const [confirm, setConfirm] = useState(false);
+  const [ddx, setDdx] = useState<DDxItem[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const data = q.data;
@@ -132,6 +168,15 @@ export function PatientTab({ topicId }: { topicId: number }) {
   const evalMsg = messages.find((m) => m.role === "eval")?.eval ?? null;
   const pending = send.isPending ? (send.variables as string) : null;
   const studentTurns = chat.filter((m) => m.role === "student").length;
+  // Buyurilgan testlar — "test" xabar matnining birinchi qatori (nomi).
+  const orderedTests = useMemo(
+    () => new Set(messages.filter((m) => m.role === "test").map((m) => m.text.split("\n")[0])),
+    [messages]
+  );
+  // Bosqichlar: anamnez / tekshiruv / differensial / tashxis.
+  const completedSteps = [studentTurns >= 3, orderedTests.size > 0, ddx.length > 0 || studentTurns >= 5, dx.trim().length > 0];
+
+  const refreshDdx = () => ddxMut.mutate(undefined, { onSuccess: (r) => setDdx(r.ddx) });
 
   useEffect(() => {
     const el = scrollRef.current;
@@ -175,112 +220,218 @@ export function PatientTab({ topicId }: { topicId: number }) {
   };
 
   return (
-    <div className="mx-auto flex h-full max-w-[620px] flex-col">
-      {/* Bemor kartasi + ko'rsatma + "Yangi bemor" (har safar boshqacha) */}
-      <div className="mb-2 flex shrink-0 items-center gap-2.5 rounded-card border border-line bg-surface-raised p-3">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-control bg-rose-soft text-rose">
-          <Icon icon={User} size={18} />
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-body font-extrabold text-ink">{data?.patientInfo?.name || t("patientLabel")}</p>
-          <p className="truncate text-micro text-ink-dim">{data?.patientInfo?.info || t("roleHint")}</p>
-        </div>
-        {chat.length > 0 && (
-          <button
-            onClick={() => reset.mutate()}
-            disabled={reset.isPending}
-            title={t("newPatient")}
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-control border border-line px-2.5 py-1.5 text-micro font-bold text-ink-soft transition-colors hover:bg-surface hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:opacity-40"
-          >
-            {reset.isPending ? <Spinner size={12} /> : <Icon icon={RotateCcw} size={13} />}
-            {t("newPatient")}
-          </button>
-        )}
-      </div>
-
-      {/* Suhbat */}
-      <div ref={scrollRef} className="min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
-        {chat.length === 0 && !pending ? (
-          <div className="flex h-full flex-col items-center justify-center gap-2 px-4 text-center">
-            <div className="flex h-12 w-12 items-center justify-center rounded-card bg-rose-soft text-rose">
-              <Icon icon={MessageCircleQuestion} size={22} />
-            </div>
-            <p className="text-note font-bold text-ink-soft">{t("startTitle")}</p>
-            <p className="max-w-[320px] text-micro leading-relaxed text-ink-dim">{t("startHint")}</p>
+    <div className="flex h-full min-h-0 flex-col gap-2 lg:grid lg:grid-cols-[minmax(0,1fr)_290px] lg:gap-3">
+      {/* ── CHAP: bemor + suhbat + kirish ── */}
+      <div className="flex min-h-0 flex-col">
+        {/* Bemor kartasi + "Yangi bemor" */}
+        <div className="mb-2 flex shrink-0 items-center gap-2.5 rounded-card border border-line bg-surface-raised p-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-control bg-rose-soft text-rose">
+            <Icon icon={User} size={18} />
           </div>
-        ) : (
-          <AnimatePresence initial={false}>
-            {chat.map((m) => (
-              <Bubble key={m.id} m={m} animate={!reduce} />
-            ))}
-            {pending && (
-              <div key="pending" className="space-y-2">
-                <Bubble
-                  key="p-mine"
-                  m={{ id: -1, role: "student", text: pending, createdAt: "" }}
-                  animate={!reduce}
-                />
-                <div className="flex justify-start">
-                  <div className="ml-9 rounded-card rounded-bl-control bg-surface-raised px-3 py-2.5">
-                    <span className="inline-flex gap-1">
-                      {[0, 1, 2].map((i) => (
-                        <motion.span
-                          key={i}
-                          animate={reduce ? undefined : { y: [0, -3, 0] }}
-                          transition={{ duration: 0.9, repeat: Infinity, ease: "easeInOut", delay: i * 0.15 }}
-                          className="h-1.5 w-1.5 rounded-full bg-ink-dim"
-                        />
-                      ))}
-                    </span>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-body font-extrabold text-ink">{data?.patientInfo?.name || t("patientLabel")}</p>
+            <p className="truncate text-micro text-ink-dim">{data?.patientInfo?.info || t("roleHint")}</p>
+          </div>
+          {chat.length > 0 && (
+            <button
+              onClick={() => reset.mutate()}
+              disabled={reset.isPending}
+              title={t("newPatient")}
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-control border border-line px-2.5 py-1.5 text-micro font-bold text-ink-soft transition-colors hover:bg-surface hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:opacity-40"
+            >
+              {reset.isPending ? <Spinner size={12} /> : <Icon icon={RotateCcw} size={13} />}
+              {t("newPatient")}
+            </button>
+          )}
+        </div>
+
+        {/* AI-simulyatsiya yorlig'i (rasmiy ma'lumotnoma emas) */}
+        <div className="mb-2 flex shrink-0 items-center gap-1.5 rounded-control bg-blue-soft px-2.5 py-1.5 text-micro text-blue">
+          <Icon icon={Sparkles} size={12} className="shrink-0" />
+          <span className="min-w-0">{t("simNote")}</span>
+        </div>
+
+        {/* Suhbat */}
+        <div ref={scrollRef} className="min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
+          {chat.length === 0 && !pending ? (
+            <div className="flex h-full flex-col items-center justify-center gap-2 px-4 text-center">
+              <div className="flex h-12 w-12 items-center justify-center rounded-card bg-rose-soft text-rose">
+                <Icon icon={MessageCircleQuestion} size={22} />
+              </div>
+              <p className="text-note font-bold text-ink-soft">{t("startTitle")}</p>
+              <p className="max-w-[320px] text-micro leading-relaxed text-ink-dim">{t("startHint")}</p>
+            </div>
+          ) : (
+            <AnimatePresence initial={false}>
+              {chat.map((m) => (m.role === "test" ? <TestResult key={m.id} m={m} /> : <Bubble key={m.id} m={m} animate={!reduce} />))}
+              {pending && (
+                <div key="pending" className="space-y-2">
+                  <Bubble key="p-mine" m={{ id: -1, role: "student", text: pending, createdAt: "" }} animate={!reduce} />
+                  <div className="flex justify-start">
+                    <div className="ml-9 rounded-card rounded-bl-control bg-surface-raised px-3 py-2.5">
+                      <span className="inline-flex gap-1">
+                        {[0, 1, 2].map((i) => (
+                          <motion.span
+                            key={i}
+                            animate={reduce ? undefined : { y: [0, -3, 0] }}
+                            transition={{ duration: 0.9, repeat: Infinity, ease: "easeInOut", delay: i * 0.15 }}
+                            className="h-1.5 w-1.5 rounded-full bg-ink-dim"
+                          />
+                        ))}
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
-          </AnimatePresence>
-        )}
+              )}
+            </AnimatePresence>
+          )}
+        </div>
+
+        {/* Kirish + yakunlash */}
+        <div className="mt-2 shrink-0 space-y-2">
+          <form
+            className="flex items-end gap-1.5"
+            onSubmit={(e) => {
+              e.preventDefault();
+              submit();
+            }}
+          >
+            <textarea
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  submit();
+                }
+              }}
+              rows={1}
+              placeholder={t("askPlaceholder")}
+              maxLength={2000}
+              className="max-h-24 min-h-[40px] min-w-0 flex-1 resize-none rounded-control border border-line bg-surface px-3 py-2.5 text-body text-ink outline-none transition-colors placeholder:text-ink-dim focus:border-brand"
+            />
+            <button
+              type="submit"
+              disabled={!draft.trim() || send.isPending}
+              aria-label={t("ask")}
+              className="flex h-[40px] w-[40px] shrink-0 items-center justify-center rounded-control bg-brand text-white transition-[background-color,transform] duration-150 hover:bg-brand-deep focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand active:scale-95 disabled:opacity-40"
+            >
+              {send.isPending ? <Spinner size={14} /> : <Icon icon={SendHorizontal} size={16} />}
+            </button>
+          </form>
+
+          <button
+            onClick={() => setConfirm(true)}
+            disabled={studentTurns === 0 || finish.isPending}
+            className="flex w-full items-center justify-center gap-2 rounded-control bg-emerald px-4 py-2.5 text-body font-extrabold text-white transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:opacity-40"
+          >
+            {finish.isPending ? <Spinner size={15} /> : <Icon icon={Stethoscope} size={16} />}
+            {t("finishBtn")}
+          </button>
+        </div>
       </div>
 
-      {/* Kirish + yakunlash */}
-      <div className="mt-2 shrink-0 space-y-2">
-        <form
-          className="flex items-end gap-1.5"
-          onSubmit={(e) => {
-            e.preventDefault();
-            submit();
-          }}
-        >
-          <textarea
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                submit();
-              }
-            }}
-            rows={1}
-            placeholder={t("askPlaceholder")}
-            maxLength={2000}
-            className="max-h-24 min-h-[40px] min-w-0 flex-1 resize-none rounded-control border border-line bg-surface px-3 py-2.5 text-body text-ink outline-none transition-colors placeholder:text-ink-dim focus:border-brand"
-          />
-          <button
-            type="submit"
-            disabled={!draft.trim() || send.isPending}
-            aria-label={t("ask")}
-            className="flex h-[40px] w-[40px] shrink-0 items-center justify-center rounded-control bg-brand text-white transition-[background-color,transform] duration-150 hover:bg-brand-deep focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand active:scale-95 disabled:opacity-40"
-          >
-            {send.isPending ? <Spinner size={14} /> : <Icon icon={SendHorizontal} size={16} />}
-          </button>
-        </form>
+      {/* ── O'NG: bosqichlar + DDx + tekshiruvlar ── */}
+      <div className="flex min-h-0 flex-col gap-2 overflow-y-auto lg:pr-1">
+        {/* Bosqichlar */}
+        <div className="rounded-card border border-line p-3">
+          <p className="mb-2 text-micro font-extrabold uppercase tracking-wider text-ink-faint">{t("steps")}</p>
+          <div className="space-y-1.5">
+            {STEP_KEYS.map((k, i) => (
+              <div key={k} className="flex items-center gap-2 text-note">
+                <span
+                  className={cls(
+                    "flex h-4 w-4 shrink-0 items-center justify-center rounded-full",
+                    completedSteps[i] ? "bg-emerald text-white" : "border border-line"
+                  )}
+                >
+                  {completedSteps[i] && <Icon icon={Check} size={10} strokeWidth={3} />}
+                </span>
+                <span className={completedSteps[i] ? "font-semibold text-emerald" : "text-ink-soft"}>{t(k)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
 
-        <button
-          onClick={() => setConfirm(true)}
-          disabled={studentTurns === 0 || finish.isPending}
-          className="flex w-full items-center justify-center gap-2 rounded-control bg-emerald px-4 py-2.5 text-body font-extrabold text-white transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:opacity-40"
-        >
-          {finish.isPending ? <Spinner size={15} /> : <Icon icon={Stethoscope} size={16} />}
-          {t("finishBtn")}
-        </button>
+        {/* Differensial tashxis (DDx) */}
+        <div className="rounded-card border border-line p-3">
+          <div className="mb-2 flex items-center gap-1.5">
+            <Icon icon={Stethoscope} size={13} className="text-ink-faint" />
+            <p className="text-micro font-extrabold uppercase tracking-wider text-ink-faint">{t("ddxTitle")}</p>
+            <button
+              onClick={refreshDdx}
+              disabled={ddxMut.isPending || studentTurns === 0}
+              title={t("ddxRefresh")}
+              className="ml-auto text-ink-faint transition-colors hover:text-brand disabled:opacity-30"
+            >
+              <Icon icon={ddxMut.isPending ? Loader2 : RefreshCw} size={13} className={ddxMut.isPending ? "animate-spin" : ""} />
+            </button>
+          </div>
+          {ddx.length === 0 ? (
+            <p className="text-micro italic text-ink-dim">{studentTurns === 0 ? t("ddxEmpty") : t("ddxHint")}</p>
+          ) : (
+            <div className="space-y-2">
+              {ddx.map((d, i) => (
+                <div key={i} className="space-y-1">
+                  <div className="flex items-center justify-between gap-2 text-micro">
+                    <span className="min-w-0 flex-1 truncate font-bold text-ink" title={d.diagnosis}>
+                      {i + 1}. {d.diagnosis}
+                    </span>
+                    <span
+                      className={cls(
+                        "shrink-0 font-bold tabular-nums",
+                        d.probability >= 60 ? "text-rose" : d.probability >= 35 ? "text-amber" : "text-ink-faint"
+                      )}
+                    >
+                      {d.probability}%
+                    </span>
+                  </div>
+                  <div className="h-1.5 overflow-hidden rounded-pill bg-surface-raised">
+                    <div
+                      className={cls("h-full rounded-pill", d.probability >= 60 ? "bg-rose" : d.probability >= 35 ? "bg-amber" : "bg-ink-faint")}
+                      style={{ width: `${Math.max(d.probability, 2)}%` }}
+                    />
+                  </div>
+                  {d.keyFinding && (
+                    <p className="truncate text-micro italic text-ink-dim" title={d.keyFinding}>
+                      💡 {d.keyFinding}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Tekshiruv buyurish */}
+        <div className="rounded-card border border-line p-3">
+          <div className="mb-2 flex items-center gap-1.5">
+            <Icon icon={FlaskConical} size={13} className="text-ink-faint" />
+            <p className="text-micro font-extrabold uppercase tracking-wider text-ink-faint">{t("ordersTitle")}</p>
+          </div>
+          <div className="grid grid-cols-2 gap-1.5">
+            {TEST_ORDERS.map((name) => {
+              const done = orderedTests.has(name);
+              const busy = order.isPending && (order.variables as string) === name;
+              return (
+                <button
+                  key={name}
+                  onClick={() => order.mutate(name, { onSuccess: () => refreshDdx() })}
+                  disabled={done || order.isPending}
+                  className={cls(
+                    "flex items-center gap-1.5 rounded-control border px-2 py-1.5 text-left text-micro font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
+                    done
+                      ? "border-emerald/30 bg-emerald-soft text-emerald"
+                      : "border-line text-ink-soft hover:border-brand hover:text-brand disabled:opacity-50"
+                  )}
+                >
+                  <Icon icon={done ? CheckCircle2 : busy ? Loader2 : FlaskConical} size={12} className={cls("shrink-0", busy && "animate-spin")} />
+                  <span className="truncate">{name}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
       </div>
 
       {/* Tashxis kiritish modali */}

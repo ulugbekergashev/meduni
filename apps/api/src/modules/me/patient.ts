@@ -7,6 +7,9 @@ import { generateStructured } from "../../ai/gemini";
 import { departmentForTopic } from "../../ai/glossary";
 import { assertQuota } from "../../ai/quota";
 import {
+  ddxResponseSchema,
+  ddxSystemPrompt,
+  ddxUserContent,
   evalResponseSchema,
   evalSystemPrompt,
   evalUserContent,
@@ -16,6 +19,10 @@ import {
   patientSystemPrompt,
   patientUserContent,
   SCENARIO_VARIATIONS,
+  testResultResponseSchema,
+  testResultSystemPrompt,
+  testResultUserContent,
+  type DDxItem,
   type PatientEval,
 } from "../../ai/prompts/patient";
 import { caseResponseSchema, caseSchema, type CaseJson, type DigestJson } from "../../ai/types";
@@ -25,7 +32,7 @@ const HISTORY_TAKE = 16;
 
 interface PatientMsgOut {
   id: number;
-  role: "student" | "patient" | "eval";
+  role: "student" | "patient" | "eval" | "test";
   text: string;
   eval?: PatientEval;
   createdAt: Date;
@@ -41,7 +48,7 @@ function serialize(m: { id: number; role: string; text: string; createdAt: Date 
     }
     return { id: m.id, role: "eval", text: parsed ? "" : m.text, eval: parsed, createdAt: m.createdAt };
   }
-  return { id: m.id, role: m.role as "student" | "patient", text: m.text, createdAt: m.createdAt };
+  return { id: m.id, role: m.role as "student" | "patient" | "test", text: m.text, createdAt: m.createdAt };
 }
 
 /** Mavzuning tasdiqlangan (PUBLISHED) klinik keysi — bemor "haqiqati" manbasi. */
@@ -119,9 +126,9 @@ async function ensureTruth(studentId: number, topicId: number, lang: "uz" | "ru"
 export async function getPatient(studentId: number, topicId: number) {
   await assertTopicOpen(studentId, topicId);
   const [messages, truth, source] = await Promise.all([
-    // "scenario" ichki yozuv — talabaga ko'rsatilmaydi.
+    // "scenario" ichki yozuv — talabaga ko'rsatilmaydi. "test" — buyurilgan tekshiruv natijasi.
     prisma.patientMessage.findMany({
-      where: { studentId, topicId, role: { in: ["student", "patient", "eval"] } },
+      where: { studentId, topicId, role: { in: ["student", "patient", "eval", "test"] } },
       orderBy: { createdAt: "asc" },
       take: 200,
     }),
@@ -189,6 +196,82 @@ export async function sendPatient(studentId: number, topicId: number, textRaw: s
   return { messages: [serialize(mine), serialize(ai)] };
 }
 
+/** Tekshiruv (EKG/lab/instrumental) BUYURISH — yashirin tashxisga izchil natija
+ *  chatда paydo bo'ladi (role="test"). Klinik ish oqimini simulyatsiya qiladi. */
+export async function orderTest(studentId: number, topicId: number, testTypeRaw: string) {
+  const testType = (testTypeRaw ?? "").trim();
+  if (!testType) throw badRequest("Tekshiruv nomi bo'sh", "Пустое название теста");
+  if (testType.length > 120) throw badRequest("Nom juda uzun", "Слишком длинное название");
+  await assertTopicOpen(studentId, topicId);
+
+  const done = await prisma.patientMessage.findFirst({ where: { studentId, topicId, role: "eval" }, select: { id: true } });
+  if (done) throw new ApiError(409, "patient_finished", "Suhbat yakunlangan", "Сессия завершена");
+
+  const user = await prisma.user.findUnique({ where: { id: studentId }, select: { locale: true } });
+  const lang: "uz" | "ru" = user?.locale === "ru" ? "ru" : "uz";
+  const kase = await ensureTruth(studentId, topicId, lang);
+  if (!kase) throw new ApiError(400, "no_case", "Bu mavzuda bemor yo'q", "В этой теме нет пациента");
+
+  const departmentId = await departmentForTopic(topicId);
+  if (departmentId) await assertQuota(departmentId);
+
+  const gen = await generateStructured<{ result: string }>({
+    systemInstruction: testResultSystemPrompt(lang),
+    userContent: testResultUserContent(kase, testType),
+    responseSchema: testResultResponseSchema,
+    kind: "PATIENT_TEST",
+    topicId,
+    departmentId: departmentId ?? undefined,
+    userId: studentId,
+    preferLite: true,
+  });
+  const result = (gen?.result ?? "").toString().trim() || "—";
+  const saved = await prisma.patientMessage.create({
+    data: { studentId, topicId, role: "test", text: `${testType}\n${result}` },
+  });
+  return { message: serialize(saved) };
+}
+
+/** Jonli DIFFERENSIAL TASHXIS (DDx) — talaba ochgan dalillar (suhbat + testlar)
+ *  asosida 3–4 ehtimoliy tashxis. ⚠️ Yashirin javobдан hisoblanMAYDI (sizdirmaydi). */
+export async function getDDx(studentId: number, topicId: number): Promise<{ ddx: DDxItem[] }> {
+  await assertTopicOpen(studentId, topicId);
+  const kase = await loadTruth(studentId, topicId);
+  if (!kase) return { ddx: [] };
+
+  const convo = await prisma.patientMessage.findMany({
+    where: { studentId, topicId, role: { in: ["student", "patient", "test"] } },
+    orderBy: { createdAt: "asc" },
+  });
+  if (convo.filter((m) => m.role === "student").length === 0) return { ddx: [] };
+
+  const user = await prisma.user.findUnique({ where: { id: studentId }, select: { locale: true } });
+  const lang: "uz" | "ru" = user?.locale === "ru" ? "ru" : "uz";
+  const departmentId = await departmentForTopic(topicId);
+  if (departmentId) await assertQuota(departmentId);
+
+  const patientBasics = `${kase.patientName || "bemor"}${kase.patientInfo ? `, ${kase.patientInfo}` : ""} — shikoyat: ${kase.complaints || "—"}`;
+  const history = convo.filter((m) => m.role !== "test").map((m) => ({ role: m.role, text: m.text }));
+  const tests = convo.filter((m) => m.role === "test").map((m) => m.text);
+
+  const gen = await generateStructured<{ ddx: DDxItem[] }>({
+    systemInstruction: ddxSystemPrompt(lang),
+    userContent: ddxUserContent(patientBasics, history, tests),
+    responseSchema: ddxResponseSchema,
+    kind: "PATIENT_DDX",
+    topicId,
+    departmentId: departmentId ?? undefined,
+    userId: studentId,
+    preferLite: true,
+  });
+  const ddx = (gen?.ddx ?? []).slice(0, 4).map((d) => ({
+    diagnosis: (d.diagnosis ?? "").toString(),
+    probability: Math.max(0, Math.min(100, Math.round(Number(d.probability) || 0))),
+    keyFinding: (d.keyFinding ?? "").toString(),
+  }));
+  return { ddx };
+}
+
 export async function finishPatient(studentId: number, topicId: number, diagnosisRaw: string) {
   const diagnosis = (diagnosisRaw ?? "").trim();
   await assertTopicOpen(studentId, topicId);
@@ -199,7 +282,7 @@ export async function finishPatient(studentId: number, topicId: number, diagnosi
   if (existing) return { eval: serialize(existing).eval, finished: true };
 
   const convo = await prisma.patientMessage.findMany({
-    where: { studentId, topicId, role: { in: ["student", "patient"] } },
+    where: { studentId, topicId, role: { in: ["student", "patient", "test"] } },
     orderBy: { createdAt: "asc" },
   });
   if (convo.filter((m) => m.role === "student").length === 0) {
@@ -228,6 +311,9 @@ export async function finishPatient(studentId: number, topicId: number, diagnosi
     diagnosis: (result?.diagnosis ?? "").toString(),
     correct: !!result?.correct,
     anamnesisScore: clamp(result?.anamnesisScore),
+    examinationScore: clamp(result?.examinationScore),
+    treatmentScore: clamp(result?.treatmentScore),
+    safetyScore: clamp(result?.safetyScore),
     communicationScore: clamp(result?.communicationScore),
     overallScore: clamp(result?.overallScore),
     strengths: (result?.strengths ?? "").toString(),
