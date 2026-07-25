@@ -1507,7 +1507,60 @@ Barcha modullar tugadi (1-17).
   resolyutsiya, diapazon fallback, eski digest regress). tsc+build ikkala tomonda
   toza. ⚠️ Real Gemini uchi-uchiga generatsiya smoke KEYIN (kalit pulli/skompro —
   o'qituvchi keyingi generatsiyasida AI haqiqatan sectionIndex qaytarishini tekshir).
-  **Keyingi: Faza 1 (kanonik o'quv oqimi).**
+
+- **Kontent taqdimoti 2.0 — Faza 1/2/3 (2026-07-25). Faza 0 ustiga qurildi.**
+  Har faza alohida toza commit; tsc+build ikkala tomonda + Gemini'siz mantiqiy smoke
+  (5 fayl, 56 assertion). Migratsiyasiz (hammasi mavjud JSON/fayl ichida). Eski
+  kontent har joyda graceful fallback.
+  **(1A — konspekt bo'limi ichiga media, `8e404bd`):** `me/lesson.ts` payload har
+  bo'limga `media {slideImages[{slideId,url}], videoAt}` qaytaradi (Faza 0 sectionId
+  xaritasi: mos slayd DONE rasmi + segment davomiyliklaridan videodagi boshlanish
+  sekundi). `SectionReader` bo'lim oxirida diagramma + "Videoda: mm:ss" violet chipi
+  → `?view=video&t=` bilan `VideoTab` `seekTo` o'sha sekundga sakraydi (rail'dan
+  ochilsa `t` yo'q → sakramaydi).
+  **(1B — checkpoint savollari, active recall, `33e151b`):** `digestSectionSchema +=
+  checkpoint {question,options,correctIndex,explanation}` — AI uni **digest
+  generatsiyasining o'zida** beradi (alohida chaqiruv YO'Q), `digestResponseSchema`ga
+  qo'shildi. O'qituvchi DigestSection'da "Checkpoint savollar" blokida ko'radi/
+  tahrirlaydi (endi tasdiqlashdan oldin talaba nima ko'rishini ko'radi). Talaba bo'lim
+  oxirida javob beradi → darhol izoh (emerald/rose); checkpoint'li bo'lim **scroll
+  bilan EMAS, javob berilганда "o'qildi"** (SectionReader IO o'sha bo'limni o'tkazadi).
+  Bahoga TA'SIR QILMAYDI, asosiy testdan MUSTAQIL (Question jadvaliga aralashmaydi,
+  digestJson ichida — sizdirish yo'q).
+  **(1C — audio-konspekt, `a8c108f`):** o'qituvchi "Audio yaratish" tugmasi →
+  `generateDigestAudio` (bo'lim matnlaridan, ≤4500 belgi, **bitta** Gemini TTS
+  chaqiruvi "Kore", ffmpeg'siz; kvota/AiUsage). Fayl yo'li VERSIYA bilan
+  (`topics/:id/digest-audio-vN.wav`) → konspekt tahrirlansa (version oshsa) audio
+  o'z-o'zidan eskiradi. Talaba `SectionReader` header'ida ixcham `<audio>` pleyer
+  (lesson payload `digestAudio` flag = joriy versiyaga fayl mavjudmi). `pcmToWav`
+  `lib/wav.ts`ga chiqarildi (video + audio reuse).
+  **(2 — mindmap, AI'siz, `8e45d87`):** `lesson/MindmapView.tsx` — tasdiqlangan
+  konspekt bo'limlari + atamalaridan radial SVG (fleshkarta presedenti — AI YO'Q,
+  nol xarajat). Atamalar bo'limlarga `TermTooltip` matcher (so'z chegarasi) bilan
+  biriktiriladi. **Navigatsiya qatlami** (dekoratsiya emas): bo'lim tuguni →
+  `?view=konspekt` + o'sha bo'limga sakraydi (LessonPage `jumpToSection`); atama
+  tuguni → `TermChip` popover (eksport qilindi). O'rganish raili bloki (`ContentView
+  += mindmap`, bosqich emas — fleshkarta kabi). Bo'limsiz eski konspektda yo'q.
+  **(3A — rasm opt-in, `43a545f`):** `generateAllImages(slideIds?)` — bo'sh=hammasi
+  (backward compat); route `{slideIds}` qabul qiladi; PresentationEditor slayd
+  checkbox'lari (default rasm-slotli barchasi) + "Rasm yasash (N)". Keraksiz slaydga
+  atlas-rasm yasalmaydi.
+  **(3B — video rasm reuse, `df3809d`):** `video.ts` render — segment o'z bo'limining
+  (sectionId) tayyor slayd rasmini QAYTA ISHLATADI (yangi `generateImage` o'rniga,
+  cheklovga kirmaydi). Video rasm xarajati ~0.
+  **(3E — TTS segment keshi, `df3809d`):** `ScriptSegment += audioUrl/audioHash`;
+  har segment audiosi `narration+voice` hash bo'yicha keshlanadi (fayl hash nomli →
+  reorder'da to'qnashuv yo'q). Rebuild'da o'zgarmagan segment qayta ovozlanmaydi.
+  **(3D — model tiering, `9967323`):** `generateStructured += preferLite` (lite
+  modelni oldinga qo'yadi, flash fallback saqlanadi). Virtual bemor **roleplay
+  navbatlari** (`patient.ts` PATIENT) lite'ga tushadi; **eval** (PATIENT_EVAL) va
+  barcha tibbiy kontent generatsiyasi flash'da qoladi.
+  **(3C — kontekst keshlash — ATAYLAB YOZILMADI):** Gemini explicit caching
+  aynan `thinkingBudget` kabi xavf — tekshirilmagan bo'lsa BARCHA generatsiyani
+  jimgina buzishi mumkin (min-token/model qo'llashi noaniq), pulli/skompro kalitni
+  sinab bo'lmadi. Kalit ishlagach yoziladi (fallback bilan himoyalangan holda).
+  **⚠️ Pilotdan oldin:** real Gemini bilan sectionIndex/checkpoint/audio-TTS/model-
+  tiering-sifat tekshiruvlari; GEMINI_API_KEY yangilash.
 
 - **Talaba paneli slot-modeliga moslandi (2026-07-25, buyurtmachi: "o'quvchi
   panelini yangiliklarga moslash").** Reja: `.claude/plans/playful-purring-moler.md`
