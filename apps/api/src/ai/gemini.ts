@@ -62,6 +62,9 @@ export interface GenerateOpts {
   userId?: number | null;
   /** Allow the model to "think" for higher-quality output (e.g. lecture scripts). */
   thinking?: boolean;
+  /** 3D (xarajat): arzon/past-riskli vazifalar uchun lite modelni OLDINGA qo'yadi
+   *  (masalan virtual bemor roleplay navbatlari). Flash fallback saqlanadi. */
+  preferLite?: boolean;
 }
 
 /** Calls Gemini for structured JSON, logs token usage, retries transient failures. */
@@ -69,8 +72,10 @@ export async function generateStructured<T>(opts: GenerateOpts): Promise<T> {
   const ai = getClient();
   let lastErr: unknown;
 
+  // 3D: preferLite bo'lsa lite avval (arzon), flash fallback qoladi.
+  const chain = opts.preferLite ? [...MODELS].reverse() : MODELS;
   // Try each model in the chain; within a model, retry transient errors with backoff.
-  for (const model of MODELS) {
+  for (const model of chain) {
     for (let attempt = 1; attempt <= ATTEMPTS_PER_MODEL; attempt++) {
       try {
         const res = await withTimeout(

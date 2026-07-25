@@ -99,6 +99,8 @@ export async function sendPatient(studentId: number, topicId: number, textRaw: s
     topicId,
     departmentId: departmentId ?? undefined,
     userId: studentId,
+    // 3D: roleplay navbati arzon/past-riskli → lite model (baholash flash'da qoladi).
+    preferLite: true,
   });
   const reply =
     (gen?.reply ?? "").toString().trim() ||
