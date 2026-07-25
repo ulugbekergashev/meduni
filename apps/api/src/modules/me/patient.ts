@@ -11,11 +11,13 @@ import {
   evalSystemPrompt,
   evalUserContent,
   patientResponseSchema,
+  patientScenarioSystemPrompt,
+  patientScenarioUserContent,
   patientSystemPrompt,
   patientUserContent,
+  SCENARIO_VARIATIONS,
   type PatientEval,
 } from "../../ai/prompts/patient";
-import { caseSystemPrompt, caseUserContent } from "../../ai/prompts/case";
 import { caseResponseSchema, caseSchema, type CaseJson, type DigestJson } from "../../ai/types";
 import { assertTopicOpen } from "./service";
 
@@ -92,9 +94,14 @@ async function ensureTruth(studentId: number, topicId: number, lang: "uz" | "ru"
   const departmentId = await departmentForTopic(topicId);
   if (departmentId) await assertQuota(departmentId);
 
+  // Har safar BOSHQACHA bemor: tasodifiy variatsiya o'qi (yosh/jins/og'irlik/atipiklik)
+  // — klinik faktlar konspektдан, faqat "qobiq" turlanadi. Reset → yangi variatsiya.
+  const axes = SCENARIO_VARIATIONS[lang];
+  const variation = axes[Math.floor(Math.random() * axes.length)];
+
   const gen = await generateStructured<CaseJson>({
-    systemInstruction: caseSystemPrompt(lang, "SHORT"),
-    userContent: caseUserContent(digest),
+    systemInstruction: patientScenarioSystemPrompt(lang),
+    userContent: patientScenarioUserContent(digest, variation),
     responseSchema: caseResponseSchema,
     kind: "PATIENT_SCENARIO",
     topicId,
