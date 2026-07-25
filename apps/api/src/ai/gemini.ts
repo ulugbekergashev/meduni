@@ -1,6 +1,12 @@
 import { GoogleGenAI } from "@google/genai";
 import { ApiError } from "../lib/errors";
 import { recordAiUsage } from "./usage";
+import { imageProvider, openaiImageConfig, openaiTextConfig, textProviderFor } from "./config";
+import { generateStructuredOpenAI } from "./providers/openaiText";
+import { generateImageOpenAI } from "./providers/openaiImage";
+import type { GenerateOpts } from "./textTypes";
+
+export type { GenerateOpts } from "./textTypes";
 
 // `gemini-2.5-flash` is blocked for new API accounts. We try the best flash first
 // for quality, then fall back to the lite alias when the primary is overloaded
@@ -52,23 +58,25 @@ function toApiError(err: unknown): ApiError {
   return new ApiError(502, "ai_error", "Konspekt yaratilmadi, qayta urinish", "Не удалось сгенерировать, повторите");
 }
 
-export interface GenerateOpts {
-  systemInstruction: string;
-  userContent: string;
-  responseSchema: unknown;
-  kind: string;
-  topicId?: number;
-  departmentId?: number | null;
-  userId?: number | null;
-  /** Allow the model to "think" for higher-quality output (e.g. lecture scripts). */
-  thinking?: boolean;
-  /** 3D (xarajat): arzon/past-riskli vazifalar uchun lite modelni OLDINGA qo'yadi
-   *  (masalan virtual bemor roleplay navbatlari). Flash fallback saqlanadi. */
-  preferLite?: boolean;
+/** Strukturali JSON generatsiyasi — provider ROUTER. Default Gemini; kind
+ *  open modelga yo'naltirilgan va kredit bo'lsa OpenAI-mos endpoint, ISHLAMASA
+ *  jimgina Gemini'ga qaytadi (tibbiy pipeline hech qachon to'liq sinmaydi). */
+export async function generateStructured<T>(opts: GenerateOpts): Promise<T> {
+  if (textProviderFor(opts.kind) === "openai") {
+    const cfg = openaiTextConfig();
+    if (cfg) {
+      try {
+        return await generateStructuredOpenAI<T>(opts, cfg);
+      } catch (err) {
+        console.warn(`[ai] openai text failed for ${opts.kind} → gemini fallback:`, (err as Error)?.message);
+      }
+    }
+  }
+  return generateStructuredGemini<T>(opts);
 }
 
 /** Calls Gemini for structured JSON, logs token usage, retries transient failures. */
-export async function generateStructured<T>(opts: GenerateOpts): Promise<T> {
+async function generateStructuredGemini<T>(opts: GenerateOpts): Promise<T> {
   const ai = getClient();
   let lastErr: unknown;
 
@@ -128,11 +136,27 @@ export interface GeneratedImage {
   mimeType: string;
 }
 
+interface ImageOpts { kind: string; topicId?: number; departmentId?: number | null; userId?: number | null }
+
+/** Rasm generatsiyasi — provider ROUTER. Default Gemini (Nano Banana Pro — belgilangan
+ *  tibbiy atlas sifati); open rasm modeli faqat AI_IMAGE_PROVIDER=openai + kredit
+ *  bo'lsa, ISHLAMASA Gemini'ga qaytadi. */
+export async function generateImage(prompt: string, opts: ImageOpts): Promise<GeneratedImage> {
+  if (imageProvider() === "openai") {
+    const cfg = openaiImageConfig();
+    if (cfg) {
+      try {
+        return await generateImageOpenAI(prompt, opts, cfg);
+      } catch (err) {
+        console.warn(`[ai] openai image failed → gemini fallback:`, (err as Error)?.message);
+      }
+    }
+  }
+  return generateImageGemini(prompt, opts);
+}
+
 /** Generates a single image via Nano Banana Pro. Logs one AiUsage row. */
-export async function generateImage(
-  prompt: string,
-  opts: { kind: string; topicId?: number; departmentId?: number | null; userId?: number | null }
-): Promise<GeneratedImage> {
+async function generateImageGemini(prompt: string, opts: ImageOpts): Promise<GeneratedImage> {
   const ai = getClient();
   try {
     const res = await withTimeout(
