@@ -1,0 +1,9 @@
+**/node_modules
+**/dist
+apps/api/storage
+apps/web/.env.local
+.git
+.turbo
+**/.env
+_cf-empty.yml
+*.log

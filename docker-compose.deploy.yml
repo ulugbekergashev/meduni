@@ -1,0 +1,34 @@
+# Production/demo deploy — Oracle VM (yoki istalgan Docker host) uchun.
+# Ishga tushirish:  docker compose -f docker-compose.deploy.yml up -d --build
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: meduni
+      POSTGRES_PASSWORD: meduni
+      POSTGRES_DB: meduni
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  app:
+    build: .
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: postgresql://meduni:meduni@db:5432/meduni
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      SERVE_WEB: "1"
+      PORT: "8080"
+      DEMO_SEED: "1"          # birinchi ishga tushishda demo login akkauntlar
+    volumes:
+      - storage:/app/apps/api/storage   # media (video/rasm/audio) doimiy saqlanadi
+    ports:
+      - "80:8080"             # http://VM_IP orqali ochiladi
+    restart: unless-stopped
+
+volumes:
+  dbdata:
+  storage:

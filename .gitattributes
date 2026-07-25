@@ -1,0 +1,5 @@
+# Deploy skriptlari Linux VM'da LF bo'lishi SHART (Windows CRLF konvertatsiyasidan
+# himoya — aks holda docker-entrypoint.sh "$'\r': command not found" bilan buziladi).
+*.sh text eol=lf
+Dockerfile text eol=lf
+docker-compose*.yml text eol=lf
