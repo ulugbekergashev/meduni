@@ -381,6 +381,9 @@ export interface ScriptSegment {
   visualImageUrl?: string | null;
   /** Faza 0: qaysi konspekt bo'limini yoritadi (digest.sections[].id). Vaqt xaritasi + rasm reuse uchun. */
   sectionId?: string | null;
+  /** 3E: keshlangan TTS audio (narration+voice hash bo'yicha). Rebuild'da o'zgarmagan segment qayta ovozlanmaydi. */
+  audioUrl?: string | null;
+  audioHash?: string | null;
 }
 
 const videoVisualSchema = z.object({
