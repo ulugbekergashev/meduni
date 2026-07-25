@@ -1,3 +1,4 @@
+import path from "path";
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
@@ -20,11 +21,16 @@ import { tasksRouter } from "./modules/tasks/router";
 
 const app = express();
 
-app.use(helmet());
+// SERVE_WEB=1 — API o'zi qurilgan web'ni ham tarqatadi (bitta origin, demo/deploy).
+// Bunda: CSP o'chiriladi (SPA + media bloklanmasin), rate-limit tunnel ortida
+// yuqoriroq (barcha foydalanuvchi bitta IP'дан ko'rinadi).
+const serveWeb = process.env.SERVE_WEB === "1";
+
+app.use(helmet(serveWeb ? { contentSecurityPolicy: false } : undefined));
 
 const apiLimiter = rateLimit({
   windowMs: 1 * 60 * 1000, // 1 minute
-  max: 100, // Limit each IP to 100 requests per windowMs
+  max: serveWeb ? 2000 : 100,
   standardHeaders: true,
   legacyHeaders: false,
 });
@@ -54,6 +60,19 @@ app.use("/api/v1/users", usersRouter);
 app.use("/api/v1/courses", coursesRouter);
 app.use("/api/v1/admin", adminRouter);
 app.use("/api/v1", orgRouter);
+
+// Qurilgan web'ni tarqatish (bitta origin). API/auth/health'дан tashqari GET
+// so'rovlar — SPA index.html (react-router client-side yo'llar uchun).
+if (serveWeb) {
+  const webDist = process.env.WEB_DIST || path.resolve(__dirname, "../../web/dist");
+  app.use(express.static(webDist));
+  app.use((req, res, next) => {
+    if (req.method !== "GET") return next();
+    if (req.path.startsWith("/api") || req.path.startsWith("/auth") || req.path === "/health") return next();
+    res.sendFile(path.join(webDist, "index.html"));
+  });
+  console.log(`Serving web from ${webDist}`);
+}
 
 app.use(errorMiddleware);
 
