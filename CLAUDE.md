@@ -1562,6 +1562,29 @@ Barcha modullar tugadi (1-17).
   **⚠️ Pilotdan oldin:** real Gemini bilan sectionIndex/checkpoint/audio-TTS/model-
   tiering-sifat tekshiruvlari; GEMINI_API_KEY yangilash.
 
+- **Ko'p-provayderli AI qatlami (2026-07-25, buyurtmachi: "open-source modellar
+  bilan xarajatni kamaytirsak?").** `ai/gemini.ts` endi provider ROUTER. **MUHIM
+  xavfsizlik: default = HAMMASI GEMINI** — hech qanday env qo'yilmasa xatti-harakat
+  AYNAN eskisidek (nol o'zgarish); open modellar faqat env berilganda yoqiladi, va
+  matn yo'nalishida **Gemini fallback** (open ishlamasa jimgina qaytadi — tibbiy
+  pipeline to'liq sinmaydi). Yangi: `ai/config.ts` (env routing), `ai/textTypes.ts`
+  (`GenerateOpts`), `ai/providers/openaiText.ts` (OpenAI-mos `/chat/completions`,
+  `response_format:json_object` + zod validatsiya chaqiruvchida; ```json``` o'ramini
+  tozalaydi), `ai/providers/openaiImage.ts` (`/images/generations`, best-effort).
+  `generateStructured`/`generateImage` router bo'ldi (eski tanalar `*Gemini`).
+  **Env:** `AI_TEXT_PROVIDER` (gemini|openai), `AI_TEXT_ROUTES` ("PATIENT:openai,
+  TUTOR:openai" — kind override), `AI_IMAGE_PROVIDER`, `OPENAI_BASE_URL`
+  (OpenRouter/Together/vLLM), `OPENAI_API_KEY`, `OPENAI_MODEL`, `OPENAI_MODEL_LITE`
+  (preferLite uchun), `OPENAI_IMAGE_MODEL`. **TAVSIYA (kod izohida ham):** faqat
+  past-riskli — TUTOR chat, PATIENT roleplay — open modelga; **tibbiy generatsiyani
+  (DIGEST/QUIZ/CASE/FACTCHECK/SLIDES) va RASMni** ishonchli modelda qoldiring
+  (open image modellar kirill/uz label sifatiga yetmaydi). **Xarajat haqiqati:**
+  asosiy narx RASM ($1.16/$1.44), matn emas — shuning uchun eng katta tejov Faza
+  3A/3B (rasm opt-in + reuse), open matn modeli faqat ~$0.28 ni kamaytiradi.
+  `cost.ts` noma'lum (open) modelni $0-matn bilan xavfsiz loglaydi. Smoke 17/17
+  (routing: default gemini, env override, route-per-kind, preferLite→lite, image).
+  tsc toza. ⚠️ Real open-model sifatini sinash pulli kalit/endpoint bilan KEYIN.
+
 - **Talaba paneli slot-modeliga moslandi (2026-07-25, buyurtmachi: "o'quvchi
   panelini yangiliklarga moslash").** Reja: `.claude/plans/playful-purring-moler.md`
   (Faza 1 talaba — bajarildi; Faza 2 admin to'liq nazorat — keyingi). Muammo (kod
