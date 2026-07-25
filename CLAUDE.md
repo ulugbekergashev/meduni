@@ -1693,3 +1693,50 @@ engine DLL'ini ushlab turadi → EPERM).
   QILINMAYDI, tracked fayllarda yo'q). Matn+rasm generatsiyaga to'liq ulangan va
   ishlaydi. Kalit chatga yozilgan — **skomprometatsiya deb hisobla**, pilot/prod'dan
   oldin aistudio.google.com'da yangila.
+
+---
+
+## 10. DEPLOY (2026-07-25 — Oracle BEKOR qilindi)
+
+Oracle Cloud'dan voz kechildi (akkaunt tasdiqlash muammosi). Yangi to'plam —
+**GitHub + Vercel (web) + Render (API) + Supabase (Postgres)**, hammasi bepul
+tarifda, kartasiz. To'liq qo'llanma: **`README.deploy.md`**.
+
+**Nega API Vercel'da EMAS:** Vercel serverless — ffmpeg yo'q va fon-jobi javobdan
+keyin o'ladi. Video generatsiya (Modul 9), material parse va rasm generatsiyasi
+doimiy ishlaydigan serverni talab qiladi → Render (Docker, ffmpeg+edge-tts ichida).
+
+**Ikki origin rejimi (asosiy o'zgarish).** Web `*.vercel.app`, API
+`*.onrender.com` — ya'ni cookie'lar "cross-site" bo'ladi:
+- `env.ts` — `WEB_ORIGIN` endi **vergul bilan ro'yxat** (`webOrigins[]`);
+  `VERCEL_PROJECT` berilsa shu loyihaning preview subdomenlariga
+  (`<project>-*.vercel.app`) ham ruxsat (`isAllowedOrigin`).
+- `CROSS_SITE_COOKIES=1` → auth cookie `SameSite=None; Secure`
+  (aks holda **brauzer login cookie'sini umuman saqlamaydi** — eng ko'p
+  uchraydigan deploy xatosi). Bitta origin/dev'da `Lax` qoladi.
+- `index.ts` — `app.set("trust proxy", 1)` (proxy ortida `secure` cookie va
+  rate-limit to'g'ri ishlashi uchun); CORS ruxsat etmaganда **xato tashlamaydi**
+  (500 log to'ldirmasin) — shunchaki sarlavha qo'ymaydi.
+- Ishga tushishда konfiguratsiya logga chiqadi (origin/cookie rejimi).
+
+**Fayllar:** `vercel.json` (ildizда — monorepo build: `--ignore-scripts` +
+`npm rebuild esbuild`, SPA rewrite), `render.yaml` (Blueprint), `Dockerfile`
+endi **API-only** (`BUILD_WEB=1` build-arg bilan eski bitta-origin rejimi
+zaxira sifatida qoladi; `docker-compose.deploy.yml` shu arg'ni beradi).
+`README.render.md` o'chirildi (README.deploy.md ichiga birlashtirildi).
+
+⚠️ **Supabase:** `DATABASE_URL` **Session pooler** (port 5432, IPv4) bo'lishi
+shart. Direct connection (`db.xxx.supabase.co`) faqat IPv6 — Render u yerga
+chiqa olmaydi (`P1001`).
+
+⚠️ **`VITE_API_URL` build-time konstanta** — Vercel'da o'zgartirilsa Redeploy shart.
+
+⚠️ **Render Free diski vaqtinchalik** — yuklangan material va generatsiya
+qilingan rasm/video/audio restart'da o'chadi (baza Supabase'da, saqlanadi).
+Doimiy yechim: `lib/storage.ts` (6 funksiya) ni **Supabase Storage**ga ko'chirish —
+hali qilinmagan.
+
+**Tekshirildi:** cross-site rejimda login cookie `HttpOnly; Secure; SameSite=None`,
+preview origin ruxsat, begona origin bloklandi (500'siz), `/health` OK; dev
+rejimda regressiya yo'q (`SameSite=Lax`, localhost:3000 ruxsat); web+API build
+toza (`VITE_API_URL` bundle'ga tushishi tasdiqlandi).

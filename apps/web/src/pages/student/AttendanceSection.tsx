@@ -7,6 +7,7 @@ import { AsyncSection } from "../../components/AsyncSection";
 import { formatDate } from "../../lib/date";
 import { useLocale } from "../../lib/useLocale";
 import { useMyAttendance, useMyCourses, useMySchedule, type AttStatus } from "./api";
+import { CheckInCard } from "./CheckInCard";
 
 const META: Record<AttStatus, { icon: typeof Check; chip: string }> = {
   PRESENT: { icon: Check, chip: "bg-emerald-soft text-emerald" },
@@ -93,6 +94,11 @@ export function AttendanceSection() {
 
   return (
     <motion.div variants={containerVariants} initial="hidden" animate="show" className="space-y-3">
+      {/* FaceID davomat — vaqt oynasi ochiq dars bo'lsagina ko'rinadi */}
+      <motion.div variants={itemVariants}>
+        <CheckInCard />
+      </motion.div>
+
       {/* Hero: umumiy % + taqsimot + oylik trend */}
       {st && (
         <motion.div variants={itemVariants}>

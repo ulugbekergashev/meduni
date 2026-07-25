@@ -1451,7 +1451,32 @@
     "summary": "Roʻyxat",
     "sortPct": "Davomat foizi boʻyicha",
     "sortName": "Ism boʻyicha",
-    "emptyReport": "Bu oraliqda mashgʻulot yoʻq"
+    "emptyReport": "Bu oraliqda mashgʻulot yoʻq",
+    "selfMarked": "oʻzi"
+  },
+  "checkin": {
+    "eyebrow": "Hozir davomat oynasi ochiq",
+    "checkIn": "FaceID bilan belgilash",
+    "checkingGps": "Joylashuv...",
+    "scanning": "FaceID...",
+    "lateWindow": "Kechikib turibsiz",
+    "markedPresent": "Davomat belgilandi — Keldingiz",
+    "markedLate": "Davomat belgilandi — Kechikib",
+    "alreadyNote": "allaqachon belgilangan",
+    "cancelled": "Bekor qilindi",
+    "failed": "Davomatdan oʻtib boʻlmadi",
+    "noWebauthn": "Bu qurilma FaceID/passkey qoʻllab-quvvatlamaydi",
+    "devicesTitle": "FaceID davomat",
+    "devicesHint": "Telefoningizni bir marta ulang — keyin dars boshida bir bosishda davomatdan oʻtasiz. Biometrika qurilmangizda qoladi.",
+    "noDevices": "Hali qurilma ulanmagan",
+    "deviceUnnamed": "Qurilma",
+    "addDevice": "Qurilma qoʻshish",
+    "deviceAdded": "Qurilma ulandi",
+    "removeDevice": "Qurilmani oʻchirish",
+    "removeConfirm": "Bu qurilmani oʻchirasizmi? Undan davomatdan oʻta olmaysiz.",
+    "deviceRemoved": "Qurilma oʻchirildi",
+    "lastUsed": "Oxirgi: {{date}}",
+    "addedOn": "Ulangan: {{date}}"
   },
   "progress": {
     "empty": "Hali talaba yoki mavzu yoʻq.",

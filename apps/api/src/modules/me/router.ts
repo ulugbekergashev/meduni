@@ -9,6 +9,7 @@ import * as chat from "./chat";
 import * as flashcards from "./flashcards";
 import * as patient from "./patient";
 import * as practice from "./practice";
+import * as checkin from "./checkin";
 import { computeStudentAutoTasks, listAssigned } from "../tasks/service";
 import { studentSearch } from "../search/service";
 
@@ -76,6 +77,40 @@ meRouter.get(
   )
 );
 meRouter.get("/grades", wrap(async (req, res) => res.json(await profile.getMyGrades(req.user!.id))));
+
+// ---------- FaceID davomat (WebAuthn passkey + GPS geofence) ----------
+
+meRouter.get("/checkin", wrap(async (req, res) => res.json(await checkin.getCheckinState(req.user!.id))));
+
+meRouter.post("/webauthn/register-options", wrap(async (req, res) => res.json(await checkin.registerOptions(req.user!.id))));
+
+const registerSchema = z.object({ response: z.record(z.string(), z.any()), deviceName: z.string().max(80).optional() });
+meRouter.post(
+  "/webauthn/register",
+  wrap(async (req, res) => {
+    const b = parseBody(registerSchema, req.body);
+    res.json(await checkin.verifyRegister(req.user!.id, b.response, b.deviceName));
+  })
+);
+
+meRouter.get("/webauthn/credentials", wrap(async (req, res) => res.json(await checkin.listCredentials(req.user!.id))));
+meRouter.delete("/webauthn/credentials/:id", wrap(async (req, res) => res.json(await checkin.removeCredential(req.user!.id, parseId(req.params.id)))));
+
+meRouter.post("/checkin/options", wrap(async (req, res) => res.json(await checkin.checkinOptions(req.user!.id))));
+
+const checkinSchema = z.object({
+  response: z.record(z.string(), z.any()),
+  lat: z.number().optional(),
+  lng: z.number().optional(),
+  accuracy: z.number().optional(),
+});
+meRouter.post(
+  "/checkin",
+  wrap(async (req, res) => {
+    const b = parseBody(checkinSchema, req.body);
+    res.json(await checkin.checkin(req.user!.id, b));
+  })
+);
 meRouter.get("/activity", wrap(async (req, res) => res.json(await profile.getMyActivity(req.user!.id))));
 meRouter.get("/rank", wrap(async (req, res) => res.json(await profile.getMyRank(req.user!.id))));
 meRouter.put("/locale", wrap(async (req, res) => res.json(await profile.setLocale(req.user!.id, req.body?.locale))));

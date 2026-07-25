@@ -202,17 +202,17 @@ export function LessonPage() {
 
   return (
     <div className="flex flex-col lg:h-full">
-      {/* Breadcrumb — bitta ixcham qator */}
-      <div className="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-1 border-b border-line bg-surface px-3 py-1.5">
+      {/* Breadcrumb — chap brand aksent chizig'i + mavzu chipi */}
+      <div className="relative flex shrink-0 flex-wrap items-center gap-x-2.5 gap-y-1 border-b border-line bg-surface py-2 pl-3 pr-3">
+        <span className="absolute inset-y-0 left-0 w-[3px] bg-gradient-to-b from-brand to-violet" aria-hidden />
         <button
           onClick={() => navigate(`/app/courses/${lesson.courseId}`)}
-          className="inline-flex items-center gap-1 rounded-control px-1.5 py-1 text-note font-bold text-brand-tint transition-colors hover:bg-surface-raised"
+          className="inline-flex items-center gap-1 rounded-pill px-2 py-1 text-note font-bold text-brand-tint transition-colors hover:bg-brand-soft"
         >
           <Icon icon={ArrowLeft} size={14} />
           {lesson.subjectName}
         </button>
-        <span className="text-line">/</span>
-        <span className="text-note font-semibold text-ink-dim">
+        <span className="rounded-pill bg-brand-soft px-2 py-0.5 text-micro font-bold uppercase tracking-wider text-brand-tint">
           {t("topic")} {lesson.orderIndex}
         </span>
         <h1 className="min-w-0 flex-1 truncate text-section font-extrabold tracking-tight text-ink">{lesson.title}</h1>
@@ -225,7 +225,7 @@ export function LessonPage() {
               title={t("stage_study")}
               className={cls(
                 "inline-flex items-center rounded-control p-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
-                railOpen ? "text-brand-tint" : "text-ink-faint hover:bg-surface-raised hover:text-ink"
+                railOpen ? "bg-brand-soft text-brand-tint" : "text-ink-faint hover:bg-surface-raised hover:text-ink"
               )}
             >
               <Icon icon={PanelLeft} size={17} />
@@ -234,10 +234,10 @@ export function LessonPage() {
               onClick={toggleChat}
               title={t("chatTitle")}
               className={cls(
-                "inline-flex items-center gap-1.5 rounded-control px-2.5 py-1.5 font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
+                "inline-flex items-center gap-1.5 rounded-pill px-3 py-1.5 font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
                 chatOpen
-                  ? "bg-brand-soft text-brand-tint"
-                  : "border border-line text-ink-soft hover:bg-surface-raised hover:text-ink"
+                  ? "bg-brand-soft text-brand-tint ring-1 ring-brand/30"
+                  : "border border-brand/30 bg-gradient-to-r from-brand/15 to-violet/15 text-brand-tint hover:from-brand/25 hover:to-violet/25"
               )}
             >
               <Icon icon={chatOpen ? X : Sparkles} size={16} />

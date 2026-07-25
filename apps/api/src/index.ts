@@ -4,7 +4,7 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
-import { env } from "./env";
+import { env, isAllowedOrigin } from "./env";
 import { authMiddleware } from "./middleware/auth";
 import { errorMiddleware } from "./middleware/error";
 import { authRouter } from "./modules/auth/router";
@@ -26,17 +26,39 @@ const app = express();
 // yuqoriroq (barcha foydalanuvchi bitta IP'дан ko'rinadi).
 const serveWeb = process.env.SERVE_WEB === "1";
 
+// Render/Vercel/Cloudflare — hammasi reverse-proxy ortida. Busiz:
+// (1) `secure` cookie'lar o'rnatilmaydi, (2) rate-limit hamma foydalanuvchini
+// bitta proxy IP'si deb hisoblaydi (va express-rate-limit ogohlantirish beradi).
+app.set("trust proxy", 1);
+
 app.use(helmet(serveWeb ? { contentSecurityPolicy: false } : undefined));
 
 const apiLimiter = rateLimit({
   windowMs: 1 * 60 * 1000, // 1 minute
-  max: serveWeb ? 2000 : 100,
+  // Bitta origin (SERVE_WEB) yoki alohida frontend (Vercel) — ikkalasida ham
+  // barcha talaba bitta chiqish IP'sидан kelishi mumkin (universitet Wi-Fi),
+  // shuning uchun limit yuqori.
+  max: serveWeb || env.crossSiteCookies ? 2000 : 100,
   standardHeaders: true,
   legacyHeaders: false,
 });
 app.use(apiLimiter);
 
-app.use(cors({ origin: env.webOrigin, credentials: true }));
+app.use(
+  cors({
+    // Ro'yxatdagi origin + shu loyihaning Vercel preview deploy'lari.
+    origin(origin, cb) {
+      // origin yo'q = same-origin / curl / mobil ilova — bloklamaymiz.
+      if (!origin) return cb(null, true);
+      if (isAllowedOrigin(origin)) return cb(null, true);
+      // Xato TASHLAMAYMIZ (u 500 bo'lib logni to'ldiradi) — shunchaki CORS
+      // sarlavhasini qo'ymaymiz: brauzer javobni o'zi bloklaydi.
+      console.warn(`CORS: ruxsat etilmagan origin — ${origin}`);
+      cb(null, false);
+    },
+    credentials: true,
+  })
+);
 app.use(express.json());
 app.use(cookieParser());
 app.use(authMiddleware);
@@ -78,4 +100,9 @@ app.use(errorMiddleware);
 
 app.listen(env.port, () => {
   console.log(`API ready on http://localhost:${env.port}`);
+  // Deploy'da eng ko'p uchraydigan xato — noto'g'ri origin/cookie sozlamasi.
+  // Shuning uchun ishga tushishda ochiq yozamiz (sekret yo'q).
+  console.log(`  web origins : ${env.webOrigins.join(", ")}`);
+  if (env.vercelProject) console.log(`  vercel prev : ${env.vercelProject}-*.vercel.app`);
+  console.log(`  cookies     : ${env.crossSiteCookies ? "SameSite=None; Secure (cross-site)" : "SameSite=Lax"}`);
 });

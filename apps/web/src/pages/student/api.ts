@@ -972,6 +972,54 @@ export function useMyActivity() {
   return useQuery({ queryKey: ["me-activity"], queryFn: () => api<ActivityItem[]>("/api/v1/me/activity") });
 }
 
+// ---- FaceID davomat (WebAuthn passkey + GPS) ----
+
+export interface CheckinOpen {
+  key: string;
+  courseId: number;
+  courseName: string;
+  room: string | null;
+  date: string;
+  /** Hozir bosilsa yoziladigan holat (vaqt oynasiga qarab). */
+  wouldBe: "PRESENT" | "LATE";
+  myStatus: AttStatus | null;
+}
+export interface CheckinState {
+  hasCredential: boolean;
+  geofenceRequired: boolean;
+  /** Vaqt oynasi ochiq dars (bo'lmasa null → tugma ko'rsatilmaydi). */
+  open: CheckinOpen | null;
+  next: { courseName: string; room: string | null; date: string } | null;
+}
+
+export function useCheckinState() {
+  return useQuery({
+    queryKey: ["me-checkin"],
+    queryFn: () => api<CheckinState>("/api/v1/me/checkin"),
+    refetchInterval: 30000, // vaqt oynasi ochilishi/yopilishini kuzatadi
+  });
+}
+
+export interface WebauthnDevice {
+  id: number;
+  deviceName: string | null;
+  createdAt: string;
+  lastUsedAt: string | null;
+}
+export function useWebauthnDevices() {
+  return useQuery({ queryKey: ["webauthn-devices"], queryFn: () => api<WebauthnDevice[]>("/api/v1/me/webauthn/credentials") });
+}
+export function useRemoveWebauthnDevice() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => api<{ ok: boolean }>(`/api/v1/me/webauthn/credentials/${id}`, { method: "DELETE" }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["webauthn-devices"] });
+      qc.invalidateQueries({ queryKey: ["me-checkin"] });
+    },
+  });
+}
+
 /** O'z o'rni guruhda — boshqa talabalar ro'yxati qaytmaydi. */
 export interface LeaderboardRow {
   rank: number;

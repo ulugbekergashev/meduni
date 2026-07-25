@@ -12,7 +12,11 @@ services:
     restart: unless-stopped
 
   app:
-    build: .
+    build:
+      context: .
+      # Bu rejimда web ham shu konteynerdan tarqatiladi (bitta origin).
+      args:
+        BUILD_WEB: "1"
     depends_on:
       - db
     environment:

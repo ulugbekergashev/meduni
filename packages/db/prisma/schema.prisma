@@ -143,6 +143,7 @@ model User {
   aiUsage           AiUsage[]
   tasksCreated      Task[]           @relation("TaskCreator")
   tasksAssigned     Task[]           @relation("TaskAssignee")
+  webauthnCredentials WebAuthnCredential[]
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
 
@@ -366,10 +367,31 @@ model Attendance {
   grade      Int?
   markedById Int
   markedBy   User             @relation("AttendanceMarker", fields: [markedById], references: [id])
+  // Talaba o'zi telefonidan FaceID (WebAuthn) + GPS bilan check-in qildimi.
+  // markedById=talabaning o'zi bo'ladi; o'qituvchi qo'lda o'zgartirsa false ga tushadi.
+  selfMarked Boolean          @default(false)
   markedAt   DateTime         @updatedAt
 
   @@unique([sessionId, studentId])
   @@map("attendance")
+}
+
+/// Talaba telefonidagi FaceID/barmoq passkey (WebAuthn) — o'zi davomat check-in
+/// qilishi uchun. Biometrika qurilmada qoladi; serverda faqat ochiq kalit saqlanadi.
+model WebAuthnCredential {
+  id           Int       @id @default(autoincrement())
+  userId       Int
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  credentialId String    @unique // base64url
+  publicKey    String // base64url
+  counter      Int       @default(0)
+  transports   String?
+  deviceName   String?
+  createdAt    DateTime  @default(now())
+  lastUsedAt   DateTime?
+
+  @@index([userId])
+  @@map("webauthn_credentials")
 }
 
 model Progress {

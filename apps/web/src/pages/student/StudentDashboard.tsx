@@ -24,6 +24,7 @@ import {
 import { Card, EmptyState, Icon, ProgressRing, BarRow, cls } from "@meduni/ui";
 import { AsyncSection } from "../../components/AsyncSection";
 import { HeroCard, HeroTile, RailCard } from "../../components/HeroStats";
+import { CheckInCard } from "./CheckInCard";
 import { useLocale } from "../../lib/useLocale";
 import { formatDate } from "../../lib/date";
 import {
@@ -271,6 +272,11 @@ export function StudentDashboard() {
             {/* Asosiy maydon: chapda ish, o'ngda kontekst */}
             <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
               <div className="min-w-0 space-y-4">
+                {/* FaceID davomat — vaqt oynasi ochiq dars bo'lsagina ko'rinadi */}
+                <motion.div variants={itemVariants}>
+                  <CheckInCard />
+                </motion.div>
+
                 {/* Davom ettirish */}
                 {d.resume && (
                   <motion.div
