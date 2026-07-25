@@ -55,6 +55,18 @@ export function PresentationEditor({ content }: { content: ContentFull }) {
   const regen = useRegenerateImage(presId);
 
   const [slides, setSlides] = useState<Slide[]>(content.presentation!.slides);
+  // 3A (xarajat): o'qituvchi qaysi slaydlarga rasm generatsiya qilinishini tanlaydi
+  // (default — rasm sloti bor barchasi). Belgilanmagan slaydga rasm yasalmaydi.
+  const [selected, setSelected] = useState<Set<string>>(
+    () => new Set(content.presentation!.slides.filter((s) => s.imageSlots.length > 0).map((s) => s.id))
+  );
+  const toggleSel = (id: string) =>
+    setSelected((prev) => {
+      const n = new Set(prev);
+      if (n.has(id)) n.delete(id);
+      else n.add(id);
+      return n;
+    });
 
   const patch = (i: number, p: Partial<Slide>) => setSlides((ss) => ss.map((s, j) => (j === i ? { ...s, ...p } : s)));
   const setBullet = (si: number, bi: number, val: string) =>
@@ -82,10 +94,10 @@ export function PresentationEditor({ content }: { content: ContentFull }) {
             variant="soft"
             size="sm"
             icon={<Icon icon={Sparkles} size={15} />}
-            onClick={() => genImages.mutate()}
-            disabled={genImages.isPending}
+            onClick={() => genImages.mutate([...selected])}
+            disabled={genImages.isPending || selected.size === 0}
           >
-            {t("generateImages")}
+            {t("generateImages")} ({selected.size})
           </Button>
           <a href={`${API_BASE}/api/v1/presentations/${presId}/pdf`}>
             <Button variant="ghost" size="sm" icon={<Icon icon={FileDown} size={15} />}>
@@ -159,13 +171,24 @@ export function PresentationEditor({ content }: { content: ContentFull }) {
                   {t("noImage")}
                 </div>
               ) : (
-                slide.imageSlots.map((slot, sloti) => (
-                  <SlotView
-                    key={sloti}
-                    slot={slot}
-                    onRegenerate={() => regen.mutate({ slideIndex: si, slotIndex: sloti })}
-                  />
-                ))
+                <>
+                  <label className="mb-2 flex cursor-pointer items-center gap-2 text-[13px] font-medium text-ink-soft">
+                    <input
+                      type="checkbox"
+                      checked={selected.has(slide.id)}
+                      onChange={() => toggleSel(slide.id)}
+                      className="h-4 w-4 accent-brand"
+                    />
+                    {t("includeImage")}
+                  </label>
+                  {slide.imageSlots.map((slot, sloti) => (
+                    <SlotView
+                      key={sloti}
+                      slot={slot}
+                      onRegenerate={() => regen.mutate({ slideIndex: si, slotIndex: sloti })}
+                    />
+                  ))}
+                </>
               )}
             </div>
           </Card>

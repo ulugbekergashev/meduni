@@ -399,7 +399,12 @@ export function useGeneratePresentation(topicId: number) {
 export function useGenerateImages(presentationId: number) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: () => api(`/api/v1/presentations/${presentationId}/generate-images`, { method: "POST" }),
+    // 3A: slideIds bo'lsa faqat tanlanganlarga; bo'sh/berilmasa hammasi.
+    mutationFn: (slideIds?: string[]) =>
+      api(`/api/v1/presentations/${presentationId}/generate-images`, {
+        method: "POST",
+        body: JSON.stringify({ slideIds: slideIds ?? [] }),
+      }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["content"] }),
   });
 }
