@@ -42,7 +42,9 @@ function viewAvailable(v: LessonView, lesson: Lesson): boolean {
     case "overview":
       return true;
     case "konspekt":
-      return !!lesson.digest || (lesson.sections?.length ?? 0) > 0;
+      // Har doim renderlanadi — kontent bo'lmasa ContentPanel "tayyorlanmoqda"
+      // bo'sh-holatini ko'rsatadi (aks holda "O'rganish" jimgina hech narsa qilmasdi).
+      return true;
     case "video":
       return !!lesson.tabs.video;
     case "slides":
@@ -190,6 +192,9 @@ export function LessonPage() {
    *  alohida interfeys"). Halollik ham shu bilan hal: test paytida material/chat
    *  umuman yo'q. */
   const focusMode = !isStudyView;
+  // O'rganish kontenti umuman bo'lmasa (faqat test bor demo mavzu kabi) — bo'sh
+  // rail ko'rsatmaymiz; ContentPanel "tayyorlanmoqda" bo'sh-holatini to'liq eninда beradi.
+  const showRail = railOpen && studyBlocks.length > 0;
 
   /** Test jarayonida (tugallanmagan urinish) — halollik rejimi (o'rganish
    *  ko'rinishiga qaytilganda material/chat qulflanadi). */
@@ -284,7 +289,7 @@ export function LessonPage() {
         <div
           className={cls(
             "grid gap-2.5 p-2.5 transition-[grid-template-columns] duration-200 ease-out lg:min-h-0 lg:flex-1",
-            railOpen
+            showRail
               ? chatOpen
                 ? "lg:grid-cols-[280px_minmax(0,1fr)_400px]"
                 : "lg:grid-cols-[280px_minmax(0,1fr)_0px]"
@@ -293,7 +298,7 @@ export function LessonPage() {
                 : "lg:grid-cols-[0px_minmax(0,1fr)_0px]"
           )}
         >
-          {railOpen && (
+          {showRail && (
             <div className="order-3 flex min-h-0 flex-col overflow-hidden lg:order-1">
               {/* O'rganish bloklari + bo'limlar TOC + materiallar.
                   Halollik: test tugallanmagan bo'lsa materiallar qulf. */}
