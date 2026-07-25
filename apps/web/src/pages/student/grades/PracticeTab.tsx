@@ -362,8 +362,13 @@ export function PracticeTab() {
                   <Icon icon={User} size={18} />
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-body font-bold text-ink">
+                  <span className="flex items-center gap-2 truncate text-body font-bold text-ink">
                     {p.patientName || t("patientDefault")}
+                    {p.generated && !p.patientName && (
+                      <span className="shrink-0 rounded-pill bg-blue-soft px-1.5 py-0.5 text-micro font-semibold text-blue">
+                        {t("patientFromDigest")}
+                      </span>
+                    )}
                   </span>
                   <span className="block truncate text-note text-ink-faint">
                     {p.topicTitle} · {p.subjectName}
