@@ -114,6 +114,12 @@ topicsRouter.post(
   wrap(async (req, res) => res.json(await svc.approveDigest(parseId(req.params.id), req.user!.id)))
 );
 
+// 1C: audio-konspekt (o'qituvchi tugmasi — joriy konspektni ovozga aylantiradi)
+topicsRouter.post(
+  "/:id/digest/audio",
+  wrap(async (req, res) => res.json(await svc.generateDigestAudio(parseId(req.params.id), req.user!.id)))
+);
+
 // ---- Materials router (/api/v1/materials) ----
 
 export const materialsRouter = Router();

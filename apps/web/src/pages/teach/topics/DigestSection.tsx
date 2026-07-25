@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Check, ChevronDown, Plus, Sparkles, Trash2, TriangleAlert } from "lucide-react";
+import { Check, ChevronDown, Plus, Sparkles, Trash2, TriangleAlert, Volume2 } from "lucide-react";
 import { Button, Card, Icon, Spinner, cls, useToast } from "@meduni/ui";
 import { apiErrorMessage } from "../../../lib/api";
 import { useLocale } from "../../../lib/useLocale";
 import {
   useApproveDigest,
   useGenerateDigest,
+  useGenerateDigestAudio,
   useUpdateDigest,
   type DigestCheckpoint,
   type DigestJson,
@@ -207,6 +208,7 @@ export function DigestSection({ topic }: { topic: TopicDetail }) {
   const generate = useGenerateDigest(topic.id);
   const update = useUpdateDigest(topic.id);
   const approve = useApproveDigest(topic.id);
+  const genAudio = useGenerateDigestAudio(topic.id);
 
   const server = topic.digest;
   const [draft, setDraft] = useState<DigestJson | null>(server?.digestJson ?? null);
@@ -321,7 +323,18 @@ export function DigestSection({ topic }: { topic: TopicDetail }) {
             {dirty && <span className="text-[12.5px] text-ink-faint">{t("saveBeforeApprove")}</span>}
           </>
         )}
-        <span className="ml-auto text-[12.5px] text-ink-faint">v{server.version}</span>
+        <div className="ml-auto flex items-center gap-2">
+          <Button
+            size="sm"
+            variant="ghost"
+            icon={<Icon icon={Volume2} size={15} />}
+            onClick={() => genAudio.mutate(undefined, { onSuccess: () => show(t("audioSaved")) })}
+            disabled={genAudio.isPending}
+          >
+            {genAudio.isPending ? t("audioGenerating") : t("generateAudio")}
+          </Button>
+          <span className="text-[12.5px] text-ink-faint">v{server.version}</span>
+        </div>
       </div>
     </Card>
   );

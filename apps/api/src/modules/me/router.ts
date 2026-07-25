@@ -247,6 +247,17 @@ meRouter.get(
   })
 );
 
+// 1C: audio-konspekt (o'qish ustuni pleyeri)
+meRouter.get(
+  "/topics/:id/digest-audio",
+  wrap(async (req, res) => {
+    const buf = await lesson.studentDigestAudio(req.user!.id, parseId(req.params.id));
+    res.setHeader("Content-Type", "audio/wav");
+    res.setHeader("Accept-Ranges", "bytes");
+    res.send(buf);
+  })
+);
+
 meRouter.get(
   "/presentations/:id/image/:slideIndex/:slotIndex",
   wrap(async (req, res) => {

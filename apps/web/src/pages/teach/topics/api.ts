@@ -348,6 +348,13 @@ export function useApproveDigest(topicId: number) {
   });
 }
 
+/** 1C: konspektni ovozga aylantiradi (joriy versiya). */
+export function useGenerateDigestAudio(topicId: number) {
+  return useMutation({
+    mutationFn: () => api<{ ok: boolean; version: number }>(`/api/v1/topics/${topicId}/digest/audio`, { method: "POST" }),
+  });
+}
+
 // ---- Content generation & editing ----
 
 export function useGenerateQuiz(topicId: number) {
