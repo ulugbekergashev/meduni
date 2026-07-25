@@ -2,7 +2,7 @@
 // o'ynaydi; talaba shifokor sifatida anamnez yig'adi. Yakunda AI baholaydi.
 // Biznes qoida (CLAUDE.md §6): AI keysда YO'Q faktni ixtiro qilmaydi.
 import { Type } from "@google/genai";
-import type { CaseJson } from "../types";
+import type { CaseJson, DigestJson } from "../types";
 
 export const PATIENT_PROMPT_VERSION = 1;
 
@@ -79,6 +79,74 @@ export const patientResponseSchema = {
   properties: { reply: { type: Type.STRING } },
   required: ["reply"],
 };
+
+// ---------- Bemor SSENARIYSI generatsiyasi (keys yo'q — konspektdan, XILMA-XIL) ----------
+// Har safar boshqacha bemor: parametrlar (yosh/jins/og'irlik/atipiklik) turlanadi;
+// konspekt bir necha holatni qamrasa — tashxis ham. Klinik FAKTLAR faqat konspektdan.
+
+/** Diversifikatsiya o'qlari — har generatsiyaда tasodifan bittasi tanlanadi. */
+export const SCENARIO_VARIATIONS = {
+  uz: [
+    "yosh bemor (18–30 yosh), tipik ko'rinish",
+    "o'rta yosh bemor (35–55), tipik ko'rinish",
+    "keksa bemor (60+), hamroh holat bilan",
+    "ATIPIK/yashirin ko'rinish (tashxis qiyinroq)",
+    "o'tkir, og'ir bosqich",
+    "yengil yoki erta bosqich",
+    "ayol bemor, o'ziga xos parametrlar",
+    "erkak bemor, o'ziga xos parametrlar",
+  ],
+  ru: [
+    "молодой пациент (18–30), типичная картина",
+    "средний возраст (35–55), типичная картина",
+    "пожилой пациент (60+), с сопутствующим состоянием",
+    "АТИПИЧНАЯ/стёртая картина (диагноз сложнее)",
+    "острая, тяжёлая стадия",
+    "лёгкая или ранняя стадия",
+    "пациентка, свои параметры",
+    "пациент-мужчина, свои параметры",
+  ],
+} as const;
+
+export function patientScenarioSystemPrompt(lang: "uz" | "ru"): string {
+  return [
+    "Sen tibbiy ta'lim uchun VIRTUAL BEMOR ssenariysini yaratuvchi assistentsan.",
+    "Berilgan MAVZU KONSPEKTI asosida roleplay uchun bitta realistik bemor 'haqiqatini' tuzasan.",
+    "",
+    "QAT'IY QOIDALAR:",
+    "1. Klinik FAKTLAR (belgilar, obyektiv holat, laboratoriya, to'g'ri TASHXIS, dozalar)",
+    "   FAQAT konspektdan bo'lsin — konspektда yo'q kasallik/mexanizm/preparatni O'YLAB TOPMA.",
+    "2. Bemor 'qobig'ini' MASHQ UCHUN XILMA-XIL qil: realistik ism, yosh, jins, og'irlik",
+    "   darajasi, tipik yoki atipik ko'rinish. Bu qism har safar boshqacha bo'lsin.",
+    "3. Agar konspekt BIR NECHA holat/kasallikni qamrasa — ulardан BIRINI tanla (tashxis",
+    "   turlanadi — differensial mashq). Agar bitta kasallik bo'lsa — tashxis o'sha bo'ladi,",
+    "   faqat ko'rinishi/parametrlari turlanadi. Konspekt qamrovidan CHIQMA.",
+    "4. `complaints`/`anamnesis` — bemor tilida (subyektiv shikoyat/tarix).",
+    "   `objectiveStatus`/`labData` — tekshiruvда chiqadigan obyektiv topilmalar.",
+    "   `vitals` — realistik hayotiy ko'rsatkichlar (holatga mos).",
+    "5. `referenceAnswer` — TO'G'RI tashxis + qisqa asoslash (BAHOLASH uchun; talabaga",
+    "   ko'rsatilmaydi). `patientName` realistik, `patientInfo` — \"NN yosh, jins\".",
+    "6. `steps` va `questions` — bo'sh massiv (roleplay uchun kerak emas).",
+    `7. Til — ${langLabel[lang]}. Javobni FAQAT JSON schema bo'yicha ber.`,
+  ].join("\n");
+}
+
+export function patientScenarioUserContent(digest: DigestJson, variation: string): string {
+  const parts = [
+    "Quyidagi konspekt asosida bitta virtual bemor ssenariysini tuz.",
+    "",
+    `VARIATSIYA (shu yo'nalishда diversifikatsiya qil): ${variation}`,
+    "",
+    "=== KONSPEKT ===",
+    "MAQSADLAR: " + (digest.objectives?.join("; ") || "—"),
+    "TUSHUNCHALAR: " + (digest.concepts?.join("; ") || "—"),
+    "FAKTLAR: " + (digest.facts?.join("; ") || "—"),
+    "DOZALAR: " + (digest.dosages?.join("; ") || "—"),
+    "BO'LIMLAR: " + ((digest.sections ?? []).map((s) => s.title).join("; ") || "—"),
+    "=== TUGADI ===",
+  ];
+  return parts.join("\n");
+}
 
 // ---------- Baholash ----------
 

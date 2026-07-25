@@ -176,7 +176,7 @@ export function PatientTab({ topicId }: { topicId: number }) {
 
   return (
     <div className="mx-auto flex h-full max-w-[620px] flex-col">
-      {/* Bemor kartasi + ko'rsatma */}
+      {/* Bemor kartasi + ko'rsatma + "Yangi bemor" (har safar boshqacha) */}
       <div className="mb-2 flex shrink-0 items-center gap-2.5 rounded-card border border-line bg-surface-raised p-3">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-control bg-rose-soft text-rose">
           <Icon icon={User} size={18} />
@@ -185,6 +185,17 @@ export function PatientTab({ topicId }: { topicId: number }) {
           <p className="truncate text-body font-extrabold text-ink">{data?.patientInfo?.name || t("patientLabel")}</p>
           <p className="truncate text-micro text-ink-dim">{data?.patientInfo?.info || t("roleHint")}</p>
         </div>
+        {chat.length > 0 && (
+          <button
+            onClick={() => reset.mutate()}
+            disabled={reset.isPending}
+            title={t("newPatient")}
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-control border border-line px-2.5 py-1.5 text-micro font-bold text-ink-soft transition-colors hover:bg-surface hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:opacity-40"
+          >
+            {reset.isPending ? <Spinner size={12} /> : <Icon icon={RotateCcw} size={13} />}
+            {t("newPatient")}
+          </button>
+        )}
       </div>
 
       {/* Suhbat */}
