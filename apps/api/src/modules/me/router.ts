@@ -170,6 +170,18 @@ meRouter.post(
 
 meRouter.post("/topics/:id/patient/reset", wrap(async (req, res) => res.json(await patient.resetPatient(req.user!.id, parseId(req.params.id)))));
 
+// Tekshiruv buyurish (EKG/lab/instrumental → natija) + jonli DDx
+const patientTestSchema = z.object({ testType: z.string().min(1).max(120) });
+meRouter.post(
+  "/topics/:id/patient/test",
+  wrap(async (req, res) => {
+    const b = parseBody(patientTestSchema, req.body);
+    res.json(await patient.orderTest(req.user!.id, parseId(req.params.id), b.testType));
+  })
+);
+
+meRouter.get("/topics/:id/patient/ddx", wrap(async (req, res) => res.json(await patient.getDDx(req.user!.id, parseId(req.params.id)))));
+
 // ---------- AI-tutor chat (layout v2, 2C) ----------
 
 meRouter.get("/topics/:id/chat", wrap(async (req, res) => res.json(await chat.getChat(req.user!.id, parseId(req.params.id)))));

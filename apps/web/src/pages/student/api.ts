@@ -498,6 +498,9 @@ export interface PatientEval {
   diagnosis: string;
   correct: boolean;
   anamnesisScore: number;
+  examinationScore: number;
+  treatmentScore: number;
+  safetyScore: number;
   communicationScore: number;
   overallScore: number;
   strengths: string;
@@ -506,10 +509,17 @@ export interface PatientEval {
 
 export interface PatientMsg {
   id: number;
-  role: "student" | "patient" | "eval";
+  /** "test" — buyurilgan tekshiruv natijasi (chatда alohida ko'rinadi). */
+  role: "student" | "patient" | "eval" | "test";
   text: string;
   eval?: PatientEval;
   createdAt: string;
+}
+
+export interface DDxItem {
+  diagnosis: string;
+  probability: number;
+  keyFinding: string;
 }
 
 export interface PatientData {
@@ -566,6 +576,30 @@ export function useResetPatient(topicId: number) {
       qc.invalidateQueries({ queryKey: ["me-patient", topicId] });
       qc.invalidateQueries({ queryKey: ["me-lesson", topicId] });
     },
+  });
+}
+
+/** Tekshiruv buyurish (EKG/lab/instrumental → natija chatда paydo bo'ladi). */
+export function useOrderTest(topicId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (testType: string) =>
+      api<{ message: PatientMsg }>(`/api/v1/me/topics/${topicId}/patient/test`, {
+        method: "POST",
+        body: JSON.stringify({ testType }),
+      }),
+    onSuccess: (res) => {
+      qc.setQueryData<PatientData>(["me-patient", topicId], (old) =>
+        old ? { ...old, messages: [...old.messages, res.message] } : old
+      );
+    },
+  });
+}
+
+/** Jonli differensial tashxis (DDx) — mavjud dalillar asosida (AI chaqiruvi). */
+export function usePatientDDx(topicId: number) {
+  return useMutation({
+    mutationFn: () => api<{ ddx: DDxItem[] }>(`/api/v1/me/topics/${topicId}/patient/ddx`),
   });
 }
 
