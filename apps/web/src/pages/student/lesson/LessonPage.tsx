@@ -28,6 +28,7 @@ const ALL_VIEWS: LessonView[] = [
   "video",
   "slides",
   "materials",
+  "mindmap",
   "case",
   "quiz",
   "flashcards",
@@ -48,6 +49,9 @@ function viewAvailable(v: LessonView, lesson: Lesson): boolean {
       return !!lesson.tabs.slides;
     case "materials":
       return lesson.materials.length > 0 || (lesson.links?.length ?? 0) > 0;
+    case "mindmap":
+      // Mindmap bo'limli konspektdan quriladi (v2). Bo'lim bo'lmasa yo'q.
+      return (lesson.sections?.length ?? 0) > 0;
     case "case":
       return !!lesson.tabs.case;
     case "quiz":
@@ -146,6 +150,13 @@ export function LessonPage() {
   const seekTo = seekRaw !== null && seekRaw !== "" && Number.isFinite(Number(seekRaw)) ? Number(seekRaw) : null;
   const seekVideo = (sec: number) => setParams({ view: "video", t: String(Math.max(0, Math.floor(sec))) }, { replace: true });
 
+  // Faza 2: mindmap bo'lim tugunidan konspektga o'tib o'sha bo'limga sakraydi.
+  const jumpToSection = (i: number) => {
+    setView("konspekt");
+    setJumpTo(i);
+    setTimeout(() => setJumpTo(null), 600);
+  };
+
   // Konspekt endi butunlay ko'rinadi — `section` faqat TOC'dan sakrash uchun,
   // `visibleSection` esa skroll paytida qaysi bo'lim ko'rinayotganini bildiradi.
   const sections = lesson.sections ?? [];
@@ -158,6 +169,8 @@ export function LessonPage() {
   // Materiallar bloki fayl YOKI havola bo'lsa turadi (matn ajratilmagan bo'lsa
   // ham — u holda blok ichida faqat yuklab olish ro'yxati ochiladi).
   if (lesson.materials.length > 0 || (lesson.links?.length ?? 0) > 0) studyBlocks.push("materials");
+  // Mindmap — bo'limli konspekt bo'lsa (navigatsiya xaritasi, AI'siz).
+  if (sections.length > 0) studyBlocks.push("mindmap");
   // Fleshkartalar — takrorlash bloki (test yoki konspekt bo'lsa hosil bo'ladi;
   // test yakunlanmaguncha rail'da qulf bilan turadi).
   if (lesson.tabs.quiz || lesson.digest) studyBlocks.push("flashcards");
@@ -169,7 +182,8 @@ export function LessonPage() {
     view === "slides" ||
     view === "video" ||
     view === "materials" ||
-    view === "flashcards";
+    view === "flashcards" ||
+    view === "mindmap";
   /** 3 panel FAQAT o'rganishda. Test/keys/kartalar/natija/overview — FOKUSLI
    *  yakka interfeys: chap rail ham, chat ham ko'rsatilmaydi (foydalanuvchi:
    *  "bu interfeys faqat o'rganish uchun; test/natija/keys/flashcard uchun
@@ -260,6 +274,7 @@ export function LessonPage() {
               onMarkRead={(i) => markRead.mutate(i)}
               seekTo={seekTo}
               onSeekVideo={seekVideo}
+              onJumpSection={jumpToSection}
             />
           )}
         </div>
@@ -316,6 +331,7 @@ export function LessonPage() {
               onMarkRead={(i) => markRead.mutate(i)}
               seekTo={seekTo}
               onSeekVideo={seekVideo}
+              onJumpSection={jumpToSection}
             />
           </div>
 

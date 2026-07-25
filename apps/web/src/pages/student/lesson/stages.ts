@@ -10,7 +10,7 @@ export type StageState = "done" | "open" | "pendingReview" | "soon";
 /** O'rganish bloklari (chap rail). "materials" — material matni mini-konspekti;
  *  "flashcards" — takrorlash (2026-07-23: fokus rejimidan o'rganishga ko'chirildi —
  *  u baholash emas, o'quv/takrorlash quroli). */
-export type ContentView = "konspekt" | "video" | "slides" | "materials" | "flashcards";
+export type ContentView = "konspekt" | "video" | "slides" | "materials" | "flashcards" | "mindmap";
 /** "overview" — kirish landing'i (layout v2); "patient" — virtual bemor roleplay
  *  (amaliyot, fokus rejim — bosqich emas). */
 export type LessonView = "overview" | ContentView | "case" | "quiz" | "result" | "patient";

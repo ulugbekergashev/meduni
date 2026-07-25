@@ -6,6 +6,7 @@ import type { Lesson } from "../api";
 import { Panel } from "./Panel";
 import { firstContentView, nextOpenStage, type ContentView, type LessonView, type StageInfo, type StageKey } from "./stages";
 import { DigestView } from "./DigestView";
+import { MindmapView } from "./MindmapView";
 import { SectionReader } from "./SectionReader";
 import { MaterialTextView } from "./MaterialTextView";
 import { NextStageBar } from "./NextStageBar";
@@ -38,6 +39,7 @@ export function ContentPanel({
   onMarkRead,
   seekTo = null,
   onSeekVideo,
+  onJumpSection,
 }: {
   lesson: Lesson;
   topicId: number;
@@ -52,6 +54,8 @@ export function ContentPanel({
   /** Faza 1: video sekundiga sakrash (konspekt media chipidan ?t=). */
   seekTo?: number | null;
   onSeekVideo?: (sec: number) => void;
+  /** Faza 2: mindmap bo'lim tugunidan konspektga sakrash. */
+  onJumpSection?: (index: number) => void;
 }) {
   const { t } = useTranslation(undefined, { keyPrefix: "lesson" });
   const hasSections = (lesson.sections?.length ?? 0) > 0;
@@ -67,7 +71,8 @@ export function ContentPanel({
     view === "video" ||
     view === "slides" ||
     view === "materials" ||
-    view === "flashcards";
+    view === "flashcards" ||
+    view === "mindmap";
 
   // ---- Virtual bemor roleplay (amaliyot — fokus rejim) ----
   if (view === "patient") {
@@ -147,6 +152,20 @@ export function ContentPanel({
     return (
       <Panel bodyClassName="p-4">
         <FlashcardsTab topicId={topicId} />
+      </Panel>
+    );
+  }
+
+  // ---- Mindmap (o'rganish bloki — navigatsiya xaritasi, AI'siz) ----
+  if (view === "mindmap") {
+    return (
+      <Panel bodyClassName="p-0">
+        <MindmapView
+          topicTitle={lesson.title}
+          sections={lesson.sections ?? []}
+          terms={lesson.digest?.terms ?? []}
+          onJumpSection={(i) => onJumpSection?.(i)}
+        />
       </Panel>
     );
   }

@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { BookText, Check, Download, ExternalLink, FileText, Layers, Link2, Lock, Sparkles, Video } from "lucide-react";
+import { BookText, Check, Download, ExternalLink, FileText, Layers, Link2, Lock, Network, Sparkles, Video } from "lucide-react";
 import { Icon, cls } from "@meduni/ui";
 import { API_URL } from "../../../lib/api";
 import { useFlashcards, type Lesson } from "../api";
@@ -30,6 +30,7 @@ const BLOCK_ICON: Record<ContentView, typeof BookText> = {
   video: Video,
   materials: FileText,
   flashcards: Sparkles,
+  mindmap: Network,
 };
 
 /** Chap ustun — o'rganish bloklari; faol blok ostida uning tafsiloti ochiladi
@@ -88,6 +89,7 @@ export function StudyRail({
       if (fc && fc.total > 0) return `${fc.knownCount}/${fc.total}`;
       return t("flashReady");
     }
+    if (v === "mindmap") return sections.length ? t("sectionsN", { n: sections.length }) : null;
     return null;
   }
 
