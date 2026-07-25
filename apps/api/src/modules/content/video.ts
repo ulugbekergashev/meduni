@@ -1,4 +1,5 @@
 import { mkdtemp, readFile, rm, writeFile } from "fs/promises";
+import { createHash } from "crypto";
 import os from "os";
 import path from "path";
 import sharp from "sharp";
@@ -336,15 +337,44 @@ async function stageTtsAndRender(videoId: number) {
   });
   const slides = (presContent?.presentation?.slidesJson as unknown as Slide[]) ?? [];
 
+  // 3B (xarajat): bo'lim → o'sha bo'limning tayyor slayd rasmi. Segment shu bo'limga
+  // tegishli bo'lsa, yangi rasm GENERATSIYA QILMAY, mavjud slayd rasmini ishlatadi
+  // (Faza 0 sectionId xaritasi). Video rasm xarajati deyarli 0 ga tushadi.
+  const slideImageBySection = new Map<string, string>();
+  for (const sl of slides) {
+    const url = sl.imageSlots?.[0]?.url;
+    if (sl.sectionId && sl.imageSlots?.[0]?.status === "DONE" && url && !slideImageBySection.has(sl.sectionId)) {
+      slideImageBySection.set(sl.sectionId, url);
+    }
+  }
+
   const dir = await mkdtemp(path.join(os.tmpdir(), "meduni-video-"));
   try {
     // --- TTS (Gemini native, per segment → normalized WAV) ---
+    // 3E (xarajat): har segment audiosi narration+voice hash bo'yicha keshlanadi.
+    // Rebuild'da o'zgarmagan segment QAYTA OVOZLANMAYDI — faqat tahrirlangani.
+    // Fayl nomi hash bo'yicha (indeks emas) → reorder'da to'qnashuv yo'q.
     await setStatus(videoId, "TTS");
     const segWavs: string[] = [];
     for (let i = 0; i < segments.length; i++) {
-      const dur = await synthSegment(segments[i].narration, geminiVoice, edgeVoice, dir, `seg${i}`, { topicId, departmentId, userId: teacherId });
-      segments[i].durationSec = dur;
-      segWavs.push(`seg${i}.wav`);
+      const seg = segments[i];
+      const hash = createHash("sha1").update(`${geminiVoice}::${seg.narration}`).digest("hex");
+      const wavName = `seg${i}.wav`;
+      let reused = false;
+      if (seg.audioHash === hash && seg.audioUrl) {
+        const buf = await readFileBuffer(seg.audioUrl).catch(() => null);
+        if (buf) {
+          await writeFile(path.join(dir, wavName), buf);
+          reused = true; // durationSec allaqachon segmentда saqlangan
+        }
+      }
+      if (!reused) {
+        const dur = await synthSegment(seg.narration, geminiVoice, edgeVoice, dir, `seg${i}`, { topicId, departmentId, userId: teacherId });
+        seg.durationSec = dur;
+        seg.audioUrl = await saveBytes(`topics/${topicId}/video/${v.id}/seg-${hash}.wav`, await readFile(path.join(dir, wavName)));
+        seg.audioHash = hash;
+      }
+      segWavs.push(wavName);
     }
     // concat audio (all segments are 24 kHz mono s16 → copy-concat is safe)
     await writeFile(path.join(dir, "audio.txt"), segWavs.map((f) => `file '${f}'`).join("\n"), "utf8");
@@ -366,6 +396,12 @@ async function stageTtsAndRender(videoId: number) {
         let imgBuf: Buffer | null = null;
         const wantsImage = seg.visual.kind === "points" || seg.visual.kind === "term";
         if (wantsImage) {
+          // 3B: avval o'sha bo'limning tayyor slayd rasmini QAYTA ISHLAT (bepul);
+          // faqat mos slayd rasmi yo'q segmentlarga yangi rasm generatsiya qilinadi.
+          if (!seg.visualImageUrl && seg.sectionId) {
+            const reuse = slideImageBySection.get(seg.sectionId);
+            if (reuse) seg.visualImageUrl = reuse; // slayd rasm faylini ishlatamiz (cheklovga kirmaydi)
+          }
           if (!seg.visualImageUrl && imagesMade < MAX_VIDEO_IMAGES) {
             try {
               const img = await generateImage(imagePromptForVisual(seg.visual, v.language), {
