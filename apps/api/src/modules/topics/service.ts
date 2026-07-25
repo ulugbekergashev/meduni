@@ -2,9 +2,10 @@ import { randomUUID } from "crypto";
 import type { SourceMaterial, Topic } from "../../lib/prisma";
 import { prisma } from "../../lib/prisma";
 import { ApiError, badRequest, notFound } from "../../lib/errors";
-import { deletePath, readText, readFileBuffer, saveMaterialFile, saveParsedText } from "../../lib/storage";
+import { deletePath, readText, readFileBuffer, saveBytes, saveMaterialFile, saveParsedText } from "../../lib/storage";
+import { pcmToWav } from "../../lib/wav";
 import { extractText, fileTypeFromName, parseErrorMessages, pdfPageCount, type ParseErrorCode } from "./parse";
-import { generateStructured } from "../../ai/gemini";
+import { generateSpeech, generateStructured } from "../../ai/gemini";
 import { assertQuota } from "../../ai/quota";
 import { departmentForTopic } from "../../ai/glossary";
 import { digestSchema, digestResponseSchema, type DigestJson } from "../../ai/types";
@@ -293,6 +294,51 @@ export async function approveDigest(topicId: number, teacherId: number) {
     version: digest.version,
     approvedByTeacher: true,
   };
+}
+
+// ---------- Audio-konspekt (1C) — mavjud Gemini TTS reuse, ffmpeg'siz ----------
+
+const DIGEST_AUDIO_CHARS = 4500; // bitta TTS chaqiruvi uchun xavfsiz cheklov
+
+/** Audio fayl yo'li — VERSIYA yo'l ichida: konspekt tahrirlansa (version oshsa)
+ *  eski audio o'z-o'zidan eskiradi (yangi yo'l → yangi generatsiya kerak). */
+export function digestAudioRel(topicId: number, version: number): string {
+  return `topics/${topicId}/digest-audio-v${version}.wav`;
+}
+
+/** Konspekt bo'limlaridan gapiriladigan matn (sarlavha + xatboshi/ro'yxat). */
+function digestSpeechText(d: DigestJson): string {
+  const parts: string[] = [];
+  for (const s of d.sections ?? []) {
+    parts.push(`${s.title}.`);
+    for (const b of s.blocks) {
+      if (b.type === "para" || b.type === "callout") parts.push(b.text);
+      else if (b.type === "list") parts.push(b.items.map((it) => `${it.lead ? it.lead + ": " : ""}${it.text}`).join(". "));
+    }
+  }
+  return parts.join(" ").replace(/\s+/g, " ").trim().slice(0, DIGEST_AUDIO_CHARS);
+}
+
+/** O'qituvchi tugmasi: joriy konspektni ovozga aylantiradi (bitta TTS chaqiruvi). */
+export async function generateDigestAudio(topicId: number, teacherId: number) {
+  await topicForTeacher(topicId, teacherId);
+  const digest = await prisma.topicDigest.findUnique({ where: { topicId } });
+  if (!digest) throw notFound("Konspekt");
+  const dj = digest.digestJson as unknown as DigestJson;
+  const text = digestSpeechText(dj);
+  if (text.length < 20) throw badRequest("Konspekt matni yetarli emas", "Недостаточно текста конспекта");
+
+  const departmentId = await departmentForTopic(topicId);
+  await assertQuota(departmentId);
+
+  const { pcm, sampleRate } = await generateSpeech(text, "Kore", { topicId, departmentId, userId: teacherId });
+  const rel = await saveBytes(digestAudioRel(topicId, digest.version), pcmToWav(pcm, sampleRate));
+  return { ok: true, version: digest.version, url: rel };
+}
+
+/** Joriy (tasdiqlangan) konspekt versiyasiga audio mavjudmi. */
+export async function hasDigestAudio(topicId: number, version: number): Promise<boolean> {
+  return !!(await readFileBuffer(digestAudioRel(topicId, version)).catch(() => null));
 }
 
 function toMaterialOut(m: SourceMaterial) {

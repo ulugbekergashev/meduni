@@ -7,6 +7,7 @@ import type { Prisma } from "../../lib/prisma";
 import { prisma } from "../../lib/prisma";
 import { ApiError, badRequest, notFound } from "../../lib/errors";
 import { readFileBuffer, saveBytes } from "../../lib/storage";
+import { pcmToWav } from "../../lib/wav";
 import { FFMPEG, run } from "../../lib/exec";
 import { generateImage, generateSpeech, generateStructured } from "../../ai/gemini";
 import { assertQuota } from "../../ai/quota";
@@ -200,18 +201,6 @@ async function renderVisualPng(visual: VideoVisual, imageBuf: Buffer | null): Pr
 // Every segment is normalized to a 24 kHz mono 16-bit WAV so they concat cleanly.
 
 const TTS_RATE = 24000;
-
-/** Wrap raw 16-bit PCM into a WAV container. */
-function pcmToWav(pcm: Buffer, rate: number, ch = 1, bits = 16): Buffer {
-  const blockAlign = (ch * bits) / 8;
-  const byteRate = rate * blockAlign;
-  const h = Buffer.alloc(44);
-  h.write("RIFF", 0); h.writeUInt32LE(36 + pcm.length, 4); h.write("WAVE", 8);
-  h.write("fmt ", 12); h.writeUInt32LE(16, 16); h.writeUInt16LE(1, 20); h.writeUInt16LE(ch, 22);
-  h.writeUInt32LE(rate, 24); h.writeUInt32LE(byteRate, 28); h.writeUInt16LE(blockAlign, 32); h.writeUInt16LE(bits, 34);
-  h.write("data", 36); h.writeUInt32LE(pcm.length, 40);
-  return Buffer.concat([h, pcm]);
-}
 
 interface TtsUsage { topicId?: number; departmentId?: number | null; userId?: number | null }
 

@@ -2,6 +2,7 @@ import { Suspense, lazy } from "react";
 import { useTranslation } from "react-i18next";
 import { ArrowLeft, BookText, ClipboardList, HeartPulse, Stethoscope, Trophy } from "lucide-react";
 import { EmptyState, Icon, Spinner } from "@meduni/ui";
+import { API_URL } from "../../../lib/api";
 import type { Lesson } from "../api";
 import { Panel } from "./Panel";
 import { firstContentView, nextOpenStage, type ContentView, type LessonView, type StageInfo, type StageKey } from "./stages";
@@ -201,6 +202,7 @@ export function ContentPanel({
             finishedLabel={nextAfterStudy ? `${t("nextStage")}: ${t(`stage_${nextAfterStudy.key}`)}` : undefined}
             hasVideo={!!lesson.tabs.video}
             onSeekVideo={onSeekVideo}
+            audioSrc={lesson.digestAudio ? `${API_URL}/api/v1/me/topics/${topicId}/digest-audio` : null}
           />
         ) : (
           lesson.digest && <DigestView digest={lesson.digest} />

@@ -119,10 +119,13 @@ export function SectionReader({
   finishedLabel,
   hasVideo = false,
   onSeekVideo,
+  audioSrc = null,
 }: {
   sections: LessonSection[];
   /** Konspekt atamalari — matn ichida Smart Tooltip uchun. */
   terms?: Term[];
+  /** 1C: audio-konspekt manzili (bo'lsa header'da pleyer). */
+  audioSrc?: string | null;
   /** Chap TOC'dan tanlangan bo'lim — shu yerga skroll qiladi. */
   activeSection: number | null;
   /** Skroll paytida ko'rinib turgan bo'lim (TOC'ni yoritish uchun). */
@@ -203,9 +206,13 @@ export function SectionReader({
 
   return (
     <div className="flex h-full flex-col">
-      {/* Ixcham shapka — faqat o'qish o'lchami. Hisoblagich/nom yo'q:
-          bo'lim nomi TOC'da, bosqich nomi stepper'da turibdi. */}
-      <div className="flex shrink-0 items-center justify-end px-3 py-1.5">
+      {/* Ixcham shapka — o'qish o'lchami (+ 1C audio pleyeri, bo'lsa). */}
+      <div className="flex shrink-0 items-center justify-between gap-2 px-3 py-1.5">
+        {audioSrc ? (
+          <audio controls preload="none" src={audioSrc} className="h-8 min-w-0 flex-1 sm:max-w-[280px]" />
+        ) : (
+          <span />
+        )}
         <div className="flex shrink-0 items-center gap-0.5 rounded-control border border-line">
           <button
             onClick={size.dec}

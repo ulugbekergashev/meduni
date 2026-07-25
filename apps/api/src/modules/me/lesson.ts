@@ -2,6 +2,7 @@ import { Prisma, prisma } from "../../lib/prisma";
 import { ApiError, badRequest, notFound } from "../../lib/errors";
 import { readFileBuffer, readText } from "../../lib/storage";
 import { buildPdf } from "../content/presentation";
+import { digestAudioRel, hasDigestAudio } from "../topics/service";
 import type { CaseJson, DigestJson, ScriptSegment, Slide } from "../../ai/types";
 import {
   assertTopicOpen,
@@ -254,6 +255,8 @@ export async function getTopicLesson(studentId: number, topicId: number) {
     links: topic.links.map((l) => ({ id: l.id, title: l.title, url: l.url, note: l.note })),
     // O'rta panel — AI konspekt (tasdiqlanmagan bo'lsa null → video/slaydlarga fallback).
     digest: digestJson,
+    /** 1C: joriy konspekt versiyasiga audio tayyormi (o'qish ustuni pleyeri). */
+    digestAudio: topic.digest?.approvedByTeacher ? await hasDigestAudio(topicId, topic.digest.version) : false,
     /** v2 bo'limli o'qish (bo'sh bo'lsa — eski yassi konspekt renderi). */
     sections,
     /** Mavzuning taxminiy vaqti (bo'limlar + test + keys). */
@@ -662,6 +665,16 @@ export async function studentSlotImage(studentId: number, presentationId: number
 export async function studentPresentationPdf(studentId: number, presentationId: number): Promise<Buffer> {
   const p = await presentationAccess(studentId, presentationId);
   return buildPdf(p.slidesJson as unknown as Slide[]);
+}
+
+/** 1C: audio-konspekt oqimi (joriy tasdiqlangan versiya). assertTopicOpen himoyasi. */
+export async function studentDigestAudio(studentId: number, topicId: number): Promise<Buffer> {
+  await assertTopicOpen(studentId, topicId);
+  const digest = await prisma.topicDigest.findUnique({ where: { topicId } });
+  if (!digest?.approvedByTeacher) throw notFound("Audio");
+  const buf = await readFileBuffer(digestAudioRel(topicId, digest.version)).catch(() => null);
+  if (!buf) throw notFound("Audio");
+  return buf;
 }
 
 /** Materialning AJRATILGAN MATNI — "Material matni" mini-konspekt bloki.

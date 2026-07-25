@@ -328,6 +328,8 @@ export interface Lesson {
   links: LessonLink[];
   /** O'rta panel — AI konspekt (tasdiqlanmagan bo'lsa null). */
   digest: DigestJson | null;
+  /** 1C: joriy konspekt versiyasiga audio tayyormi (o'qish ustuni pleyeri). */
+  digestAudio?: boolean;
   /** v2 bo'limli o'qish. Bo'sh bo'lsa — eski yassi konspekt renderi. */
   sections: LessonSection[];
   /** Mavzuning taxminiy vaqti (daqiqa). */
