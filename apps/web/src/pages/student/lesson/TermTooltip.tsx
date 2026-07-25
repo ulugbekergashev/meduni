@@ -38,8 +38,9 @@ function buildMatcher(terms: Term[]): Matcher | null {
   return { regex, byLower };
 }
 
-/** Bitta atama — nuqta-chiziqли, bosilganda/hover'да izoh chiqadi. */
-function TermChip({ raw, term }: { raw: string; term: Term }) {
+/** Bitta atama — nuqta-chiziqли, bosilganda/hover'да izoh chiqadi.
+ *  Mindmap (Faza 2) barg tugunlarida ham qayta ishlatiladi. */
+export function TermChip({ raw, term }: { raw: string; term: Term }) {
   const { t } = useTranslation(undefined, { keyPrefix: "lesson" });
   const reduce = useReducedMotion();
   const [open, setOpen] = useState(false);

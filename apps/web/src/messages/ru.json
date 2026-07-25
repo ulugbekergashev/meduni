@@ -1518,6 +1518,8 @@
     "tab_video": "Видеолекция",
     "tab_slides": "Презентация",
     "tab_flashcards": "Карточки",
+    "tab_mindmap": "Карта мыслей",
+    "mindmapOpenSection": "Открыть раздел",
     "contentPreparing": "Контент готовится...",
     "questions": "вопросов",
     "passIs": "Проходной балл:",
