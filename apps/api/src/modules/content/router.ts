@@ -116,7 +116,10 @@ presentationsRouter.use(requireRoles("TEACHER"));
 presentationsRouter.post(
   "/:id/generate-images",
   wrap(async (req, res) => {
-    await pres.generateAllImages(parseId(req.params.id), req.user!.id);
+    // 3A: ixtiyoriy slideIds — faqat tanlangan slaydlarga rasm (bo'sh = hammasi).
+    const raw = (req.body as { slideIds?: unknown })?.slideIds;
+    const slideIds = Array.isArray(raw) ? raw.filter((x): x is string => typeof x === "string") : undefined;
+    await pres.generateAllImages(parseId(req.params.id), req.user!.id, slideIds);
     res.json({ ok: true });
   })
 );

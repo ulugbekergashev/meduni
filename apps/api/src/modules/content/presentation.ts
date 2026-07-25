@@ -140,17 +140,21 @@ async function runImageJob(presentationId: number, topicId: number, teacherId: n
   }
 }
 
-export async function generateAllImages(presentationId: number, teacherId: number) {
+export async function generateAllImages(presentationId: number, teacherId: number, slideIds?: string[]) {
   const pres = await presentationForTeacher(presentationId, teacherId);
   const topicId = pres.contentItem.topicId;
   const lang = pres.contentItem.language;
   const slides = slidesOf(pres);
+  // 3A (xarajat): o'qituvchi tanlagan slaydlarga (slideIds) — bo'sh bo'lsa hammasi
+  // (eski xatti-harakat). Matnli slaydga atlas-rasm generatsiya qilinmaydi.
+  const pick = slideIds && slideIds.length ? new Set(slideIds) : null;
   const targets: { s: number; slot: number }[] = [];
-  slides.forEach((slide, s) =>
+  slides.forEach((slide, s) => {
+    if (pick && !pick.has(slide.id)) return;
     slide.imageSlots.forEach((slot, i) => {
       if (slot.status !== "DONE") targets.push({ s, slot: i });
-    })
-  );
+    });
+  });
   await assertQuota(await departmentForTopic(topicId));
   // Mark queued as pending immediately so the UI shows progress.
   for (const t of targets) await updateSlot(presentationId, t.s, t.slot, { status: "PENDING" });
