@@ -221,9 +221,11 @@ export async function getTopicLesson(studentId: number, topicId: number) {
   const courseRule = (topic.unlockRuleJson ?? enrolledCourse?.defaultUnlockRuleJson) as Record<string, unknown> | null;
   const videoThreshold = (courseRule?.videoWatchedPct as number) ?? 80;
 
-  // Virtual bemor (Modul 26) — keys bo'lsa amaliyot bosqichi ochiq;
+  // Virtual bemor (Modul 26) — keys YOKI tasdiqlangan konspekt bo'lsa amaliyot
+  // bosqichi ochiq (keys shart emas; konspektdan bemor generatsiya qilinadi).
   // baholash (role="eval") yozilgan bo'lsa — bajarilgan.
-  const patientEval = caseItem?.clinicalCase
+  const patientAvailable = !!caseItem?.clinicalCase || topic.digest?.approvedByTeacher === true;
+  const patientEval = patientAvailable
     ? await prisma.patientMessage.findFirst({
         where: { studentId, topicId, role: "eval" },
         select: { id: true },
@@ -264,8 +266,8 @@ export async function getTopicLesson(studentId: number, topicId: number) {
       sectionsRaw.reduce((n, s) => n + (s.minutes || 0), 0) +
       (quizItem?.quiz ? quizItem.quiz.questions.length : 0) +
       (caseItem ? 10 : 0),
-    /** Virtual bemor amaliyoti (bosqich sifatida ko'rsatiladi). */
-    patient: { available: !!caseItem?.clinicalCase, finished: !!patientEval },
+    /** Virtual bemor amaliyoti (keys yoki konspekt bo'lsa; bosqich sifatida). */
+    patient: { available: patientAvailable, finished: !!patientEval },
     tabs: {
       video: videoItem?.video
         ? {

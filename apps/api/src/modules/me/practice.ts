@@ -212,59 +212,86 @@ export async function getPracticeSet(studentId: number, topicId: number) {
   };
 }
 
-/** Virtual bemor amaliyot markazi — barcha OCHIQ mavzulardagi published keyslar.
- *  "Hoxlagan payt kirib, har xil keyslar bilan mashq" (buyurtmachi). */
+/** Virtual bemor amaliyot markazi — barcha OCHIQ mavzular (published keys BOR yoki
+ *  tasdiqlangan KONSPEKT bor). Keys shart emas: keys bo'lmaganда bemor konspektdan
+ *  generatsiya qilinadi (patient.ts). "Hoxlagan payt kirib ishlash" (buyurtmachi). */
 export async function getPatientPractice(studentId: number) {
   const courseIds = await enrolledCourseIds(studentId);
   const seen = new Set<number>();
-  const out: {
+  const open: { topicId: number; topicTitle: string; subjectName: string }[] = [];
+
+  for (const cid of courseIds) {
+    const course = await loadCourse(cid);
+    const facts = await studentFactsMap(studentId, course);
+    for (const t of computeTopics(course, facts)) {
+      if (t.state === "LOCKED" || seen.has(t.id)) continue;
+      seen.add(t.id);
+      open.push({ topicId: t.id, topicTitle: t.title, subjectName: course.name });
+    }
+  }
+  if (open.length === 0) return { patients: [] };
+
+  const ids = open.map((o) => o.topicId);
+  const [cases, digests, evals, scenarios] = await Promise.all([
+    prisma.contentItem.findMany({
+      where: { topicId: { in: ids }, kind: "CASE", status: "PUBLISHED" },
+      include: { clinicalCase: true },
+    }),
+    prisma.topicDigest.findMany({ where: { topicId: { in: ids }, approvedByTeacher: true }, select: { topicId: true } }),
+    prisma.patientMessage.findMany({ where: { studentId, role: "eval", topicId: { in: ids } }, select: { topicId: true } }),
+    prisma.patientMessage.findMany({ where: { studentId, role: "scenario", topicId: { in: ids } }, select: { topicId: true, text: true } }),
+  ]);
+  const caseByTopic = new Map(cases.map((c) => [c.topicId, c.clinicalCase]));
+  const digestSet = new Set(digests.map((d) => d.topicId));
+  const evalSet = new Set(evals.map((e) => e.topicId));
+  const scenarioByTopic = new Map(scenarios.map((s) => [s.topicId, s.text]));
+
+  const patients: {
     topicId: number;
     topicTitle: string;
     subjectName: string;
     patientName: string;
     patientInfo: string;
     finished: boolean;
+    /** true = bemor konspektdan generatsiya qilinadi (published keys yo'q). */
+    generated: boolean;
   }[] = [];
 
-  for (const cid of courseIds) {
-    const course = await loadCourse(cid);
-    const facts = await studentFactsMap(studentId, course);
-    for (const t of computeTopics(course, facts)) {
-      if (t.state === "LOCKED" || seen.has(t.id) || !t.elements.case.exists) continue;
-      seen.add(t.id);
-      out.push({
-        topicId: t.id,
-        topicTitle: t.title,
-        subjectName: course.name,
-        patientName: "",
-        patientInfo: "",
-        finished: false,
-      });
-    }
-  }
-  if (out.length === 0) return { patients: [] };
+  for (const o of open) {
+    const hasCase = caseByTopic.has(o.topicId);
+    const hasDigest = digestSet.has(o.topicId);
+    if (!hasCase && !hasDigest) continue; // bemor manbai yo'q
 
-  const ids = out.map((o) => o.topicId);
-  const [cases, evals] = await Promise.all([
-    prisma.contentItem.findMany({
-      where: { topicId: { in: ids }, kind: "CASE", status: "PUBLISHED" },
-      include: { clinicalCase: true },
-    }),
-    prisma.patientMessage.findMany({
-      where: { studentId, role: "eval", topicId: { in: ids } },
-      select: { topicId: true },
-    }),
-  ]);
-  const caseByTopic = new Map(cases.map((c) => [c.topicId, c.clinicalCase]));
-  const evalSet = new Set(evals.map((e) => e.topicId));
-  for (const o of out) {
+    let patientName = "";
+    let patientInfo = "";
     const cc = caseByTopic.get(o.topicId);
     if (cc) {
       const cj = cc.caseJson as unknown as CaseJson;
-      o.patientName = cj.patientName ?? "";
-      o.patientInfo = cj.patientInfo ?? "";
+      patientName = cj.patientName ?? "";
+      patientInfo = cj.patientInfo ?? "";
+    } else {
+      // Ssenariy allaqachon generatsiya qilingan bo'lsa — ism/ma'lumotini ko'rsatamiz.
+      const sc = scenarioByTopic.get(o.topicId);
+      if (sc) {
+        try {
+          const cj = JSON.parse(sc) as CaseJson;
+          patientName = cj.patientName ?? "";
+          patientInfo = cj.patientInfo ?? "";
+        } catch {
+          /* buzuq — bo'sh qoldiramiz */
+        }
+      }
     }
-    o.finished = evalSet.has(o.topicId);
+
+    patients.push({
+      topicId: o.topicId,
+      topicTitle: o.topicTitle,
+      subjectName: o.subjectName,
+      patientName,
+      patientInfo,
+      finished: evalSet.has(o.topicId),
+      generated: !hasCase,
+    });
   }
-  return { patients: out };
+  return { patients };
 }

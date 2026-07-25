@@ -686,6 +686,8 @@ export interface PatientPracticeItem {
   patientName: string;
   patientInfo: string;
   finished: boolean;
+  /** true = bemor konspektdan generatsiya qilinadi (published keys yo'q). */
+  generated?: boolean;
 }
 
 export function usePatientPractice() {

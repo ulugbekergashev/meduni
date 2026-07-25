@@ -57,8 +57,8 @@ function viewAvailable(v: LessonView, lesson: Lesson): boolean {
     case "quiz":
       return !!lesson.tabs.quiz;
     case "patient":
-      // Virtual bemor keys asosida — keys bo'lsa ochiq.
-      return !!lesson.tabs.case;
+      // Virtual bemor keys YOKI tasdiqlangan konspekt bo'lsa ochiq (keys shart emas).
+      return !!lesson.patient?.available;
     case "flashcards":
     case "result":
       return true;
