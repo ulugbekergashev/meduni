@@ -14,8 +14,10 @@ done
 
 cd /app
 if [ "$DEMO_SEED" = "1" ]; then
+  echo "==> Birlamchi foydalanuvchilar (prisma seed)..."
+  npx tsx packages/db/prisma/seed.ts || echo "   (birlamchi seed o'tkazib yuborildi)"
   echo "==> Demo data (login akkauntlar)..."
-  npx tsx apps/api/src/scripts/demoRestore.ts || echo "   (seed o'tkazib yuborildi)"
+  npx tsx apps/api/src/scripts/demoRestore.ts || echo "   (demoRestore o'tkazib yuborildi)"
 fi
 
 echo "==> API ishga tushmoqda (:$PORT, web bilan)..."

@@ -815,7 +815,7 @@ export function useSetupCycle() {
 // Yo'qlama (kurs, sana) bo'yicha — sessiya lazy yaratiladi
 export interface DateRoster {
   date: string;
-  students: { id: number; fullName: string; status: AttStatus | null; grade: number | null }[];
+  students: { id: number; fullName: string; status: AttStatus | null; grade: number | null; selfMarked: boolean; markedAt: string | null }[];
 }
 export function useRosterByDate(courseId: number, date: string, groupId?: number, time?: string) {
   const p = new URLSearchParams({ courseId: String(courseId), date });

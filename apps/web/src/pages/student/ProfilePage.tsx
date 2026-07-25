@@ -20,6 +20,7 @@ import { ApiError } from "../../lib/api";
 import { useLocale } from "../../lib/useLocale";
 import { useLogout } from "../../lib/auth";
 import { useChangePassword, useMyProfile, useSetLocale } from "./api";
+import { CheckinDevices } from "./CheckinDevices";
 
 /** Ma'lumotnoma qatori: ikonka + yorliq + qiymat. */
 function InfoRow({ icon, label, value }: { icon: LucideIcon; label: string; value: string }) {
@@ -234,6 +235,9 @@ export function ProfilePage() {
               </Button>
             </div>
           </Card>
+
+          {/* FaceID davomat qurilmalari */}
+          <CheckinDevices />
 
           <Button
             variant="ghost"

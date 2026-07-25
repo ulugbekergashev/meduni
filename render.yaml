@@ -1,0 +1,38 @@
+# Render Blueprint — API'ni bir bosishda ko'taradi (Dashboard → New → Blueprint).
+# Baza bu yerda YO'Q: Postgres Supabase'da (DATABASE_URL qo'lda kiritiladi).
+services:
+  - type: web
+    name: meduni-api
+    runtime: docker
+    plan: free
+    region: frankfurt # Supabase region'iga eng yaqinini tanlang
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    envVars:
+      # --- Qo'lda kiritiladigan (sync: false → Render so'raydi) ---
+      - key: DATABASE_URL # Supabase → Session pooler URI (port 5432)
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: WEB_ORIGIN # https://<loyiha>.vercel.app  (vergul bilan bir nechta)
+        sync: false
+      - key: VERCEL_PROJECT # Vercel loyiha nomi — preview deploy'larga ruxsat
+        sync: false
+      - key: WEBAUTHN_RP_ID # vercel domen, sxemasiz: meduni.vercel.app
+        sync: false
+      - key: WEBAUTHN_ORIGIN # https://meduni.vercel.app
+        sync: false
+
+      # --- Avtomatik ---
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: CROSS_SITE_COOKIES # web va API har xil domenda → SameSite=None
+        value: "1"
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "8080"
+      - key: DEMO_SEED # birinchi ishga tushishda demo akkauntlar
+        value: "1"

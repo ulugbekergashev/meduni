@@ -1,5 +1,6 @@
 import { Router, type CookieOptions } from "express";
 import { z } from "zod";
+import { env } from "../../env";
 import { prisma } from "../../lib/prisma";
 import { badRequest, unauthorized } from "../../lib/errors";
 import { requireAuth } from "../../middleware/auth";
@@ -12,12 +13,12 @@ const loginSchema = z.object({
   password: z.string().min(1),
 });
 
-const cookieOpts: CookieOptions = {
-  httpOnly: true,
-  sameSite: "lax",
-  secure: process.env.NODE_ENV === "production",
-  path: "/",
-};
+// Web (Vercel) va API (Render) har xil domenda bo'lsa cookie "cross-site"
+// hisoblanadi: brauzer uni FAQAT SameSite=None + Secure bo'lsa saqlaydi.
+// Bitta origin'da (dev yoki SERVE_WEB=1) Lax qoladi — CSRF'ga qarshi qat'iyroq.
+const cookieOpts: CookieOptions = env.crossSiteCookies
+  ? { httpOnly: true, sameSite: "none", secure: true, path: "/" }
+  : { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/" };
 
 function setAuthCookies(res: import("express").Response, accessToken: string, refreshToken: string) {
   res.cookie("access_token", accessToken, { ...cookieOpts, maxAge: 15 * 60 * 1000 });

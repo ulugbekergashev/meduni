@@ -1,105 +1,187 @@
-# MedUni — Oracle Cloud (Always Free) ga deploy qo'llanma
+# MedUni — deploy: GitHub + Vercel + Render + Supabase
 
-Natija: **online, kompyuterga bog'liq bo'lmagan, doimiy havola** (24/7).
-To'plam: `Dockerfile` + `docker-compose.deploy.yml` (API+web+Postgres bitta buyruqda).
+Natija: **doimiy, kompyuterga bog'liq bo'lmagan havola** (24/7), karta talab qilinmaydi.
 
-⚠️ Akkaunt ochish, VM yaratish, karta — bularni SIZ qilasiz (menda kirish yo'q).
-Quyida har qadam yozilgan. VM tayyor bo'lgach deploy — 3-4 buyruq.
+| Qism | Qayerda | Tarif |
+| :--- | :--- | :--- |
+| Web (React/Vite) | **Vercel** | bepul (Hobby) |
+| API (Express + ffmpeg/video) | **Render** | bepul (Free) |
+| Postgres baza | **Supabase** | bepul (Free) |
+| Kod | **GitHub** (private) | bepul |
+
+> Nega API Vercel'da emas? Vercel serverless — u yerда **ffmpeg yo'q** va fon-jobi
+> javobdan keyin o'ladi. Video generatsiya (Modul 9), material parse va rasm
+> generatsiyasi shu sababли doimiy ishlaydigan serverni talab qiladi → Render.
 
 ---
 
-## 1. Oracle Cloud akkaunt (yangi, dentacrm bilan aloqasiz)
+## 0. Avval nomlarni tanlang (muhim!)
 
-1. https://www.oracle.com/cloud/free/ → **Start for free**.
-2. Email (yangi/istalgan), mamlakat: Uzbekistan, telefon tasdiqlash.
-3. **Visa/Mastercard** (tasdiqlash uchun; Always Free'da pul yechilmaydi, ~$1 hold qaytadi).
-   ⚠️ Humo/UzCard ko'pincha o'tmaydi — dollarli Visa/MC kerak.
-4. Region tanlashda: bandroq regionlarda ARM "out of capacity" chiqadi.
-   Yaqinroq/kamroq band: **Jeddah, Dubai, Frankfurt, Mumbai** — birini sinang.
+Vercel va Render bir-birining manzilini bilishi kerak. Manzillar nomdan kelib
+chiqadi, shuning uchun **oldindan tanlab qo'ying** va ikkalasida ham aynan shu
+nomni yozing:
 
-## 2. ARM VM yaratish
+| | Nom (misol) | Manzil |
+| :--- | :--- | :--- |
+| Vercel loyihasi | `meduni` | `https://meduni.vercel.app` |
+| Render servisi | `meduni-api` | `https://meduni-api.onrender.com` |
 
-1. Console → **Compute → Instances → Create instance**.
-2. **Image**: Canonical **Ubuntu 22.04**.
-3. **Shape**: **Ampere (ARM) → VM.Standard.A1.Flex**, `2 OCPU / 12 GB` (Always Free
-   4 OCPU/24GB ichida). ⚠️ "Out of host capacity" chiqsa — boshqa region yoki
-   biroz kutib qayta urinib ko'ring (bu bepul ARM'ning ma'lum muammosi).
-4. **SSH key**: "Generate a key pair" → **private key'ni yuklab oling** (SSH uchun).
-5. **Create**. Bir necha daqiqada tayyor → **Public IP** ni yozib oling.
+Agar nom band bo'lsa (Vercel `meduni-2` beradi) — quyidagi qadamlarda haqiqiy
+manzilni ishlating.
 
-## 3. Port 80'ni ochish (ingress)
+---
 
-Instance → **Virtual Cloud Network → Security List → Add Ingress Rule**:
-- Source `0.0.0.0/0`, IP Protocol **TCP**, Destination Port **80** → Add.
-(80 — web/API kiradigan port.)
+## 1. GitHub — kodni yuklash
 
-## 4. VM'ga SSH
+Loyihani **private** repozitoriyga qo'ying:
 
-Windows PowerShell'da (yuklagan private key bilan):
 ```powershell
-ssh -i "C:\yo'l\private-key.key" ubuntu@VM_PUBLIC_IP
+git add .
+git commit -m "Deploy: Vercel + Render + Supabase"
+git branch -M main
+git remote add origin https://github.com/SIZNING_USERINGIZ/meduni.git
+git push -u origin main
 ```
 
-## 5. Docker o'rnatish (VM ichida, bir marta)
-```bash
-sudo apt update && sudo apt install -y docker.io docker-compose-plugin git
-sudo usermod -aG docker $USER && newgrp docker
-```
-
-## 6. Kodni VM'ga olib kelish
-
-**Variant A — GitHub (tavsiya):** loyihani yangi **private** GitHub repo'ga push qiling,
-keyin VM'da:
-```bash
-git clone https://github.com/SIZNING_USERINGIZ/meduni.git && cd meduni
-```
-
-**Variant B — to'g'ridan yuklash:** kompyuterdan (PowerShell), `node_modules`siz zip'lab
-`scp` bilan yuboring (yoki WinSCP bilan).
-
-## 7. Env sozlash (VM ichида, loyiha papkasида)
-```bash
-cp .env.deploy.example .env
-# JWT sekretlari:
-echo "JWT_ACCESS_SECRET=$(openssl rand -hex 32)" >> .env
-echo "JWT_REFRESH_SECRET=$(openssl rand -hex 32)" >> .env
-nano .env      # GEMINI_API_KEY ni to'ldiring, namunа qatorlarni o'chiring
-```
-
-## 8. Ishga tushirish (bitta buyruq!)
-```bash
-docker compose -f docker-compose.deploy.yml up -d --build
-```
-Birinchi build ~5-10 daqiqa (ARM'da image + npm install). Loglar:
-```bash
-docker compose -f docker-compose.deploy.yml logs -f app
-```
-`API ishga tushmoqda (:8080...` ko'rinsa — tayyor.
-
-## 9. Ochish
-Brauzerда: **`http://VM_PUBLIC_IP`**
-- Admin: `admin@meduni.uz` / `admin123`
-- O'qituvchi: `teacher.m11demo@meduni.uz` / `student123`
-- Talaba: `student@meduni.uz` / `student123`
-
-## 10. (Ixtiyoriy) Chiroyli domen + HTTPS
-
-VM ishlaganда ustiga Cloudflare (dentacrm EMAS, yangi/istalgan domen) yoki Caddy
-bilan TLS qo'yish mumkin. Bu bosqichда yordam beraman.
+> `.env` fayllar `.gitignore`da — GEMINI_API_KEY commit bo'lmaydi. Kalitlarni
+> faqat Render/Vercel panelidan kiritasiz.
 
 ---
 
-## Yangilash (kod o'zgarganда)
-```bash
-git pull   # yoki yangi kodni yuklang
-docker compose -f docker-compose.deploy.yml up -d --build
+## 2. Supabase — baza
+
+1. [supabase.com](https://supabase.com) → GitHub bilan kiring → **New Project**.
+   * Name: `meduni`, Region: **Frankfurt** (Render region'i bilan bir xil bo'lsin).
+   * **Database Password** — eslab qoling.
+2. Loyiha tayyor bo'lgach: yuqoridagi **Connect** tugmasi → **ORM** yorlig'i (yoki
+   Project Settings → Database → Connection string).
+3. **Session pooler** ni tanlang (port **5432**, `...pooler.supabase.com`):
+
+   ```
+   postgresql://postgres.ABCDEF:PAROL@aws-0-eu-central-1.pooler.supabase.com:5432/postgres
+   ```
+
+   ⚠️ **Direct connection (`db.xxx.supabase.co`) ni OLMANG** — u faqat IPv6, Render
+   esa IPv6 bilan chiqa olmaydi (`P1001: Can't reach database server` xatosi).
+   **Session pooler** IPv4 va Prisma'ning `db push`i bilan ham ishlaydi.
+4. `PAROL` qismini haqiqiy parolga almashtiring. Bu — `DATABASE_URL`.
+
+---
+
+## 3. Render — API
+
+**Variant A (tez): Blueprint.** Repo'da `render.yaml` bor.
+Render → **New → Blueprint** → repo'ni tanlang → Render qolgan qiymatlarni so'raydi.
+
+**Variant B: qo'lda.** Render → **New → Web Service** → repo → sozlash:
+* Name: `meduni-api` · Region: **Frankfurt** · Runtime: **Docker** · Instance: **Free**
+
+Ikkala variantда ham **Environment Variables**:
+
+| Key | Value |
+| :--- | :--- |
+| `DATABASE_URL` | *2-qadamdagi Session pooler URI (paroli bilan)* |
+| `GEMINI_API_KEY` | *Gemini kaliti* ⚠️ eskisi skomprometatsiya — yangisini oling |
+| `JWT_ACCESS_SECRET` | *tasodifiy hex* (Render "Generate" tugmasi bor) |
+| `JWT_REFRESH_SECRET` | *boshqa tasodifiy hex* |
+| `WEB_ORIGIN` | `https://meduni.vercel.app` |
+| `VERCEL_PROJECT` | `meduni` *(preview deploy'lar ham ishlashi uchun)* |
+| `CROSS_SITE_COOKIES` | `1` ⚠️ **shusiz login ishlamaydi** |
+| `NODE_ENV` | `production` |
+| `DEMO_SEED` | `1` *(birinchi ishga tushishda demo akkauntlar)* |
+| `WEBAUTHN_RP_ID` | `meduni.vercel.app` *(sxemasiz!)* |
+| `WEBAUTHN_ORIGIN` | `https://meduni.vercel.app` |
+
+**Create** → birinchi build ~8-12 daqiqa (ffmpeg + npm install).
+Log'да quyidagini kutasiz:
+
+```
+==> Bazani kutish + sinxronlash (prisma db push)...
+API ready on http://localhost:8080
+  web origins : https://meduni.vercel.app
+  cookies     : SameSite=None; Secure (cross-site)
 ```
 
-## To'xtatish
-```bash
-docker compose -f docker-compose.deploy.yml down          # saqlanadi
-docker compose -f docker-compose.deploy.yml down -v        # + ma'lumot o'chadi
-```
+Tekshirish: `https://meduni-api.onrender.com/health` → `{"ok":true}`
 
-⚠️ Birinchi deploy'da xato chiqishi mumkin (ARM, sharp, prisma) — logni menga
-yuboring, birga tuzatamiz.
+---
+
+## 4. Vercel — web
+
+1. [vercel.com](https://vercel.com) → GitHub bilan kiring → **Add New → Project** →
+   `meduni` repo'sini **Import**.
+2. **Project Name**: `meduni` (0-qadamda tanlagan nom).
+3. Framework Preset: **Other** — build sozlamalariga **tegmang**, ular
+   repo'dagi `vercel.json` dan olinadi.
+
+   > `vercel.json` da install `--ignore-scripts` bilan: web uchun keraksiz
+   > native build'lar (argon2, sharp, prisma — ular faqat API'da ishlaydi)
+   > o'tkazib yuboriladi, keyin `npm rebuild esbuild` faqat Vite'ning
+   > kompilyatorini tiklaydi. Shu sababли build ~2 barobar tez va argon2
+   > kompilyatsiyasi Vercel'da sinsa ham web deploy'i to'xtamaydi.
+4. **Environment Variables** — bitta o'zgaruvchi:
+
+   | Key | Value |
+   | :--- | :--- |
+   | `VITE_API_URL` | `https://meduni-api.onrender.com` |
+
+   ⚠️ Oxirida `/` bo'lmasin.
+5. **Deploy** → ~2 daqiqa.
+
+> ⚠️ `VITE_API_URL` **build paytida** bundle ichiga yoziladi. Keyinchalik uni
+> o'zgartirsangiz — Vercel'da **Redeploy** qilish shart, aks holda eski manzil
+> qoladi.
+
+---
+
+## 5. Ochish va tekshirish
+
+`https://meduni.vercel.app`
+
+| Rol | Login | Parol |
+| :--- | :--- | :--- |
+| Admin | `admin@meduni.uz` | `admin123` |
+| O'qituvchi | `teacher.m11demo@meduni.uz` | `student123` |
+| Talaba | `student@meduni.uz` | `student123` |
+
+⚠️ Birinchi kirishда Render "uxlagan" bo'lsa ~50 soniya kutasiz (bepul tarif).
+
+---
+
+## Nosozliklarni bartaraf qilish
+
+| Alomat | Sabab / yechim |
+| :--- | :--- |
+| Login "muvaffaqiyatli", lekin sahifa qayta login so'raydi | `CROSS_SITE_COOKIES=1` qo'yilmagan (cookie SameSite=None bo'lmasa brauzer uni tashlab yuboradi) |
+| Konsolда `CORS ... has been blocked` | Render'да `WEB_ORIGIN` noto'g'ri (`https://` bilan, oxirida `/` **siz**) |
+| Tarmoqda so'rovlar `localhost:8000` ga ketyapti | Vercel'да `VITE_API_URL` yo'q yoki qo'yilgandan keyin **Redeploy** qilinmagan |
+| Render log: `P1001: Can't reach database server` | Supabase **Direct connection** (IPv6) ishlatilgan — **Session pooler** (5432) ga almashtiring |
+| Preview deploy'да login ishlamaydi | `VERCEL_PROJECT` o'zgaruvchisi qo'yilmagan |
+| Passkey/check-in ishlamaydi | `WEBAUTHN_RP_ID` sxemasiz domen bo'lishi shart (`meduni.vercel.app`) |
+
+---
+
+## Bepul tarif cheklovlari (bilib turing)
+
+1. **Render Free 15 daqiqada uxlaydi.** Keyingi kirgan odam ~50 soniya kutadi.
+   Taqdimotdan 1 daqiqa oldin saytni ochib "uyg'otib" qo'ying.
+2. **Yuklangan fayllar doimiy emas.** Render Free'da disk vaqtinchalik: server
+   qayta ishga tushsa yuklangan materiallar, generatsiya qilingan rasm/video/audio
+   **o'chadi** (baza — Supabase'da, u saqlanadi). Taqdimotdan oldin kerakli
+   materialni qayta yuklang.
+   → Doimiy yechim: fayllarni **Supabase Storage**ga ko'chirish (`lib/storage.ts`
+   yuzasi kichik — 6 funksiya). Kerak bo'lsa aytasiz, qilamiz.
+3. **Supabase Free 1 hafta faolliksizdan keyin loyihani pauza qiladi** — panelдан
+   bir bosishda tiklanadi.
+
+---
+
+## Yangilash
+
+`git push` — Vercel ham, Render ham avtomat qayta deploy qiladi.
+
+## Zaxira rejim (Vercel ishlamay qolsa)
+
+Dockerfile hali ham web'ni o'zi tarqata oladi (bitta origin):
+`BUILD_WEB=1` build-arg + `SERVE_WEB=1` env → API `/` da web'ni ham beradi.
+Mahalliy/VM uchun: `docker compose -f docker-compose.deploy.yml up -d --build`.

@@ -437,7 +437,7 @@ async function findSession(courseId: number, groupId: number | null, dateKey: st
   return slots <= 1 && daySessions.length === 1 ? daySessions[0] : null;
 }
 
-async function ensureSession(courseId: number, groupId: number | null, dateKey: string, startTime: string, teacherId: number): Promise<number> {
+export async function ensureSession(courseId: number, groupId: number | null, dateKey: string, startTime: string, teacherId: number): Promise<number> {
   const existing = await findSession(courseId, groupId, dateKey, startTime);
   if (existing) return existing.id;
   const created = await prisma.lessonSession.create({
@@ -455,15 +455,26 @@ export async function rosterByDate(teacherId: number, courseId: number, dateKey:
   });
   const found = await findSession(courseId, groupId ?? null, dateKey, time);
   const session = found ? await prisma.lessonSession.findUnique({ where: { id: found.id }, include: { attendance: true } }) : null;
-  const marks = new Map((session?.attendance ?? []).map((a) => [a.studentId, { status: a.status as Status, grade: a.grade }]));
+  const marks = new Map(
+    (session?.attendance ?? []).map((a) => [
+      a.studentId,
+      { status: a.status as Status, grade: a.grade, selfMarked: a.selfMarked, markedAt: a.markedAt },
+    ])
+  );
   return {
     date: dateKey,
-    students: enr.map((e) => ({
-      id: e.student.id,
-      fullName: e.student.fullName,
-      status: marks.get(e.student.id)?.status ?? null,
-      grade: marks.get(e.student.id)?.grade ?? null,
-    })),
+    students: enr.map((e) => {
+      const m = marks.get(e.student.id);
+      return {
+        id: e.student.id,
+        fullName: e.student.fullName,
+        status: m?.status ?? null,
+        grade: m?.grade ?? null,
+        // Talaba o'zi FaceID bilan belgiladimi + qachon (o'qituvchi UI belgisi uchun).
+        selfMarked: m?.selfMarked ?? false,
+        markedAt: m ? m.markedAt.toISOString() : null,
+      };
+    }),
   };
 }
 
@@ -477,8 +488,9 @@ export async function markByDate(
   for (const m of clean) {
     await prisma.attendance.upsert({
       where: { sessionId_studentId: { sessionId, studentId: m.studentId } },
-      create: { sessionId, studentId: m.studentId, status: m.status, grade: m.grade ?? null, markedById: teacherId },
-      update: { status: m.status, grade: m.grade ?? null, markedById: teacherId },
+      // O'qituvchi qo'lda belgilaganda selfMarked=false (talabaning avto-belgisini bekor qiladi).
+      create: { sessionId, studentId: m.studentId, status: m.status, grade: m.grade ?? null, markedById: teacherId, selfMarked: false },
+      update: { status: m.status, grade: m.grade ?? null, markedById: teacherId, selfMarked: false },
     });
   }
   await prisma.auditLog.create({

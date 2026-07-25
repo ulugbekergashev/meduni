@@ -53,10 +53,18 @@ export function Panel({
               chrome ? "pb-1" : "border-b border-line"
             )}
           >
-            {icon && <Icon icon={icon} size={14} className="shrink-0 text-ink-faint" />}
+            {icon &&
+              (chrome ? (
+                <Icon icon={icon} size={14} className="shrink-0 text-ink-faint" />
+              ) : (
+                // Content panel — ikonka kichik brand-chipда (yengil aksent).
+                <span className="grid h-6 w-6 shrink-0 place-items-center rounded-control bg-brand-soft text-brand-tint">
+                  <Icon icon={icon} size={13} />
+                </span>
+              ))}
             {/* UPPERCASE dietasi: panel sarlavhasi endi oddiy registrda —
                 ekranda bir vaqtda 3 ta "qichqiruvchi" yorliq turmasin. */}
-            {title && <p className="min-w-0 flex-1 truncate text-note font-bold text-ink-soft">{title}</p>}
+            {title && <p className="min-w-0 flex-1 truncate text-note font-bold text-ink">{title}</p>}
             {actions}
           </div>
         )

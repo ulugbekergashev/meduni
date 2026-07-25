@@ -1,9 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { CheckCheck, Search } from "lucide-react";
+import { CheckCheck, Search, Smartphone } from "lucide-react";
 import { Button, Icon, Modal, Spinner, cls, useToast } from "@meduni/ui";
 import { useMarkByDate, useRosterByDate, type AttStatus } from "../../api";
 import { STATUS_META, STATUSES } from "./meta";
+
+/** ISO → "HH:MM" (talaba o'zi belgilagan vaqt chipi uchun). */
+const hhmm = (iso: string) => {
+  const d = new Date(iso);
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+};
 
 /** Yo'qlama — (kurs, sana) bo'yicha. Sessiya birinchi belgilashda AVTO yaratiladi
  *  (o'qituvchi qo'lda "yangi mashg'ulot" yaratmaydi). */
@@ -73,7 +79,16 @@ export function RollCallModal({
           <div className="max-h-[50vh] space-y-2 overflow-y-auto pr-1">
             {filtered.map((st) => (
               <div key={st.id} className="flex flex-col gap-2 rounded-[12px] border border-line bg-surface p-3 transition-all hover:border-brand/30 sm:flex-row sm:items-center sm:gap-3">
-                <span className="min-w-0 flex-1 truncate pl-1 text-[15.5px] font-bold text-ink">{st.fullName}</span>
+                <span className="min-w-0 flex-1 truncate pl-1 text-[15.5px] font-bold text-ink">
+                  {st.fullName}
+                  {st.selfMarked && (
+                    <span className="ml-2 inline-flex items-center gap-1 rounded-pill bg-blue-soft px-2 py-0.5 align-middle text-[12px] font-semibold text-blue">
+                      <Icon icon={Smartphone} size={11} />
+                      {t("selfMarked")}
+                      {st.markedAt ? ` · ${hhmm(st.markedAt)}` : ""}
+                    </span>
+                  )}
+                </span>
                 <div className="flex shrink-0 gap-1.5">
                   {STATUSES.map((status) => {
                     const on = marks[st.id] === status;
