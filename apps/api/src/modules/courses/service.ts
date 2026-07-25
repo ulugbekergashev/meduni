@@ -544,17 +544,68 @@ export async function listTeacherGroups(teacherId: number) {
     byGroup.get(s.groupId!)!.push(s);
   }
 
-  return [...map.values()]
-    .map(({ group, courses }) => ({
-      id: group.id,
-      name: group.name,
-      yearOfStudy: group.yearOfStudy,
-      facultyName: group.faculty.name,
-      courses: [...courses.values()],
-      students: (byGroup.get(group.id) ?? []).map((s) => ({ id: s.id, fullName: s.fullName, email: s.email })),
-      studentCount: (byGroup.get(group.id) ?? []).length,
-    }))
-    .sort((a, b) => a.name.localeCompare(b.name));
+  // Guruh statistikasi (avgProgress/avgAttendance/behindCount) — frontend shu 3
+  // maydonni kutadi (aks holda NaN/undefined chiqadi). Har kurs BIR MARTA buildMatrix
+  // qilinadi (kurslar guruhlararo takrorlanadi), keyin guruh talabalari bo'yicha agregat.
+  const allCourseIds = new Set<number>();
+  for (const { courses } of map.values()) for (const cid of courses.keys()) allCourseIds.add(cid);
+  const matrixByCourse = new Map<number, { id: number; overallPct: number; behind: boolean }[]>();
+  for (const cid of allCourseIds) {
+    const loaded = await loadCourse(cid).catch(() => null);
+    if (!loaded) { matrixByCourse.set(cid, []); continue; }
+    const { students } = await buildMatrix(loaded);
+    matrixByCourse.set(cid, students.map((s) => ({ id: s.id, overallPct: s.overallPct, behind: s.behind })));
+  }
+
+  const enriched = await Promise.all(
+    [...map.values()].map(async ({ group, courses }) => {
+      const gStudents = byGroup.get(group.id) ?? [];
+      const gIds = new Set(gStudents.map((s) => s.id));
+      const courseIds = [...courses.keys()];
+
+      const pcts: number[] = [];
+      const behindIds = new Set<number>();
+      for (const cid of courseIds) {
+        for (const s of matrixByCourse.get(cid) ?? []) {
+          if (!gIds.has(s.id)) continue;
+          pcts.push(s.overallPct);
+          if (s.behind) behindIds.add(s.id);
+        }
+      }
+      const avgProgress = pcts.length ? Math.round(pcts.reduce((a, b) => a + b, 0) / pcts.length) : 0;
+
+      let avgAttendance: number | null = null;
+      if (gIds.size > 0 && courseIds.length > 0) {
+        const marks = await prisma.attendance.groupBy({
+          by: ["status"],
+          where: { studentId: { in: [...gIds] }, session: { courseId: { in: courseIds } } },
+          _count: true,
+        });
+        let present = 0, late = 0, marked = 0;
+        for (const m of marks) {
+          marked += m._count;
+          if (m.status === "PRESENT") present += m._count;
+          else if (m.status === "LATE") late += m._count;
+        }
+        avgAttendance = marked === 0 ? null : Math.round(((present + late) / marked) * 100);
+      }
+
+      return {
+        id: group.id,
+        name: group.name,
+        yearOfStudy: group.yearOfStudy,
+        facultyName: group.faculty.name,
+        courses: [...courses.values()],
+        students: gStudents.map((s) => ({ id: s.id, fullName: s.fullName, email: s.email })),
+        studentCount: gStudents.length,
+        avgProgress,
+        avgAttendance,
+        behindCount: behindIds.size,
+      };
+    })
+  );
+
+  return enriched.sort((a, b) => a.name.localeCompare(b.name));
 }
 
 export async function getTeacherCourseMeta(courseId: number, teacherId: number) {

@@ -54,7 +54,10 @@ function NewGroupModal({ onClose }: { onClose: () => void }) {
 /** Boy guruh kartasi — progress halqasi + davomat + orqada qolganlar + kurslar. */
 function GroupCard({ g, onClick }: { g: TeachGroup; onClick: () => void }) {
   const { t } = useTranslation(undefined, { keyPrefix: "groups" });
-  const lowAtt = g.avgAttendance !== null && g.avgAttendance < 75;
+  const att = g.avgAttendance ?? null;
+  const progress = g.avgProgress ?? 0;
+  const behind = g.behindCount ?? 0;
+  const lowAtt = att !== null && att < 75;
   return (
     <Card interactive onClick={onClick} className="flex flex-col gap-3 !p-0">
       <div className="flex items-center gap-3 border-b border-line px-4 pt-4 pb-3">
@@ -65,16 +68,16 @@ function GroupCard({ g, onClick }: { g: TeachGroup; onClick: () => void }) {
           <h3 className="truncate text-body font-bold text-ink">{g.name}</h3>
           <p className="truncate text-micro text-ink-faint">{t("yearN", { n: g.yearOfStudy })} · {g.facultyName}</p>
         </div>
-        {g.behindCount > 0 && <Badge tone="rose">{t("behindN", { n: g.behindCount })}</Badge>}
+        {behind > 0 && <Badge tone="rose">{t("behindN", { n: behind })}</Badge>}
       </div>
 
       <div className="grid grid-cols-3 items-center gap-2 px-4">
         <div className="flex flex-col items-center gap-1">
-          <ProgressRing value={g.avgProgress} size={52} stroke={6} tone="brand" />
+          <ProgressRing value={progress} size={52} stroke={6} tone="brand" />
           <span className="text-micro font-medium text-ink-soft">{t("mProgress")}</span>
         </div>
         <div className="flex flex-col items-center gap-1">
-          <span className={cls("text-section font-bold tabular-nums", lowAtt ? "text-rose" : "text-blue")}>{g.avgAttendance === null ? "—" : `${g.avgAttendance}%`}</span>
+          <span className={cls("text-section font-bold tabular-nums", lowAtt ? "text-rose" : "text-blue")}>{att === null ? "—" : `${att}%`}</span>
           <span className="text-micro font-medium text-ink-soft">{t("mAttendance")}</span>
         </div>
         <div className="flex flex-col items-center gap-1">
@@ -118,9 +121,9 @@ export function TeachGroupsPage() {
 
   // Xulosa (barcha guruhlar bo'yicha).
   const summary = useMemo(() => {
-    const students = groups.reduce((a, g) => a + g.studentCount, 0);
-    const behind = groups.reduce((a, g) => a + g.behindCount, 0);
-    const avgProgress = groups.length ? Math.round(groups.reduce((a, g) => a + g.avgProgress, 0) / groups.length) : 0;
+    const students = groups.reduce((a, g) => a + (g.studentCount ?? 0), 0);
+    const behind = groups.reduce((a, g) => a + (g.behindCount ?? 0), 0);
+    const avgProgress = groups.length ? Math.round(groups.reduce((a, g) => a + (g.avgProgress ?? 0), 0) / groups.length) : 0;
     return { count: groups.length, students, behind, avgProgress };
   }, [groups]);
 
@@ -136,9 +139,9 @@ export function TeachGroupsPage() {
     if (onlyBehind) list = list.filter((g) => g.behindCount > 0);
     const sorted = [...list];
     if (sort === "name") sorted.sort((a, b) => a.name.localeCompare(b.name));
-    else if (sort === "progress") sorted.sort((a, b) => b.avgProgress - a.avgProgress);
+    else if (sort === "progress") sorted.sort((a, b) => (b.avgProgress ?? 0) - (a.avgProgress ?? 0));
     else if (sort === "attendance") sorted.sort((a, b) => (a.avgAttendance ?? 999) - (b.avgAttendance ?? 999));
-    else sorted.sort((a, b) => b.behindCount - a.behindCount);
+    else sorted.sort((a, b) => (b.behindCount ?? 0) - (a.behindCount ?? 0));
     return sorted;
   }, [groups, search, sort, onlyBehind]);
 
