@@ -31,7 +31,10 @@
     "myCourses": "Kurslar",
     "grades": "O'zlashtirish",
     "schedule": "Jadval",
-    "lessons": "Darslarim"
+    "lessons": "Darslarim",
+    "more": "Yana",
+    "theme": "Tungi rejim",
+    "language": "Til"
   },
   "theme": {
     "label": "Mavzu (rang)",
@@ -1820,8 +1823,16 @@
     "viewWeek": "Hafta",
     "viewMonth": "Oy",
     "today": "Bugun",
-    "tabs": { "students": "Talabalar", "courses": "Kurslar", "timetable": "Dars jadvali" },
-    "status": { "UNMARKED": "Belgilanmagan", "PARTIAL": "Qisman", "FULL": "Toʻliq" }
+    "tabs": {
+      "students": "Talabalar",
+      "courses": "Kurslar",
+      "timetable": "Dars jadvali"
+    },
+    "status": {
+      "UNMARKED": "Belgilanmagan",
+      "PARTIAL": "Qisman",
+      "FULL": "Toʻliq"
+    }
   },
   "subjects": {
     "title": "Fanlarim",
@@ -2016,5 +2027,22 @@
     "viewWeek": "Hafta",
     "viewMonth": "Oy",
     "noneThisDay": "Bu kuni dars yo'q"
+  },
+  "navShort": {
+    "dashboard": "Bosh",
+    "myCourses": "Kurslar",
+    "courses": "Kurslar",
+    "tasks": "Vazifa",
+    "myTasks": "Vazifa",
+    "grades": "Baholar",
+    "attendance": "Davomat",
+    "students": "Talaba",
+    "staff": "Xodim",
+    "lessons": "Darslar",
+    "groups": "Guruh",
+    "profile": "Profil",
+    "ai": "AI",
+    "audit": "Audit",
+    "settings": "Sozlama"
   }
 }

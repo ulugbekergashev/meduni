@@ -16,6 +16,8 @@ interface StudentSearchResp {
 
 export function StudentShell() {
   const { t } = useTranslation(undefined, { keyPrefix: "nav" });
+  // Mobil tab-bar uchun qisqa yorliqlar (uzun nom 78px katakka sig'maydi).
+  const { t: ts } = useTranslation(undefined, { keyPrefix: "navShort" });
   const locale = useLocale();
   const tasks = useMyTasks();
   const openTasks = tasks.data?.auto.length ?? 0;
@@ -63,12 +65,12 @@ export function StudentShell() {
       profileHref="/app/profile"
       fullBleed={isWorkspace}
       items={[
-        { href: "/app", label: t("dashboard"), icon: <Icon icon={Home} />, end: true },
-        { href: "/app/courses", label: t("myCourses"), icon: <Icon icon={BookOpen} />, end: true },
-        { href: "/app/tasks", label: t("tasks"), icon: <Icon icon={ListChecks} />, badge: openTasks },
-        { href: "/app/grades", label: t("grades"), icon: <Icon icon={Award} /> },
-        { href: "/app/attendance", label: t("attendance"), icon: <Icon icon={CalendarCheck} /> },
-        { href: "/app/profile", label: t("profile"), icon: <Icon icon={User} /> },
+        { href: "/app", label: t("dashboard"), shortLabel: ts("dashboard"), icon: <Icon icon={Home} />, end: true },
+        { href: "/app/courses", label: t("myCourses"), shortLabel: ts("myCourses"), icon: <Icon icon={BookOpen} />, end: true },
+        { href: "/app/tasks", label: t("tasks"), shortLabel: ts("tasks"), icon: <Icon icon={ListChecks} />, badge: openTasks },
+        { href: "/app/grades", label: t("grades"), shortLabel: ts("grades"), icon: <Icon icon={Award} /> },
+        { href: "/app/attendance", label: t("attendance"), shortLabel: ts("attendance"), icon: <Icon icon={CalendarCheck} /> },
+        { href: "/app/profile", label: t("profile"), shortLabel: ts("profile"), icon: <Icon icon={User} /> },
       ]}
     >
       <Outlet />

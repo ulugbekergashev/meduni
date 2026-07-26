@@ -10,6 +10,8 @@ export * from "./components/Icon";
 export * from "./components/Input";
 export * from "./components/Select";
 export * from "./components/Modal";
+export * from "./components/Sheet";
+export * from "./components/BottomNav";
 export * from "./components/Toast";
 export * from "./components/Spinner";
 export * from "./components/EmptyState";
