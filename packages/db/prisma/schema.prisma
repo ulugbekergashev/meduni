@@ -592,6 +592,23 @@ model AiUsage {
   @@map("ai_usage")
 }
 
+/// Doimiy fayl saqlash. Render Free'da disk VAQTINCHALIK — konteyner har
+/// restart/redeploy'da noldan ko'tariladi va `/app/storage` bo'shab qoladi
+/// (yuklangan material, generatsiya qilingan rasm/video/audio yo'qoladi).
+/// Shuning uchun prod'da fayllar shu jadvalda yashaydi; `path` — eski disk
+/// yo'li bilan AYNAN bir xil (masalan "topics/12/video/3/video.mp4"), ya'ni
+/// boshqa jadvallardagi mavjud url qiymatlari o'zgarishsiz ishlayveradi.
+model FileBlob {
+  path      String   @id
+  data      Bytes
+  mimeType  String?
+  size      Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("file_blobs")
+}
+
 model SourceMaterial {
   id            Int         @id @default(autoincrement())
   topicId       Int

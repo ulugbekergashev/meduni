@@ -381,7 +381,11 @@ function contentToText(item: ContentFull): string {
 async function collectSource(topicId: number): Promise<string> {
   const materials = await prisma.sourceMaterial.findMany({ where: { topicId, parseStatus: "DONE" }, orderBy: { id: "asc" } });
   const parts: string[] = [];
-  for (const m of materials) if (m.parsedTextUrl) parts.push(await readText(m.parsedTextUrl));
+  for (const m of materials) {
+    if (!m.parsedTextUrl) continue;
+    const text = await readText(m.parsedTextUrl).catch(() => null); // yo'qolgan fayl — o'tkazamiz
+    if (text) parts.push(text);
+  }
   return parts.join("\n\n---\n\n").slice(0, 100_000);
 }
 
