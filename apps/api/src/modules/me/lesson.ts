@@ -28,6 +28,25 @@ function questionOptions(optionsJson: unknown): string[] {
 // ---------- GET /me/topics/:id — the full lesson payload ----------
 
 export async function getTopicLesson(studentId: number, topicId: number) {
+  // ⚠️ TEZLIK: baza uzoq regionda — har so'rov ~200-300ms. Bir-biriga bog'liq
+  // bo'lmagan so'rovlarni KETMA-KET emas, PARALLEL yuboramiz (dars sahifasi
+  // ~8 ta so'rov qiladi; ketma-ket bo'lsa bu 2-3 soniya sof kutish demak).
+  // Mavzu yuklanishi kirish tekshiruvidan mustaqil — birga boshlanadi.
+  const topicPromise = prisma.topic.findUnique({
+    where: { id: topicId },
+    include: {
+      contentItems: {
+        where: { status: "PUBLISHED" },
+        include: { quiz: { include: { questions: { orderBy: { orderIndex: "asc" } } } }, clinicalCase: true, presentation: true, video: true },
+      },
+      materials: { orderBy: { createdAt: "asc" } },
+      links: { orderBy: [{ orderIndex: "asc" }, { id: "asc" }] },
+      digest: true,
+    },
+  });
+  const progressPromise = prisma.progress.findUnique({ where: { studentId_topicId: { studentId, topicId } } });
+  const readsPromise = prisma.sectionRead.findMany({ where: { studentId, topicId }, select: { sectionIndex: true } });
+
   // Enrolled + published + unlocked tekshiruvi — bitta hisob-kitobda: shu yerda
   // "keyingi mavzu" ham chiqadi (dars tugagach to'g'ridan o'tish uchun).
   const enrolledCourseId = await enrolledCourseIdForTopic(studentId, topicId);
@@ -41,22 +60,8 @@ export async function getTopicLesson(studentId: number, topicId: number) {
   if (state.state === "LOCKED") throw forbiddenLocked(state.reason ?? undefined);
   const nextTopic = computed[idx + 1] ?? null;
 
-  const topic = await prisma.topic.findUnique({
-    where: { id: topicId },
-    include: {
-      contentItems: {
-        where: { status: "PUBLISHED" },
-        include: { quiz: { include: { questions: { orderBy: { orderIndex: "asc" } } } }, clinicalCase: true, presentation: true, video: true },
-      },
-      // O'qituvchi manba materiallari (talaba faqat asl faylni ko'radi/yuklab
-      // oladi — parse ichki maydonlari sizib chiqmaydi).
-      materials: { orderBy: { createdAt: "asc" } },
-      // Tashqi manbalar (darslik boblari, klinik ma'lumotnomalar).
-      links: { orderBy: [{ orderIndex: "asc" }, { id: "asc" }] },
-      // AI konspekt — FAQAT o'qituvchi tasdiqlagan bo'lsa ko'rsatiladi.
-      digest: true,
-    },
-  });
+  // Yuqorida boshlangan so'rov — bu yerda tayyor bo'ladi (kutish yo'q).
+  const topic = await topicPromise;
   if (!topic) throw notFound("Mavzu");
 
   const videoItem = topic.contentItems.find((c) => c.kind === "VIDEO");
@@ -69,13 +74,25 @@ export async function getTopicLesson(studentId: number, topicId: number) {
     ? (topic.digest.digestJson as unknown as DigestJson)
     : null;
   const sectionsRaw = digestJson?.sections ?? [];
-  const reads = sectionsRaw.length
-    ? await prisma.sectionRead.findMany({
-        where: { studentId, topicId },
-        select: { sectionIndex: true },
-      })
-    : [];
-  const readSet = new Set(reads.map((r) => r.sectionIndex));
+  const readSet = new Set((await readsPromise).map((r) => r.sectionIndex));
+
+  // Qolgan mustaqil so'rovlar ham shu yerdan PARALLEL ketadi (test urinishlari,
+  // keys javobi, bemor baholashi, audio mavjudligi) — pastda natijasi olinadi.
+  const quizForMeta = topic.contentItems.find((c) => c.kind === "QUIZ")?.quiz ?? null;
+  const caseForMeta = topic.contentItems.find((c) => c.kind === "CASE")?.clinicalCase ?? null;
+  const quizAttemptsPromise = quizForMeta
+    ? prisma.quizAttempt.findMany({ where: { studentId, quizId: quizForMeta.id }, orderBy: { attemptNo: "desc" } })
+    : Promise.resolve([]);
+  const caseAttemptPromise = caseForMeta
+    ? prisma.caseAttempt.findUnique({ where: { studentId_caseId: { studentId, caseId: caseForMeta.id } } })
+    : Promise.resolve(null);
+  const patientEvalPromise =
+    caseForMeta || topic.digest?.approvedByTeacher === true
+      ? prisma.patientMessage.findFirst({ where: { studentId, topicId, role: "eval" }, select: { id: true } })
+      : Promise.resolve(null);
+  const digestAudioPromise = topic.digest?.approvedByTeacher
+    ? hasDigestAudio(topicId, topic.digest.version)
+    : Promise.resolve(false);
 
   // Faza 1: bo'lim ichiga media — o'sha bo'limni yorituvchi slayd diagrammasi va
   // videodagi boshlanish vaqti (Faza 0 sectionId xaritasi orqali). Bo'lim id'si
@@ -124,16 +141,13 @@ export async function getTopicLesson(studentId: number, topicId: number) {
   }));
 
   const rule = state; // TopicOut carries elements; thresholds come from the course rule below
-  const progress = await prisma.progress.findUnique({ where: { studentId_topicId: { studentId, topicId } } });
+  const progress = await progressPromise;
 
   // Latest quiz attempt (for the intro/result state).
   let quizMeta = null;
   if (quizItem?.quiz) {
     const q = quizItem.quiz;
-    const attempts = await prisma.quizAttempt.findMany({
-      where: { studentId, quizId: q.id },
-      orderBy: { attemptNo: "desc" },
-    });
+    const attempts = await quizAttemptsPromise;
     const inProgress = attempts.find((a) => a.finishedAt === null) ?? null;
     const finishedCount = attempts.filter((a) => a.finishedAt !== null).length;
     const latest = attempts[0] ?? null;
@@ -163,9 +177,7 @@ export async function getTopicLesson(studentId: number, topicId: number) {
   if (caseItem?.clinicalCase) {
     const cc = caseItem.clinicalCase;
     const caseJson = cc.caseJson as unknown as CaseJson;
-    const attempt = await prisma.caseAttempt.findUnique({
-      where: { studentId_caseId: { studentId, caseId: cc.id } },
-    });
+    const attempt = await caseAttemptPromise;
     const steps = caseJson.steps ?? [];
     const picked = (attempt?.stepsJson as Record<string, number>) ?? {};
     const submitted = !!attempt;
@@ -225,12 +237,7 @@ export async function getTopicLesson(studentId: number, topicId: number) {
   // bosqichi ochiq (keys shart emas; konspektdan bemor generatsiya qilinadi).
   // baholash (role="eval") yozilgan bo'lsa — bajarilgan.
   const patientAvailable = !!caseItem?.clinicalCase || topic.digest?.approvedByTeacher === true;
-  const patientEval = patientAvailable
-    ? await prisma.patientMessage.findFirst({
-        where: { studentId, topicId, role: "eval" },
-        select: { id: true },
-      })
-    : null;
+  const patientEval = patientAvailable ? await patientEvalPromise : null;
 
   return {
     topicId: topic.id,
@@ -258,7 +265,7 @@ export async function getTopicLesson(studentId: number, topicId: number) {
     // O'rta panel — AI konspekt (tasdiqlanmagan bo'lsa null → video/slaydlarga fallback).
     digest: digestJson,
     /** 1C: joriy konspekt versiyasiga audio tayyormi (o'qish ustuni pleyeri). */
-    digestAudio: topic.digest?.approvedByTeacher ? await hasDigestAudio(topicId, topic.digest.version) : false,
+    digestAudio: await digestAudioPromise,
     /** v2 bo'limli o'qish (bo'sh bo'lsa — eski yassi konspekt renderi). */
     sections,
     /** Mavzuning taxminiy vaqti (bo'limlar + test + keys). */

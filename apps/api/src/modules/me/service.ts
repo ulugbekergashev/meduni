@@ -295,15 +295,16 @@ export async function loadCourse(courseId: number): Promise<CourseWithTopics> {
 
 /** GET /me/courses — enrolled courses with a progress summary each. */
 export async function listMyCourses(studentId: number) {
-  const ids = await enrolledCourseIds(studentId);
-  const myGroupId = await studentGroupId(studentId);
-  const summaries = [];
-  for (const id of ids) {
-    const course = await loadCourse(id);
-    const pm = await studentFactsMap(studentId, course);
-    summaries.push(courseSummary(course, computeTopics(course, pm), myGroupId));
-  }
-  return summaries;
+  // ⚠️ TEZLIK: kurslar PARALLEL yuklanadi (baza uzoq regionda — ketma-ket
+  // yuklash har kurs uchun ~0.6s sof kutish qo'shardi).
+  const [ids, myGroupId] = await Promise.all([enrolledCourseIds(studentId), studentGroupId(studentId)]);
+  return Promise.all(
+    ids.map(async (id) => {
+      const course = await loadCourse(id);
+      const pm = await studentFactsMap(studentId, course);
+      return courseSummary(course, computeTopics(course, pm), myGroupId);
+    })
+  );
 }
 
 /** GET /me/courses/:id — a course's full topic path for the student. */
@@ -337,7 +338,6 @@ export async function getDashboard(studentId: number) {
   const myGroupId = me?.groupId ?? null;
   const ids = await enrolledCourseIds(studentId);
 
-  const courses = [];
   let resume: {
     courseId: number;
     subjectName: string;
@@ -346,24 +346,30 @@ export async function getDashboard(studentId: number) {
     pct: number;
   } | null = null;
 
-  for (const id of ids) {
-    const course = await loadCourse(id);
-    const pm = await studentFactsMap(studentId, course);
-    const topics = computeTopics(course, pm);
-    courses.push(courseSummary(course, topics, myGroupId));
+  // ⚠️ TEZLIK: har kurs uchun 4 ta so'rov ketadi — kurslarni PARALLEL yuklaymiz.
+  // "Davom ettirish" esa kurslar TARTIBI bo'yicha tanlanadi (natija o'zgarmaydi).
+  const computedCourses = await Promise.all(
+    ids.map(async (id) => {
+      const course = await loadCourse(id);
+      const pm = await studentFactsMap(studentId, course);
+      return { course, topics: computeTopics(course, pm) };
+    })
+  );
 
-    if (!resume) {
-      // Prefer an in-progress topic; otherwise the first available one.
-      const current = topics.find((t) => t.state === "IN_PROGRESS") ?? topics.find((t) => t.state === "AVAILABLE");
-      if (current) {
-        resume = {
-          courseId: course.id,
-          subjectName: course.name,
-          topicId: current.id,
-          topic: current.title,
-          pct: current.pct,
-        };
-      }
+  const courses = computedCourses.map(({ course, topics }) => courseSummary(course, topics, myGroupId));
+
+  for (const { course, topics } of computedCourses) {
+    if (resume) break;
+    // Prefer an in-progress topic; otherwise the first available one.
+    const current = topics.find((t) => t.state === "IN_PROGRESS") ?? topics.find((t) => t.state === "AVAILABLE");
+    if (current) {
+      resume = {
+        courseId: course.id,
+        subjectName: course.name,
+        topicId: current.id,
+        topic: current.title,
+        pct: current.pct,
+      };
     }
   }
 
