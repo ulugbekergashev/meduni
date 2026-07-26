@@ -389,11 +389,19 @@ export async function computeStudentAutoTasks(studentId: number): Promise<AutoTa
   const quiz: AutoTaskItem[] = [];
   const cases: AutoTaskItem[] = [];
 
-  for (const id of ids) {
-    const course = await loadCourse(id).catch(() => null);
-    if (!course) continue;
-    const pm = await studentFactsMap(studentId, course);
-    const topics = computeTopics(course, pm);
+  // ⚠️ TEZLIK: kurslar PARALLEL yuklanadi (ketma-ket bo'lsa har kurs ~0.6s).
+  const loaded = await Promise.all(
+    ids.map(async (id) => {
+      const course = await loadCourse(id).catch(() => null);
+      if (!course) return null;
+      const pm = await studentFactsMap(studentId, course);
+      return { course, topics: computeTopics(course, pm) };
+    })
+  );
+
+  for (const entry of loaded) {
+    if (!entry) continue;
+    const { course, topics } = entry;
     const current = topics.find((t) => t.state === "IN_PROGRESS") ?? topics.find((t) => t.state === "AVAILABLE");
     if (!current) continue;
     const courseName = course.name;

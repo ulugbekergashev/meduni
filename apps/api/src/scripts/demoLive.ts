@@ -62,22 +62,23 @@ interface StudentPlan {
   attendance: number; // 0..1 — darsga kelish ulushi
   quiz1: number | null; // Yurak anatomiyasi testi bali (null = ishlamagan)
   quiz2: number | null; // Yurak fiziologiyasi testi
+  quiz3?: number | null; // Buyrak fiziologiyasi (Nefrologiya kursi)
   caseState: "reviewed" | "pending" | null;
   flashcardsDue?: boolean;
 }
 
 const STUDENTS: StudentPlan[] = [
   // Mavjud demo talabasi (email o'zgarmaydi — login shu bilan ko'rsatiladi).
-  { fullName: "Talaba Demo", email: "student@meduni.uz", attendance: 0.9, quiz1: 67, quiz2: 80, caseState: "reviewed", flashcardsDue: true },
-  { fullName: "Aziza Rahimova", email: "aziza.rahimova@meduni.uz", attendance: 1.0, quiz1: 100, quiz2: 100, caseState: "reviewed", flashcardsDue: true },
-  { fullName: "Bekzod Tursunov", email: "bekzod.tursunov@meduni.uz", attendance: 0.92, quiz1: 100, quiz2: 80, caseState: "pending" },
-  { fullName: "Dilnoza Yusupova", email: "dilnoza.yusupova@meduni.uz", attendance: 0.85, quiz1: 67, quiz2: 60, caseState: "pending" },
-  { fullName: "Eldor Qodirov", email: "eldor.qodirov@meduni.uz", attendance: 0.77, quiz1: 67, quiz2: 40, caseState: "pending", flashcardsDue: true },
-  { fullName: "Feruza Ismoilova", email: "feruza.ismoilova@meduni.uz", attendance: 0.95, quiz1: 100, quiz2: 80, caseState: null },
+  { fullName: "Talaba Demo", email: "student@meduni.uz", attendance: 0.9, quiz1: 67, quiz2: 80, quiz3: 80, caseState: "reviewed", flashcardsDue: true },
+  { fullName: "Aziza Rahimova", email: "aziza.rahimova@meduni.uz", attendance: 1.0, quiz1: 100, quiz2: 100, quiz3: 100, caseState: "reviewed", flashcardsDue: true },
+  { fullName: "Bekzod Tursunov", email: "bekzod.tursunov@meduni.uz", attendance: 0.92, quiz1: 100, quiz2: 80, quiz3: 60, caseState: "pending" },
+  { fullName: "Dilnoza Yusupova", email: "dilnoza.yusupova@meduni.uz", attendance: 0.85, quiz1: 67, quiz2: 60, quiz3: 80, caseState: "pending" },
+  { fullName: "Eldor Qodirov", email: "eldor.qodirov@meduni.uz", attendance: 0.77, quiz1: 67, quiz2: 40, quiz3: null, caseState: "pending", flashcardsDue: true },
+  { fullName: "Feruza Ismoilova", email: "feruza.ismoilova@meduni.uz", attendance: 0.95, quiz1: 100, quiz2: 80, quiz3: 100, caseState: null },
   { fullName: "G'ayrat Sobirov", email: "gayrat.sobirov@meduni.uz", attendance: 0.62, quiz1: 33, quiz2: null, caseState: null },
-  { fullName: "Hilola Nazarova", email: "hilola.nazarova@meduni.uz", attendance: 1.0, quiz1: 100, quiz2: 100, caseState: null },
+  { fullName: "Hilola Nazarova", email: "hilola.nazarova@meduni.uz", attendance: 1.0, quiz1: 100, quiz2: 100, quiz3: 80, caseState: null },
   { fullName: "Islom Abdullayev", email: "islom.abdullayev@meduni.uz", attendance: 0.46, quiz1: null, quiz2: null, caseState: null },
-  { fullName: "Jasmina Karimova", email: "jasmina.karimova@meduni.uz", attendance: 0.88, quiz1: 67, quiz2: 60, caseState: null },
+  { fullName: "Jasmina Karimova", email: "jasmina.karimova@meduni.uz", attendance: 0.88, quiz1: 67, quiz2: 60, quiz3: 60, caseState: null },
 ];
 
 // ----------------------------------------------------- konspekt: Yurak anatomiyasi
@@ -756,7 +757,7 @@ async function main() {
 
   // ===================================================== 6) TEST URINISHLARI
   const quizzes = await prisma.quiz.findMany({
-    where: { contentItem: { topicId: { in: [anatomy.id, physio.id] } } },
+    where: { contentItem: { topicId: { in: [anatomy.id, physio.id, kidney.id] } } },
     include: { contentItem: true, questions: { orderBy: { orderIndex: "asc" } } },
   });
   const quizByTopic = new Map(quizzes.map((q) => [q.contentItem.topicId, q]));
@@ -789,6 +790,7 @@ async function main() {
   for (const [i, st] of students.entries()) {
     await putAttempt(st.id, anatomy.id, st.plan.quiz1, 6 + (i % 3));
     await putAttempt(st.id, physio.id, st.plan.quiz2, 2 + (i % 3));
+    await putAttempt(st.id, kidney.id, st.plan.quiz3 ?? null, 1 + (i % 2));
   }
   log("✓ Test urinishlari yozildi (xatolari bilan)");
 
@@ -895,14 +897,24 @@ async function main() {
           groupId: group.id,
           batchId,
           dueDate: addDays(TODAY, 2),
-          status: st.plan.quiz1 !== null ? "DONE" : "OPEN",
-          completedAt: st.plan.quiz1 !== null ? addDays(TODAY, -1) : null,
+          // Demo talabasida ATAYLAB ochiq qoldiramiz — "Bugun" bloki bo'sh
+          // ko'rinmasin va "Bajardim" tugmasi jonli ko'rsatilsin.
+          status: st.plan.quiz1 !== null && st.plan.email !== "student@meduni.uz" ? "DONE" : "OPEN",
+          completedAt:
+            st.plan.quiz1 !== null && st.plan.email !== "student@meduni.uz" ? addDays(TODAY, -1) : null,
         },
       });
     }
     log(`✓ Topshiriqlar: 1 (admin→o'qituvchi) + ${students.length} (o'qituvchi→guruh)`);
   } else {
-    log(`· Topshiriqlar mavjud (${existingTasks} ta) — o'tkazib yuborildi`);
+    const demoStudent = students.find((s) => s.plan.email === "student@meduni.uz");
+    if (demoStudent) {
+      await prisma.task.updateMany({
+        where: { assignedToId: demoStudent.id, createdById: teacher.id },
+        data: { status: "OPEN", completedAt: null },
+      });
+    }
+    log(`· Topshiriqlar mavjud (${existingTasks} ta) — demo talabasiniki ochiq qoldirildi`);
   }
 
   // ================================================= 10) PROGRESSNI QAYTA HISOB
