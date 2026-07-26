@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "installCommand": "NODE_ENV=development npm install --production=false --ignore-scripts && npm rebuild esbuild",
+  "installCommand": "npm install --ignore-scripts --include=dev && npm rebuild esbuild",
   "buildCommand": "npm run build --workspace=@meduni/web",
   "outputDirectory": "apps/web/dist",
   "framework": null,
