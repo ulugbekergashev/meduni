@@ -18,9 +18,9 @@ services:
         sync: false
       - key: VERCEL_PROJECT # Vercel loyiha nomi — preview deploy'larga ruxsat
         sync: false
-      - key: WEBAUTHN_RP_ID # vercel domen, sxemasiz: meduni.vercel.app
+      - key: WEBAUTHN_RP_ID # vercel domen, sxemasiz: meduni-api.vercel.app
         sync: false
-      - key: WEBAUTHN_ORIGIN # https://meduni.vercel.app
+      - key: WEBAUTHN_ORIGIN # https://meduni-api.vercel.app
         sync: false
 
       # --- Avtomatik ---
