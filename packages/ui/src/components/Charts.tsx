@@ -179,18 +179,26 @@ export function BarRow({
   onClick?: () => void;
 }) {
   const v = Math.max(0, Math.min(100, Number.isFinite(value) ? value : 0));
+  // Bosiladigan bo'lmasa <div> qaytaramiz: BarRow ba'zan o'zi tugma bo'lgan
+  // karta ichida turadi (masalan talaba bosh sahifasidagi "O'zlashtirish"
+  // kartasi) — <button> ichida <button> HTML'da noto'g'ri va React konsolga
+  // "cannot be a descendant" ogohlantirishini yozadi.
+  const Tag = onClick ? "button" : "div";
   return (
-    <button
+    <Tag
       onClick={onClick}
-      disabled={!onClick}
-      className={`flex w-full items-center gap-4 rounded-control px-2 py-2 text-left transition-colors ${onClick ? "hover:bg-bg" : "cursor-default"}`}
+      className={`flex w-full items-center gap-4 rounded-control px-2 py-2 text-left transition-colors ${
+        onClick
+          ? "hover:bg-bg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+          : "cursor-default"
+      }`}
     >
-      <span className="w-44 shrink-0 truncate text-[15px] font-medium text-ink">{label}</span>
+      <span className="w-44 shrink-0 truncate text-note font-medium text-ink">{label}</span>
       <span className="h-3 flex-1 overflow-hidden rounded-pill bg-bg">
         <span className="block h-full rounded-pill transition-all" style={{ width: `${Math.max(v, 2)}%`, background: toneVar[tone] }} />
       </span>
-      <span className="w-12 shrink-0 text-right text-[14.5px] font-bold tabular-nums text-ink">{Math.round(v)}%</span>
-    </button>
+      <span className="w-12 shrink-0 text-right text-note font-bold tabular-nums text-ink">{Math.round(v)}%</span>
+    </Tag>
   );
 }
 

@@ -31,7 +31,10 @@
     "myCourses": "Курсы",
     "grades": "Успеваемость",
     "schedule": "Расписание",
-    "lessons": "Мои занятия"
+    "lessons": "Мои занятия",
+    "more": "Ещё",
+    "theme": "Тёмная тема",
+    "language": "Язык"
   },
   "theme": {
     "label": "Тема оформления",
@@ -1820,8 +1823,16 @@
     "viewWeek": "Неделя",
     "viewMonth": "Месяц",
     "today": "Сегодня",
-    "tabs": { "students": "Студенты", "courses": "Курсы", "timetable": "Расписание" },
-    "status": { "UNMARKED": "Не отмечено", "PARTIAL": "Частично", "FULL": "Полностью" }
+    "tabs": {
+      "students": "Студенты",
+      "courses": "Курсы",
+      "timetable": "Расписание"
+    },
+    "status": {
+      "UNMARKED": "Не отмечено",
+      "PARTIAL": "Частично",
+      "FULL": "Полностью"
+    }
   },
   "subjects": {
     "title": "Мои предметы",
@@ -2016,5 +2027,22 @@
     "viewWeek": "Неделя",
     "viewMonth": "Месяц",
     "noneThisDay": "В этот день занятий нет"
+  },
+  "navShort": {
+    "dashboard": "Главная",
+    "myCourses": "Курсы",
+    "courses": "Курсы",
+    "tasks": "Задачи",
+    "myTasks": "Задачи",
+    "grades": "Оценки",
+    "attendance": "Посещ.",
+    "students": "Студент",
+    "staff": "Кадры",
+    "lessons": "Занятия",
+    "groups": "Группы",
+    "profile": "Профиль",
+    "ai": "AI",
+    "audit": "Аудит",
+    "settings": "Настр."
   }
 }

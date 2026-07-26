@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { X } from "lucide-react";
 import { cls } from "../cls";
+import { Sheet } from "./Sheet";
 
 export interface ModalProps {
   open: boolean;
@@ -10,9 +11,35 @@ export interface ModalProps {
   title?: string;
   children: ReactNode;
   className?: string;
+  /** Mobilda ham markazda tursin (pastdan chiqadigan sheet bo'lmasin). */
+  forceCentered?: boolean;
 }
 
-export function Modal({ open, onClose, title, children, className }: ModalProps) {
+/** `sm` chegarasi (640px) — Tailwind bilan bir xil. */
+const MOBILE_QUERY = "(max-width: 639px)";
+
+function useIsMobile(): boolean {
+  const [mobile, setMobile] = useState(
+    () => typeof window !== "undefined" && window.matchMedia(MOBILE_QUERY).matches
+  );
+  useEffect(() => {
+    const mq = window.matchMedia(MOBILE_QUERY);
+    const onChange = (e: MediaQueryListEvent) => setMobile(e.matches);
+    mq.addEventListener("change", onChange);
+    setMobile(mq.matches);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+  return mobile;
+}
+
+/**
+ * Modal oynasi. Desktopda — markazda karta; **mobilda avtomat ravishda
+ * pastdan chiqadigan `Sheet`** (barmoq bilan pastga tortib yopiladi).
+ * Chaqiruvchi kod o'zgarmaydi — barcha modallar birdan mobilga moslashadi.
+ */
+export function Modal({ open, onClose, title, children, className, forceCentered = false }: ModalProps) {
+  const isMobile = useIsMobile();
+
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
@@ -22,6 +49,15 @@ export function Modal({ open, onClose, title, children, className }: ModalProps)
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onClose]);
 
+  // Mobil: sheet (Escape/backdrop/drag yopishni o'zi boshqaradi).
+  if (isMobile && !forceCentered) {
+    return (
+      <Sheet open={open} onClose={onClose} title={title} className={className}>
+        {children}
+      </Sheet>
+    );
+  }
+
   if (!open) return null;
 
   return (
@@ -30,7 +66,10 @@ export function Modal({ open, onClose, title, children, className }: ModalProps)
       onClick={onClose}
     >
       <div
-        className={cls("w-full max-w-lg rounded-card bg-surface p-7 shadow-card-hover", className)}
+        className={cls(
+          "max-h-[90dvh] w-full max-w-lg overflow-y-auto rounded-card bg-surface p-7 shadow-card-hover",
+          className
+        )}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-5 flex items-center justify-between">

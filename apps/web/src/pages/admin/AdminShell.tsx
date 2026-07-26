@@ -18,6 +18,8 @@ interface AdminSearchResp {
 
 export function AdminShell() {
   const { t } = useTranslation(undefined, { keyPrefix: "nav" });
+  // Mobil tab-bar uchun qisqa yorliqlar (uzun nom 78px katakka sig'maydi).
+  const { t: ts } = useTranslation(undefined, { keyPrefix: "navShort" });
   const locale = useLocale();
   const { data: me } = useMe();
   const isSuper = me?.role === "superadmin";
@@ -67,23 +69,24 @@ export function AdminShell() {
       headerSlot={<GlobalSearch fetch={search} />}
       profileHref="/admin/settings"
       items={[
-        { href: "/admin", label: t("dashboard"), icon: <Icon icon={Home} />, end: true },
+        { href: "/admin", label: t("dashboard"), shortLabel: ts("dashboard"), icon: <Icon icon={Home} />, end: true },
         // Students are a faculty-level contingent; dept admins have no student scope.
         ...(me?.role !== "dept_admin"
-          ? [{ href: "/admin/students", label: t("students"), icon: <Icon icon={Users} /> }]
+          ? [{ href: "/admin/students", label: t("students"), shortLabel: ts("students"), icon: <Icon icon={Users} /> }]
           : []),
         // The staff module is each tier's own world — name it accordingly.
         {
           href: "/admin/staff",
           label: me?.role === "faculty_admin" ? t("myFaculty") : me?.role === "dept_admin" ? t("myDept") : t("staff"),
+          shortLabel: ts("staff"),
           icon: <Icon icon={Network} />,
         },
-        { href: "/admin/courses", label: t("courses"), icon: <Icon icon={BookOpen} /> },
-        { href: "/admin/tasks", label: t("tasks"), icon: <Icon icon={ListChecks} /> },
-        { href: "/admin/ai", label: t("ai"), icon: <Icon icon={Sparkles} /> },
+        { href: "/admin/courses", label: t("courses"), shortLabel: ts("courses"), icon: <Icon icon={BookOpen} /> },
+        { href: "/admin/tasks", label: t("tasks"), shortLabel: ts("tasks"), icon: <Icon icon={ListChecks} /> },
+        { href: "/admin/ai", label: t("ai"), shortLabel: ts("ai"), icon: <Icon icon={Sparkles} /> },
         // University-wide audit trail is superadmin-only (backend enforces too).
-        ...(isSuper ? [{ href: "/admin/audit", label: t("audit"), icon: <Icon icon={ScrollText} /> }] : []),
-        { href: "/admin/settings", label: t("settings"), icon: <Icon icon={Settings} /> },
+        ...(isSuper ? [{ href: "/admin/audit", label: t("audit"), shortLabel: ts("audit"), icon: <Icon icon={ScrollText} /> }] : []),
+        { href: "/admin/settings", label: t("settings"), shortLabel: ts("settings"), icon: <Icon icon={Settings} /> },
       ]}
     >
       <Outlet />

@@ -17,6 +17,8 @@ interface TeachSearchResp {
 
 export function TeachShell() {
   const { t } = useTranslation(undefined, { keyPrefix: "nav" });
+  // Mobil tab-bar uchun qisqa yorliqlar (uzun nom 78px katakka sig'maydi).
+  const { t: ts } = useTranslation(undefined, { keyPrefix: "navShort" });
   const locale = useLocale();
   const tasks = useTaskBoard();
   const openTasks = tasks.data?.stats.toDo ?? 0;
@@ -56,12 +58,12 @@ export function TeachShell() {
       headerSlot={<GlobalSearch fetch={search} />}
       profileHref="/teach/settings"
       items={[
-        { href: "/teach", label: t("dashboard"), icon: <Icon icon={Home} />, end: true },
-        { href: "/teach/tasks", label: t("myTasks"), icon: <Icon icon={ListChecks} />, badge: openTasks },
-        { href: "/teach/courses", label: t("courses"), icon: <Icon icon={BookOpen} /> },
-        { href: "/teach/schedule", label: t("lessons"), icon: <Icon icon={CalendarDays} /> },
-        { href: "/teach/groups", label: t("groups"), icon: <Icon icon={Users2} /> },
-        { href: "/teach/settings", label: t("settings"), icon: <Icon icon={Settings} /> },
+        { href: "/teach", label: t("dashboard"), shortLabel: ts("dashboard"), icon: <Icon icon={Home} />, end: true },
+        { href: "/teach/tasks", label: t("myTasks"), shortLabel: ts("myTasks"), icon: <Icon icon={ListChecks} />, badge: openTasks },
+        { href: "/teach/courses", label: t("courses"), shortLabel: ts("courses"), icon: <Icon icon={BookOpen} /> },
+        { href: "/teach/schedule", label: t("lessons"), shortLabel: ts("lessons"), icon: <Icon icon={CalendarDays} /> },
+        { href: "/teach/groups", label: t("groups"), shortLabel: ts("groups"), icon: <Icon icon={Users2} /> },
+        { href: "/teach/settings", label: t("settings"), shortLabel: ts("settings"), icon: <Icon icon={Settings} /> },
       ]}
     >
       <Outlet />

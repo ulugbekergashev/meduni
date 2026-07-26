@@ -2,7 +2,7 @@ import { useState, type ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { LogOut, Moon, Sun } from "lucide-react";
-import { Icon, SidebarLayout, type SidebarItem } from "@meduni/ui";
+import { BottomNav, Icon, SidebarLayout, type SidebarItem } from "@meduni/ui";
 import { useLogout, useMe } from "../lib/auth";
 import { getTheme, setTheme, type Theme } from "../lib/theme";
 import { useLocale } from "../lib/useLocale";
@@ -40,6 +40,8 @@ function ThemeButton() {
 export interface RoleShellItem {
   href: string;
   label: string;
+  /** Mobil tab-bar uchun qisqa yorliq (i18n `navShort.*`). */
+  shortLabel?: string;
   icon: ReactNode;
   /** Exact-match only (for the role home item); otherwise prefix-match highlights sub-routes. */
   end?: boolean;
@@ -77,6 +79,7 @@ export function RoleShell({
   const sidebarItems: SidebarItem[] = items.map((item) => ({
     href: item.href,
     label: item.label,
+    shortLabel: item.shortLabel,
     icon: item.icon,
     badge: item.badge,
     active: item.end
@@ -85,6 +88,30 @@ export function RoleShell({
   }));
 
   const today = formatDate(locale === "ru" ? "ru" : "uz", new Date(), "long");
+  const doLogout = () => logout.mutate(undefined, { onSuccess: () => navigate("/login", { replace: true }) });
+
+  // Mobil "Yana" panelining pastki bloki — headerdan ko'chgan boshqaruvlar.
+  const moreExtra = (
+    <div className="flex flex-col gap-1">
+      <div className="flex min-h-[52px] items-center justify-between gap-3 px-3">
+        <span className="text-body font-semibold text-ink">{t("language")}</span>
+        <LocaleSwitcher />
+      </div>
+      {showTheme && (
+        <div className="flex min-h-[52px] items-center justify-between gap-3 px-3">
+          <span className="text-body font-semibold text-ink">{t("theme")}</span>
+          <ThemeButton />
+        </div>
+      )}
+      <button
+        onClick={doLogout}
+        className="flex min-h-[52px] items-center gap-3 rounded-control px-3 text-body font-semibold text-rose transition-colors hover:bg-rose-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+      >
+        <Icon icon={LogOut} size={18} />
+        {t("logout")}
+      </button>
+    </div>
+  );
 
   return (
     <SidebarLayout
@@ -93,27 +120,38 @@ export function RoleShell({
       headerSlot={headerSlot}
       fullBleed={fullBleed}
       LinkComponent={RouterLink}
+      bottomNav={
+        <BottomNav
+          items={sidebarItems}
+          moreLabel={t("more")}
+          moreExtra={moreExtra}
+          LinkComponent={RouterLink}
+        />
+      }
       rightSlot={
         <>
           <span className="hidden whitespace-nowrap text-[13.5px] font-medium text-ink-faint xl:block">{today}</span>
-          <LocaleSwitcher />
-          {showTheme && <ThemeButton />}
+          {/* Til/tema/chiqish mobilda "Yana" panelida — headerda joy tor. */}
+          <span className="hidden lg:inline-flex">
+            <LocaleSwitcher />
+          </span>
+          {showTheme && <span className="hidden lg:inline-flex"><ThemeButton /></span>}
           {/* User bloki — avatar + ism, bosilsa profil/sozlamalar sahifasi */}
           <Link
             to={profileHref}
             title={t("openProfile")}
-            className="ml-1 flex min-w-0 items-center gap-2.5 rounded-control border-l border-line py-1 pl-3 pr-1.5 transition-colors hover:bg-bg"
+            className="flex min-w-0 items-center gap-2.5 rounded-control py-1 pr-0.5 transition-colors hover:bg-bg lg:ml-1 lg:border-l lg:border-line lg:pl-3 lg:pr-1.5"
           >
-            <div className="hidden min-w-0 text-right leading-tight sm:block">
+            <div className="hidden min-w-0 text-right leading-tight lg:block">
               <p className="max-w-[150px] truncate text-[13.5px] font-semibold text-ink">{me?.full_name}</p>
               <p className="max-w-[150px] truncate text-[12px] text-ink-faint">{me?.email}</p>
             </div>
             <Avatar name={me?.full_name ?? ""} />
           </Link>
           <button
-            onClick={() => logout.mutate(undefined, { onSuccess: () => navigate("/login", { replace: true }) })}
+            onClick={doLogout}
             aria-label="logout"
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-control text-ink-soft transition-colors hover:bg-rose-soft hover:text-rose"
+            className="hidden h-8 w-8 shrink-0 items-center justify-center rounded-control text-ink-soft transition-colors hover:bg-rose-soft hover:text-rose lg:flex"
           >
             <Icon icon={LogOut} size={15} />
           </button>

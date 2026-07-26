@@ -42,6 +42,14 @@
   --radius-control: 12px;
   --radius-pill: 9999px;
 
+  /* Yuqoridagi doimiy header balandligi. Sticky elementlar (wizard stepper
+     kabi) shu qiymatdan oladi — ilgari 57px qo'lda yozilgan edi va header
+     64px ga o'zgarganda 7px bo'shliq paydo bo'lgandi. */
+  --header-h: 64px;
+  /* Mobil pastki tab-bar balandligi (safe-area'siz) — kontent tagiga shuncha
+     bo'sh joy qoldiriladi, aks holda oxirgi element menyu ostida qoladi. */
+  --bottomnav-h: 64px;
+
   /* Premium, dispersed, soft shadows (apple-like) */
   --shadow-card: 0 4px 20px -4px rgba(15, 23, 42, 0.05), 0 1px 2px rgba(15, 23, 42, 0.02);
   --shadow-card-hover: 0 12px 32px -8px rgba(15, 23, 42, 0.1), 0 4px 8px rgba(15, 23, 42, 0.04);

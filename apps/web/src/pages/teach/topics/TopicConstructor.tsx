@@ -158,9 +158,10 @@ export function TopicConstructor() {
       </div>
 
       {/* Sticky stepper — one glance at where you are; click an unlocked step to jump. */}
-      {/* top-[57px]: sits right below the sticky global-search bar */}
-      <div className="sticky top-[57px] z-20 mt-5 border-b border-line bg-bg py-3">
-        <div className="flex items-center gap-1 overflow-x-auto">
+      {/* --header-h: doimiy header balandligi (tokens.css). Ilgari 57px qo'lda
+          yozilgan edi va header 64px ga o'zgarganda 7px bo'shliq qolgandi. */}
+      <div className="sticky top-[var(--header-h)] z-20 mt-5 border-b border-line bg-bg py-3">
+        <div className="flex items-center gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {STEP_ORDER.map((key, i) => {
             const st = stateOf(key, available, done);
             const isActive = key === active;
