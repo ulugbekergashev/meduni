@@ -33,17 +33,10 @@ app.set("trust proxy", 1);
 
 app.use(helmet(serveWeb ? { contentSecurityPolicy: false } : undefined));
 
-const apiLimiter = rateLimit({
-  windowMs: 1 * 60 * 1000, // 1 minute
-  // Bitta origin (SERVE_WEB) yoki alohida frontend (Vercel) — ikkalasida ham
-  // barcha talaba bitta chiqish IP'sидан kelishi mumkin (universitet Wi-Fi),
-  // shuning uchun limit yuqori.
-  max: serveWeb || env.crossSiteCookies ? 2000 : 100,
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-app.use(apiLimiter);
-
+// ⚠️ CORS rate-limit'DAN OLDIN turishi SHART. Aks holda limit oshganda
+// express-rate-limit 429 javobini CORS sarlavhalarisiz yuboradi va brauzer
+// buni "No 'Access-Control-Allow-Origin' header" deb ko'rsatadi — ya'ni
+// haqiqiy sabab (juda ko'p so'rov) butunlay yashirinib qoladi.
 app.use(
   cors({
     // Ro'yxatdagi origin + shu loyihaning Vercel preview deploy'lari.
@@ -59,6 +52,21 @@ app.use(
     credentials: true,
   })
 );
+
+const apiLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minute
+  // SPA bitta sahifa ochilishida 10+ so'rov yuboradi (dashboard, vazifalar,
+  // jadval, profil...). Ilgari bu yerda 100 turardi va faol foydalanishda
+  // chegaraga urilardi. Prod'da (bitta origin / Vercel) yanada yuqori —
+  // universitet Wi-Fi ortida ko'p talaba bitta IP'dan ko'rinishi mumkin.
+  max: serveWeb || env.crossSiteCookies ? 2000 : 300,
+  standardHeaders: true,
+  legacyHeaders: false,
+  // Preflight (OPTIONS) limitga kirmasin — u foydalanuvchi so'rovi emas.
+  skip: (req) => req.method === "OPTIONS",
+});
+app.use(apiLimiter);
+
 app.use(express.json());
 app.use(cookieParser());
 app.use(authMiddleware);
