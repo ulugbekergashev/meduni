@@ -15,19 +15,21 @@ Natija: **doimiy, kompyuterga bog'liq bo'lmagan havola** (24/7), karta talab qil
 
 ---
 
-## 0. Avval nomlarni tanlang (muhim!)
+## 0. Manzillar (joriy holat)
 
-Vercel va Render bir-birining manzilini bilishi kerak. Manzillar nomdan kelib
-chiqadi, shuning uchun **oldindan tanlab qo'ying** va ikkalasida ham aynan shu
-nomni yozing:
+| | Nom | Manzil | Holat |
+| :--- | :--- | :--- | :--- |
+| Vercel loyihasi (web) | `meduni-api` | https://meduni-api.vercel.app | ✅ ishlayapti |
+| Render servisi (API) | `meduni-api` | `https://meduni-api.onrender.com` | ⏳ yaratilmagan |
 
-| | Nom (misol) | Manzil |
-| :--- | :--- | :--- |
-| Vercel loyihasi | `meduni` | `https://meduni.vercel.app` |
-| Render servisi | `meduni-api` | `https://meduni-api.onrender.com` |
-
-Agar nom band bo'lsa (Vercel `meduni-2` beradi) — quyidagi qadamlarda haqiqiy
-manzilni ishlating.
+> ⚠️ **Render servisining nomi AYNAN `meduni-api` bo'lishi shart.** Web bundle'iga
+> `https://meduni-api.onrender.com` manzili build paytida yozib qo'yilgan — nom
+> boshqacha bo'lsa frontend API'ni topa olmaydi (yoki `VITE_API_URL` ni
+> o'zgartirib Vercel'ni qayta deploy qilish kerak bo'ladi).
+>
+> Vercel loyihasi `meduni-api` deb nomlangan (import paytida shunday tanlangan),
+> Render ham shu nomda — to'qnashuv yo'q, domenlar har xil (`.vercel.app` va
+> `.onrender.com`).
 
 ---
 
@@ -84,13 +86,13 @@ Ikkala variantда ham **Environment Variables**:
 | `GEMINI_API_KEY` | *Gemini kaliti* ⚠️ eskisi skomprometatsiya — yangisini oling |
 | `JWT_ACCESS_SECRET` | *tasodifiy hex* (Render "Generate" tugmasi bor) |
 | `JWT_REFRESH_SECRET` | *boshqa tasodifiy hex* |
-| `WEB_ORIGIN` | `https://meduni.vercel.app` |
-| `VERCEL_PROJECT` | `meduni` *(preview deploy'lar ham ishlashi uchun)* |
+| `WEB_ORIGIN` | `https://meduni-api.vercel.app` |
+| `VERCEL_PROJECT` | `meduni-api` *(preview deploy'lar ham ishlashi uchun)* |
 | `CROSS_SITE_COOKIES` | `1` ⚠️ **shusiz login ishlamaydi** |
 | `NODE_ENV` | `production` |
 | `DEMO_SEED` | `1` *(birinchi ishga tushishda demo akkauntlar)* |
-| `WEBAUTHN_RP_ID` | `meduni.vercel.app` *(sxemasiz!)* |
-| `WEBAUTHN_ORIGIN` | `https://meduni.vercel.app` |
+| `WEBAUTHN_RP_ID` | `meduni-api.vercel.app` *(sxemasiz!)* |
+| `WEBAUTHN_ORIGIN` | `https://meduni-api.vercel.app` |
 
 **Create** → birinchi build ~8-12 daqiqa (ffmpeg + npm install).
 Log'да quyidagini kutasiz:
@@ -98,7 +100,7 @@ Log'да quyidagini kutasiz:
 ```
 ==> Bazani kutish + sinxronlash (prisma db push)...
 API ready on http://localhost:8080
-  web origins : https://meduni.vercel.app
+  web origins : https://meduni-api.vercel.app
   cookies     : SameSite=None; Secure (cross-site)
 ```
 
@@ -106,13 +108,21 @@ Tekshirish: `https://meduni-api.onrender.com/health` → `{"ok":true}`
 
 ---
 
-## 4. Vercel — web
+## 4. Vercel — web ✅ (bajarilgan)
 
 1. [vercel.com](https://vercel.com) → GitHub bilan kiring → **Add New → Project** →
    `meduni` repo'sini **Import**.
-2. **Project Name**: `meduni` (0-qadamda tanlagan nom).
+2. **Project Name**: `meduni-api`.
 3. Framework Preset: **Other** — build sozlamalariga **tegmang**, ular
    repo'dagi `vercel.json` dan olinadi.
+
+   > ⚠️ **Import paytidagi asosiy tuzoq (biz shunga uch marta yiqildik):**
+   > Vercel monorepo'ni skanerlab `apps/api` dagi Express'ni "framework" deb
+   > topadi va **Root Directory ni `apps/api` qilib qo'yadi**. Natijada `npm
+   > install` API papkasida ishlaydi (`added 373 packages`), `react` umuman
+   > o'rnatilmaydi va build 300+ "Cannot find module" xatosi bilan yiqiladi.
+   > **Root Directory bo'sh (repo ildizi) bo'lishi shart**, Framework Preset —
+   > **Other**. Settings → Build & Deployment dan tekshiring.
 
    > `vercel.json` da install `--ignore-scripts` bilan: web uchun keraksiz
    > native build'lar (argon2, sharp, prisma — ular faqat API'da ishlaydi)
@@ -136,7 +146,7 @@ Tekshirish: `https://meduni-api.onrender.com/health` → `{"ok":true}`
 
 ## 5. Ochish va tekshirish
 
-`https://meduni.vercel.app`
+`https://meduni-api.vercel.app`
 
 | Rol | Login | Parol |
 | :--- | :--- | :--- |
@@ -152,12 +162,14 @@ Tekshirish: `https://meduni-api.onrender.com/health` → `{"ok":true}`
 
 | Alomat | Sabab / yechim |
 | :--- | :--- |
+| Vercel build: 300+ `Cannot find module 'react'` | **Root Directory** `apps/api` yoki `apps/web` ga qo'yilgan — **bo'sh** (repo ildizi) bo'lishi kerak. Log'da `added 373 packages` ko'rinsa aynan shu |
+| Vercel build: `JSX.IntrinsicElements mavjud emas` | devDependencies o'rnatilmagan — `vercel.json` da `--include=dev` bo'lishi shart (`--production=false` npm 9+ da **eskirgan**, ishlamaydi) |
 | Login "muvaffaqiyatli", lekin sahifa qayta login so'raydi | `CROSS_SITE_COOKIES=1` qo'yilmagan (cookie SameSite=None bo'lmasa brauzer uni tashlab yuboradi) |
 | Konsolда `CORS ... has been blocked` | Render'да `WEB_ORIGIN` noto'g'ri (`https://` bilan, oxirida `/` **siz**) |
 | Tarmoqda so'rovlar `localhost:8000` ga ketyapti | Vercel'да `VITE_API_URL` yo'q yoki qo'yilgandan keyin **Redeploy** qilinmagan |
 | Render log: `P1001: Can't reach database server` | Supabase **Direct connection** (IPv6) ishlatilgan — **Session pooler** (5432) ga almashtiring |
 | Preview deploy'да login ishlamaydi | `VERCEL_PROJECT` o'zgaruvchisi qo'yilmagan |
-| Passkey/check-in ishlamaydi | `WEBAUTHN_RP_ID` sxemasiz domen bo'lishi shart (`meduni.vercel.app`) |
+| Passkey/check-in ishlamaydi | `WEBAUTHN_RP_ID` sxemasiz domen bo'lishi shart (`meduni-api.vercel.app`) |
 
 ---
 
