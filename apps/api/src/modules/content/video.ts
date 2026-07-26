@@ -511,5 +511,8 @@ export async function getVideoMedia(videoId: number, teacherId: number, kind: "m
   const v = await videoForTeacher(videoId, teacherId);
   const rel = kind === "mp4" ? v.mp4Url : v.srtUrl;
   if (!rel) throw notFound("Fayl");
-  return readFileBuffer(rel);
+  // Yozuv bor, fayl yo'q (eski disk-drayver davridagi media) → 500 emas, 404.
+  const buf = await readFileBuffer(rel).catch(() => null);
+  if (!buf) throw notFound("Video");
+  return buf;
 }

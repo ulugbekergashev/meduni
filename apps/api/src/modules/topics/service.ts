@@ -199,7 +199,11 @@ async function collectMaterialText(topicId: number): Promise<string> {
   });
   const parts: string[] = [];
   for (const m of materials) {
-    if (m.parsedTextUrl) parts.push(await readText(m.parsedTextUrl));
+    if (!m.parsedTextUrl) continue;
+    // Fayl yo'qolgan bo'lsa (eski disk media) — o'sha materialsiz davom etamiz,
+    // butun generatsiya 500 bilan yiqilmasin.
+    const text = await readText(m.parsedTextUrl).catch(() => null);
+    if (text) parts.push(text);
   }
   return parts.join("\n\n---\n\n").slice(0, MAX_MATERIAL_CHARS);
 }
@@ -421,7 +425,8 @@ export async function getMaterial(materialId: number, teacherId: number) {
 export async function getMaterialText(materialId: number, teacherId: number) {
   const m = await materialForTeacher(materialId, teacherId);
   if (!m.parsedTextUrl) throw notFound("Matn");
-  const text = await readText(m.parsedTextUrl);
+  const text = await readText(m.parsedTextUrl).catch(() => null);
+  if (text === null) throw notFound("Matn");
   return { text };
 }
 

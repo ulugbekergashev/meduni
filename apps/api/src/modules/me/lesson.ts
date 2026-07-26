@@ -642,11 +642,19 @@ async function videoAccess(studentId: number, videoId: number) {
   return v;
 }
 
+/** Fayl yozuvi bazada bor, o'zi esa yo'q bo'lishi mumkin (eski, disk drayveri
+ *  davridagi media). Bunda 500 emas — toza 404 qaytaramiz, UI buzilmasin. */
+async function readMediaOr404(rel: string, what: string): Promise<Buffer> {
+  const buf = await readFileBuffer(rel).catch(() => null);
+  if (!buf) throw notFound(what);
+  return buf;
+}
+
 export async function studentVideoMedia(studentId: number, videoId: number, kind: "mp4" | "srt"): Promise<Buffer> {
   const v = await videoAccess(studentId, videoId);
   const rel = kind === "mp4" ? v.mp4Url : v.srtUrl;
   if (!rel) throw notFound("Fayl");
-  return readFileBuffer(rel);
+  return readMediaOr404(rel, "Video");
 }
 
 async function presentationAccess(studentId: number, presentationId: number) {
@@ -661,7 +669,7 @@ export async function studentSlotImage(studentId: number, presentationId: number
   const p = await presentationAccess(studentId, presentationId);
   const slot = (p.slidesJson as unknown as Slide[])[slideIndex]?.imageSlots?.[slotIndex];
   if (!slot?.url) throw notFound("Rasm");
-  return readFileBuffer(slot.url);
+  return readMediaOr404(slot.url, "Rasm");
 }
 
 export async function studentPresentationPdf(studentId: number, presentationId: number): Promise<Buffer> {
@@ -686,8 +694,9 @@ export async function studentMaterialText(studentId: number, materialId: number)
   if (!m) throw notFound("Fayl");
   await assertTopicOpen(studentId, m.topicId);
   if (m.parseStatus !== "DONE" || !m.parsedTextUrl) throw notFound("Matn");
-  const text = (await readText(m.parsedTextUrl)).slice(0, 60_000);
-  return { id: m.id, fileName: m.fileName, text };
+  const raw = await readText(m.parsedTextUrl).catch(() => null);
+  if (raw === null) throw notFound("Matn");
+  return { id: m.id, fileName: m.fileName, text: raw.slice(0, 60_000) };
 }
 
 /** O'qituvchi manba materialini talabaga oqim qiladi. Egalik/qulf tekshiruvi
@@ -699,6 +708,6 @@ export async function studentMaterialFile(
   const m = await prisma.sourceMaterial.findUnique({ where: { id: materialId } });
   if (!m) throw notFound("Fayl");
   await assertTopicOpen(studentId, m.topicId);
-  const buf = await readFileBuffer(m.fileUrl);
+  const buf = await readMediaOr404(m.fileUrl, "Fayl");
   return { buf, fileName: m.fileName, fileType: m.fileType };
 }

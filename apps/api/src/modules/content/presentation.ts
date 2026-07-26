@@ -180,7 +180,9 @@ export async function getSlotImage(presentationId: number, teacherId: number, sl
   const pres = await presentationForTeacher(presentationId, teacherId);
   const slot = slidesOf(pres)[slideIndex]?.imageSlots[slotIndex];
   if (!slot?.url) throw notFound("Rasm");
-  return readFileBuffer(slot.url);
+  const buf = await readFileBuffer(slot.url).catch(() => null);
+  if (!buf) throw notFound("Rasm");
+  return buf;
 }
 
 // ---------- Exports (branded default template) ----------
