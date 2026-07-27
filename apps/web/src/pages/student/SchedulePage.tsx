@@ -307,7 +307,45 @@ export function SchedulePage() {
         </motion.div>
       ) : (
         <motion.div variants={itemVariants}>
-          <Card className="overflow-x-auto p-0 shadow-sm border border-line bg-surface">
+          {/* ——— MOBIL: kun-agenda. Vaqt×kun to'ri 820px joy talab qiladi,
+              telefonda u faqat gorizontal skroll bo'lib qolardi. Shu sababli
+              lg dan kichik ekranda darslar kunlar bo'yicha ro'yxat bo'ladi. ——— */}
+          <div className="space-y-2 lg:hidden">
+            {days.map((d) => {
+              const dayRows = slots.flatMap((slot) => at(slot, d.key).map((s) => ({ slot, s })));
+              if (dayRows.length === 0) return null;
+              return (
+                <Card key={d.key} className="p-0 shadow-sm">
+                  <div
+                    className={cls(
+                      "flex items-center gap-2 rounded-t-card border-b border-line px-3 py-2",
+                      d.isToday ? "bg-brand-soft" : "bg-surface-raised"
+                    )}
+                  >
+                    <span className={cls("text-note font-bold uppercase tracking-wider", d.isToday ? "text-brand-tint" : "text-ink-soft")}>
+                      {d.short}
+                    </span>
+                    <span className={cls("text-body font-extrabold tabular-nums", d.isToday ? "text-brand-tint" : "text-ink")}>
+                      {d.num}
+                    </span>
+                  </div>
+                  <div className="space-y-2 p-2">
+                    {dayRows.map(({ slot, s }) => (
+                      <div key={s.key} className="flex items-start gap-2">
+                        <span className="w-12 shrink-0 pt-1 text-note font-bold tabular-nums text-ink-soft">{slot}</span>
+                        <div className="min-w-0 flex-1">
+                          <LessonCell s={s} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+
+          {/* ——— DESKTOP: to'liq vaqt×kun to'ri ——— */}
+          <Card className="hidden overflow-x-auto p-0 shadow-sm border border-line bg-surface lg:block">
             {/* Jadval to'ri: vaqt ustuni + 7 kun */}
             <div className="min-w-[820px]">
               {/* Sarlavha qatori */}
