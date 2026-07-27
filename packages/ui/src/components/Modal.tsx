@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { X } from "lucide-react";
 import { cls } from "../cls";
+import { MOBILE_QUERY, useMediaQuery } from "../useMediaQuery";
 import { Sheet } from "./Sheet";
 
 export interface ModalProps {
@@ -15,30 +16,13 @@ export interface ModalProps {
   forceCentered?: boolean;
 }
 
-/** `sm` chegarasi (640px) — Tailwind bilan bir xil. */
-const MOBILE_QUERY = "(max-width: 639px)";
-
-function useIsMobile(): boolean {
-  const [mobile, setMobile] = useState(
-    () => typeof window !== "undefined" && window.matchMedia(MOBILE_QUERY).matches
-  );
-  useEffect(() => {
-    const mq = window.matchMedia(MOBILE_QUERY);
-    const onChange = (e: MediaQueryListEvent) => setMobile(e.matches);
-    mq.addEventListener("change", onChange);
-    setMobile(mq.matches);
-    return () => mq.removeEventListener("change", onChange);
-  }, []);
-  return mobile;
-}
-
 /**
  * Modal oynasi. Desktopda — markazda karta; **mobilda avtomat ravishda
  * pastdan chiqadigan `Sheet`** (barmoq bilan pastga tortib yopiladi).
  * Chaqiruvchi kod o'zgarmaydi — barcha modallar birdan mobilga moslashadi.
  */
 export function Modal({ open, onClose, title, children, className, forceCentered = false }: ModalProps) {
-  const isMobile = useIsMobile();
+  const isMobile = useMediaQuery(MOBILE_QUERY);
 
   useEffect(() => {
     if (!open) return;

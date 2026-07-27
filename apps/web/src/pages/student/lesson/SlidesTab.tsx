@@ -1,12 +1,79 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { AlignLeft, CheckCircle2, ChevronLeft, ChevronRight, Download, GalleryHorizontal } from "lucide-react";
+import { AlignLeft, CheckCircle2, ChevronLeft, ChevronRight, Download, GalleryHorizontal, X, ZoomIn } from "lucide-react";
 import { Icon, cls } from "@meduni/ui";
 import { API_URL } from "../../../lib/api";
 import { useSlidesViewed, type SlidesTabData } from "../api";
 
 /** Ko'rinish: slayd karuseli yoki matn (mini-konspekt) — tanlov eslab qolinadi. */
 const MODE_KEY = "meduni.slidesMode";
+
+/**
+ * Diagramma ko'rgichi. Telefon ekranida tibbiy atlas rasmidagi yozuvlar
+ * o'qilmaydi — bosilganda to'liq ekranda ochiladi, yana bosilsa kattalashadi
+ * (skroll bilan siljitiladi). Yopish: X, backdrop yoki Escape.
+ */
+function SlideImage({ src, alt, className }: { src: string; alt: string; className?: string }) {
+  const [open, setOpen] = useState(false);
+  const [zoom, setZoom] = useState(false);
+  const { t } = useTranslation(undefined, { keyPrefix: "lesson" });
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    window.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [open]);
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => {
+          setZoom(false);
+          setOpen(true);
+        }}
+        aria-label={t("zoomImage")}
+        className="group relative block w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+      >
+        <img src={src} alt={alt} className={className} />
+        <span className="absolute bottom-2 right-2 flex h-9 w-9 items-center justify-center rounded-full bg-ink/60 text-white opacity-90 transition-opacity group-hover:opacity-100">
+          <Icon icon={ZoomIn} size={17} />
+        </span>
+      </button>
+
+      {open && (
+        <div className="fixed inset-0 z-50 flex flex-col bg-black/95" role="dialog" aria-modal="true">
+          <div className="flex shrink-0 justify-end p-2">
+            <button
+              onClick={() => setOpen(false)}
+              aria-label={t("close")}
+              className="flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+            >
+              <Icon icon={X} size={22} />
+            </button>
+          </div>
+          <div className={cls("flex-1", zoom ? "overflow-auto" : "flex items-center justify-center p-2")}>
+            <img
+              src={src}
+              alt={alt}
+              onClick={() => setZoom((z) => !z)}
+              className={cls(
+                "cursor-zoom-in select-none",
+                zoom ? "h-auto w-[200%] max-w-none" : "max-h-full max-w-full object-contain"
+              )}
+            />
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
 
 export function SlidesTab({ topicId, data }: { topicId: number; data: SlidesTabData }) {
   const { t } = useTranslation(undefined, { keyPrefix: "lesson" });
@@ -91,11 +158,13 @@ export function SlidesTab({ topicId, data }: { topicId: number; data: SlidesTabD
                 <h3 className="text-body font-extrabold leading-snug text-ink">{s.title}</h3>
               </div>
               {s.imageUrl && (
-                <img
-                  src={`${API_URL}${s.imageUrl}`}
-                  alt=""
-                  className="my-2 max-h-56 w-full rounded-control border border-line object-contain"
-                />
+                <div className="my-2">
+                  <SlideImage
+                    src={`${API_URL}${s.imageUrl}`}
+                    alt={s.title}
+                    className="max-h-[40dvh] w-full rounded-control border border-line object-contain sm:max-h-56"
+                  />
+                </div>
               )}
               <ul className="space-y-1.5">
                 {s.bullets.map((b, bi) => (
@@ -124,14 +193,18 @@ export function SlidesTab({ topicId, data }: { topicId: number; data: SlidesTabD
             <div className="min-h-[280px] p-4">
               <div className="mb-3 flex items-start gap-3">
                 <div className="mt-1 h-7 w-1 shrink-0 rounded-pill bg-brand" />
-                <h3 className="text-[19px] font-extrabold leading-snug text-ink">{slide.title}</h3>
+                <h3 className="text-section font-extrabold leading-snug text-ink">{slide.title}</h3>
               </div>
               {slide.imageUrl && (
-                <img
-                  src={`${API_URL}${slide.imageUrl}`}
-                  alt=""
-                  className="my-4 max-h-72 w-full rounded-control border border-line object-contain"
-                />
+                <div className="my-4">
+                  <SlideImage
+                    src={`${API_URL}${slide.imageUrl}`}
+                    alt={slide.title}
+                    // Mobilda viewport'ga nisbatan — 288px qat'iy balandlik
+                    // telefonda diagrammani juda kichraytirib yuborardi.
+                    className="max-h-[45dvh] w-full rounded-control border border-line object-contain sm:max-h-72"
+                  />
+                </div>
               )}
               <ul className="mt-3 space-y-2.5">
                 {slide.bullets.map((b, bi) => (
@@ -151,7 +224,7 @@ export function SlidesTab({ topicId, data }: { topicId: number; data: SlidesTabD
             <button
               onClick={() => go(-1)}
               disabled={i === 0}
-              className="flex h-9 w-9 items-center justify-center rounded-control border border-line text-ink-soft transition-colors hover:bg-surface-raised hover:text-ink disabled:opacity-30"
+              className="flex h-11 w-11 items-center justify-center rounded-control border border-line text-ink-soft transition-colors hover:bg-surface-raised hover:text-ink disabled:opacity-30"
               aria-label="prev"
             >
               <Icon icon={ChevronLeft} size={17} />
@@ -162,7 +235,7 @@ export function SlidesTab({ topicId, data }: { topicId: number; data: SlidesTabD
             <button
               onClick={() => go(1)}
               disabled={i === total - 1}
-              className="flex h-9 w-9 items-center justify-center rounded-control border border-line text-ink-soft transition-colors hover:bg-surface-raised hover:text-ink disabled:opacity-30"
+              className="flex h-11 w-11 items-center justify-center rounded-control border border-line text-ink-soft transition-colors hover:bg-surface-raised hover:text-ink disabled:opacity-30"
               aria-label="next"
             >
               <Icon icon={ChevronRight} size={17} />

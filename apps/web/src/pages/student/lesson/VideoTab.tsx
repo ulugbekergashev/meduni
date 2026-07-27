@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { Captions, CheckCircle2 } from "lucide-react";
+import { Captions, CheckCircle2, Maximize2 } from "lucide-react";
 import { Icon } from "@meduni/ui";
 import { API_URL } from "../../../lib/api";
 import { useVideoProgress, type VideoTabData } from "../api";
@@ -99,13 +99,22 @@ export function VideoTab({
   if (failed || !data.hasMp4) {
     return (
       <div className="rounded-card border border-line bg-surface p-4 text-center shadow-sm">
-        <p className="text-[14.5px] font-medium text-ink-soft">{t("videoUnavailable")}</p>
+        <p className="text-note font-medium text-ink-soft">{t("videoUnavailable")}</p>
       </div>
     );
   }
 
+  /** To'liq ekran — mobilda asosiy tomosha rejimi (telefonni yon burib ko'rish). */
+  const goFullscreen = () => {
+    const el = ref.current as (HTMLVideoElement & { webkitEnterFullscreen?: () => void }) | null;
+    if (!el) return;
+    // iOS Safari <video> uchun standart Fullscreen API'ni qo'llamaydi.
+    if (typeof el.webkitEnterFullscreen === "function") el.webkitEnterFullscreen();
+    else void el.requestFullscreen?.();
+  };
+
   return (
-    <div className="mx-auto max-w-5xl space-y-4">
+    <div className="mx-auto max-w-5xl space-y-3">
       {/* Kino rejimi (Theater mode) uslubidagi media player */}
       <div className="relative overflow-hidden rounded-[16px] bg-black shadow-2xl ring-1 ring-black/5">
         <video
@@ -152,27 +161,38 @@ export function VideoTab({
         )}
       </div>
 
-      {/* Ostki boshqaruv va status paneli */}
-      <div className="flex items-center justify-between gap-4 rounded-[12px] bg-surface p-4 shadow-sm border border-line">
-        {data.hasSrt && (
+      {/* Ostki boshqaruv va status paneli — mobilda ustma-ust, desktopda yonma-yon */}
+      <div className="flex flex-col gap-3 rounded-control border border-line bg-surface p-3 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:p-4">
+        <div className="flex items-center gap-2">
+          {data.hasSrt && (
+            <button
+              onClick={() => setCaptions((c) => !c)}
+              className={`inline-flex min-h-[44px] items-center gap-2 rounded-pill border px-4 text-note font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
+                captions ? "border-violet bg-violet-soft text-violet" : "border-line text-ink-soft hover:bg-surface-raised hover:text-ink"
+              }`}
+            >
+              <Icon icon={Captions} size={18} />
+              {t("subtitles")}
+            </button>
+          )}
+          {/* Mobilda to'liq ekran — telefonni yon burib ko'rish uchun asosiy tugma. */}
           <button
-            onClick={() => setCaptions((c) => !c)}
-            className={`inline-flex items-center gap-2 rounded-pill border px-4 py-2 text-[14px] font-bold transition-all ${
-              captions ? "border-violet bg-violet-soft text-violet" : "border-line text-ink-soft hover:bg-surface-raised hover:text-ink"
-            }`}
+            onClick={goFullscreen}
+            aria-label={t("fullscreen")}
+            className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-2 rounded-pill border border-line px-4 text-note font-bold text-ink-soft transition-all hover:bg-surface-raised hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand sm:hidden"
           >
-            <Icon icon={Captions} size={18} />
-            {t("subtitles")}
+            <Icon icon={Maximize2} size={18} />
+            {t("fullscreen")}
           </button>
-        )}
-        <div className="ml-auto flex-1 max-w-[280px]">
+        </div>
+        <div className="w-full sm:ml-auto sm:max-w-[280px] sm:flex-1">
           <div className="mb-2 flex items-center justify-between">
             {done ? (
-              <span className="inline-flex items-center gap-1.5 text-[14px] font-bold text-emerald">
+              <span className="inline-flex items-center gap-1.5 text-note font-bold text-emerald">
                 <Icon icon={CheckCircle2} size={16} /> {t("videoDone")}
               </span>
             ) : (
-              <span className="text-[13.5px] font-medium text-ink-soft">
+              <span className="text-note font-medium text-ink-soft">
                 {t("videoNeed", { threshold })} <span className="font-bold text-ink">({shownPct}%)</span>
               </span>
             )}

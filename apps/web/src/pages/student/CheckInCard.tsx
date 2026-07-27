@@ -131,7 +131,10 @@ export function CheckInCard() {
     >
       <div className="pointer-events-none absolute -right-10 -top-10 h-36 w-36 rounded-full bg-white/10 blur-3xl" />
 
-      <div className="relative flex flex-wrap items-center gap-4">
+      {/* Mobilda ustma-ust (CTA to'liq kenglikda), sm+ da yonma-yon.
+          Bu karta asosan TELEFONDA ishlatiladi — darsda passkey bilan
+          belgilanish, shuning uchun mobil ko'rinish birlamchi. */}
+      <div className="relative flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
         <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/15">
           <Icon icon={showDone ? CheckCircle2 : ScanFace} size={30} />
         </div>
@@ -171,7 +174,7 @@ export function CheckInCard() {
           <button
             onClick={() => run()}
             disabled={busy}
-            className="flex shrink-0 items-center gap-2 rounded-control bg-white/95 px-5 py-3 text-body font-bold text-brand-tint shadow-sm transition-all hover:scale-105 hover:bg-white disabled:cursor-not-allowed disabled:opacity-80"
+            className="flex w-full min-h-[52px] shrink-0 items-center justify-center gap-2 rounded-control bg-white/95 px-5 py-3 text-body font-bold text-brand-tint shadow-sm transition-all hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:cursor-not-allowed disabled:opacity-80 sm:w-auto sm:hover:scale-105"
           >
             {busy ? <Icon icon={Loader2} size={18} className="animate-spin" /> : <Icon icon={ScanFace} size={18} />}
             {phase === "gps" ? t("checkingGps") : phase === "faceid" ? t("scanning") : t("checkIn")}

@@ -1707,7 +1707,12 @@
     "tab_materials": "Текст материалов",
     "filesN": "{{n}} файлов",
     "slidesOutline": "Текст",
-    "slidesCarousel": "Слайды"
+    "slidesCarousel": "Слайды",
+    "fullscreen": "Во весь экран",
+    "zoomImage": "Увеличить изображение",
+    "close": "Закрыть",
+    "downloadPdf": "Скачать PDF",
+    "slidesDone": "Просмотрено"
   },
   "search": {
     "placeholder": "Поиск… (студент, группа, курс)",
