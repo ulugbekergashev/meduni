@@ -253,6 +253,7 @@ export function CoursesPage() {
           onRetry={() => list.refetch()}
         >
           <DataTable
+            hideOnMobile={[3, 4, 5, 6]}
             headers={[
               t("courseName"),
               t("teacher"),

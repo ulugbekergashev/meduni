@@ -66,7 +66,12 @@ export function BottomNav({ items, primaryCount = 4, moreLabel, moreExtra, LinkC
     <>
       <nav
         className={cls(
-          "fixed inset-x-0 bottom-0 z-40 flex items-stretch border-t border-line bg-surface/95 backdrop-blur-xl lg:hidden",
+          // ⚠️ `bg-surface/95` ISHLAMAYDI: ranglar tokenlarda to'liq rang
+          // (`var(--surface)`) sifatida saqlanadi, Tailwind shaffoflik
+          // modifikatori uchun esa kanal qiymatlari kerak — natijada klass
+          // umuman generatsiya qilinmaydi va menyu SHAFFOF bo'lib qoladi
+          // (kontent ostidan ko'rinib turadi). Shuning uchun solid `bg-surface`.
+          "fixed inset-x-0 bottom-0 z-40 flex items-stretch border-t border-line bg-surface lg:hidden",
           "pb-[env(safe-area-inset-bottom)] shadow-[0_-2px_16px_rgb(0,0,0,0.06)]"
         )}
         aria-label="asosiy navigatsiya"
