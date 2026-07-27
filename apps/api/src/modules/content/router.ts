@@ -91,20 +91,6 @@ contentRouter.post(
 );
 
 contentRouter.post(
-  "/:id/factcheck",
-  wrap(async (req, res) => res.json(await svc.runFactcheck(parseId(req.params.id), req.user!.id)))
-);
-
-const resolveSchema = z.object({ flagIndex: z.number().int().min(0), resolution: z.enum(["confirmed", "fixed"]) });
-contentRouter.post(
-  "/:id/factcheck/resolve",
-  wrap(async (req, res) => {
-    const b = parseBody(resolveSchema, req.body);
-    res.json(await svc.resolveFactcheckFlag(parseId(req.params.id), req.user!.id, b.flagIndex, b.resolution));
-  })
-);
-
-contentRouter.post(
   "/:id/publish",
   wrap(async (req, res) => res.json(await svc.publishContent(parseId(req.params.id), req.user!.id)))
 );

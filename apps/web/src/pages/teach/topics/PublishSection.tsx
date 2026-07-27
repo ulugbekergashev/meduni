@@ -36,8 +36,7 @@ function ContentPublish({ topic, item }: { topic: TopicDetail; item: ContentSumm
   const kindName = tg(kindKey[item.kind] ?? "quizTitle");
   const digestOk = topic.generateUnlocked;
   const reviewedOk = item.reviewOpened;
-  const factcheckOk = item.factcheckStatus === "clean" || item.factcheckStatus === "resolved";
-  const allOk = digestOk && reviewedOk && factcheckOk;
+  const allOk = digestOk && reviewedOk;
   const published = item.status === "published";
 
   return (
@@ -59,7 +58,6 @@ function ContentPublish({ topic, item }: { topic: TopicDetail; item: ContentSumm
           <div className="space-y-2">
             <CheckRow ok={digestOk} label={t("cDigest")} doHint={t("cDigestDo")} />
             <CheckRow ok={reviewedOk} label={t("cReviewed")} doHint={t("cReviewedDo")} />
-            <CheckRow ok={factcheckOk} label={t("cFactcheck")} doHint={t("cFactcheckDo")} />
           </div>
           <Button
             variant="deep"
@@ -94,7 +92,7 @@ function ContentPublish({ topic, item }: { topic: TopicDetail; item: ContentSumm
 }
 
 export function PublishSection({ topic }: { topic: TopicDetail }) {
-  const { t } = useTranslation(undefined, { keyPrefix: "factcheck" });
+  const { t } = useTranslation(undefined, { keyPrefix: "publish" });
   if (topic.content.length === 0) {
     return <p className="text-body text-ink-soft">{t("needContent")}</p>;
   }

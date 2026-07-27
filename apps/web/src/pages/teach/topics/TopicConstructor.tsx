@@ -8,7 +8,6 @@ import {
   ChevronRight,
   FileStack,
   Rocket,
-  ShieldCheck,
   Sparkles,
   type LucideIcon,
 } from "lucide-react";
@@ -16,20 +15,18 @@ import { Badge, Button, Card, Icon, Spinner, cls } from "@meduni/ui";
 import { MaterialsSection } from "./MaterialsSection";
 import { DigestSection } from "./DigestSection";
 import { GenerateSection } from "./GenerateSection";
-import { FactcheckSection } from "./FactcheckSection";
 import { PublishSection } from "./PublishSection";
 import { TopicUnlockRule } from "./TopicUnlockRule";
 import { useTopicDetail, type TopicDetail } from "./api";
 
-type StepKey = "material" | "digest" | "generate" | "factcheck" | "publish";
+type StepKey = "material" | "digest" | "generate" | "publish";
 type StepState = "done" | "current" | "locked";
 
-const STEP_ORDER: StepKey[] = ["material", "digest", "generate", "factcheck", "publish"];
+const STEP_ORDER: StepKey[] = ["material", "digest", "generate", "publish"];
 const STEP_ICON: Record<StepKey, LucideIcon> = {
   material: FileStack,
   digest: BookOpen,
   generate: Sparkles,
-  factcheck: ShieldCheck,
   publish: Rocket,
 };
 // "material" step title lives under sections.materials (plural); others match.
@@ -37,7 +34,6 @@ const SECTION_KEY: Record<StepKey, string> = {
   material: "materials",
   digest: "digest",
   generate: "generate",
-  factcheck: "factcheck",
   publish: "publish",
 };
 
@@ -46,22 +42,18 @@ function computeSteps(topic: TopicDetail) {
   const materialDone = topic.digestUnlocked;
   const digestApproved = topic.generateUnlocked;
   const hasContent = topic.content.length > 0;
-  const factcheckDone =
-    hasContent && topic.content.every((c) => c.factcheckStatus === "clean" || c.factcheckStatus === "resolved");
   const anyPublished = topic.content.some((c) => c.status === "published");
 
   const available: Record<StepKey, boolean> = {
     material: true,
     digest: materialDone,
     generate: digestApproved,
-    factcheck: hasContent,
     publish: hasContent,
   };
   const done: Record<StepKey, boolean> = {
     material: materialDone,
     digest: digestApproved,
     generate: hasContent,
-    factcheck: factcheckDone,
     publish: anyPublished,
   };
   return { available, done };
@@ -222,7 +214,6 @@ export function TopicConstructor() {
         {active === "material" && <MaterialsSection topicId={topicId} materials={topic.materials} />}
         {active === "digest" && <DigestSection topic={topic} />}
         {active === "generate" && <GenerateSection topic={topic} />}
-        {active === "factcheck" && <FactcheckSection topic={topic} />}
         {active === "publish" && (
           <div className="space-y-4">
             <PublishSection topic={topic} />

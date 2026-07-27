@@ -199,6 +199,12 @@ o'xshaydi, qiyinligidan"*. Sabab **layout emas** edi — uchala ustun bir xil
   talaba GradesPage'da guruh reytingini ko'radi. (Ilgari faqat o'z o'rni edi —
   buyurtmachi ochiq leaderboard so'radi.)
 - **Hech narsa avtomatik publish bo'lmaydi.** Ikki qulf: (1) o'qituvchi konspektni tasdiqlaydi, keyingina generatsiya; (2) o'qituvchi kontentни tasdiqlaydi, keyingina talaba ko'radi.
+  ⚠️ **FAKTCHEK OLIB TASHLANDI (2026-07-27, buyurtmachi qarori).** Konstruktor endi
+  4 bosqichli: Material → Konspekt → Generatsiya → Chop etish. Chop etish shartlari:
+  konspekt tasdiqlangan + kontent tahrirlagichda ochilgan (uchinchi "faktchek toza"
+  sharti yo'q). Ikki qulf va "kontent tahrirlansa tasdiq bekor bo'ladi" qoidasi
+  o'z kuchida. `ContentItem.factcheck*` ustunlari bazada qoladi (Glossary presedenti),
+  kod ularni ishlatmaydi.
 - **AI faqat yuklangan materialdan** (RAG). O'zidan fakt/doza/protokol qo'shmaydi. Faktcheck bu buzilmaganini tekshiradi.
 - Yo'qlama — sodda (o'qituvchi qo'lda belgilaydi: keldi/kelmadi/kechikdi/sababli). QR YO'Q.
 - Mavzular ketma-ket ochiladi (keyingisi oldingisi tugagach).
