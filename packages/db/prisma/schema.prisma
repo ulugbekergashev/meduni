@@ -1,5 +1,11 @@
 generator client {
   provider = "prisma-client-js"
+  // relationJoins — bog'langan ma'lumotni BITTA SQL bilan olish imkonini beradi
+  // (`relationLoadStrategy: "join"`). Sukut bo'yicha Prisma har bog'lanish uchun
+  // alohida so'rov yuboradi; baza uzoq regionda bo'lganda (har so'rov ~150ms)
+  // bitta sahifa 25-30 so'rovga bo'linib, soniyalab kutish paydo bo'ladi.
+  // ⚠️ Opt-in: faqat aniq belgilangan og'ir so'rovlarda ishlatiladi.
+  previewFeatures = ["relationJoins"]
 }
 
 datasource db {
