@@ -1795,3 +1795,75 @@ hali qilinmagan.
 preview origin ruxsat, begona origin bloklandi (500'siz), `/health` OK; dev
 rejimda regressiya yo'q (`SameSite=Lax`, localhost:3000 ruxsat); web+API build
 toza (`VITE_API_URL` bundle'ga tushishi tasdiqlandi).
+
+---
+
+## 11. MOBIL MOSLASHUV (2026-07-27) — pastki tab-bar, uchala rol
+
+Reja: `.claude/plans/giggly-gliding-reddy.md`. Ilgari `SidebarLayout`da mobil
+rejim UMUMAN yo'q edi — yon panel 272px joy egallardi (375px ekranda uchdan
+ikkisi). Butun ilovada atigi 180 ta responsive prefiks bor edi.
+
+**Yangi umumiy komponentlar (`packages/ui`):**
+- **`Sheet.tsx`** — pastdan chiqadigan panel: drag-to-dismiss, backdrop/Escape,
+  fon skroli qulfi, safe-area, `useReducedMotion`. Mobil navigatsiya, `Modal`ning
+  mobil ko'rinishi, dars sahifasidagi rail/chat — hammasi shunga tayanadi.
+- **`BottomNav.tsx`** — 4 bo'lim + "Yana" (qolganlari + til/tema/chiqish sheet
+  ichida). Faol holat `layoutId` bilan suziladi, badge, tap-target 56px.
+- **`useMediaQuery.ts`** — `MOBILE_QUERY` (<640) / `COMPACT_QUERY` (<1024).
+  Layout MOBILDA BOSHQACHA qurilganda ishlatiladi; shunchaki yashirish kerak
+  bo'lsa Tailwind `hidden lg:block` afzal.
+
+**Qobiq:** `<aside>` → `hidden lg:flex`; mobilda brend headerda; kontent tagida
+pastki menyu balandligicha padding (safe-area bilan); `--header-h` va
+`--bottomnav-h` tokenlari (`tokens.css`). `Modal` <640px da avtomat `Sheet`
+bo'ladi — 21 ta chaqiruv joyi o'zgarmadi.
+
+**Nav qisqa yorliqlari:** `navShort.*` i18n bo'limi + `SidebarItem.shortLabel`
+("Bosh sahifa" 78px katakka sig'maydi). Tab-barda `text-micro` (13px — mutlaq
+minimum, §4).
+
+**Sahifa naqshlari:** vaqt×kun to'rlari (talaba jadvali 820px, o'qituvchi
+"Darslarim" 860px) mobilda **KUN-AGENDA**ga aylanadi (`lg:hidden` / `hidden
+lg:block` juftligi). Keng jadvallar: `DataTable` ga `hideOnMobile={[...]}`
+(nth-child variantlari STATIK yozilgan — Tailwind JIT dinamik class nomlarini
+ko'rmaydi); davomat jadvalida ikkilamchi ustunlar `hidden sm:table-cell`.
+Dars sahifasi mobilda bir ustun: rail va AI-tutor `Sheet`da, fokus rejimida
+(test/keys/natija) ular UMUMAN render bo'lmaydi — halollik strukturaviy.
+Slaydlarda diagramma **lightbox** (to'liq ekran + zoom), video'da to'liq ekran
+tugmasi (iOS `webkitEnterFullscreen`).
+
+### ⛔ Bu ishda topilgan UCH bug (hammasi tuzatildi)
+
+1. **helmet CORP — jonli saytni buzardi.** Helmet sukut bo'yicha
+   `Cross-Origin-Resource-Policy: same-origin` qo'yadi; web (*.vercel.app) va
+   API (*.onrender.com) har xil domenda → brauzer API'dan kelgan BARCHA rasm/
+   video/PDF/audio'ni bloklardi (`net::ERR_BLOCKED_BY_RESPONSE.NotSameOrigin`).
+   Endi `crossOriginResourcePolicy: { policy: "cross-origin" }`.
+2. **rate-limit CORS'dan OLDIN turardi.** Limit oshganda 429 CORS sarlavhasiz
+   ketardi va brauzer buni "No Access-Control-Allow-Origin" deb ko'rsatardi —
+   haqiqiy sabab yashirinardi. CORS endi oldinda; limit 100→300; OPTIONS skip.
+3. **`Charts.BarRow` har doim `<button>` qaytarardi** (bosiladigan bo'lmasa ham)
+   → tugma bo'lgan karta ichida `<button>` ichida `<button>`. Endi `onClick`
+   bo'lmasa `<div>`.
+
+### ⚠️ OCHIQ QOLGAN tizimli muammo — token ranglarda shaffoflik
+
+`bg-surface/95`, `bg-brand/10`, `border-brand/30`, `ring-brand/10` va shunga
+o'xshash **~40 ta ishlatish qurilgan CSS'da UMUMAN YO'Q** (`grep 'bg-surface\/'
+dist/*.css` = 0). Sabab: ranglar tokenlarda to'liq rang (`var(--surface)`)
+sifatida saqlanadi, Tailwind esa `/NN` uchun kanal qiymatlarini talab qiladi.
+Ya'ni bu klasslar **jimgina hech narsa qilmaydi** (chegara/ring/tint yo'q).
+Pastki menyu va header shu sababli FONSIZ qolgan edi — ikkalasi solid tokenga
+o'tkazildi. Qolganini tuzatish uchun tokenlarni kanal ko'rinishiga
+(`--surface: 255 255 255` + `rgb(var(--surface) / <alpha-value>)`) o'tkazish
+kerak — bu butun palitraga ta'sir qiladi, ALOHIDA ish sifatida rejalashtirilsin.
+
+**Tekshirish uslubi:** Playwright + Chrome (`channel:"chrome"`), real login,
+iPhone 14 (390×844) + landscape (844×390) + planshet (768) + desktop (1440).
+Mezon: `document.documentElement.scrollWidth - innerWidth === 0` va
+`main *` ichida viewport'dan keng element yo'qligi. 26 sahifa, uchala rol.
+
+⚠️ **Demo ma'lumot:** bazada Presentation yo'q edi — `scripts/demoSlides.ts`
+(3 slayd + sharp bilan chizilgan yorliqli diagramma) qo'shildi. **Video hali
+ham yo'q** — VideoTab o'zgarishlari vizual tekshirilmagan.
