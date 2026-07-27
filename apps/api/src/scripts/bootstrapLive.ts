@@ -28,10 +28,14 @@ const STEPS: { title: string; file: string; args?: string[]; cwd?: string }[] = 
 
 function run(step: (typeof STEPS)[number]): boolean {
   console.log(`\n──────── ${step.title}`);
-  const res = spawnSync("npx", ["tsx", step.file, ...(step.args ?? [])], {
+  const useShell = process.platform === "win32";
+  // ⚠️ Windows'da shell rejimida argumentlar qo'shilib ketadi — yo'lda bo'shliq
+  // bo'lsa ("C:\Users\Hp Vitus Gaming\...") qo'shtirnoqsiz sinadi.
+  const q = (s: string) => (useShell ? `"${s}"` : s);
+  const res = spawnSync("npx", ["tsx", q(step.file), ...(step.args ?? [])], {
     cwd: step.cwd ?? API,
     stdio: "inherit",
-    shell: process.platform === "win32",
+    shell: useShell,
     env: { ...process.env, STORAGE_DRIVER: process.env.STORAGE_DRIVER ?? "db" },
   });
   return res.status === 0;

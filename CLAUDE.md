@@ -1689,8 +1689,18 @@ Barcha modullar tugadi (1-17).
   (progress+test+keys), `computeStudentAutoTasks`. **Jonli o'lchov (oldin → keyin):**
   dars sahifasi 7.3-10s → **2.9-3.3s**, bosh sahifa 5.2-7.5s → **2.0-3.1s**, kurslar
   5.0s → **1.3s**, vazifalar 5.8s → **1.4-2.1s**, baholar/davomat → **0.7-1.2s**.
-  ⚠️ Qolgan kechikish manbai — DB/API turli regionda; tubdan yechim ikkalasini bir
-  regionga qo'yish (Supabase'ni Frankfurt'ga yoki Render'ni Singapore'ga).
+  **(C2) REGION KO'CHIRILDI — asosiy tezlik yechimi (o'sha kuni).** Baza Frankfurt'ga
+  (`eu-central-1`) ko'chdi, ya'ni endi Render bilan BIR REGIONDA. Region keyin
+  o'zgartirilmaydi — yangi Supabase loyihasi ochildi, `prisma db push` + yangi
+  `scripts/bootstrapLive.ts` (seed → demoRestore → demoLesson(2) → demoLive,
+  `STORAGE_DRIVER=db` bilan) bazani bitta buyruqda tikladi; eski loyiha zaxira
+  sifatida qoldirildi (`.env`da eski URL izohda). **Jonli o'lchov (region ko'chgach):**
+  dars sahifasi 2.9-3.3s → **0.38-0.45s**, bosh sahifa → **0.38-0.44s**, kurslar/
+  vazifalar/baholar/davomat → **0.35-0.5s**, o'qituvchi progress+xatolar xaritasi →
+  **0.39-0.5s**. Ya'ni boshlang'ich holatga nisbatan **~20 barobar**. Smoke 32/32
+  qayta o'tdi, AI-tutor yangi bazada ham konspektga tayanib javob berdi.
+  ⚠️ Yangi bazada `file_blobs` bo'sh bo'lgani uchun materiallar `STORAGE_DRIVER=db`
+  bilan qayta yozildi — bu qadam unutilsa talaba material faylini ko'ra olmaydi.
   **(D) Jonli demo ma'lumoti** — `scripts/demoLive.ts` (idempotent): 10 talaba har biri
   o'z profili bilan (davomat/test/keys), 2 mavzuga tasdiqlangan **bo'limli konspekt +
   checkpoint savollari + atamalar** + materiallar + havolalar, Nefrologiyaga chop

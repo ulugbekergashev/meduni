@@ -68,6 +68,20 @@ git push -u origin main
    **Session pooler** IPv4 va Prisma'ning `db push`i bilan ham ishlaydi.
 4. `PAROL` qismini haqiqiy parolga almashtiring. Bu — `DATABASE_URL`.
 
+⚠️⚠️ **REGION — eng katta tezlik omili (2026-07-27 da o'lchandi).** Supabase
+loyihasi va Render servisi **BIR REGIONDA** bo'lishi SHART (ikkalasi ham
+Frankfurt / `eu-central-1`). Ilgari baza Singapurda (`ap-southeast-1`), server
+Frankfurtda edi — har SQL so'rovi ~150-300ms bo'lib, sahifalar **5-10 soniya**
+ochilardi. Bir regionga keltirilgach o'sha sahifalar **0.35-0.5 soniya**.
+Region keyinchalik O'ZGARTIRILMAYDI — noto'g'ri tanlansa loyiha qayta yaratiladi;
+`apps/api/src/scripts/bootstrapLive.ts` yangi bazani bitta buyruq bilan to'ldiradi
+(`cd apps/api && STORAGE_DRIVER=db npx tsx src/scripts/bootstrapLive.ts`).
+
+⚠️ **Ulanish limiti:** Session pooler butun loyihaga ~15 mijoz beradi; Prisma esa
+sukut bo'yicha `CPU*2+1` ochadi. Kod URL'ga `connection_limit=5` qo'shadi
+(`packages/db/src/index.ts`, `DB_CONNECTION_LIMIT` bilan o'zgartiriladi). Dev
+mashinasi ham shu bazaga ulansa shu limit yodda bo'lsin.
+
 ---
 
 ## 3. Render — API
@@ -177,12 +191,11 @@ Tekshirish: `https://meduni-api.onrender.com/health` → `{"ok":true}`
 
 1. **Render Free 15 daqiqada uxlaydi.** Keyingi kirgan odam ~50 soniya kutadi.
    Taqdimotdan 1 daqiqa oldin saytni ochib "uyg'otib" qo'ying.
-2. **Yuklangan fayllar doimiy emas.** Render Free'da disk vaqtinchalik: server
-   qayta ishga tushsa yuklangan materiallar, generatsiya qilingan rasm/video/audio
-   **o'chadi** (baza — Supabase'da, u saqlanadi). Taqdimotdan oldin kerakli
-   materialni qayta yuklang.
-   → Doimiy yechim: fayllarni **Supabase Storage**ga ko'chirish (`lib/storage.ts`
-   yuzasi kichik — 6 funksiya). Kerak bo'lsa aytasiz, qilamiz.
+2. ~~Yuklangan fayllar doimiy emas~~ — **HAL QILINDI (2026-07-27).** Fayllar endi
+   bazada saqlanadi (`file_blobs` jadvali, `lib/storage.ts` ning `db` drayveri),
+   Render diski o'chsa ham qoladi. ⚠️ Mahalliy skript bilan material yozganda
+   `STORAGE_DRIVER=db` ber — aks holda fayl mahalliy diskka tushadi va serverда
+   ko'rinmaydi.
 3. **Supabase Free 1 hafta faolliksizdan keyin loyihani pauza qiladi** — panelдан
    bir bosishda tiklanadi.
 
