@@ -1707,7 +1707,12 @@
     "tab_materials": "Material matni",
     "filesN": "{{n}} fayl",
     "slidesOutline": "Matn",
-    "slidesCarousel": "Slaydlar"
+    "slidesCarousel": "Slaydlar",
+    "fullscreen": "Toʻliq ekran",
+    "zoomImage": "Rasmni kattalashtirish",
+    "close": "Yopish",
+    "downloadPdf": "PDF yuklab olish",
+    "slidesDone": "Koʻrildi"
   },
   "search": {
     "placeholder": "Qidirish… (talaba, guruh, kurs)",

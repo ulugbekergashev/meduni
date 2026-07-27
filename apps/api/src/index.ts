@@ -31,7 +31,20 @@ const serveWeb = process.env.SERVE_WEB === "1";
 // bitta proxy IP'si deb hisoblaydi (va express-rate-limit ogohlantirish beradi).
 app.set("trust proxy", 1);
 
-app.use(helmet(serveWeb ? { contentSecurityPolicy: false } : undefined));
+app.use(
+  helmet({
+    // SERVE_WEB rejimida SPA va media bloklanmasin.
+    ...(serveWeb ? { contentSecurityPolicy: false as const } : {}),
+    // ⚠️ Helmet sukut bo'yicha `Cross-Origin-Resource-Policy: same-origin`
+    // qo'yadi. Web (*.vercel.app) va API (*.onrender.com) HAR XIL domenda
+    // bo'lgani uchun bu brauzerga API'dan kelgan HAR QANDAY media'ni
+    // bloklashni buyuradi: slayd rasmlari, video, PDF, audio —
+    // `net::ERR_BLOCKED_BY_RESPONSE.NotSameOrigin`.
+    // Resurslar baribir cookie-auth bilan himoyalangan (CORS origin ro'yxati
+    // ham kuchda), shuning uchun cross-origin ruxsati xavfsiz.
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+  })
+);
 
 // ⚠️ CORS rate-limit'DAN OLDIN turishi SHART. Aks holda limit oshganda
 // express-rate-limit 429 javobini CORS sarlavhalarisiz yuboradi va brauzer

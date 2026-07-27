@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ArrowLeft, PanelLeft, Sparkles, X } from "lucide-react";
-import { Icon, Spinner, cls } from "@meduni/ui";
+import { COMPACT_QUERY, Icon, Sheet, Spinner, cls, useMediaQuery } from "@meduni/ui";
 import { apiErrorMessage } from "../../../lib/api";
 import { useLocale } from "../../../lib/useLocale";
 import { useLesson, useMarkSectionRead, type Lesson } from "../api";
@@ -88,10 +88,19 @@ export function LessonPage() {
   /** TOC'dan tanlangan bo'lim (skroll uchun) va skrollda ko'rinayotgani. */
   const [jumpTo, setJumpTo] = useState<number | null>(null);
   const [visibleSection, setVisibleSection] = useState<number | null>(null);
+  /** Mobilda (lg dan kichik) 3 ustun sig'maydi: kontent yolg'iz qoladi, rail va
+   *  chat esa pastdan chiqadigan `Sheet`da ochiladi. Desktop tartibi o'zgarmaydi. */
+  const compact = useMediaQuery(COMPACT_QUERY);
+  /** Mobil panellar HAR DOIM yopiq boshlanadi (desktopdagi "rail default ochiq"
+   *  qoidasi bu yerda ishlamaydi — sahifa ochilishi bilan sheet chiqib kelardi). */
+  const [mobileRail, setMobileRail] = useState(false);
+  const [mobileChat, setMobileChat] = useState(false);
+
   const [railOpen, setRailOpen] = useState(
     () => typeof window === "undefined" || window.localStorage.getItem(RAIL_KEY) !== "closed"
   );
-  const toggleRail = () =>
+  const toggleRail = () => {
+    if (compact) return setMobileRail((o) => !o);
     setRailOpen((o) => {
       const next = !o;
       try {
@@ -99,11 +108,13 @@ export function LessonPage() {
       } catch {}
       return next;
     });
+  };
   // Chat default YOPIQ (foydalanuvchi: "chat ko'rinmasin, fokus markazda").
   const [chatOpen, setChatOpen] = useState(
     () => typeof window !== "undefined" && window.localStorage.getItem(CHAT_KEY) === "open"
   );
-  const toggleChat = () =>
+  const toggleChat = () => {
+    if (compact) return setMobileChat((o) => !o);
     setChatOpen((o) => {
       const next = !o;
       try {
@@ -111,6 +122,7 @@ export function LessonPage() {
       } catch {}
       return next;
     });
+  };
 
   if (q.isLoading) {
     return (
@@ -194,7 +206,14 @@ export function LessonPage() {
   const focusMode = !isStudyView;
   // O'rganish kontenti umuman bo'lmasa (faqat test bor demo mavzu kabi) — bo'sh
   // rail ko'rsatmaymiz; ContentPanel "tayyorlanmoqda" bo'sh-holatini to'liq eninда beradi.
-  const showRail = railOpen && studyBlocks.length > 0;
+  const hasStudy = studyBlocks.length > 0;
+  /** Desktop: rail grid ustuni sifatida. Mobil: `Sheet` ichida. */
+  const showRail = !compact && railOpen && hasStudy;
+  const railSheetOpen = compact && mobileRail && hasStudy;
+  const chatSheetOpen = compact && mobileChat;
+  /** Tugmalarning "yoqilgan" ko'rinishi ekran o'lchamiga qarab. */
+  const railActive = compact ? mobileRail : railOpen;
+  const chatActive = compact ? mobileChat : chatOpen;
 
   /** Test jarayonida (tugallanmagan urinish) — halollik rejimi (o'rganish
    *  ko'rinishiga qaytilganda material/chat qulflanadi). */
@@ -225,7 +244,7 @@ export function LessonPage() {
               title={t("stage_study")}
               className={cls(
                 "inline-flex items-center rounded-control p-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
-                railOpen ? "bg-brand-soft text-brand-tint" : "text-ink-faint hover:bg-surface-raised hover:text-ink"
+                railActive ? "bg-brand-soft text-brand-tint" : "text-ink-faint hover:bg-surface-raised hover:text-ink"
               )}
             >
               <Icon icon={PanelLeft} size={17} />
@@ -235,13 +254,14 @@ export function LessonPage() {
               title={t("chatTitle")}
               className={cls(
                 "inline-flex items-center gap-1.5 rounded-pill px-3 py-1.5 font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
-                chatOpen
+                chatActive
                   ? "bg-brand-soft text-brand-tint ring-1 ring-brand/30"
                   : "border border-brand/30 bg-gradient-to-r from-brand/15 to-violet/15 text-brand-tint hover:from-brand/25 hover:to-violet/25"
               )}
             >
-              <Icon icon={chatOpen ? X : Sparkles} size={16} />
-              <span className="text-note">{t("chatTitle")}</span>
+              <Icon icon={chatActive ? X : Sparkles} size={16} />
+              {/* Mobilda faqat ikonka — sarlavha qatorida joy tor. */}
+              <span className="hidden text-note sm:inline">{t("chatTitle")}</span>
             </button>
           </div>
         )}
@@ -341,11 +361,53 @@ export function LessonPage() {
           </div>
 
           {/* AI-tutor — YOPIQ bo'lsa umuman yo'q (fokus markazda); ochilsa keng panel.
-              Test paytida qulf. */}
+              Test paytida qulf. Mobilda bu ustun emas, pastdagi Sheet. */}
           <div className="order-2 flex min-h-0 flex-col overflow-hidden lg:order-3">
-            {chatOpen && <ChatPanel topicId={topicId} locked={quizRunning} onClose={toggleChat} />}
+            {!compact && chatOpen && <ChatPanel topicId={topicId} locked={quizRunning} onClose={toggleChat} />}
           </div>
         </div>
+      )}
+
+      {/* ——— Mobil panellar (lg dan kichik). Fokus rejimida (test/keys/natija)
+          ular umuman ochilmaydi — halollik strukturaviy. ——— */}
+      {compact && !focusMode && (
+        <>
+          <Sheet open={railSheetOpen} onClose={() => setMobileRail(false)} title={t("stage_study")}>
+            <StudyRail
+              lesson={lesson}
+              blocks={studyBlocks}
+              active={activeBlock}
+              onBlock={(v) => {
+                setJumpTo(null);
+                setView(v);
+                setMobileRail(false);
+              }}
+              sectionActive={visibleSection}
+              onSection={(i) => {
+                if (view !== "konspekt") setView("konspekt");
+                setJumpTo(i);
+                setMobileRail(false);
+                setTimeout(() => setJumpTo(null), 600);
+              }}
+              locked={quizRunning}
+              lockedNote={t("materialsLockedQuiz")}
+            />
+          </Sheet>
+
+          {/* Chat sheet'i balandroq: yozishmani ko'rish uchun. `disableDrag` —
+              ichidagi skroll bilan tortish jesti to'qnashmasin. */}
+          <Sheet
+            open={chatSheetOpen}
+            onClose={() => setMobileChat(false)}
+            title={t("chatTitle")}
+            className="h-[85dvh]"
+            disableDrag
+          >
+            <div className="flex h-[calc(85dvh-72px)] flex-col">
+              <ChatPanel topicId={topicId} locked={quizRunning} onClose={() => setMobileChat(false)} />
+            </div>
+          </Sheet>
+        </>
       )}
     </div>
   );
