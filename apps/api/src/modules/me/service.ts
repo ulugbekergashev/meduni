@@ -175,13 +175,7 @@ export async function studentFactsMap(studentId: number, course: CourseWithTopic
   const map = new Map<number, FullFacts>();
   if (topicIds.length === 0) return map;
 
-  const progressRows = await prisma.progress.findMany({
-    where: { studentId, topicId: { in: topicIds } },
-    select: { topicId: true, videoWatchedPct: true, slidesViewed: true, overriddenAt: true },
-  });
-  const progressByTopic = new Map(progressRows.map((r) => [r.topicId, r]));
-
-  // quizId -> topicId, caseId -> topicId
+  // quizId -> topicId, caseId -> topicId (xotirada, so'rovsiz)
   const quizToTopic = new Map<number, number>();
   const caseToTopic = new Map<number, number>();
   for (const topic of course.topics) {
@@ -191,30 +185,41 @@ export async function studentFactsMap(studentId: number, course: CourseWithTopic
     }
   }
 
+  // ⚠️ TEZLIK: uchala so'rov bir-biriga bog'liq emas — PARALLEL yuboriladi
+  // (ketma-ket bo'lsa uzoq bazada ~450ms sof kutish).
+  const [progressRows, attempts, caseAttempts] = await Promise.all([
+    prisma.progress.findMany({
+      where: { studentId, topicId: { in: topicIds } },
+      select: { topicId: true, videoWatchedPct: true, slidesViewed: true, overriddenAt: true },
+    }),
+    quizToTopic.size > 0
+      ? prisma.quizAttempt.findMany({
+          where: { studentId, quizId: { in: [...quizToTopic.keys()] }, finishedAt: { not: null } },
+          select: { quizId: true, scorePct: true },
+        })
+      : Promise.resolve([]),
+    caseToTopic.size > 0
+      ? prisma.caseAttempt.findMany({
+          where: { studentId, caseId: { in: [...caseToTopic.keys()] } },
+          select: { caseId: true, reviewedAt: true },
+        })
+      : Promise.resolve([]),
+  ]);
+
+  const progressByTopic = new Map(progressRows.map((r) => [r.topicId, r]));
+
   // Best finished quiz score per topic.
   const bestScore = new Map<number, number>();
-  if (quizToTopic.size > 0) {
-    const attempts = await prisma.quizAttempt.findMany({
-      where: { studentId, quizId: { in: [...quizToTopic.keys()] }, finishedAt: { not: null } },
-      select: { quizId: true, scorePct: true },
-    });
-    for (const a of attempts) {
-      const tid = quizToTopic.get(a.quizId)!;
-      bestScore.set(tid, Math.max(bestScore.get(tid) ?? 0, a.scorePct));
-    }
+  for (const a of attempts) {
+    const tid = quizToTopic.get(a.quizId)!;
+    bestScore.set(tid, Math.max(bestScore.get(tid) ?? 0, a.scorePct));
   }
 
   // Case submission / review per topic.
   const caseState = new Map<number, { submitted: boolean; reviewed: boolean }>();
-  if (caseToTopic.size > 0) {
-    const caseAttempts = await prisma.caseAttempt.findMany({
-      where: { studentId, caseId: { in: [...caseToTopic.keys()] } },
-      select: { caseId: true, reviewedAt: true },
-    });
-    for (const a of caseAttempts) {
-      const tid = caseToTopic.get(a.caseId)!;
-      caseState.set(tid, { submitted: true, reviewed: a.reviewedAt !== null });
-    }
+  for (const a of caseAttempts) {
+    const tid = caseToTopic.get(a.caseId)!;
+    caseState.set(tid, { submitted: true, reviewed: a.reviewedAt !== null });
   }
 
   for (const topic of course.topics) {
@@ -282,7 +287,15 @@ export async function enrolledCourseIds(studentId: number): Promise<number[]> {
 }
 
 export async function loadCourse(courseId: number): Promise<CourseWithTopics> {
-  const course = await prisma.course.findUnique({ where: { id: courseId }, include: courseInclude });
+  // ⚠️ TEZLIK: `relationLoadStrategy: "join"` — bog'langan ma'lumot BITTA SQL
+  // bilan olinadi. Sukut ("query") rejimida Prisma har bog'lanishga alohida
+  // so'rov yuboradi: kurs+mavzular+kontent+test+savollar+keys+slayd+video =
+  // ~10 ta so'rov, uzoq bazada esa bu 1.5 soniya sof kutish.
+  const course = await prisma.course.findUnique({
+    where: { id: courseId },
+    include: courseInclude,
+    relationLoadStrategy: "join",
+  });
   if (!course) throw notFound("Kurs");
   // Only topics with at least one PUBLISHED content item are visible to students;
   // topics still being built (no published content) don't appear on the path at all.

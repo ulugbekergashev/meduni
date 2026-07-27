@@ -43,6 +43,8 @@ export async function getTopicLesson(studentId: number, topicId: number) {
       links: { orderBy: [{ orderIndex: "asc" }, { id: "asc" }] },
       digest: true,
     },
+    // Bitta SQL (yuqoridagi izohga qarang) — aks holda 7 ta alohida so'rov.
+    relationLoadStrategy: "join",
   });
   const progressPromise = prisma.progress.findUnique({ where: { studentId_topicId: { studentId, topicId } } });
   const readsPromise = prisma.sectionRead.findMany({ where: { studentId, topicId }, select: { sectionIndex: true } });
