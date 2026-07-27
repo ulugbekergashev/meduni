@@ -180,7 +180,10 @@ export function StudentsPage() {
           emptyText={hasFilters ? t("emptyFiltered") : t("empty")}
           onRetry={() => list.refetch()}
         >
-          <DataTable headers={[t("table.name"), t("table.group"), t("table.progress"), t("table.attendance"), t("table.active"), t("table.actions")]}>
+          <DataTable
+            hideOnMobile={[2, 4, 5]}
+            headers={[t("table.name"), t("table.group"), t("table.progress"), t("table.attendance"), t("table.active"), t("table.actions")]}
+          >
             {items.map((u) => (
               <tr key={u.id} className="border-b border-line transition-colors last:border-0 hover:bg-bg/60">
                 <td className="px-4 py-3">

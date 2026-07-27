@@ -269,8 +269,44 @@ export function TeachSchedulePage() {
           <div />
         </AsyncSection>
       ) : (
-        /* Haftalik to'r: vaqt qatorlari × 7 kun ustuni */
-        <Card className="!p-0 overflow-x-auto">
+        <>
+        {/* ——— MOBIL: kun-agenda. To'r 860px talab qiladi — telefonda u faqat
+            gorizontal skroll bo'lardi va yo'qlamani bosish noqulay edi.
+            Yo'qlama — o'qituvchining ASOSIY mobil ssenariysi. ——— */}
+        <div className="space-y-2 lg:hidden">
+          {weekDays.map((d, di) => {
+            const dk = dayKey(d);
+            const dayLessons = times.flatMap((time) => (cellMap.get(`${dk}|${time}`) ?? []).map((l) => ({ time, l })));
+            if (dayLessons.length === 0) return null;
+            const isToday = dk === todayKey;
+            return (
+              <Card key={dk} className="!p-0 overflow-hidden">
+                <div className={cls("flex items-center gap-2 border-b border-line px-3 py-2", isToday ? "bg-brand-soft" : "bg-bg")}>
+                  <span className={cls("text-note font-bold uppercase tracking-wider", isToday ? "text-brand-deep" : "text-ink-soft")}>
+                    {dayShort[di]}
+                  </span>
+                  <span className={cls("text-body font-extrabold tabular-nums", isToday ? "text-brand-deep" : "text-ink")}>
+                    {d.getDate()}
+                  </span>
+                  {isToday && <span className="rounded-pill bg-brand px-2 py-0.5 text-micro font-bold text-white">{t("today")}</span>}
+                </div>
+                <div className="space-y-2 p-2">
+                  {dayLessons.map(({ time, l }) => (
+                    <div key={l.slotId + l.dayKey} className="flex items-start gap-2">
+                      <span className="w-12 shrink-0 pt-1 text-note font-bold tabular-nums text-ink-soft">{time}</span>
+                      <div className="min-w-0 flex-1">
+                        <LessonCell l={l} onMark={() => setRoll(l)} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            );
+          })}
+        </div>
+
+        {/* ——— DESKTOP: haftalik to'r (vaqt qatorlari × 7 kun ustuni) ——— */}
+        <Card className="!p-0 overflow-x-auto hidden lg:block">
           <div className="min-w-[860px]">
             {/* Sarlavha qatori — kunlar */}
             <div className="grid gap-px border-b border-line bg-line" style={{ gridTemplateColumns: "60px repeat(7, minmax(0, 1fr))" }}>
@@ -305,6 +341,7 @@ export function TeachSchedulePage() {
             </div>
           </div>
         </Card>
+        </>
       )}
 
       {/* Legenda */}

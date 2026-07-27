@@ -128,7 +128,11 @@ export function SidebarLayout({
       </aside>
 
       <main className="relative flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-30 flex h-[var(--header-h)] shrink-0 items-center gap-2 border-b border-line/50 bg-surface/80 px-3 backdrop-blur-xl shadow-sm sm:gap-4 sm:px-6 transition-all duration-300">
+        {/* ⚠️ Ilgari `bg-surface/80 border-line/50` edi — token ranglarda
+            shaffoflik modifikatori CSS generatsiya QILMAYDI, ya'ni header
+            fonsiz va chegarasiz qolardi (skroll paytida matn ostidan
+            ko'rinardi). Solid token ishlatiladi. */}
+        <header className="sticky top-0 z-30 flex h-[var(--header-h)] shrink-0 items-center gap-2 border-b border-line bg-surface px-3 shadow-sm sm:gap-4 sm:px-6 transition-all duration-300">
           {/* Yig'ish tugmasi faqat lg+ da mantiqiy — mobilda yon panel yo'q. */}
           <button
             onClick={toggle}
