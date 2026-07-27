@@ -455,7 +455,6 @@ export type TeacherTaskKind =
   | "digest_approve"
   | "content_create"
   | "content_publish"
-  | "factcheck"
   | "attendance_unmarked"
   | "students_behind"
   | "assigned"

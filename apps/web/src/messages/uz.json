@@ -93,7 +93,6 @@
     "digestApprove": "Konspektni tasdiqlash",
     "contentCreate": "Kontent yaratish (test/keys/slayd/video)",
     "contentPublish": "Kontentni chop etish",
-    "factcheck": "Faktcheck belgilarini hal qilish",
     "attendanceUnmarked": "Yoʻqlama belgilanmagan darslar",
     "studentsBehind": "Orqada qolgan talabalar",
     "studentTitle": "Vazifalar",
@@ -759,7 +758,6 @@
       "material": "Material",
       "digest": "Konspekt",
       "generate": "Generatsiya",
-      "factcheck": "Faktcheck",
       "publish": "Chop etish"
     },
     "locked": "Qulflangan — keyingi bosqichda ochiladi",
@@ -767,13 +765,11 @@
       "materials": "Materiallar",
       "digest": "Konspekt",
       "generate": "Generatsiya",
-      "factcheck": "Faktcheck",
       "publish": "Chop etish va tasdiqlash"
     },
     "sectionLocked": {
       "digest": "Kamida bitta material tayyor boʻlgach ochiladi.",
       "generate": "Konspekt tasdiqlangach ochiladi (qulf 1).",
-      "factcheck": "Kontent generatsiya qilingach ochiladi (Modul 10).",
       "publish": "Faktcheck tugagach ochiladi (Modul 10)."
     },
     "generateSoon": "Konspekt tasdiqlangan. Generatsiya moduli (Modul 7) da qoʻshiladi.",
@@ -971,40 +967,20 @@
       "Tibbiy savodsiz — hamma narsani sodda tilda aytadi."
     ]
   },
-  "factcheck": {
-    "needContent": "Avval kamida bitta kontent yarating.",
-    "run": "Faktcheckni ishga tushirish",
-    "rerun": "Qayta tekshirish",
-    "running": "Kontent manba bilan solishtirilmoqda…",
-    "clean": "Barcha daʼvolar manbaga mos",
-    "notRun": "Tekshirilmagan",
-    "flagged": "{n} ta belgi",
-    "sev": {
-      "high": "Yuqori",
-      "medium": "Oʻrta",
-      "low": "Past"
-    },
-    "at": "Qayerda",
-    "confirm": "Tasdiqlayman",
-    "fix": "Tuzataman",
-    "resolvedConfirmed": "Tasdiqlangan",
-    "resolvedFixed": "Tuzatilgan"
-  },
   "publish": {
     "checklist": "Tayyorlik",
     "cDigest": "Konspekt tasdiqlangan",
     "cDigestDo": "Konspekt boʻlimida tasdiqlang",
     "cReviewed": "Tahrirlagichda ochilgan",
     "cReviewedDo": "Kontentni tahrirlagichda oching",
-    "cFactcheck": "Faktcheck hal qilingan",
-    "cFactcheckDo": "Faktcheckni ishga tushiring va belgilarni hal qiling",
     "publishBtn": "Tasdiqlash va chop etish",
     "confirmTitle": "Chop etish",
     "confirmMsg": "Bu kontent talabalarga ochiladi. Tasdiqlaysizmi?",
     "confirmBtn": "Chop etish",
     "publishedMsg": "Kontent talabalarga chop etildi!",
     "stamp": "Tekshirdi: {name}, {date}",
-    "published": "Chop etilgan"
+    "published": "Chop etilgan",
+    "needContent": "Avval kamida bitta kontent yarating."
   },
   "settings": {
     "title": "Kurs sozlamalari",
@@ -1852,7 +1828,6 @@
     "needMaterial": "material kerak",
     "needDigest": "konspekt kutmoqda",
     "needPublish": "chop etilmagan",
-    "needFactcheck": "faktcheck belgisi",
     "allReady": "Hammasi tayyor",
     "backToList": "Fanlarim",
     "myCourse": "Mening kursim",

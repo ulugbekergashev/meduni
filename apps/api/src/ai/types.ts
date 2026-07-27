@@ -314,43 +314,6 @@ export const slideGenSchema = z.object({
 export const slidesGenSchema = z.object({ slides: z.array(slideGenSchema) });
 export type SlidesGen = z.infer<typeof slidesGenSchema>;
 
-// ---------- Factcheck ----------
-
-export const factcheckFlagSchema = z.object({
-  claim: z.string(),
-  location: z.string(),
-  severity: z.enum(["high", "medium", "low"]),
-});
-export const factcheckGenSchema = z.object({ flags: z.array(factcheckFlagSchema) });
-export type FactcheckGen = z.infer<typeof factcheckGenSchema>;
-
-export interface FactcheckFlag {
-  claim: string;
-  location: string;
-  severity: "high" | "medium" | "low";
-  resolved: boolean;
-  resolution: "confirmed" | "fixed" | null;
-}
-
-export const factcheckResponseSchema = {
-  type: Type.OBJECT,
-  properties: {
-    flags: {
-      type: Type.ARRAY,
-      items: {
-        type: Type.OBJECT,
-        properties: {
-          claim: { type: Type.STRING },
-          location: { type: Type.STRING },
-          severity: { type: Type.STRING, enum: ["high", "medium", "low"] },
-        },
-        required: ["claim", "location", "severity"],
-      },
-    },
-  },
-  required: ["flags"],
-};
-
 // ---------- Video script ----------
 
 export const scriptSegmentSchema = z.object({

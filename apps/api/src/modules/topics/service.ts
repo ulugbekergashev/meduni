@@ -184,8 +184,6 @@ export async function getTopicDetail(id: number, teacherId: number) {
       status: c.status.toLowerCase(),
       editedByTeacher: c.editedByTeacher,
       reviewOpened: c.reviewOpenedAt !== null,
-      factcheckStatus: c.factcheckStatus.toLowerCase(),
-      factcheckFlags: (c.factcheckFlagsJson as unknown as unknown[] | null) ?? [],
       approvedByName: c.approvedBy?.fullName ?? null,
       approvedAt: c.approvedAt,
     })),

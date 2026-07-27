@@ -42,7 +42,6 @@ export type TeacherTaskKind =
   | "digest_approve"
   | "content_create"
   | "content_publish"
-  | "factcheck"
   | "attendance_unmarked"
   | "students_behind"
   | "assigned";
@@ -138,7 +137,7 @@ async function computeAutoItems(teacherId: number): Promise<TeacherTaskItem[]> {
       course: { select: { name: true } },
       materials: { select: { parseStatus: true } },
       digest: { select: { approvedByTeacher: true, updatedAt: true } },
-      contentItems: { select: { status: true, factcheckStatus: true } },
+      contentItems: { select: { status: true } },
     },
     orderBy: { id: "asc" },
   });
@@ -161,9 +160,6 @@ async function computeAutoItems(teacherId: number): Promise<TeacherTaskItem[]> {
     }
     if (t.contentItems.some((c) => c.status === "DRAFT" || c.status === "REVIEW")) {
       items.push(auto({ id: `publish:${t.id}`, kind: "content_publish", tone: "blue", title: t.title, subtitle: t.course.name, sinceIso: t.createdAt.toISOString(), link: `/teach/topics/${t.id}?step=publish` }));
-    }
-    if (t.contentItems.some((c) => c.factcheckStatus === "FLAGGED")) {
-      items.push(auto({ id: `factcheck:${t.id}`, kind: "factcheck", tone: "amber", title: t.title, subtitle: t.course.name, sinceIso: t.createdAt.toISOString(), link: `/teach/topics/${t.id}?step=factcheck` }));
     }
   }
 
