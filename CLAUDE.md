@@ -1657,6 +1657,51 @@ Barcha modullar tugadi (1-17).
   Konsol toza; tsc+build ikkala tomonda toza. **Faza 2 to'liq yopildi** (guruh
   sahifasi + kurs detali + davomat eksport).
 
+- **PILOT TAYYORGARLIGI — jonli deploy tuzatildi (2026-07-27).** Deploy ochilgan edi,
+  lekin uch jiddiy nuqsoni bor edi (hammasi jonli tizimda o'lchab tasdiqlangan).
+  **(A) Fayllar restartda YO'QOLARDI.** Render Free'da doimiy disk yo'q — konteyner
+  15 daqiqa faoliyatsizlikdan keyin uxlaydi va NOLDAN ko'tariladi, `/app/storage`
+  bo'shaydi; bazadagi yozuv (`Video.mp4Url`, `SourceMaterial.fileUrl`) qolgani uchun
+  UI "fayl bor" deb pleyer ko'rsatib, so'rovda **500** berardi. Prisma `FileBlob`
+  (`file_blobs`: path=eski disk yo'li, data, mimeType, size) + `lib/storage.ts` endi
+  **ikki drayver, bitta yuza**: `disk` (dev) / `db` (prod, `NODE_ENV` bo'yicha avto,
+  `STORAGE_DRIVER` bilan majburlash mumkin). O'qishda ikkinchi drayverga fallback →
+  eski fayllar ham topiladi. Yo'llar o'zgarmagani uchun mavjud url'lar migratsiyasiz
+  ishlaydi. Media yo'q bo'lsa endi **toza 404** (lesson/video/presentation/material),
+  manba matni yo'qolsa AI generatsiya yiqilmaydi (o'sha materialsiz davom etadi).
+  Migratsiya `20260727090000_file_blobs`. `scripts/smokeStorage.ts` — 12/12.
+  ⚠️ Demo ma'lumotini mahalliy skript bilan yozganda `STORAGE_DRIVER=db` ber, aks
+  holda fayl MAHALLIY diskka tushadi va serverда ko'rinmaydi.
+  **(B) `EMAXCONNSESSION — max clients reached`.** Supabase Session pooler butun
+  loyihaga ~15 mijoz beradi; Prisma esa sukut bo'yicha `CPU*2+1` ulanish ochadi →
+  ko'p yadroli hostда bir o'zi limitni yeydi (dev mashinasi ham shu bazaga ulansa —
+  darrov). `packages/db/src/index.ts` endi URL'ga `connection_limit` (def 5, env
+  `DB_CONNECTION_LIMIT`) va `pool_timeout=20` qo'shadi (URL'da bo'lsa tegilmaydi).
+  **(C) Sahifalar 5-10 SONIYA ochilardi.** Sabab uzoq baza EMAS, **so'rovlar soni**:
+  Prisma sukut bo'yicha har bog'lanish uchun alohida so'rov yuboradi — `loadCourse`
+  ~10 ta, dars sahifasi jami ~25-30 ta; baza boshqa qit'ada (Supabase `ap-southeast-1`
+  ↔ Render `frankfurt`, ~150-300ms/so'rov) bo'lgani uchun bu sof kutishga aylanardi.
+  Yechim: (1) `previewFeatures = ["relationJoins"]` + `relationLoadStrategy: "join"`
+  **faqat ikki og'ir so'rovda** (`loadCourse`, dars sahifasi mavzu so'rovi) — bog'liq
+  ma'lumot bitta SQL bilan; (2) mustaqil so'rovlar parallelga: `getTopicLesson`
+  (mavzu/progress/bo'lim-o'qildi kirish tekshiruvi bilan birga, keyin test/keys/bemor/
+  audio), `getDashboard` va `listMyCourses` (kurslar `Promise.all`), `studentFactsMap`
+  (progress+test+keys), `computeStudentAutoTasks`. **Jonli o'lchov (oldin → keyin):**
+  dars sahifasi 7.3-10s → **2.9-3.3s**, bosh sahifa 5.2-7.5s → **2.0-3.1s**, kurslar
+  5.0s → **1.3s**, vazifalar 5.8s → **1.4-2.1s**, baholar/davomat → **0.7-1.2s**.
+  ⚠️ Qolgan kechikish manbai — DB/API turli regionda; tubdan yechim ikkalasini bir
+  regionga qo'yish (Supabase'ni Frankfurt'ga yoki Render'ni Singapore'ga).
+  **(D) Jonli demo ma'lumoti** — `scripts/demoLive.ts` (idempotent): 10 talaba har biri
+  o'z profili bilan (davomat/test/keys), 2 mavzuga tasdiqlangan **bo'limli konspekt +
+  checkpoint savollari + atamalar** + materiallar + havolalar, Nefrologiyaga chop
+  etilgan test, haftalik jadval + sikl, 12 dars yo'qlamasi, test urinishlari **xatolari
+  bilan** (xatolar xaritasi uchun), 3 keys tekshiruvda + 2 baholangan, fleshkarta
+  takrorlari, topshiriqlar; oxirida `syncTopicProgress` bilan progress qayta hisob.
+  **Tekshirildi:** `scratchpad/smokeLive.mjs` — jonli HTTP, uchala rol + xavfsizlik,
+  **32/32**; Gemini kaliti jonli serverda ishlaydi (AI-tutor konspektga tayanib javob
+  berdi). Yo'l-yo'lakay: CORS endi rate-limit'dan OLDIN (429 javobi CORS sarlavhasiz
+  ketib, brauzerda "No Access-Control-Allow-Origin" bo'lib ko'rinardi).
+
 ## 9. Loyiha holati va ishga tushirish (operatsion — sessiya 0)
 
 **Monorepo (npm workspaces):**
