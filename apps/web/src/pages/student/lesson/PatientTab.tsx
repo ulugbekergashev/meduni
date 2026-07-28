@@ -18,6 +18,8 @@ import {
   User,
 } from "lucide-react";
 import { Button, Icon, Modal, ProgressRing, Spinner, cls } from "@meduni/ui";
+import { apiErrorMessage } from "../../../lib/api";
+import { useLocale } from "../../../lib/useLocale";
 import {
   usePatient,
   useSendPatient,
@@ -228,6 +230,8 @@ function Section({
 export function PatientTab({ topicId }: { topicId: number }) {
   const { t } = useTranslation(undefined, { keyPrefix: "patient" });
   const reduce = useReducedMotion();
+  const locale = useLocale();
+  const lang = locale === "ru" ? ("ru" as const) : ("uz" as const);
   const q = usePatient(topicId);
   const start = useStartPatient(topicId);
   const send = useSendPatient(topicId);
@@ -242,6 +246,9 @@ export function PatientTab({ topicId }: { topicId: number }) {
   const [confirm, setConfirm] = useState(false);
   const [ddx, setDdx] = useState<DDxItem[]>([]);
   const [customTest, setCustomTest] = useState("");
+  /** Baholash xatosi — ilgari mutatsiya jimgina yiqilardi (modal yopilib
+   *  ketardi va ekranda hech narsa o'zgarmasdi → "qotib qoldi" taassuroti). */
+  const [finishError, setFinishError] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const autoStarted = useRef(false);
 
@@ -336,6 +343,11 @@ export function PatientTab({ topicId }: { topicId: number }) {
   const orderTest = (name: string) => order.mutate(name, { onSuccess: () => refreshDdx() });
 
   const busy = start.isPending || send.isPending;
+  /** Suhbat/tekshiruv amallari ham jimgina yiqilardi — endi bitta xato qatori. */
+  const actionError = apiErrorMessage(
+    send.error ?? start.error ?? order.error ?? vitalsMut.error ?? null,
+    lang
+  );
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-2 lg:grid lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-3">
@@ -459,6 +471,13 @@ export function PatientTab({ topicId }: { topicId: number }) {
               {send.isPending ? <Spinner size={14} /> : <Icon icon={SendHorizontal} size={16} />}
             </button>
           </form>
+
+          {actionError && (
+            <p className="mb-2 flex items-start gap-2 rounded-control bg-rose-soft px-3 py-2 text-note font-bold text-rose">
+              <Icon icon={TriangleAlert} size={14} className="mt-0.5 shrink-0" />
+              {actionError}
+            </p>
+          )}
 
           <button
             onClick={() => setConfirm(true)}
@@ -644,7 +663,7 @@ export function PatientTab({ topicId }: { topicId: number }) {
       </div>
 
       {/* Tashxis kiritish modali */}
-      <Modal open={confirm} onClose={() => setConfirm(false)} title={t("dxTitle")}>
+      <Modal open={confirm} onClose={() => !finish.isPending && setConfirm(false)} title={t("dxTitle")}>
         <p className="text-note text-ink-soft">{t("dxHint")}</p>
         <textarea
           value={dx}
@@ -655,6 +674,22 @@ export function PatientTab({ topicId }: { topicId: number }) {
           autoFocus
           className="mt-3 w-full resize-none rounded-control border border-line bg-surface px-3 py-2 text-body text-ink outline-none focus:border-brand"
         />
+        {/* Baholash ~5-10 soniya oladi — modal YOPILMAYDI, holat shu yerda
+            ko'rinadi (ilgari modal darrov yopilib, ekranda hech nima
+            o'zgarmasdi va foydalanuvchi "qotib qoldi" deb o'ylardi). */}
+        {finish.isPending && (
+          <p className="mt-3 flex items-center gap-2 rounded-control bg-brand-soft px-3 py-2 text-note font-bold text-brand-tint">
+            <Spinner size={14} />
+            {t("evaluating")}
+          </p>
+        )}
+        {finishError && (
+          <p className="mt-3 flex items-start gap-2 rounded-control bg-rose-soft px-3 py-2 text-note font-bold text-rose">
+            <Icon icon={TriangleAlert} size={14} className="mt-0.5 shrink-0" />
+            {finishError}
+          </p>
+        )}
+
         <div className="mt-3 flex justify-end gap-2">
           <Button variant="ghost" size="md" onClick={() => setConfirm(false)} disabled={finish.isPending}>
             {t("cancel")}
@@ -663,12 +698,15 @@ export function PatientTab({ topicId }: { topicId: number }) {
             variant="primary"
             size="md"
             onClick={() => {
-              finish.mutate(dx.trim());
-              setConfirm(false);
+              setFinishError(null);
+              finish.mutate(dx.trim(), {
+                onSuccess: () => setConfirm(false),
+                onError: (e) => setFinishError(apiErrorMessage(e, lang) ?? t("finishError")),
+              });
             }}
             disabled={finish.isPending}
           >
-            {t("submitDx")}
+            {finish.isPending ? t("evaluatingShort") : t("submitDx")}
           </Button>
         </div>
       </Modal>
