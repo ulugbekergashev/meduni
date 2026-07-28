@@ -34,12 +34,44 @@ export class ApiError extends Error {
   }
 }
 
+/** Bir vaqtda kelgan bir necha 401 uchun /auth/refresh BIR marta chaqiriladi. */
+let refreshing: Promise<boolean> | null = null;
+
+function refreshSession(): Promise<boolean> {
+  if (!refreshing) {
+    refreshing = fetch(`${API_URL}/auth/refresh`, { method: "POST", credentials: "include" })
+      .then((r) => r.ok)
+      .catch(() => false)
+      .finally(() => {
+        // Keyingi 401 yangi refreshni boshlashi uchun bo'shatamiz.
+        setTimeout(() => (refreshing = null), 0);
+      });
+  }
+  return refreshing;
+}
+
+/**
+ * Cookie bilan so'rov + 401 bo'lsa sessiyani yangilab BIR marta qayta urinish.
+ *
+ * ⚠️ NEGA KERAK: access token atigi **15 daqiqa** yashaydi (`ACCESS_TTL`),
+ * refresh token esa 30 kun. Ilgari frontend `/auth/refresh` ni HECH QACHON
+ * chaqirmasdi — ya'ni 15 daqiqadan keyin ilova ochiq turgani bilan HAR QANDAY
+ * so'rov 401 qaytarardi, foydalanuvchi esa buni "tugma ishlamayapti" deb
+ * ko'rardi (fayl yuklash, saqlash — hammasi jimgina yiqilardi).
+ */
+export async function authedFetch(url: string, init?: RequestInit): Promise<Response> {
+  const send = () => fetch(url, { ...init, credentials: "include" });
+  const res = await send();
+  if (res.status !== 401 || url.includes("/auth/")) return res;
+  const ok = await refreshSession();
+  return ok ? send() : res;
+}
+
 export async function api<T>(path: string, init?: RequestInit): Promise<T> {
   let res: Response;
   try {
-    res = await fetch(`${API_URL}${path}`, {
+    res = await authedFetch(`${API_URL}${path}`, {
       ...init,
-      credentials: "include",
       headers: {
         "Content-Type": "application/json",
         ...init?.headers,
@@ -69,6 +101,33 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
   }
 
   if (res.status === 204) return undefined as T;
+  return res.json();
+}
+
+/** Fayl yuklash (multipart). `api()` bilan bir xil: refresh-retry + tushunarli
+ *  xato. Content-Type QO'YILMAYDI — brauzer boundary bilan o'zi qo'yadi. */
+export async function apiUpload<T>(path: string, form: FormData): Promise<T> {
+  let res: Response;
+  try {
+    res = await authedFetch(`${API_URL}${path}`, { method: "POST", body: form });
+  } catch {
+    throw new ApiError(
+      0,
+      "network_error",
+      "Server javob bermayapti. Bir necha soniyadan keyin qayta urining.",
+      "Сервер не отвечает. Повторите через несколько секунд."
+    );
+  }
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    const detail = body?.error;
+    throw new ApiError(
+      res.status,
+      detail?.code ?? (res.status === 401 ? "unauthorized" : "upload_failed"),
+      detail?.messageUz ?? (res.status === 401 ? "Sessiya tugagan — qayta kiring" : "Faylni yuklab boʻlmadi"),
+      detail?.messageRu ?? (res.status === 401 ? "Сессия истекла — войдите снова" : "Не удалось загрузить файл")
+    );
+  }
   return res.json();
 }
 

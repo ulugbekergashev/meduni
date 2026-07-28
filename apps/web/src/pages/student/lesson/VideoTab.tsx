@@ -3,7 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { Captions, CheckCircle2, Maximize2 } from "lucide-react";
 import { Icon } from "@meduni/ui";
-import { API_URL } from "../../../lib/api";
+import { API_URL, authedFetch } from "../../../lib/api";
 import { useVideoProgress, type VideoTabData } from "../api";
 
 // SRT (comma millis) -> WebVTT (dot millis) so the native <track> can render it.
@@ -40,7 +40,7 @@ export function VideoTab({
   useEffect(() => {
     if (!captions || vttUrl || !data.hasSrt) return;
     let revoked: string | null = null;
-    fetch(`${API_URL}/api/v1/me/videos/${data.videoId}/srt`, { credentials: "include" })
+    authedFetch(`${API_URL}/api/v1/me/videos/${data.videoId}/srt`)
       .then((r) => (r.ok ? r.text() : Promise.reject()))
       .then((srt) => {
         const url = URL.createObjectURL(new Blob([srtToVtt(srt)], { type: "text/vtt" }));

@@ -1059,6 +1059,7 @@
     "formats": "PDF, Word (DOCX), PowerPoint (PPTX), matn (TXT)",
     "empty": "Hali material yuklanmagan. Lektsiya yoki metodichka yuklang.",
     "uploading": "Yuklanmoqda...",
+    "uploadFailed": "Faylni yuklab boʻlmadi. Qayta urinib koʻring.",
     "status": {
       "pending": "Kutilmoqda",
       "processing": "Oʻqilmoqda",

@@ -1,9 +1,10 @@
 import { useRef, useState, type DragEvent } from "react";
 import { useTranslation } from "react-i18next";
-import { FileText, RotateCw, Trash2, Upload } from "lucide-react";
+import { FileText, RotateCw, Trash2, TriangleAlert, Upload } from "lucide-react";
 import { Badge, Button, Card, EmptyState, Icon, Modal, Spinner, useToast, type BadgeTone } from "@meduni/ui";
 import { ConfirmDialog } from "../../../components/ConfirmDialog";
 import { useLocale } from "../../../lib/useLocale";
+import { apiErrorMessage } from "../../../lib/api";
 import {
   fetchMaterialText,
   useDeleteMaterial,
@@ -109,6 +110,15 @@ export function MaterialsSection({ topicId, materials }: { topicId: number; mate
           </span>
         )}
       </button>
+
+      {/* ⚠️ Yuklash xatosi ilgari umuman ko'rsatilmasdi — fayl "yuklanmoqda"
+          deb turib, keyin jimgina yo'qolardi (401/sessiya, katta hajm, format). */}
+      {upload.isError && (
+        <p className="mt-2 flex items-start gap-2 rounded-control bg-rose-soft px-3 py-2 text-note font-bold text-rose">
+          <Icon icon={TriangleAlert} size={14} className="mt-0.5 shrink-0" />
+          {apiErrorMessage(upload.error, locale) ?? t("uploadFailed")}
+        </p>
+      )}
 
       {/* File list */}
       <div className="mt-4">
