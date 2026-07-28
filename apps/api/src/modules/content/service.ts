@@ -340,13 +340,13 @@ export async function publishContent(contentId: number, teacherId: number) {
   const item = await contentForTeacher(contentId, teacherId);
   const topic = await prisma.topic.findUnique({ where: { id: item.topicId }, include: { digest: true } });
 
-  // Gate 1: digest approved
+  // Yagona shart — konspekt tasdiqlangan bo'lsin (birinchi qulf). Odatdagi
+  // oqimda u allaqachon bajarilgan: kontent tasdiqlangan konspektsiz umuman
+  // generatsiya qilinmaydi. "Tahrirlagichda ochilgan bo'lsin" sharti olib
+  // tashlandi (2026-07-27, buyurtmachi: "prosta tasdiqlab chop etib yuborsin") —
+  // o'qituvchi bitta bosishda tasdiqlab chop etadi.
   if (!topic?.digest?.approvedByTeacher) {
     throw new ApiError(403, "digest_not_approved", "Avval konspektni tasdiqlang", "Сначала утвердите конспект");
-  }
-  // Gate 2: opened in editor at least once
-  if (item.reviewOpenedAt === null) {
-    throw new ApiError(403, "not_reviewed", "Avval kontentni tahrirlagichda oching", "Сначала откройте контент в редакторе");
   }
   const published = await prisma.contentItem.update({
     where: { id: contentId },

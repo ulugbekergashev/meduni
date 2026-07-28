@@ -968,11 +968,6 @@
     ]
   },
   "publish": {
-    "checklist": "Tayyorlik",
-    "cDigest": "Konspekt tasdiqlangan",
-    "cDigestDo": "Konspekt boʻlimida tasdiqlang",
-    "cReviewed": "Tahrirlagichda ochilgan",
-    "cReviewedDo": "Kontentni tahrirlagichda oching",
     "publishBtn": "Tasdiqlash va chop etish",
     "confirmTitle": "Chop etish",
     "confirmMsg": "Bu kontent talabalarga ochiladi. Tasdiqlaysizmi?",
@@ -980,7 +975,8 @@
     "publishedMsg": "Kontent talabalarga chop etildi!",
     "stamp": "Tekshirdi: {name}, {date}",
     "published": "Chop etilgan",
-    "needContent": "Avval kamida bitta kontent yarating."
+    "needContent": "Avval kamida bitta kontent yarating.",
+    "hint": "Tasdiqlangach talaba shu kontentni darrov ko'radi."
   },
   "settings": {
     "title": "Kurs sozlamalari",
