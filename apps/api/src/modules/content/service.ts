@@ -106,6 +106,12 @@ function toContentOut(item: ContentFull) {
           voiceId: item.video.voiceId,
           durationSec: item.video.durationSec,
           script: item.video.scriptJson as unknown as ScriptSegment[],
+          // Montaj jarayoni ko'rinsin: nechta segment ovozlangan (spinner emas,
+          // haqiqiy hisob — "Ovoz: 7/15"). audioUrl har segmentdan keyin saqlanadi.
+          progress: {
+            done: ((item.video.scriptJson as unknown as ScriptSegment[]) ?? []).filter((s) => !!s?.audioUrl).length,
+            total: ((item.video.scriptJson as unknown as ScriptSegment[]) ?? []).length,
+          },
           hasMp4: !!item.video.mp4Url,
           hasSrt: !!item.video.srtUrl,
         }

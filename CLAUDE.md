@@ -1997,3 +1997,41 @@ beradi (ilgari CSS'da umuman yo'q edi). Yorug'/qorong'i ikkala tema, mindmap SVG
 chiziqlari va hisoblangan ranglar brauzerda tekshirildi — regressiya yo'q.
 ⚠️ `--surface-glass` ataylab konvertatsiya qilinmadi (u rgba, `/NN` bilan
 ishlatilmaydi).
+
+---
+
+## 12. FON-JOBLAR: video montaji soatlab "osilib" qolardi (2026-07-29)
+
+Buyurtmachi: *"1 soatdan ko'p shunday turibdiku, video yaratilmasdan"*. Bazada
+esa **ikkala video ham `ERROR / interrupted`** edi — ya'ni jarayon allaqachon
+o'lgan, UI faqat yolg'on spinner ko'rsatib turgan. Uch alohida nuqson:
+
+1. **Ish YO'QOLARDI.** `scriptJson` faqat BUTUN TTS sikli tugagach yozilardi.
+   Jarayon 9/15-segmentda o'lsa (Render restart/OOM/deploy) 9 ta ovozlangan
+   segment ham yo'qolardi va har urinish NOLDAN boshlanardi → hech qachon
+   tugamasdi. Endi **har segmentdan keyin** (va har generatsiya qilingan
+   rasmdan keyin — u pullik) saqlanadi; `audioHash` keshi bor edi, endi u
+   haqiqatan ishlaydi.
+2. **OOM sababi — parallel og'ir joblar.** Slayd rasmlari (Nano Banana + sharp)
+   va video TTS/ffmpeg bir vaqtda ishlardi; Render Free'da 512 MB → konteyner
+   o'ldirilardi (AiUsage loglari: TTS 20:29–20:30, IMAGE 20:32–20:35, keyin
+   jimlik). Yangi `lib/jobQueue.ts` — **concurrency 1** navbat; video pipeline
+   va rasm joblari shundan o'tadi (bitta job xatosi navbatni buzmaydi).
+3. **UI yolg'on gapirardi.** `useContent` polling'i `refetchIntervalInBackground`
+   siz edi — o'qituvchi tabni fonga o'tkazsa so'rov TO'XTARDI va holat qotib
+   qolardi. Endi fonda ham so'raydi; bosqich o'rniga **haqiqiy hisob**
+   ("Ovoz: 7/15" + progress chizig'i) va "montaj 10–20 daqiqa" izohi.
+
+**Tiklash endi passiv emas:** `recovery.ts` uzilgan montajni ERROR qilib
+qo'yish bilan cheklanmaydi — serverni ko'targanda **o'zi davom ettiradi**
+(`resumeVideo`, keshdan; urinishlar `errorStage`da: `interrupted` →
+`interrupted (2)` → `(3)` → `interrupted_giveup`, `MAX_AUTO_RESUME=3` — cheksiz
+sikl yo'q). O'qituvchi uchun ham **"Davom ettirish"** tugmasi
+(`POST /api/v1/videos/:id/resume`) — "Qayta generatsiya" endi yagona yo'l emas
+(u bor ishni o'chirib yuboradi).
+
+**Tekshirildi:** navbat testi (ketma-ketlik, xato izolyatsiyasi), urinish
+hisoblagichi jadvali, route wiring (404/401); tsc ikkala tomonda toza.
+⚠️ Mahalliy serverni JONLI bazaga ulab pipeline ishga tushirma — dev'da
+`STORAGE_DRIVER=disk`, media mahalliy diskka tushadi va jonli server uni
+ko'rmaydi (§ PILOT TAYYORGARLIGI (A) bilan bir xil tuzoq).

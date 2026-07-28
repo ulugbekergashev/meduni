@@ -15,18 +15,59 @@
 // ko'rsatadi va "Qayta urinish" tugmasi ishlaydi.
 import { prisma } from "../../lib/prisma";
 import type { Slide } from "../../ai/types";
+import { resumeVideo } from "./video";
 
 /** Video montajining oraliq (terminal bo'lmagan) holatlari. PENDING ham shu
  *  yerda: pipeline `setImmediate` bilan darrov boshlanadi, ya'ni yangi jarayon
  *  ko'tarilganda PENDING'da qolgan video — eskisining o'lik qoldig'i. */
 const RUNNING_VIDEO = ["PENDING", "SCRIPT", "TTS", "RENDER"] as const;
 
+/** Necha marta avtomatik davom ettiramiz. Har urinish oldingi ishni (ovozlangan
+ *  segmentlar, generatsiya qilingan rasmlar) QAYTA ISHLATADI — ya'ni har safar
+ *  oldinga siljiydi va qayta to'lov bo'lmaydi. Shu bois 3 urinish yetadi;
+ *  keyin to'xtaymiz (cheksiz sikl bo'lmasin). */
+const MAX_AUTO_RESUME = 3;
+
+/** `interrupted`, `interrupted (2)`, `interrupted (3)` → urinish raqami.
+ *  `interrupted_giveup` → limit (qaytadan avtomatik urinilmaydi; faqat
+ *  o'qituvchi o'zi bosganda hisob nolga tushadi). */
+function attemptOf(errorStage: string | null): number {
+  if (errorStage === "interrupted_giveup") return MAX_AUTO_RESUME;
+  const m = /^interrupted(?: \((\d+)\))?$/.exec(errorStage ?? "");
+  return m ? Number(m[1] ?? 1) : 0;
+}
+
 export async function recoverStaleJobs(): Promise<void> {
   try {
+    // Uzilgan montajlar — belgilashdan OLDIN o'qiymiz (davom ettirish uchun).
+    const stale = await prisma.video.findMany({
+      where: { buildStatus: { in: RUNNING_VIDEO as unknown as ("PENDING" | "SCRIPT" | "TTS" | "RENDER")[] } },
+      select: { id: true, errorStage: true },
+    });
+
     const videos = await prisma.video.updateMany({
       where: { buildStatus: { in: RUNNING_VIDEO as unknown as ("PENDING" | "SCRIPT" | "TTS" | "RENDER")[] } },
       data: { buildStatus: "ERROR", errorStage: "interrupted" },
     });
+
+    // ⚠️ Faqat ERROR qilib qo'yish YETARLI EMAS edi: o'qituvchi soatlab kutib,
+    // keyin o'zi "Qayta generatsiya" bosishi kerak edi (va ish NOLDAN ketardi).
+    // Endi server ko'tarilganda uzilgan montaj O'ZI davom etadi — ovozlangan
+    // segmentlar keshdan olinadi, faqat qolgani ishlanadi.
+    for (const v of stale) {
+      const attempt = attemptOf(v.errorStage) + 1;
+      if (attempt > MAX_AUTO_RESUME) {
+        await prisma.video.update({ where: { id: v.id }, data: { errorStage: "interrupted_giveup" } });
+        console.log(`  tiklash    : video ${v.id} — ${MAX_AUTO_RESUME} marta uzildi, avtomatik davom ettirilmaydi`);
+        continue;
+      }
+      await prisma.video.update({
+        where: { id: v.id },
+        data: { errorStage: attempt > 1 ? `interrupted (${attempt})` : "interrupted" },
+      });
+      await resumeVideo(v.id).catch((e) => console.error("[recoverStaleJobs] resume", v.id, e));
+      console.log(`  tiklash    : video ${v.id} davom ettirilmoqda (urinish ${attempt}/${MAX_AUTO_RESUME})`);
+    }
 
     // Rasm slotlari slaydlar JSON ichida — har prezentatsiyani alohida yangilaymiz.
     const presentations = await prisma.presentation.findMany({ select: { id: true, slidesJson: true } });
