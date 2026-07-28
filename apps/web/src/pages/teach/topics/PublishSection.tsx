@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Check, Rocket, X } from "lucide-react";
+import { Rocket } from "lucide-react";
 import { Badge, Button, Card, Icon, useToast } from "@meduni/ui";
 import { ConfirmDialog } from "../../../components/ConfirmDialog";
 import { useLocale } from "../../../lib/useLocale";
@@ -13,18 +13,9 @@ const kindKey: Record<string, string> = {
   video: "videoTitle",
 };
 
-function CheckRow({ ok, label, doHint }: { ok: boolean; label: string; doHint: string }) {
-  return (
-    <div className="flex items-start gap-2">
-      <Icon icon={ok ? Check : X} size={16} className={ok ? "mt-0.5 text-emerald" : "mt-0.5 text-rose"} />
-      <div>
-        <span className={"text-body " + (ok ? "text-ink" : "text-ink-soft")}>{label}</span>
-        {!ok && <p className="text-note text-ink-faint">{doHint}</p>}
-      </div>
-    </div>
-  );
-}
-
+/** Bitta kontent — bitta bosishda tasdiqlab chop etiladi (tayyorlik ro'yxati YO'Q;
+ *  buyurtmachi qarori 2026-07-27). Yagona to'siq — tasdiq oynasi, chunki chop
+ *  etilgan kontentni talaba darrov ko'radi. */
 function ContentPublish({ topic, item }: { topic: TopicDetail; item: ContentSummary }) {
   const { t } = useTranslation(undefined, { keyPrefix: "publish" });
   const { t: tg } = useTranslation(undefined, { keyPrefix: "generate" });
@@ -34,13 +25,10 @@ function ContentPublish({ topic, item }: { topic: TopicDetail; item: ContentSumm
   const [confirm, setConfirm] = useState(false);
 
   const kindName = tg(kindKey[item.kind] ?? "quizTitle");
-  const digestOk = topic.generateUnlocked;
-  const reviewedOk = item.reviewOpened;
-  const allOk = digestOk && reviewedOk;
   const published = item.status === "published";
 
   return (
-    <Card className={published ? "border-emerald/30 bg-emerald-soft" : "space-y-4"}>
+    <Card className={published ? "border-emerald/30 bg-emerald-soft" : "space-y-3"}>
       <div className="flex items-center justify-between gap-2">
         <h3 className="text-section font-bold text-ink">{kindName}</h3>
         {published && <Badge tone="emerald">{t("published")}</Badge>}
@@ -55,14 +43,11 @@ function ContentPublish({ topic, item }: { topic: TopicDetail; item: ContentSumm
         </p>
       ) : (
         <>
-          <div className="space-y-2">
-            <CheckRow ok={digestOk} label={t("cDigest")} doHint={t("cDigestDo")} />
-            <CheckRow ok={reviewedOk} label={t("cReviewed")} doHint={t("cReviewedDo")} />
-          </div>
+          <p className="text-note text-ink-soft">{t("hint")}</p>
           <Button
             variant="deep"
             icon={<Icon icon={Rocket} size={16} />}
-            disabled={!allOk || publish.isPending}
+            disabled={publish.isPending}
             onClick={() => setConfirm(true)}
           >
             {t("publishBtn")}
