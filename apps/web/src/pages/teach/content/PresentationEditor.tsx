@@ -23,9 +23,13 @@ function SlotView({ slot, onRegenerate }: { slot: ImageSlot; onRegenerate: () =>
   return (
     <div className="rounded-control border border-line p-2">
       <div className="flex aspect-video items-center justify-center overflow-hidden rounded-[6px] bg-bg">
+        {/* ⚠️ 2026-07-28: PENDING'ga ham spinner chizilardi. PENDING = "hali
+            yaratilmagan" (job boshlanganda PROCESSING qo'yiladi) — ya'ni hech
+            narsa ishlamayotgan slot abadiy "yuklanmoqda" bo'lib ko'rinardi va
+            o'qituvchi bekorga kutardi. Spinner FAQAT PROCESSING'da. */}
         {slot.status === "DONE" && slot.url ? (
           <img src={`${API_BASE}${slot.url}`} alt="" className="h-full w-full object-contain" />
-        ) : slot.status === "PROCESSING" || slot.status === "PENDING" ? (
+        ) : slot.status === "PROCESSING" ? (
           <Spinner size={22} />
         ) : (
           <Icon icon={ImageOff} size={26} className="text-ink-faint" />
