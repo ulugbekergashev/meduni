@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Check, ClipboardList, Film, Presentation, Sparkles, Stethoscope } from "lucide-react";
-import { Badge, Button, Card, Icon, Select, Spinner, useToast } from "@meduni/ui";
+import { Check, ClipboardList, Film, Presentation, RotateCcw, Sparkles, Stethoscope } from "lucide-react";
+import { Badge, Button, Card, Icon, Select, Spinner, cls, useToast } from "@meduni/ui";
 import { Field } from "../../../components/Field";
 import { apiErrorMessage } from "../../../lib/api";
 import { useLocale } from "../../../lib/useLocale";
@@ -12,6 +12,7 @@ import {
   useGeneratePresentation,
   useGenerateQuiz,
   useGenerateVideo,
+  useResumeVideo,
   type ContentSummary,
   type TopicDetail,
 } from "./api";
@@ -218,28 +219,42 @@ function PresentationCard({ topic }: { topic: TopicDetail }) {
   );
 }
 
-function VideoStages({ status }: { status: string }) {
-  const { t } = useTranslation(undefined, { keyPrefix: "generate.vStep" });
+function VideoStages({ status, progress }: { status: string; progress?: { done: number; total: number } }) {
+  const { t } = useTranslation(undefined, { keyPrefix: "generate" });
   const order = ["script", "tts", "render"];
   const idx = order.indexOf(status);
+  const pct = progress && progress.total ? Math.round((progress.done / progress.total) * 100) : 0;
   return (
     <div className="space-y-1.5">
       {order.map((step, i) => {
         const done = idx > i;
         const active = status === step;
+        // Ovoz bosqichi uzoq (har segment ~30–60s) — spinner emas, HAQIQIY hisob.
+        const counter = active && step === "tts" && progress?.total ? ` ${progress.done}/${progress.total}` : "";
         return (
-          <div key={step} className="flex items-center gap-2 text-body">
-            {done ? (
-              <Icon icon={Check} size={15} className="text-emerald" />
-            ) : active ? (
-              <Spinner size={13} />
-            ) : (
-              <span className="h-[13px] w-[13px] rounded-full border border-line" />
+          <div key={step}>
+            <div className="flex items-center gap-2 text-body">
+              {done ? (
+                <Icon icon={Check} size={15} className="text-emerald" />
+              ) : active ? (
+                <Spinner size={13} />
+              ) : (
+                <span className="h-[13px] w-[13px] rounded-full border border-line" />
+              )}
+              <span className={done ? "text-emerald" : active ? "text-ink" : "text-ink-faint"}>
+                {t(`vStep.${step}`)}
+                {counter}
+              </span>
+            </div>
+            {active && step === "tts" && !!progress?.total && (
+              <div className="ml-[23px] mt-1 h-1 overflow-hidden rounded-pill bg-surface-raised">
+                <div className="h-full rounded-pill bg-brand transition-[width] duration-500" style={{ width: `${Math.max(pct, 3)}%` }} />
+              </div>
             )}
-            <span className={done ? "text-emerald" : active ? "text-ink" : "text-ink-faint"}>{t(step)}</span>
           </div>
         );
       })}
+      <p className="pt-1 text-note text-ink-faint">{t("vLongHint")}</p>
     </div>
   );
 }
@@ -260,6 +275,9 @@ function VideoCard({ topic }: { topic: TopicDetail }) {
   const video = summary ? detail.data?.video : null;
   const building = video && ["pending", "script", "tts", "render"].includes(video.buildStatus);
   const errored = video?.buildStatus === "error";
+  // Server qayta ishga tushgani uchun uzilgan (crash emas) — davom ettirsa bo'ladi.
+  const interrupted = errored && (video?.errorStage ?? "").startsWith("interrupted");
+  const resume = useResumeVideo(video?.id ?? 0);
 
   return (
     <Card className="flex flex-col gap-4">
@@ -271,7 +289,7 @@ function VideoCard({ topic }: { topic: TopicDetail }) {
       </div>
 
       {building ? (
-        <VideoStages status={video!.buildStatus} />
+        <VideoStages status={video!.buildStatus} progress={video!.progress} />
       ) : (
         <>
           {!summary && (
@@ -291,18 +309,35 @@ function VideoCard({ topic }: { topic: TopicDetail }) {
             </>
           )}
           {(gen.isError || errored) && (
-            <p className="text-body text-rose">
-              {errored ? t("vError", { stage: video!.errorStage ?? "" }) : apiErrorMessage(gen.error, locale) ?? t("error")}
+            <p className={cls("text-body", interrupted ? "text-amber" : "text-rose")}>
+              {!errored
+                ? apiErrorMessage(gen.error, locale) ?? t("error")
+                : interrupted
+                  ? t("vInterrupted", { done: video!.progress?.done ?? 0, total: video!.progress?.total ?? 0 })
+                  : t("vError", { stage: video!.errorStage ?? "" })}
             </p>
           )}
           {!summary || errored ? (
-            <Button
-              icon={<Icon icon={Sparkles} size={16} />}
-              onClick={() => gen.mutate({ language, voice }, { onSuccess: () => show(t("ready")) })}
-              disabled={gen.isPending}
-            >
-              {errored ? t("regenerate") : t("generateVideo")}
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              {/* Uzilgan montaj — bajarilgan ish saqlangan, noldan boshlash shart emas. */}
+              {interrupted && (
+                <Button
+                  icon={<Icon icon={RotateCcw} size={16} />}
+                  onClick={() => resume.mutate(undefined, { onSuccess: () => show(t("vResumed")) })}
+                  disabled={resume.isPending}
+                >
+                  {t("vResume")}
+                </Button>
+              )}
+              <Button
+                variant={interrupted ? "soft" : "primary"}
+                icon={<Icon icon={Sparkles} size={16} />}
+                onClick={() => gen.mutate({ language, voice }, { onSuccess: () => show(t("ready")) })}
+                disabled={gen.isPending}
+              >
+                {errored ? t("regenerate") : t("generateVideo")}
+              </Button>
+            </div>
           ) : (
             <ReadyRow summary={summary} onEdit={() => navigate(`/teach/content/${summary.id}`)} />
           )}

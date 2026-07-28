@@ -9,6 +9,7 @@ import { ApiError, badRequest, notFound } from "../../lib/errors";
 import { readFileBuffer, saveBytes } from "../../lib/storage";
 import { pcmToWav } from "../../lib/wav";
 import { FFMPEG, run } from "../../lib/exec";
+import { enqueueMediaJob } from "../../lib/jobQueue";
 import { generateImage, generateSpeech, generateStructured } from "../../ai/gemini";
 import { assertQuota } from "../../ai/quota";
 import { departmentForTopic } from "../../ai/glossary";
@@ -362,6 +363,11 @@ async function stageTtsAndRender(videoId: number) {
         seg.durationSec = dur;
         seg.audioUrl = await saveBytes(`topics/${topicId}/video/${v.id}/seg-${hash}.wav`, await readFile(path.join(dir, wavName)));
         seg.audioHash = hash;
+        // ⚠️ HAR SEGMENTDAN KEYIN saqlaymiz. Ilgari scriptJson faqat BUTUN sikl
+        // tugagach yozilardi — jarayon 9/15 da o'lsa (Render restart/OOM) 9 ta
+        // ovozlangan segment ham yo'qolardi va qayta urinish NOLDAN boshlardi.
+        // Endi uzilgan job qolgan joyidan davom etadi (audioHash keshi).
+        await prisma.video.update({ where: { id: videoId }, data: { scriptJson: segments as object } });
       }
       segWavs.push(wavName);
     }
@@ -401,6 +407,8 @@ async function stageTtsAndRender(videoId: number) {
               });
               seg.visualImageUrl = await saveBytes(`topics/${topicId}/video/${v.id}/seg${i}.png`, img.buffer);
               imagesMade++;
+              // Rasm pullik — uzilib qolsa qayta to'lanmasin (segmentда keshlanadi).
+              await prisma.video.update({ where: { id: videoId }, data: { scriptJson: segments as object } });
             } catch {
               seg.visualImageUrl = null; // quota/429/etc → clean text card
             }
@@ -493,8 +501,25 @@ export async function generateVideo(
   });
 
   const video = await prisma.video.findUnique({ where: { contentItemId: content.id } });
-  setImmediate(() => void runPipeline(video!.id, false));
+  enqueueMediaJob(`video:${video!.id}`, () => runPipeline(video!.id, false));
   return content.id;
+}
+
+/** UZILIB QOLGAN montajni DAVOM ETTIRISH — skript va ovozlangan segmentlar
+ *  saqlangani uchun qoldiq ishdan boshlanadi (qayta to'lov yo'q).
+ *  `teacherId` berilmasa (server tiklashi) egalik tekshirilmaydi. */
+export async function resumeVideo(videoId: number, teacherId?: number) {
+  if (teacherId !== undefined) await videoForTeacher(videoId, teacherId);
+  const v = await prisma.video.findUnique({ where: { id: videoId } });
+  if (!v) throw notFound("Video");
+  // ⚠️ errorStage'ni O'CHIRMAYMIZ (server tiklashida): u yerda avtomatik
+  // urinishlar hisobi turadi — aks holda cheksiz tiklash sikli bo'lardi.
+  // O'qituvchi o'zi bosganда esa hisob nolga tushadi (yangi niyat).
+  await prisma.video.update({
+    where: { id: videoId },
+    data: { buildStatus: "PENDING", ...(teacherId !== undefined ? { errorStage: null } : {}) },
+  });
+  enqueueMediaJob(`video:${videoId}`, () => runPipeline(videoId, scriptOf(v).length > 0));
 }
 
 /** Rebuild after script edit — skips SCRIPT, re-runs TTS + RENDER. */
@@ -504,7 +529,7 @@ export async function rebuildVideo(videoId: number, teacherId: number) {
   // reset segment durations so TTS re-measures
   const segs = scriptOf(v).map((s) => ({ ...s, durationSec: 0 }));
   await prisma.video.update({ where: { id: v.id }, data: { scriptJson: segs as object } });
-  setImmediate(() => void runPipeline(v.id, true));
+  enqueueMediaJob(`video:${v.id}`, () => runPipeline(v.id, true));
 }
 
 export async function getVideoMedia(videoId: number, teacherId: number, kind: "mp4" | "srt") {

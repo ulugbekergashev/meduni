@@ -170,6 +170,15 @@ videosRouter.post(
   })
 );
 
+// Uzilib qolgan montajni DAVOM ETTIRISH (noldan emas — keshdan).
+videosRouter.post(
+  "/:id/resume",
+  wrap(async (req, res) => {
+    await video.resumeVideo(parseId(req.params.id), req.user!.id);
+    res.json({ ok: true });
+  })
+);
+
 videosRouter.get(
   "/:id/mp4",
   wrap(async (req, res) => {

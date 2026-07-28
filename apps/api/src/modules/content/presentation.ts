@@ -7,6 +7,7 @@ import { ApiError, notFound } from "../../lib/errors";
 import { readFileBuffer, saveBytes } from "../../lib/storage";
 import { generateImage, generateStructured } from "../../ai/gemini";
 import { assertQuota } from "../../ai/quota";
+import { enqueueMediaJob } from "../../lib/jobQueue";
 import { departmentForTopic } from "../../ai/glossary";
 import { slidesGenSchema, slidesResponseSchema, type DigestJson, type Slide, type SlidesGen } from "../../ai/types";
 import { slidesSystemPrompt, slidesUserContent } from "../../ai/prompts/slides";
@@ -158,7 +159,7 @@ export async function generateAllImages(presentationId: number, teacherId: numbe
   await assertQuota(await departmentForTopic(topicId));
   // Mark queued as pending immediately so the UI shows progress.
   for (const t of targets) await updateSlot(presentationId, t.s, t.slot, { status: "PENDING" });
-  setImmediate(() => void runImageJob(presentationId, topicId, teacherId, lang, targets));
+  enqueueMediaJob(`images:${presentationId}`, () => runImageJob(presentationId, topicId, teacherId, lang, targets));
 }
 
 export async function regenerateOneImage(
@@ -171,7 +172,7 @@ export async function regenerateOneImage(
   const topicId = pres.contentItem.topicId;
   const lang = pres.contentItem.language;
   await updateSlot(presentationId, slideIndex, slotIndex, { status: "PENDING", url: null });
-  setImmediate(() => void runImageJob(presentationId, topicId, teacherId, lang, [{ s: slideIndex, slot: slotIndex }]));
+  enqueueMediaJob(`image:${presentationId}:${slideIndex}`, () => runImageJob(presentationId, topicId, teacherId, lang, [{ s: slideIndex, slot: slotIndex }]));
 }
 
 // ---------- Media ----------

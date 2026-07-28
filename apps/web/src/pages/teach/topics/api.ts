@@ -188,6 +188,8 @@ export interface VideoContent {
   voiceId: string | null;
   durationSec: number | null;
   script: ScriptSegment[];
+  /** Ovozlangan segmentlar hisobi — spinner o'rniga haqiqiy jarayon. */
+  progress: { done: number; total: number };
   hasMp4: boolean;
   hasSrt: boolean;
 }
@@ -378,6 +380,10 @@ export function useContent(id: number) {
         data?.video && ["pending", "script", "tts", "render"].includes(data.video.buildStatus);
       return imgBusy || vidBusy ? 2000 : false;
     },
+    // ⚠️ Montaj 10–20 daqiqa davom etadi — o'qituvchi tabni fonda qoldiradi.
+    // Sukut bo'yicha react-query fon tabda so'rovni TO'XTATADI, shuning uchun
+    // holat qotib qolardi (jarayon o'lganda ham "Ovoz yaratilmoqda…" turardi).
+    refetchIntervalInBackground: true,
   });
 }
 
@@ -437,6 +443,17 @@ export function useRebuildVideo(videoId: number) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: () => api(`/api/v1/videos/${videoId}/rebuild`, { method: "POST" }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["content"] }),
+  });
+}
+
+/** Uzilib qolgan montajni davom ettirish — ovozlangan segmentlar qayta
+ *  ishlatiladi (noldan boshlamaydi, qayta to'lov yo'q). */
+export function useResumeVideo(videoId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    meta: { silent: true },
+    mutationFn: () => api(`/api/v1/videos/${videoId}/resume`, { method: "POST" }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["content"] }),
   });
 }

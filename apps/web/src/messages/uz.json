@@ -899,7 +899,11 @@
     "ready": "Tayyor",
     "edit": "Tahrirlash",
     "error": "Yaratilmadi, qayta urinish",
-    "edited": "Tahrirlangan"
+    "edited": "Tahrirlangan",
+    "vLongHint": "Montaj 10–20 daqiqa davom etadi. Sahifani yopsangiz ham jarayon serverda davom etadi.",
+    "vInterrupted": "Server qayta ishga tushgani uchun montaj uzildi ({{done}}/{{total}} segment ovozlangan). Bajarilgan ish saqlangan — davom ettiring.",
+    "vResume": "Davom ettirish",
+    "vResumed": "Montaj davom etmoqda"
   },
   "videoEditor": {
     "back": "← Konstruktor",
