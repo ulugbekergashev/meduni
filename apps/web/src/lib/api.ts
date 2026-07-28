@@ -1,4 +1,23 @@
-export const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
+const CONFIGURED_API_URL: string = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
+
+/**
+ * Vercel'da chiqarilgan saytda so'rovlar O'Z domeniga (nisbiy yo'l bilan)
+ * yuboriladi — `vercel.json` dagi rewrite ularni API'ga uzatadi.
+ *
+ * ⚠️ NEGA: ba'zi provayderlar (jumladan buyurtmachining tarmog'i) Render
+ * domeniga HTTPS ulanishini to'sadi — TCP ochiladi, TLS esa uziladi. Natijada
+ * sayt ochiladi, lekin login/ma'lumot so'rovlari "osilib" qoladi. Brauzer
+ * faqat Vercel bilan gaplashsa, bu to'siq umuman ta'sir qilmaydi. Qo'shimcha
+ * foyda: cookie'lar cross-site bo'lmaydi (bir xil origin).
+ *
+ * Mahalliy dev va boshqa muhitlarda odatdagi VITE_API_URL ishlatiladi.
+ */
+function resolveApiUrl(): string {
+  if (typeof window !== "undefined" && /(^|\.)vercel\.app$/i.test(window.location.hostname)) return "";
+  return CONFIGURED_API_URL;
+}
+
+export const API_URL = resolveApiUrl();
 
 export class ApiError extends Error {
   status: number;
