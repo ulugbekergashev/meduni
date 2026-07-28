@@ -294,7 +294,12 @@ export async function getTopicLesson(studentId: number, topicId: number) {
     /** Virtual bemor amaliyoti (keys yoki konspekt bo'lsa; bosqich sifatida). */
     patient: { available: patientAvailable, finished: !!patientEval },
     tabs: {
-      video: videoItem?.video
+      // ⚠️ Video FAQAT mp4 tayyor bo'lsa yuboriladi. Ilgari montaj tugamagan
+      // (buildStatus=TTS/RENDER) video ham payloadga tushardi — talaba rail'da
+      // "Video ma'ruza" blokini ko'rib bosardi va bo'sh xato ekraniga tushardi,
+      // ustiga bosqich foizi ham hech qachon to'lmasdi. Tayyor bo'lmagan video —
+      // talaba uchun kontent emas.
+      video: videoItem?.video?.mp4Url
         ? {
             present: true,
             videoId: videoItem.video.id,

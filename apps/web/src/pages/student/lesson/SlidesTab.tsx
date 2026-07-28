@@ -113,9 +113,9 @@ export function SlidesTab({ topicId, data }: { topicId: number; data: SlidesTabD
   const go = (d: number) => setI((p) => Math.min(Math.max(p + d, 0), total - 1));
 
   return (
-    <div className="space-y-3">
+    <div className="flex h-full min-h-0 flex-col gap-3">
       {/* Ko'rinish almashtirish + PDF */}
-      <div className="flex items-center gap-1.5">
+      <div className="flex shrink-0 items-center gap-1.5">
         <div className="flex rounded-control border border-line p-0.5">
           {([false, true] as const).map((o) => (
             <button
@@ -148,7 +148,7 @@ export function SlidesTab({ topicId, data }: { topicId: number; data: SlidesTabD
 
       {outline ? (
         /* ---- Matn ko'rinishi (mini-konspekt): hamma slayd birdaniga ---- */
-        <div className="mx-auto max-w-[68ch] space-y-4">
+        <div className="mx-auto min-h-0 w-full max-w-[68ch] flex-1 space-y-4 overflow-y-auto">
           {data.slides.map((s, si) => (
             <section key={s.id} className="rounded-card border border-line p-4">
               <div className="mb-2 flex items-start gap-2.5">
@@ -181,7 +181,7 @@ export function SlidesTab({ topicId, data }: { topicId: number; data: SlidesTabD
         /* ---- Slayd karuseli ---- */
         <>
           <div
-            className="relative overflow-hidden rounded-card border border-line bg-surface-raised"
+            className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-card border border-line bg-surface-raised"
             onTouchStart={(e) => (touchX.current = e.touches[0].clientX)}
             onTouchEnd={(e) => {
               if (touchX.current === null) return;
@@ -190,7 +190,7 @@ export function SlidesTab({ topicId, data }: { topicId: number; data: SlidesTabD
               touchX.current = null;
             }}
           >
-            <div className="min-h-[280px] p-4">
+            <div className="min-h-0 flex-1 overflow-y-auto p-4">
               <div className="mb-3 flex items-start gap-3">
                 <div className="mt-1 h-7 w-1 shrink-0 rounded-pill bg-brand" />
                 <h3 className="text-section font-extrabold leading-snug text-ink">{slide.title}</h3>
@@ -215,7 +215,7 @@ export function SlidesTab({ topicId, data }: { topicId: number; data: SlidesTabD
                 ))}
               </ul>
             </div>
-            <div className="h-1 w-full bg-line">
+            <div className="h-1 w-full shrink-0 bg-line">
               <div className="h-full bg-brand transition-all duration-300" style={{ width: `${((i + 1) / total) * 100}%` }} />
             </div>
           </div>

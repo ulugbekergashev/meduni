@@ -27,7 +27,6 @@ const ALL_VIEWS: LessonView[] = [
   "konspekt",
   "video",
   "slides",
-  "materials",
   "mindmap",
   "case",
   "quiz",
@@ -49,8 +48,6 @@ function viewAvailable(v: LessonView, lesson: Lesson): boolean {
       return !!lesson.tabs.video;
     case "slides":
       return !!lesson.tabs.slides;
-    case "materials":
-      return lesson.materials.length > 0 || (lesson.links?.length ?? 0) > 0;
     case "mindmap":
       // Mindmap bo'limli konspektdan quriladi (v2). Bo'lim bo'lmasa yo'q.
       return (lesson.sections?.length ?? 0) > 0;
@@ -180,9 +177,6 @@ export function LessonPage() {
   if (lesson.digest || sections.length > 0) studyBlocks.push("konspekt");
   if (lesson.tabs.slides) studyBlocks.push("slides");
   if (lesson.tabs.video) studyBlocks.push("video");
-  // Materiallar bloki fayl YOKI havola bo'lsa turadi (matn ajratilmagan bo'lsa
-  // ham — u holda blok ichida faqat yuklab olish ro'yxati ochiladi).
-  if (lesson.materials.length > 0 || (lesson.links?.length ?? 0) > 0) studyBlocks.push("materials");
   // Mindmap — bo'limli konspekt bo'lsa (navigatsiya xaritasi, AI'siz).
   if (sections.length > 0) studyBlocks.push("mindmap");
   // Fleshkartalar — takrorlash bloki (test yoki konspekt bo'lsa hosil bo'ladi;
@@ -195,7 +189,6 @@ export function LessonPage() {
     view === "konspekt" ||
     view === "slides" ||
     view === "video" ||
-    view === "materials" ||
     view === "flashcards" ||
     view === "mindmap";
   /** 3 panel FAQAT o'rganishda. Test/keys/kartalar/natija/overview — FOKUSLI
@@ -300,6 +293,8 @@ export function LessonPage() {
               seekTo={seekTo}
               onSeekVideo={seekVideo}
               onJumpSection={jumpToSection}
+              materialsLocked={quizRunning}
+              materialsLockedNote={t("materialsLockedQuiz")}
             />
           )}
         </div>
@@ -337,8 +332,6 @@ export function LessonPage() {
                   // Bir xil bo'limni qayta bosish ham ishlashi uchun darhol tozalanadi.
                   setTimeout(() => setJumpTo(null), 600);
                 }}
-                locked={quizRunning}
-                lockedNote={t("materialsLockedQuiz")}
               />
             </div>
           )}
@@ -357,6 +350,8 @@ export function LessonPage() {
               seekTo={seekTo}
               onSeekVideo={seekVideo}
               onJumpSection={jumpToSection}
+              materialsLocked={quizRunning}
+              materialsLockedNote={t("materialsLockedQuiz")}
             />
           </div>
 
@@ -389,8 +384,6 @@ export function LessonPage() {
                 setMobileRail(false);
                 setTimeout(() => setJumpTo(null), 600);
               }}
-              locked={quizRunning}
-              lockedNote={t("materialsLockedQuiz")}
             />
           </Sheet>
 

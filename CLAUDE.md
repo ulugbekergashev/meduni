@@ -1884,3 +1884,72 @@ Mezon: `document.documentElement.scrollWidth - innerWidth === 0` va
 ⚠️ **Demo ma'lumot:** bazada Presentation yo'q edi — `scripts/demoSlides.ts`
 (3 slayd + sharp bilan chizilgan yorliqli diagramma) qo'shildi. **Video hali
 ham yo'q** — VideoTab o'zgarishlari vizual tekshirilmagan.
+
+---
+
+## 12. DARS SAHIFASI 2.0 — fleshkarta/mindmap/material (2026-07-28, buyurtmachi)
+
+Shikoyat: *"flashcardlar chiroyliroq qilsang, keyin ko'proq bo'lishi kerak.
+prezentatsiya vabshe yo'q. video ko'rsatmayapdi. material matni bizga kerak emas —
+materialni o'zi pdfi konspektni tepasida bo'lsin. mindmap ham xuyoviy chiqqan."*
+
+### Kutubxona tanlovi
+Ko'rib chiqildi: **React Flow (@xyflow/react)**, Cytoscape.js, markmap, GoJS,
+Embla Carousel. **Olindi: `@xyflow/react` + `@dagrejs/dagre`** (faqat mindmap
+uchun) — MIT, headless, style bizning tokenlarda; auto-layout/zoom/pan/fit qo'lda
+yozib bo'lmaydigan qism. **Embla OLINMADI** — fleshkarta *dastasi* karusel emas,
+mavjud `framer-motion` drag bilan yasaladi (yangi paket ortiqcha). React Flow
+attribution QOLDIRILDI (pro-litsenziyasiz olib tashlanmaydi).
+⚠️ Mindmap `React.lazy` chunk (~76kB gzip) — asosiy bundle o'smaydi.
+
+### O'zgarishlar
+1. **Fleshkarta MANBALARI kengaydi** (`me/flashcards.ts`, AI YO'Q, hammasi mavjud
+   konspektdan): atama (uz→ru·lat) · **teskari atama** (lat/ru→uz) · **tushuncha**
+   ("Nom — ta'rif" ajratgichi bo'lsa) · **fakt cloze** (raqam/atama `_____`
+   qilinadi) · **doza** · **bo'lim checkpointi** · **keys qadami** · test savoli.
+   Ajratgich/raqam topilmasa karta YASALMAYDI (soxta savoldan ko'ra yo'q yaxshi).
+   Chegara `MAX_CARDS=60`. O'lchandi: mavzu 1 — 9 → **33 karta**, mavzu 4 — 3 → **10**.
+   ⚠️ **QULF MODELI O'ZGARDI:** ilgari BUTUN to'plam test yakunlanmaguncha yopiq
+   edi; endi faqat **test savollari** (va topshirilmagan **keys qadamlari**) yopiq —
+   konspektdan kelgan kartalar har doim ochiq (ular o'qish ustunida allaqachon
+   ko'rinadi, ya'ni yashirishning ma'nosi yo'q va takrorlash aynan test OLDIDAN
+   kerak). Javobda `quizLocked`/`pendingQuiz` — UI "yana N ta ochiladi" deydi.
+2. **Fleshkarta YUZASI**: dasta (orqada 2 karta), chapga/o'ngga **surish** =
+   bilmayman/bilaman (drag niyat belgisi bilan), tur bo'yicha **filtr chiplari**,
+   har tur o'z rangi+ikonkasi (`KIND` xaritasi), javob tomonida savol eslatmasi.
+   `CardFace` imzosi o'zgarmadi — `grades/ReviewTab` va `PracticeTab` ishlayveradi.
+3. **Material matni bloki O'CHIRILDI** (`MaterialTextView.tsx`, `useMaterialText`,
+   `ContentView.materials`). O'rniga **`MaterialBar`** — konspekt USTIDA: fayl
+   chipi (PDF · 93 bet · 3.3 MB) + havolalar, bosilsa hujjat **joyida** ochiladi.
+   ⚠️ `<iframe src={API_URL}/...>` ISHLAMAYDI: helmet `X-Frame-Options: SAMEORIGIN`
+   + CSP `frame-ancestors 'self'` qo'yadi, web boshqa originda → brauzer bloklaydi
+   ("buzuq hujjat" ikonkasi). Yechim — fayl `credentials:"include"` bilan olinib
+   **`blob:` URL** sifatida ko'rsatiladi (sahifaning o'z origini; prod cross-site
+   holatida ham ishlaydi). Backend xavfsizlik sozlamalariga TEGILMADI.
+4. **Mindmap React Flow'ga ko'chdi** — dagre `rankdir:"LR"` daraxti (tugunlar
+   ustma-ust tushmaydi), zoom/pan/fit, `data-theme` kuzatuvchi `colorMode`.
+   MiniMap qo'yilib, keyin OLIB TASHLANDI (o'ng chetdagi tugunlarni yopardi).
+   `onInit` da `requestAnimationFrame(fitView)` — mount paytida panel kengligi 0
+   bo'lsa daraxtning o'ng chekkasi kesilib qolardi.
+5. **Video — o'lik blok tuzatildi.** `me/lesson.ts` endi videoni FAQAT `mp4Url`
+   bor bo'lsa yuboradi. Ilgari montaji tugamagan video (`buildStatus=TTS`) ham
+   payloadga tushardi → rail'da "Video ma'ruza" turardi, bosilsa bo'sh xato
+   ekrani chiqardi. Ustiga `lesson.videoUnavailable/videoDone/videoNeed/subtitles`
+   i18n kalitlari UMUMAN YO'Q edi — ekranda `lesson.videoUnavailable` xom matni
+   ko'rinardi. Qo'shildi (uz+ru).
+6. **Slaydlar panel balandligini to'ldiradi** (ZICHLIK qoidasi — pastda bo'sh
+   ekran qolardi).
+7. **`scripts/demoPublishTopic.ts`** (yangi) — mavzu kontentini DRAFT→PUBLISHED
+   qiladi (mp4siz videoni o'tkazib yuboradi). Demo mavzu 4 da prezentatsiya/test/
+   keys chop etilmagani uchun talaba ularni umuman ko'rmasdi.
+
+**Tekshirildi (Playwright + real Chrome, talaba logini):** rail bloklari
+(Konspekt/Prezentatsiya/Fikr xaritasi/Kartonkalar — video yo'q, material matni
+yo'q), 33 karta + 6 filtr chipi + ag'darish, mindmap daraxti (5 bo'lim + 9 atama),
+6 slaydli prezentatsiya, **PDF konspekt ustida haqiqatan ochiladi** (BMJ, 93 bet),
+konsolda xom i18n kaliti va 404 yo'q. tsc + build ikkala tomonda toza.
+
+⚠️ **Qolgan (pul talab qiladi, buyurtmachidan so'raladi):** mavzu 4 videosi
+`buildStatus=TTS` da qotib qolgan — mp4 uchun **rebuild** kerak (Gemini TTS +
+ffmpeg); prezentatsiya slaydlarida rasm sloti `PENDING` — **Nano Banana Pro**
+generatsiyasi qilinmagan (slaydlar hozircha matn-only).

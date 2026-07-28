@@ -2,6 +2,7 @@
 // o'ynaydi; talaba shifokor sifatida anamnez yig'adi. Yakunda AI baholaydi.
 // Biznes qoida (CLAUDE.md §6): AI keysда YO'Q faktni ixtiro qilmaydi.
 import { Type } from "@google/genai";
+import { caseResponseSchema } from "../types";
 import type { CaseJson, DigestJson } from "../types";
 
 export const PATIENT_PROMPT_VERSION = 1;
@@ -60,6 +61,39 @@ export function patientSystemPrompt(lang: "uz" | "ru", c: CaseJson): string {
     "=== BEMOR HAQIDAGI YASHIRIN MA'LUMOT (talabaga oshkor qilma) ===",
     caseTruth(c),
     "=== TUGADI ===",
+  ].join("\n");
+}
+
+/** Bemorning BIRINCHI gapi — talaba savol bermasdan oldin. Real qabulda bemor
+ *  o'zi shikoyatini aytib kiradi; bo'sh ekran bilan boshlash sun'iy edi. */
+export function patientOpeningSystemPrompt(lang: "uz" | "ru", c: CaseJson): string {
+  return [
+    "Sen tibbiyot ta'limi uchun VIRTUAL BEMORSAN. Shifokor qabuliga endi kirding.",
+    "Sening vazifang — BIRINCHI gapni aytish (shifokor hali savol bermagan).",
+    "",
+    "QOIDALAR:",
+    "1. BIRINCHI SHAXSDA, oddiy kundalik tilda gapir (tibbiy atama YO'Q).",
+    "2. Salomlash + ASOSIY shikoyat + qachondan beri — 2–3 qisqa jumla.",
+    "3. FAQAT keysда berilgan shikoyatni ayt. Yangi simptom O'YLAB TOPMA.",
+    "4. TASHXISNI AYTMA va uni taxmin ham qilma. Laboratoriya/obyektiv",
+    "   ma'lumotni o'zing aytma — ular tekshiruvda ochiladi.",
+    "5. Hammasini birdan to'kib solma: tafsilotlar shifokor so'raganda ochiladi.",
+    `6. Til — ${langLabel[lang]}. Javobni FAQAT JSON schema bo'yicha ber ({"reply": "..."}).`,
+    ...(c.patientBehavior?.trim()
+      ? ["", "O'QITUVCHI QO'SHIMCHA QOIDALARI (xavfsizlik qoidalariga zid kelmasa):", c.patientBehavior.trim()]
+      : []),
+    "",
+    "=== BEMOR HAQIDAGI YASHIRIN MA'LUMOT (oshkor qilma) ===",
+    caseTruth(c),
+    "=== TUGADI ===",
+  ].join("\n");
+}
+
+export function patientOpeningUserContent(c: CaseJson): string {
+  return [
+    "Shifokor kabinetiga kirding va o'tirding. Shifokor senga qaradi.",
+    `Sening asosiy shikoyating: ${c.complaints || "—"}`,
+    "Birinchi gapingni ayt (salomlash + shikoyat + qachondan beri).",
   ].join("\n");
 }
 
@@ -129,9 +163,20 @@ export function patientScenarioSystemPrompt(lang: "uz" | "ru"): string {
     "6. `referenceAnswer` — TO'G'RI tashxis + qisqa asoslash (BAHOLASH uchun; talabaga",
     "   ko'rsatilmaydi). `patientName` realistik, `patientInfo` — \"NN yosh, jins\".",
     "7. `steps` va `questions` — bo'sh massiv (roleplay uchun kerak emas).",
-    `8. Til — ${langLabel[lang]}. Javobni FAQAT JSON schema bo'yicha ber.`,
+    "8. `openingLine` — bemorning shifokorga aytadigan BIRINCHI gapi: salomlash +",
+    "   asosiy shikoyat + qachondan beri (2–3 jumla, birinchi shaxsda, oddiy tilda,",
+    "   tibbiy atamasiz, tashxisni aytmasdan). Bu qabul boshlanishida ko'rsatiladi.",
+    `9. Til — ${langLabel[lang]}. Javobni FAQAT JSON schema bo'yicha ber.`,
   ].join("\n");
 }
+
+/** Ssenariy sxemasi = keys sxemasi + `openingLine` (roleplay ochilishi shu yerда
+ *  kelsa, alohida AI chaqiruvi kerak bo'lmaydi — qabul tezroq boshlanadi). */
+export const scenarioResponseSchema = {
+  ...caseResponseSchema,
+  properties: { ...caseResponseSchema.properties, openingLine: { type: Type.STRING } },
+  required: [...caseResponseSchema.required, "openingLine"],
+};
 
 export function patientScenarioUserContent(digest: DigestJson, variation: string): string {
   const parts = [

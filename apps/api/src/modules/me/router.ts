@@ -185,6 +185,12 @@ meRouter.get(
 
 meRouter.get("/topics/:id/patient", wrap(async (req, res) => res.json(await patient.getPatient(req.user!.id, parseId(req.params.id)))));
 
+// Qabulni boshlash — bemor birinchi bo'lib shikoyatini aytadi (idempotent).
+meRouter.post("/topics/:id/patient/start", wrap(async (req, res) => res.json(await patient.startPatient(req.user!.id, parseId(req.params.id)))));
+
+// Hayotiy ko'rsatkichlarni o'lchash (keysда bo'lsa — AI chaqiruvisiz).
+meRouter.post("/topics/:id/patient/vitals", wrap(async (req, res) => res.json(await patient.measureVitals(req.user!.id, parseId(req.params.id)))));
+
 const patientMsgSchema = z.object({ text: z.string().min(1).max(2000) });
 meRouter.post(
   "/topics/:id/patient",
