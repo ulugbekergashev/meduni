@@ -18,6 +18,7 @@ import { meRouter } from "./modules/me/router";
 import { accountRouter } from "./modules/account/router";
 import { adminRouter } from "./modules/admin/router";
 import { tasksRouter } from "./modules/tasks/router";
+import { recoverStaleJobs } from "./modules/content/recovery";
 
 const app = express();
 
@@ -138,4 +139,7 @@ app.listen(env.port, () => {
   console.log(`  web origins : ${env.webOrigins.join(", ")}`);
   if (env.vercelProject) console.log(`  vercel prev : ${env.vercelProject}-*.vercel.app`);
   console.log(`  cookies     : ${env.crossSiteCookies ? "SameSite=None; Secure (cross-site)" : "SameSite=Lax"}`);
+  // Oldingi jarayonda uzilib qolgan video/rasm joblarini ERROR ga o'tkazamiz —
+  // aks holda UI abadiy "ishlamoqda" spinnerini ko'rsatib turadi.
+  void recoverStaleJobs();
 });

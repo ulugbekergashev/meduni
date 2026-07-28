@@ -75,8 +75,18 @@
     "countDdx": "{{n}} versiya",
     "orderLab": "Laboratoriya",
     "orderInstr": "Instrumental",
-    "labTests": ["Umumiy qon tahlili", "Biokimyoviy tahlil", "Troponin", "Umumiy siydik tahlili"],
-    "instrTests": ["EKG", "EKO-KG", "Rentgen", "UZI"],
+    "labTests": [
+      "Umumiy qon tahlili",
+      "Biokimyoviy tahlil",
+      "Troponin",
+      "Umumiy siydik tahlili"
+    ],
+    "instrTests": [
+      "EKG",
+      "EKO-KG",
+      "Rentgen",
+      "UZI"
+    ],
     "orderCustom": "Boshqa tekshiruv…",
     "orderCustomBtn": "Buyurish",
     "askPlaceholder": "Bemorga savol bering…",
@@ -928,7 +938,7 @@
     "saved": "Saqlandi",
     "addBullet": "Tezis qoʻshish",
     "imageStatus": {
-      "pending": "Navbatda",
+      "pending": "Yaratilmagan",
       "processing": "Chizilmoqda…",
       "done": "Tayyor",
       "error": "Xato"
@@ -1006,7 +1016,7 @@
     "confirmMsg": "Bu kontent talabalarga ochiladi. Tasdiqlaysizmi?",
     "confirmBtn": "Chop etish",
     "publishedMsg": "Kontent talabalarga chop etildi!",
-    "stamp": "Tekshirdi: {name}, {date}",
+    "stamp": "Tekshirdi: {{name}}, {{date}}",
     "published": "Chop etilgan",
     "needContent": "Avval kamida bitta kontent yarating.",
     "hint": "Tasdiqlangach talaba shu kontentni darrov ko'radi."
@@ -1273,7 +1283,7 @@
     "noTeachers": "Avval oʻqituvchi qoʻshing (Foydalanuvchilar boʻlimi).",
     "noGroups": "Avval guruh qoʻshing (Tuzilma boʻlimi).",
     "empty": "Hali kurs yoʻq. Fan, oʻqituvchi va guruhni tanlab kurs yarating.",
-    "created": "Kurs yaratildi. {n} talaba yozildi.",
+    "created": "Kurs yaratildi. {{n}} talaba yozildi.",
     "confirmDelete": "Bu kursni oʻchirasizmi? Yozilganlar ham oʻchadi.",
     "confirmDeleteTitle": "Kursni oʻchirish",
     "detail": {

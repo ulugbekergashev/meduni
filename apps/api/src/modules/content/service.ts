@@ -348,6 +348,22 @@ export async function publishContent(contentId: number, teacherId: number) {
   if (!topic?.digest?.approvedByTeacher) {
     throw new ApiError(403, "digest_not_approved", "Avval konspektni tasdiqlang", "Сначала утвердите конспект");
   }
+
+  // ⚠️ 2026-07-28: VIDEO montaji tugamagan bo'lsa ham chop etilaverardi —
+  // o'qituvchi panelida "Chop etilgan" deb turardi, talabada esa ko'radigan
+  // narsa yo'q edi (mp4 yo'q). Chop etish endi TAYYOR faylni talab qiladi.
+  if (item.kind === "VIDEO") {
+    const video = await prisma.video.findUnique({ where: { contentItemId: contentId }, select: { mp4Url: true } });
+    if (!video?.mp4Url) {
+      throw new ApiError(
+        400,
+        "video_not_built",
+        "Video hali tayyor emas — avval montajni yakunlang",
+        "Видео ещё не готово — сначала завершите монтаж"
+      );
+    }
+  }
+
   const published = await prisma.contentItem.update({
     where: { id: contentId },
     data: { status: "PUBLISHED", approvedById: teacherId, approvedAt: new Date() },
