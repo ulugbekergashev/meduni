@@ -4,7 +4,12 @@
   "buildCommand": "npm run build --workspace=@meduni/web",
   "outputDirectory": "apps/web/dist",
   "framework": null,
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }],
+  "rewrites": [
+    { "source": "/api/:path*", "destination": "https://meduni-api.onrender.com/api/:path*" },
+    { "source": "/auth/:path*", "destination": "https://meduni-api.onrender.com/auth/:path*" },
+    { "source": "/health", "destination": "https://meduni-api.onrender.com/health" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ],
   "headers": [
     {
       "source": "/assets/(.*)",
