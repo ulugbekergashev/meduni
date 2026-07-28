@@ -26,6 +26,10 @@ RUN if [ "$BUILD_WEB" = "1" ]; then cd apps/web && VITE_API_URL="$VITE_API_URL" 
 ENV SERVE_WEB=""
 
 ENV PORT=8080
+# ⚠️ Render Free = 512MB. V8 sukut bo'yicha konteyner chegarasini bilmaydi va
+# to'lguncha o'sadi — natijada jarayon "OOM killed" bo'lib, servis qayta-qayta
+# ko'tariladi. Heap'ni ataylab pastroq cheklaymiz: GC erta ishlaydi.
+ENV NODE_OPTIONS=--max-old-space-size=400
 EXPOSE 8080
 
 RUN chmod +x docker-entrypoint.sh
