@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Check, TriangleAlert } from "lucide-react";
 import { cls } from "../cls";
 
@@ -17,6 +17,20 @@ interface ToastContextValue {
 }
 
 const ToastContext = createContext<ToastContextValue | null>(null);
+
+/** React'dan TASHQARIDA toast ko'rsatish uchun ko'prik.
+ *
+ * ⚠️ NEGA KERAK: TanStack Query'ning `QueryClient`i React daraxtidan tashqarida
+ * yaratiladi, ya'ni u `useToast()` ni chaqira olmaydi. Global mutatsiya-xatosi
+ * tarmog'i esa aynan o'sha yerda o'rnatiladi (main.tsx). Provider ulanganda
+ * o'z `show` funksiyasini shu yerga yozib qo'yadi. */
+let emitToast: ToastContextValue["show"] | null = null;
+
+/** Istalgan joydan (hook'siz) toast ko'rsatish. Provider hali ulanmagan bo'lsa
+ *  jimgina hech narsa qilmaydi — bu ilovani yiqitmasligi kerak. */
+export function toast(message: string, kind: ToastKind = "ok"): void {
+  emitToast?.(message, kind);
+}
 
 export function useToast(): ToastContextValue {
   const ctx = useContext(ToastContext);
@@ -36,6 +50,14 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo(() => ({ show }), [show]);
+
+  // React'dan tashqaridagi chaqiruvlar uchun ko'prikni ulaymiz.
+  useEffect(() => {
+    emitToast = show;
+    return () => {
+      if (emitToast === show) emitToast = null;
+    };
+  }, [show]);
 
   return (
     <ToastContext.Provider value={value}>

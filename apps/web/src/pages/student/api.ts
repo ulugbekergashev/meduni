@@ -478,6 +478,8 @@ export function useTutorChat(topicId: number) {
 export function useSendTutorMessage(topicId: number) {
   const qc = useQueryClient();
   return useMutation({
+    // Xato chat oynasida ko'rsatiladi - global toast takrorlamasin.
+    meta: { silent: true },
     mutationFn: (text: string) =>
       api<{ messages: TutorMsg[] }>(`/api/v1/me/topics/${topicId}/chat`, {
         method: "POST",
@@ -591,6 +593,8 @@ export function useSendPatient(topicId: number) {
 export function useFinishPatient(topicId: number) {
   const qc = useQueryClient();
   return useMutation({
+    // Xato chaqiruv joyida ko'rsatiladi - global toast takrorlamasin.
+    meta: { silent: true },
     mutationFn: (diagnosis: string) =>
       api<{ eval: PatientEval; finished: boolean }>(`/api/v1/me/topics/${topicId}/patient/finish`, {
         method: "POST",

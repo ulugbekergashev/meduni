@@ -34,6 +34,8 @@ export function useMe() {
 export function useLogin() {
   const queryClient = useQueryClient();
   return useMutation({
+    // Xato chaqiruv joyida ko'rsatiladi — global toast takrorlamasin.
+    meta: { silent: true },
     mutationFn: (body: { email: string; password: string }) =>
       api<Me>("/auth/login", { method: "POST", body: JSON.stringify(body) }),
     onSuccess: (me) => {

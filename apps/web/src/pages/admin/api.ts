@@ -231,6 +231,8 @@ export interface CreateTaskBody {
 export function useCreateTask() {
   const qc = useQueryClient();
   return useMutation({
+    // Xato chaqiruv joyida ko'rsatiladi - global toast takrorlamasin.
+    meta: { silent: true },
     mutationFn: (body: CreateTaskBody) => api<{ count: number }>("/api/v1/tasks", { method: "POST", body: JSON.stringify(body) }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["created-tasks"] }),
   });

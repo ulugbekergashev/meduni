@@ -273,6 +273,8 @@ export function useTopicDetail(id: number) {
 export function useUploadMaterial(topicId: number) {
   const qc = useQueryClient();
   return useMutation({
+    // Xato chaqiruv joyida ko'rsatiladi - global toast takrorlamasin.
+    meta: { silent: true },
     mutationFn: (file: File) => {
       const form = new FormData();
       form.append("file", file);
@@ -307,6 +309,8 @@ export function fetchMaterialText(id: number) {
 export function useGenerateDigest(topicId: number) {
   const qc = useQueryClient();
   return useMutation({
+    // Xato chaqiruv joyida ko'rsatiladi - global toast takrorlamasin.
+    meta: { silent: true },
     mutationFn: () => api<Digest>(`/api/v1/topics/${topicId}/digest/generate`, { method: "POST" }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["topic", topicId] }),
   });
@@ -341,6 +345,8 @@ export function useGenerateDigestAudio(topicId: number) {
 export function useGenerateQuiz(topicId: number) {
   const qc = useQueryClient();
   return useMutation({
+    // Xato chaqiruv joyida ko'rsatiladi - global toast takrorlamasin.
+    meta: { silent: true },
     mutationFn: (body: { language: "uz" | "ru"; questionCount: number; difficulty: string }) =>
       api<ContentFull>(`/api/v1/topics/${topicId}/generate/quiz`, { method: "POST", body: JSON.stringify(body) }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["topic", topicId] }),
@@ -350,6 +356,8 @@ export function useGenerateQuiz(topicId: number) {
 export function useGenerateCase(topicId: number) {
   const qc = useQueryClient();
   return useMutation({
+    // Xato chaqiruv joyida ko'rsatiladi - global toast takrorlamasin.
+    meta: { silent: true },
     mutationFn: (body: { language: "uz" | "ru"; format: "SHORT" | "EXTENDED" }) =>
       api<ContentFull>(`/api/v1/topics/${topicId}/generate/case`, { method: "POST", body: JSON.stringify(body) }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["topic", topicId] }),
@@ -384,6 +392,8 @@ export const API_BASE = API_URL;
 export function useGeneratePresentation(topicId: number) {
   const qc = useQueryClient();
   return useMutation({
+    // Xato chaqiruv joyida ko'rsatiladi - global toast takrorlamasin.
+    meta: { silent: true },
     mutationFn: (body: { language: "uz" | "ru" }) =>
       api<ContentFull>(`/api/v1/topics/${topicId}/generate/presentation`, { method: "POST", body: JSON.stringify(body) }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["topic", topicId] }),
@@ -415,6 +425,8 @@ export function useRegenerateImage(presentationId: number) {
 export function useGenerateVideo(topicId: number) {
   const qc = useQueryClient();
   return useMutation({
+    // Xato chaqiruv joyida ko'rsatiladi - global toast takrorlamasin.
+    meta: { silent: true },
     mutationFn: (body: { language: "uz" | "ru"; voice: "male" | "female" }) =>
       api<ContentFull>(`/api/v1/topics/${topicId}/generate/video`, { method: "POST", body: JSON.stringify(body) }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["topic", topicId] }),

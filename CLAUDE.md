@@ -1864,17 +1864,13 @@ tugmasi (iOS `webkitEnterFullscreen`).
    → tugma bo'lgan karta ichida `<button>` ichida `<button>`. Endi `onClick`
    bo'lmasa `<div>`.
 
-### ⚠️ OCHIQ QOLGAN tizimli muammo — token ranglarda shaffoflik
+### ✅ (YOPILDI 2026-07-29) token ranglarda shaffoflik
 
-`bg-surface/95`, `bg-brand/10`, `border-brand/30`, `ring-brand/10` va shunga
-o'xshash **~40 ta ishlatish qurilgan CSS'da UMUMAN YO'Q** (`grep 'bg-surface\/'
-dist/*.css` = 0). Sabab: ranglar tokenlarda to'liq rang (`var(--surface)`)
-sifatida saqlanadi, Tailwind esa `/NN` uchun kanal qiymatlarini talab qiladi.
-Ya'ni bu klasslar **jimgina hech narsa qilmaydi** (chegara/ring/tint yo'q).
-Pastki menyu va header shu sababli FONSIZ qolgan edi — ikkalasi solid tokenga
-o'tkazildi. Qolganini tuzatish uchun tokenlarni kanal ko'rinishiga
-(`--surface: 255 255 255` + `rgb(var(--surface) / <alpha-value>)`) o'tkazish
-kerak — bu butun palitraga ta'sir qiladi, ALOHIDA ish sifatida rejalashtirilsin.
+Ilgari `bg-brand/10`, `border-brand/30`, `bg-surface/95` kabi ~40 ta klass
+qurilgan CSS'da UMUMAN yo'q edi — tokenlar to'liq rang bo'lgani uchun Tailwind
+`/NN` modifikatorini chiqara olmasdi va bu klasslar jimgina hech narsa qilmasdi.
+**Yechim (§13ga qarang): tokenlar KANAL ko'rinishiga o'tkazildi**, to'liq rang
+variantlari (`--brand: rgb(var(--brand-rgb))`) esa saqlandi.
 
 **Tekshirish uslubi:** Playwright + Chrome (`channel:"chrome"`), real login,
 iPhone 14 (390×844) + landscape (844×390) + planshet (768) + desktop (1440).
@@ -1953,3 +1949,51 @@ konsolda xom i18n kaliti va 404 yo'q. tsc + build ikkala tomonda toza.
 `buildStatus=TTS` da qotib qolgan — mp4 uchun **rebuild** kerak (Gemini TTS +
 ffmpeg); prezentatsiya slaydlarida rasm sloti `PENDING` — **Nano Banana Pro**
 generatsiyasi qilinmagan (slaydlar hozircha matn-only).
+
+---
+
+## 13. IKKI TIZIMLI TUZATISH (2026-07-29)
+
+### A. Jimgina yiqiladigan mutatsiyalar sinfi YOPILDI
+
+Buyurtmachi uch marta bir xil nosozlikni boshqa nom bilan aytdi — *"baholashni
+bossam qotib qoldi"*, *"yuklanmasdan yo'q bo'lib qolayapdi"*, *"nimaga
+yaratilmayapdi?"*. Uchalasining ildizi bitta: ilovada ~90 ta `useMutation` bor,
+lekin **global xato tutuvchi yo'q** edi — chaqiruv joyi `onError` yozishni unutsa,
+xato jimgina yo'qolardi.
+
+- Yangi **`lib/queryClient.ts`**: `MutationCache.onError` → har qanday
+  tutilmagan mutatsiya xatosi toast bo'lib chiqadi (serverning o'z xabari;
+  401 uchun "Sessiya tugadi — qayta kiring").
+- **`packages/ui/Toast.tsx`** ga `toast(message, kind)` ko'prigi qo'shildi —
+  `QueryClient` React daraxtidan tashqarida yaratiladi, ya'ni `useToast()` ni
+  chaqira olmaydi; `ToastProvider` ulanganda o'z `show` funksiyasini yozib qo'yadi.
+- Xatoni O'ZI ko'rsatadigan 11 ta mutatsiya `meta: { silent: true }` bilan
+  belgilandi (login, chat, generatsiya kartalari, upload, finish, task) — toast
+  takrorlanmasin.
+- **Tekshirildi:** Playwright bilan `/flashcards/review` ataylab 500 qilindi →
+  ekranda serverning xabari toast bo'lib chiqdi.
+
+⚠️ Yangi mutatsiya yozganda `onError` shart EMAS — global tarmoq qoplaydi.
+Faqat xatoni joyida (modal/forma ichida) ko'rsatsang, `meta: { silent: true }` ber.
+
+### B. Token ranglar KANAL ko'rinishiga o'tkazildi
+
+`packages/ui/src/tokens.css` — har rang endi ikki ko'rinishda:
+```
+--brand-rgb: 79 70 229;          /* kanal — Tailwind /NN shu formatni talab qiladi */
+--brand: rgb(var(--brand-rgb));  /* to'liq rang — CSS/SVG/inline style uchun */
+```
+`tailwind.config.ts` ranglari `rgb(var(--X-rgb) / <alpha-value>)` ga o'tdi.
+Dark blok faqat `-rgb` larni qayta belgilaydi — to'liq rang o'zgaruvchilari
+avtomatik ergashadi.
+
+**Nega ikki ko'rinish:** kodda `stroke: "var(--line-raised)"` (MindmapView),
+`color="var(--line-raised)"` (React Flow Background) kabi TO'G'RIDAN ishlatish
+joylari bor — sof kanal qiymati (`79 70 229`) u yerda yaroqsiz rang bo'lardi.
+
+**O'lchandi:** `bg-brand/15` endi `background-color: rgb(var(--brand-rgb) / .15)`
+beradi (ilgari CSS'da umuman yo'q edi). Yorug'/qorong'i ikkala tema, mindmap SVG
+chiziqlari va hisoblangan ranglar brauzerda tekshirildi — regressiya yo'q.
+⚠️ `--surface-glass` ataylab konvertatsiya qilinmadi (u rgba, `/NN` bilan
+ishlatilmaydi).

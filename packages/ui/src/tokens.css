@@ -1,42 +1,42 @@
 :root {
   /* Premium Light Mode Palette (WOW effect redesign). */
-  --bg: #f4f7fb;          /* Much softer, cooler background */
-  --surface: #ffffff;
-  --surface-raised: #fafbfc;
+  --bg-rgb: 244 247 251;          /* Much softer, cooler background */
+  --surface-rgb: 255 255 255;
+  --surface-raised-rgb: 250 251 252;
   --surface-glass: rgba(255, 255, 255, 0.75); /* Translucent for glassmorphism */
-  --ink: #0f172a;         /* Deep slate for better contrast */
-  --ink-strong: #020617;
-  --ink-soft: #64748b;    /* Modern slate soft text */
-  --ink-faint: #94a3b8;
-  --ink-dim: #cbd5e1;
-  --line: #e2e8f0;
-  --line-raised: #cbd5e1;
+  --ink-rgb: 15 23 42;         /* Deep slate for better contrast */
+  --ink-strong-rgb: 2 6 23;
+  --ink-soft-rgb: 100 116 139;    /* Modern slate soft text */
+  --ink-faint-rgb: 148 163 184;
+  --ink-dim-rgb: 203 213 225;
+  --line-rgb: 226 232 240;
+  --line-raised-rgb: 203 213 225;
 
-  --brand: #4f46e5;
-  --brand-soft: #eef2ff;
-  --brand-deep: #3730a3;
-  --brand-tint: #4338ca;
+  --brand-rgb: 79 70 229;
+  --brand-soft-rgb: 238 242 255;
+  --brand-deep-rgb: 55 48 163;
+  --brand-tint-rgb: 67 56 202;
 
-  --blue: #0ea5e9;
-  --blue-soft: #e0f2fe;
-  --violet: #8b5cf6;
-  --violet-soft: #ede9fe;
-  --amber: #f59e0b;
-  --amber-soft: #fef3c7;
-  --rose: #f43f5e;
-  --rose-soft: #ffe4e6;
-  --emerald: #10b981;
-  --emerald-soft: #d1fae5;
+  --blue-rgb: 14 165 233;
+  --blue-soft-rgb: 224 242 254;
+  --violet-rgb: 139 92 246;
+  --violet-soft-rgb: 237 233 254;
+  --amber-rgb: 245 158 11;
+  --amber-soft-rgb: 254 243 199;
+  --rose-rgb: 244 63 94;
+  --rose-soft-rgb: 255 228 230;
+  --emerald-rgb: 16 185 129;
+  --emerald-soft-rgb: 209 250 229;
 
   /* Light sidebar (2026-07): white surface, soft indigo active chip. */
-  --side-bg: #ffffff;
-  --side-bg-deep: #f8fafc;
-  --side-ink: #0f172a;
-  --side-ink-soft: #64748b;
-  --side-line: #e2e8f0;
-  --side-active-bg: #eef2ff;
-  --side-active-ink: #4338ca;
-  --side-hover-bg: #f1f5f9;
+  --side-bg-rgb: 255 255 255;
+  --side-bg-deep-rgb: 248 250 252;
+  --side-ink-rgb: 15 23 42;
+  --side-ink-soft-rgb: 100 116 139;
+  --side-line-rgb: 226 232 240;
+  --side-active-bg-rgb: 238 242 255;
+  --side-active-ink-rgb: 67 56 202;
+  --side-hover-bg-rgb: 241 245 249;
 
   --radius-card: 20px;    /* Smoother, larger border radius */
   --radius-control: 12px;
@@ -53,6 +53,49 @@
   /* Premium, dispersed, soft shadows (apple-like) */
   --shadow-card: 0 4px 20px -4px rgba(15, 23, 42, 0.05), 0 1px 2px rgba(15, 23, 42, 0.02);
   --shadow-card-hover: 0 12px 32px -8px rgba(15, 23, 42, 0.1), 0 4px 8px rgba(15, 23, 42, 0.04);
+
+  /* ⚠️ RANG TOKENLARI IKKI KO'RINISHDA (2026-07-29).
+     `--x-rgb` — KANAL qiymati ("79 70 229"). Tailwind'ning shaffoflik
+     modifikatori (`bg-brand/10`, `border-brand/30`) FAQAT shu formatda
+     ishlaydi; ilgari tokenlar to'liq rang bo'lgani uchun ~40 ta bunday
+     klass qurilgan CSS'ga UMUMAN tushmasdi va jimgina hech narsa qilmasdi.
+     `--x` — o'sha rangning to'liq ko'rinishi: CSS, SVG va inline style'da
+     to'g'ridan ishlatiladi (masalan `stroke: var(--line-raised)`).
+     Dark blok faqat `-rgb` larni qayta belgilaydi — `--x` lar avtomatik
+     ergashadi (CSS o'zgaruvchilari dinamik hisoblanadi). */
+  --bg: rgb(var(--bg-rgb));
+  --surface: rgb(var(--surface-rgb));
+  --surface-raised: rgb(var(--surface-raised-rgb));
+  --ink: rgb(var(--ink-rgb));
+  --ink-strong: rgb(var(--ink-strong-rgb));
+  --ink-soft: rgb(var(--ink-soft-rgb));
+  --ink-faint: rgb(var(--ink-faint-rgb));
+  --ink-dim: rgb(var(--ink-dim-rgb));
+  --line: rgb(var(--line-rgb));
+  --line-raised: rgb(var(--line-raised-rgb));
+  --brand: rgb(var(--brand-rgb));
+  --brand-soft: rgb(var(--brand-soft-rgb));
+  --brand-deep: rgb(var(--brand-deep-rgb));
+  --brand-tint: rgb(var(--brand-tint-rgb));
+  --blue: rgb(var(--blue-rgb));
+  --blue-soft: rgb(var(--blue-soft-rgb));
+  --violet: rgb(var(--violet-rgb));
+  --violet-soft: rgb(var(--violet-soft-rgb));
+  --amber: rgb(var(--amber-rgb));
+  --amber-soft: rgb(var(--amber-soft-rgb));
+  --rose: rgb(var(--rose-rgb));
+  --rose-soft: rgb(var(--rose-soft-rgb));
+  --emerald: rgb(var(--emerald-rgb));
+  --emerald-soft: rgb(var(--emerald-soft-rgb));
+  --side-bg: rgb(var(--side-bg-rgb));
+  --side-bg-deep: rgb(var(--side-bg-deep-rgb));
+  --side-ink: rgb(var(--side-ink-rgb));
+  --side-ink-soft: rgb(var(--side-ink-soft-rgb));
+  --side-line: rgb(var(--side-line-rgb));
+  --side-active-bg: rgb(var(--side-active-bg-rgb));
+  --side-active-ink: rgb(var(--side-active-ink-rgb));
+  --side-hover-bg: rgb(var(--side-hover-bg-rgb));
+
 }
 
 /* Dark theme — 2026-07-23 yumshatildi: "qora bo'shliq" (#06080d) texno-startap
@@ -63,43 +106,43 @@
 
   /* 2026-07-23 v3: kartalar fondan aniq AJRALSIN (DentaCRM kabi "chiqadi") —
      bg chuqurroq, surface sezilarli ochroq, borderlar ko'rinarli, ink yorqin. */
-  --bg: #0b1018;          /* eng chuqur fon (sahifa) */
-  --surface: #19212f;     /* asosiy panel — fondan aniq ochroq */
-  --surface-raised: #232d3f; /* panel ichidagi karta */
+  --bg-rgb: 11 16 24;          /* eng chuqur fon (sahifa) */
+  --surface-rgb: 25 33 47;     /* asosiy panel — fondan aniq ochroq */
+  --surface-raised-rgb: 35 45 63; /* panel ichidagi karta */
   --surface-glass: #19212f;
   /* 2026-07-23 v4: ikkilamchi matn juda xira edi ("ko'rinmaydi") — yorqinlashtirildi. */
-  --ink: #f6f8fc;
-  --ink-strong: #e9eef6;
-  --ink-soft: #cbd2df;   /* sub-yorliqlar shu — endi aniq o'qiladi */
-  --ink-faint: #aab2c4;
-  --ink-dim: #9aa3b6;    /* eng xira ham o'qiladigan darajada */
-  --line: #2c3648;
-  --line-raised: #3a4456;
+  --ink-rgb: 246 248 252;
+  --ink-strong-rgb: 233 238 246;
+  --ink-soft-rgb: 203 210 223;   /* sub-yorliqlar shu — endi aniq o'qiladi */
+  --ink-faint-rgb: 170 178 196;
+  --ink-dim-rgb: 154 163 182;    /* eng xira ham o'qiladigan darajada */
+  --line-rgb: 44 54 72;
+  --line-raised-rgb: 58 68 86;
 
-  --brand: #6366f1;
-  --brand-soft: #1c2743;
-  --brand-deep: #4f46e5;
-  --brand-tint: #a5b4fc;
+  --brand-rgb: 99 102 241;
+  --brand-soft-rgb: 28 39 67;
+  --brand-deep-rgb: 79 70 229;
+  --brand-tint-rgb: 165 180 252;
 
-  --blue: #38bdf8;
-  --blue-soft: #12283a;
-  --violet: #a78bfa;
-  --violet-soft: #241b3e;
-  --amber: #fbbf24;
-  --amber-soft: #2a2210;
-  --rose: #f87171;
-  --rose-soft: #2b1620;
-  --emerald: #34d399;
-  --emerald-soft: #0f2a24;
+  --blue-rgb: 56 189 248;
+  --blue-soft-rgb: 18 40 58;
+  --violet-rgb: 167 139 250;
+  --violet-soft-rgb: 36 27 62;
+  --amber-rgb: 251 191 36;
+  --amber-soft-rgb: 42 34 16;
+  --rose-rgb: 248 113 113;
+  --rose-soft-rgb: 43 22 32;
+  --emerald-rgb: 52 211 153;
+  --emerald-soft-rgb: 15 42 36;
 
-  --side-bg: #141b28;
-  --side-bg-deep: #0b1018;
-  --side-ink: #f5f7fc;
-  --side-ink-soft: #9aa3b6;
-  --side-line: #2c3648;
-  --side-active-bg: #2a3960;
-  --side-active-ink: #c7d2fe;
-  --side-hover-bg: #1d2637;
+  --side-bg-rgb: 20 27 40;
+  --side-bg-deep-rgb: 11 16 24;
+  --side-ink-rgb: 245 247 252;
+  --side-ink-soft-rgb: 154 163 182;
+  --side-line-rgb: 44 54 72;
+  --side-active-bg-rgb: 42 57 96;
+  --side-active-ink-rgb: 199 210 254;
+  --side-hover-bg-rgb: 29 38 55;
 
   --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px -12px rgba(0, 0, 0, 0.6);
   --shadow-card-hover: 0 2px 4px rgba(0, 0, 0, 0.45), 0 16px 36px -12px rgba(0, 0, 0, 0.7);
