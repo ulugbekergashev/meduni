@@ -7,10 +7,12 @@ import type { Lesson } from "../api";
 
 export type StageKey = "study" | "patient" | "case" | "quiz" | "result";
 export type StageState = "done" | "open" | "pendingReview" | "soon";
-/** O'rganish bloklari (chap rail). "materials" — material matni mini-konspekti;
- *  "flashcards" — takrorlash (2026-07-23: fokus rejimidan o'rganishga ko'chirildi —
- *  u baholash emas, o'quv/takrorlash quroli). */
-export type ContentView = "konspekt" | "video" | "slides" | "materials" | "flashcards" | "mindmap";
+/** O'rganish bloklari (chap rail). "flashcards" — takrorlash (2026-07-23:
+ *  fokus rejimidan o'rganishga ko'chirildi — u baholash emas, o'quv quroli).
+ *  ⚠️ 2026-07-28: "materials" bloki OLIB TASHLANDI — asl material (PDF) endi
+ *  konspekt ustidagi `MaterialBar`da (buyurtmachi: "material matni kerak emas,
+ *  materialni o'zi pdfi konspektni tepasida bo'lsin"). */
+export type ContentView = "konspekt" | "video" | "slides" | "flashcards" | "mindmap";
 /** "overview" — kirish landing'i (layout v2); "patient" — virtual bemor roleplay
  *  (amaliyot, fokus rejim — bosqich emas). */
 export type LessonView = "overview" | ContentView | "case" | "quiz" | "result" | "patient";

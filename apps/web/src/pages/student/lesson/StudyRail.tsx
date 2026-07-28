@@ -1,34 +1,17 @@
 import { useTranslation } from "react-i18next";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { BookText, Check, Download, ExternalLink, FileText, Layers, Link2, Lock, Network, Sparkles, Video } from "lucide-react";
+import { BookText, Check, Layers, Lock, Network, Sparkles, Video } from "lucide-react";
 import { Icon, cls } from "@meduni/ui";
-import { API_URL } from "../../../lib/api";
 import { useFlashcards, type Lesson } from "../api";
 import { Panel } from "./Panel";
 import type { ContentView } from "./stages";
 
-const TYPE_TONE: Record<string, string> = {
-  pdf: "bg-rose-soft text-rose",
-  docx: "bg-blue-soft text-blue",
-  pptx: "bg-amber-soft text-amber",
-  txt: "bg-surface-raised text-ink-soft",
-  md: "bg-surface-raised text-ink-soft",
-};
-const INLINE = new Set(["pdf", "txt", "md"]);
-
 const FOCUS = "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand";
-
-function formatSize(bytes: number): string {
-  if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  if (bytes >= 1024) return `${Math.round(bytes / 1024)} KB`;
-  return `${bytes} B`;
-}
 
 const BLOCK_ICON: Record<ContentView, typeof BookText> = {
   konspekt: BookText,
   slides: Layers,
   video: Video,
-  materials: FileText,
   flashcards: Sparkles,
   mindmap: Network,
 };
@@ -45,8 +28,6 @@ export function StudyRail({
   onBlock,
   sectionActive,
   onSection,
-  locked = false,
-  lockedNote,
 }: {
   lesson: Lesson;
   blocks: ContentView[];
@@ -55,15 +36,10 @@ export function StudyRail({
   /** Konspektda ko'rinib turgan bo'lim (yoritish uchun). */
   sectionActive: number | null;
   onSection: (index: number) => void;
-  /** Test paytida materiallar yopiladi (halollik). */
-  locked?: boolean;
-  lockedNote?: string;
 }) {
   const { t } = useTranslation(undefined, { keyPrefix: "lesson" });
   const reduce = useReducedMotion();
   const sections = lesson.sections ?? [];
-  const links = lesson.links ?? [];
-  const hasResources = lesson.materials.length > 0 || links.length > 0;
 
   // Fleshkartalar holati (takrorlash bloki). Qulf: test bor va yakunlanmagan.
   const fc = useFlashcards(lesson.topicId).data;
@@ -79,10 +55,6 @@ export function StudyRail({
     if (v === "video") {
       const d = lesson.tabs.video?.durationSec;
       return d ? `${Math.round(d / 60)} ${t("minShort")}` : null;
-    }
-    if (v === "materials") {
-      const n = lesson.materials.filter((m) => m.hasText).length;
-      return n ? t("filesN", { n }) : null;
     }
     if (v === "flashcards") {
       if (fcLocked) return t("flashLockedShort");
@@ -215,91 +187,6 @@ export function StudyRail({
                   </motion.ol>
                 )}
 
-                {on && v === "materials" && hasResources && (
-                  <motion.div
-                    initial={reduce ? false : { height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-                    className="overflow-hidden pl-2.5"
-                  >
-                    {locked && (
-                      <div className="mb-1 flex gap-2 rounded-control border-l-2 border-amber bg-amber-soft px-2.5 py-2">
-                        <Icon icon={Lock} size={12} className="mt-0.5 shrink-0 text-amber" />
-                        <p className="text-micro font-bold leading-snug text-amber">{lockedNote}</p>
-                      </div>
-                    )}
-                    <div className={cls("space-y-0.5", locked && "pointer-events-none opacity-40")}>
-                      {lesson.materials.map((m) => {
-                        const meta = [
-                          m.fileType.toUpperCase(),
-                          m.pageCount ? t("pagesN", { n: m.pageCount }) : null,
-                          m.sizeBytes ? formatSize(m.sizeBytes) : null,
-                        ].filter(Boolean);
-                        return (
-                          <a
-                            key={m.id}
-                            href={`${API_URL}/api/v1/me/materials/${m.id}/file`}
-                            target="_blank"
-                            rel="noreferrer"
-                            className={cls(
-                              "group flex items-center gap-2 rounded-control px-2 py-1.5 transition-colors hover:bg-surface",
-                              FOCUS
-                            )}
-                          >
-                            <span
-                              className={cls(
-                                "flex h-7 w-7 shrink-0 items-center justify-center rounded-control",
-                                TYPE_TONE[m.fileType] ?? "bg-surface-raised text-ink-soft"
-                              )}
-                            >
-                              <Icon icon={FileText} size={13} />
-                            </span>
-                            <span className="min-w-0 flex-1">
-                              <span className="block truncate text-note font-bold text-ink group-hover:text-brand-tint">
-                                {m.fileName}
-                              </span>
-                              <span className="block truncate text-note text-ink-soft">{meta.join(" · ")}</span>
-                            </span>
-                            <Icon
-                              icon={INLINE.has(m.fileType) ? ExternalLink : Download}
-                              size={12}
-                              className="shrink-0 -translate-x-1 text-ink-dim opacity-0 transition-[opacity,transform] duration-150 group-hover:translate-x-0 group-hover:opacity-100"
-                            />
-                          </a>
-                        );
-                      })}
-
-                      {links.map((l) => (
-                        <a
-                          key={l.id}
-                          href={l.url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className={cls(
-                            "group flex items-center gap-2 rounded-control px-2 py-1.5 transition-colors hover:bg-surface",
-                            FOCUS
-                          )}
-                        >
-                          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-control bg-brand-soft text-brand-tint">
-                            <Icon icon={Link2} size={13} />
-                          </span>
-                          <span className="min-w-0 flex-1">
-                            <span className="block truncate text-note font-bold text-ink group-hover:text-brand-tint">
-                              {l.title}
-                            </span>
-                            <span className="block truncate text-note text-ink-soft">{l.note || t("externalLink")}</span>
-                          </span>
-                          <Icon
-                            icon={ExternalLink}
-                            size={12}
-                            className="shrink-0 -translate-x-1 text-ink-dim opacity-0 transition-[opacity,transform] duration-150 group-hover:translate-x-0 group-hover:opacity-100"
-                          />
-                        </a>
-                      ))}
-                    </div>
-                  </motion.div>
-                )}
               </AnimatePresence>
             </div>
           );

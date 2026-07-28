@@ -259,17 +259,9 @@ export interface LessonMaterial {
   /** null bo'lsa UI ko'rsatmaydi (soxta raqam yo'q). */
   sizeBytes: number | null;
   pageCount: number | null;
-  /** Ajratilgan matn mavjudmi ("Material matni" bloki uchun). */
+  /** Ajratilgan matn mavjudmi (AI generatsiyasi uchun; talabaga ko'rsatilmaydi —
+   *  2026-07-28 dan talaba ASL faylni konspekt ustidagi panelda ochadi). */
   hasText: boolean;
-}
-
-export function useMaterialText(materialId: number | null) {
-  return useQuery({
-    queryKey: ["me-material-text", materialId],
-    queryFn: () => api<{ id: number; fileName: string; text: string }>(`/api/v1/me/materials/${materialId}/text`),
-    enabled: materialId !== null,
-    staleTime: 5 * 60_000,
-  });
 }
 
 /** Mavzuga biriktirilgan tashqi manba (darslik bobi, klinik ma'lumotnoma). */
@@ -403,9 +395,13 @@ function useInvalidateLesson(topicId: number) {
 
 // ---- Fleshkartalar (takrorlash) ----
 
+/** Karta manbasi — front tomonda "nima so'ralayotgani"ni tur bildiradi
+ *  (2026-07-28: atama/testdan tashqari tushuncha, fakt, doza, checkpoint, keys). */
+export type FlashcardKind = "quiz" | "term" | "termRev" | "concept" | "fact" | "dose" | "check" | "case";
+
 export interface Flashcard {
   key: string;
-  kind: "quiz" | "term";
+  kind: FlashcardKind;
   front: string;
   back: string;
   note: string | null;
@@ -414,11 +410,15 @@ export interface Flashcard {
 
 export interface FlashcardsData {
   locked: boolean;
-  reason: "quiz_not_finished" | null;
+  reason: "quiz_not_finished" | "no_content" | null;
   cards: Flashcard[];
   total: number;
   knownCount: number;
   hasQuiz?: boolean;
+  /** Test yakunlanmagan — yakunlangach yana `pendingQuiz` ta karta qo'shiladi. */
+  quizLocked?: boolean;
+  caseLocked?: boolean;
+  pendingQuiz?: number;
 }
 
 export function useFlashcards(topicId: number) {
@@ -522,10 +522,21 @@ export interface DDxItem {
   keyFinding: string;
 }
 
+export interface PatientVitals {
+  bp: string;
+  pulse: string;
+  spo2: string;
+  temp: string;
+}
+
 export interface PatientData {
   available: boolean;
   patientInfo: { name: string; info: string } | null;
   finished: boolean;
+  /** Bemor allaqachon gapirganmi (qabul boshlangan). */
+  started: boolean;
+  /** Faqat talaba o'lchagach to'ladi. */
+  vitals: PatientVitals | null;
   messages: PatientMsg[];
 }
 
@@ -533,6 +544,31 @@ export function usePatient(topicId: number) {
   return useQuery({
     queryKey: ["me-patient", topicId],
     queryFn: () => api<PatientData>(`/api/v1/me/topics/${topicId}/patient`),
+  });
+}
+
+/** Qabulni boshlash — bemor o'zi shikoyatini aytadi (idempotent). */
+export function useStartPatient(topicId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api<PatientData>(`/api/v1/me/topics/${topicId}/patient/start`, { method: "POST" }),
+    onSuccess: (res) => qc.setQueryData<PatientData>(["me-patient", topicId], res),
+  });
+}
+
+/** Hayotiy ko'rsatkichlarni o'lchash (chatда natija + panelda kartochka). */
+export function useMeasureVitals(topicId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () =>
+      api<{ message: PatientMsg; vitals: PatientVitals | null }>(`/api/v1/me/topics/${topicId}/patient/vitals`, {
+        method: "POST",
+      }),
+    onSuccess: (res) => {
+      qc.setQueryData<PatientData>(["me-patient", topicId], (old) =>
+        old ? { ...old, messages: [...old.messages, res.message], vitals: res.vitals ?? old.vitals } : old
+      );
+    },
   });
 }
 

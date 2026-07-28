@@ -211,6 +211,9 @@ export const caseSchema = z.object({
   /** v2 — bemor kartasi (ixtiyoriy, faqat materialda bo'lsa). */
   patientName: z.string().default(""),
   patientInfo: z.string().default(""), // "58 yosh, erkak"
+  /** Virtual bemorning BIRINCHI gapi (roleplay ochilishi). Bo'sh bo'lsa —
+   *  alohida AI chaqiruvi bilan yaratiladi (me/patient.ts::startPatient). */
+  openingLine: z.string().default(""),
   vitals: caseVitalsSchema.optional(),
   /** v2 — qadamlar. Bo'sh bo'lsa eski erkin-matnli format ishlaydi. */
   steps: z.array(caseStepSchema).default([]),

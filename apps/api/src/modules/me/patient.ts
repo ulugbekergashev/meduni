@@ -13,12 +13,15 @@ import {
   evalResponseSchema,
   evalSystemPrompt,
   evalUserContent,
+  patientOpeningSystemPrompt,
+  patientOpeningUserContent,
   patientResponseSchema,
   patientScenarioSystemPrompt,
   patientScenarioUserContent,
   patientSystemPrompt,
   patientUserContent,
   SCENARIO_VARIATIONS,
+  scenarioResponseSchema,
   testResultResponseSchema,
   testResultSystemPrompt,
   testResultUserContent,
@@ -29,6 +32,35 @@ import { caseResponseSchema, caseSchema, type CaseJson, type DigestJson } from "
 import { assertTopicOpen } from "./service";
 
 const HISTORY_TAKE = 16;
+
+/** Hayotiy ko'rsatkichlar o'lchovi — chatда "test" xabari sifatida saqlanadi.
+ *  Ikkala til yorlig'i saqlanadi: talaba tilni almashtirsa ham o'lchov topiladi. */
+const VITALS_LABEL = { uz: "Hayotiy koʻrsatkichlar", ru: "Витальные показатели" } as const;
+const VITALS_LABELS = [VITALS_LABEL.uz, VITALS_LABEL.ru];
+
+async function localeOf(studentId: number): Promise<"uz" | "ru"> {
+  const user = await prisma.user.findUnique({ where: { id: studentId }, select: { locale: true } });
+  return user?.locale === "ru" ? "ru" : "uz";
+}
+
+/** Vitallarni o'qiladigan qatorga aylantiradi (bo'sh maydonlar tushib qoladi). */
+function formatVitals(v: NonNullable<CaseJson["vitals"]>, lang: "uz" | "ru"): string {
+  const L = lang === "ru"
+    ? { bp: "АД", pulse: "Пульс", spo2: "SpO2", temp: "t°" }
+    : { bp: "AB", pulse: "Puls", spo2: "SpO2", temp: "t°" };
+  return [
+    v.bp && `${L.bp}: ${v.bp}`,
+    v.pulse && `${L.pulse}: ${v.pulse}`,
+    v.spo2 && `${L.spo2}: ${v.spo2}`,
+    v.temp && `${L.temp}: ${v.temp}`,
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
+function hasVitals(v: CaseJson["vitals"]): v is NonNullable<CaseJson["vitals"]> {
+  return !!v && !!(v.bp || v.pulse || v.spo2 || v.temp);
+}
 
 interface PatientMsgOut {
   id: number;
@@ -109,7 +141,7 @@ async function ensureTruth(studentId: number, topicId: number, lang: "uz" | "ru"
   const gen = await generateStructured<CaseJson>({
     systemInstruction: patientScenarioSystemPrompt(lang),
     userContent: patientScenarioUserContent(digest, variation),
-    responseSchema: caseResponseSchema,
+    responseSchema: scenarioResponseSchema,
     kind: "PATIENT_SCENARIO",
     topicId,
     departmentId: departmentId ?? undefined,
@@ -136,13 +168,99 @@ export async function getPatient(studentId: number, topicId: number) {
     hasPatientSource(topicId),
   ]);
   const out = messages.map(serialize);
+  // Vitallar FAQAT talaba o'lchagach ochiladi (o'lchov chatда "test" xabari).
+  const measured = out.some((m) => m.role === "test" && VITALS_LABELS.some((l) => m.text.startsWith(l)));
   return {
     // Keys YOKI tasdiqlangan konspekt bo'lsa — bemor mavjud (keys shart emas).
     available: source,
     patientInfo: truth ? { name: truth.patientName || "", info: truth.patientInfo || "" } : null,
     finished: out.some((m) => m.role === "eval"),
+    /** Bemor allaqachon gapirgan (qabul boshlangan)? */
+    started: out.length > 0,
+    vitals: measured && hasVitals(truth?.vitals) ? truth!.vitals! : null,
     messages: out,
   };
+}
+
+/** QABULNI BOSHLASH — bemor o'zi shikoyatini aytadi (talaba savol bermasidan).
+ *  Idempotent: xabar bor bo'lsa AI chaqirilmaydi, joriy holat qaytadi. */
+export async function startPatient(studentId: number, topicId: number) {
+  await assertTopicOpen(studentId, topicId);
+
+  const existing = await prisma.patientMessage.findFirst({
+    where: { studentId, topicId, role: { in: ["student", "patient", "eval", "test"] } },
+    select: { id: true },
+  });
+  if (existing) return getPatient(studentId, topicId);
+
+  const lang = await localeOf(studentId);
+  const kase = await ensureTruth(studentId, topicId, lang);
+  if (!kase) {
+    throw new ApiError(400, "no_case", "Bu mavzuda bemor yo'q (konspekt tasdiqlanmagan)", "В этой теме нет пациента (конспект не утверждён)");
+  }
+
+  const departmentId = await departmentForTopic(topicId);
+  if (departmentId) await assertQuota(departmentId);
+
+  // AI ishlamasa ham qabul boshlanishi kerak — shikoyatдан oddiy ochilish gapi.
+  const fallback =
+    lang === "ru"
+      ? `Здравствуйте, доктор. ${kase.complaints || "Мне нездоровится."}`
+      : `Assalomu alaykum, doktor. ${kase.complaints || "Oʻzimni yomon his qilyapman."}`;
+
+  // Ssenariy generatsiyasi ochilish gapini ham beradi → qo'shimcha chaqiruv
+  // kerak emas (qabul tezroq boshlanadi). Faqat o'qituvchi keysida generatsiya.
+  let opening = (kase.openingLine ?? "").trim();
+  if (!opening) {
+    opening = fallback;
+    try {
+      const gen = await generateStructured<{ reply: string }>({
+        systemInstruction: patientOpeningSystemPrompt(lang, kase),
+        userContent: patientOpeningUserContent(kase),
+        responseSchema: patientResponseSchema,
+        kind: "PATIENT",
+        topicId,
+        departmentId: departmentId ?? undefined,
+        userId: studentId,
+        preferLite: true,
+      });
+      opening = (gen?.reply ?? "").toString().trim() || fallback;
+    } catch {
+      /* model javob bermadi — fallback bilan davom etamiz */
+    }
+  }
+
+  await prisma.patientMessage.create({ data: { studentId, topicId, role: "patient", text: opening } });
+  return getPatient(studentId, topicId);
+}
+
+/** HAYOTIY KO'RSATKICHLARNI O'LCHASH — AI chaqiruvisiz (keysдаги vitals).
+ *  Keysда vitals bo'lmasa — odatdagi tekshiruv yo'li (AI natija generatsiyasi). */
+export async function measureVitals(studentId: number, topicId: number) {
+  await assertTopicOpen(studentId, topicId);
+
+  const done = await prisma.patientMessage.findFirst({ where: { studentId, topicId, role: "eval" }, select: { id: true } });
+  if (done) throw new ApiError(409, "patient_finished", "Suhbat yakunlangan", "Сессия завершена");
+
+  const lang = await localeOf(studentId);
+  const kase = await ensureTruth(studentId, topicId, lang);
+  if (!kase) throw new ApiError(400, "no_case", "Bu mavzuda bemor yo'q", "В этой теме нет пациента");
+
+  if (!hasVitals(kase.vitals)) {
+    // Keysда yozilmagan — AI izchil natija bersin (odatdagi tekshiruv yo'li).
+    const res = await orderTest(studentId, topicId, VITALS_LABEL[lang]);
+    return { message: res.message, vitals: null };
+  }
+
+  const saved = await prisma.patientMessage.create({
+    data: {
+      studentId,
+      topicId,
+      role: "test",
+      text: `${VITALS_LABEL[lang]}\n${formatVitals(kase.vitals, lang)}`,
+    },
+  });
+  return { message: serialize(saved), vitals: kase.vitals };
 }
 
 export async function sendPatient(studentId: number, topicId: number, textRaw: string) {
@@ -156,8 +274,7 @@ export async function sendPatient(studentId: number, topicId: number, textRaw: s
   const already = await prisma.patientMessage.findFirst({ where: { studentId, topicId, role: "eval" }, select: { id: true } });
   if (already) throw new ApiError(409, "patient_finished", "Suhbat yakunlangan", "Сессия завершена");
 
-  const user = await prisma.user.findUnique({ where: { id: studentId }, select: { locale: true } });
-  const lang: "uz" | "ru" = user?.locale === "ru" ? "ru" : "uz";
+  const lang = await localeOf(studentId);
 
   // Keys bo'lmasa — tasdiqlangan konspektdan bemor generatsiya qilinadi (birinchi
   // xabarda). Konspekt ham tasdiqlanmagan bo'lsagina bemor yo'q.
@@ -207,8 +324,7 @@ export async function orderTest(studentId: number, topicId: number, testTypeRaw:
   const done = await prisma.patientMessage.findFirst({ where: { studentId, topicId, role: "eval" }, select: { id: true } });
   if (done) throw new ApiError(409, "patient_finished", "Suhbat yakunlangan", "Сессия завершена");
 
-  const user = await prisma.user.findUnique({ where: { id: studentId }, select: { locale: true } });
-  const lang: "uz" | "ru" = user?.locale === "ru" ? "ru" : "uz";
+  const lang = await localeOf(studentId);
   const kase = await ensureTruth(studentId, topicId, lang);
   if (!kase) throw new ApiError(400, "no_case", "Bu mavzuda bemor yo'q", "В этой теме нет пациента");
 
@@ -245,8 +361,7 @@ export async function getDDx(studentId: number, topicId: number): Promise<{ ddx:
   });
   if (convo.filter((m) => m.role === "student").length === 0) return { ddx: [] };
 
-  const user = await prisma.user.findUnique({ where: { id: studentId }, select: { locale: true } });
-  const lang: "uz" | "ru" = user?.locale === "ru" ? "ru" : "uz";
+  const lang = await localeOf(studentId);
   const departmentId = await departmentForTopic(topicId);
   if (departmentId) await assertQuota(departmentId);
 
@@ -292,8 +407,7 @@ export async function finishPatient(studentId: number, topicId: number, diagnosi
   const departmentId = await departmentForTopic(topicId);
   if (departmentId) await assertQuota(departmentId);
 
-  const user = await prisma.user.findUnique({ where: { id: studentId }, select: { locale: true } });
-  const lang: "uz" | "ru" = user?.locale === "ru" ? "ru" : "uz";
+  const lang = await localeOf(studentId);
   const history = convo.map((m) => ({ role: m.role, text: m.text }));
 
   const result = await generateStructured<PatientEval>({

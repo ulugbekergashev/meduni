@@ -10,26 +10,80 @@
 // FAQAT test yakunlangach ochiladi (403 flashcards_locked).
 import { prisma } from "../../lib/prisma";
 import { ApiError, badRequest, notFound } from "../../lib/errors";
-import type { DigestJson } from "../../ai/types";
+import type { CaseJson, CaseStep, DigestJson } from "../../ai/types";
 import { assertTopicOpen } from "./service";
+
+/** Karta turi — UI rangi/yorlig'i shunga qarab (front tomon "nima soralayapti"
+ *  ni tur bildiradi, shuning uchun savol matnini yasash shart emas). */
+export type FlashcardKind = "quiz" | "term" | "termRev" | "concept" | "fact" | "dose" | "check" | "case";
 
 export interface Flashcard {
   key: string;
-  kind: "quiz" | "term";
+  kind: FlashcardKind;
   front: string;
   back: string;
-  /** Qo'shimcha izoh (test savoli uchun — tushuntirish). */
+  /** Qo'shimcha izoh (test savoli uchun — tushuntirish; fakt uchun — to'liq jumla). */
   note: string | null;
   /** Oxirgi takrorlashda "bilaman" deb belgilanganmi (null — hali ko'rilmagan). */
   known: boolean | null;
 }
+
+// ---------- Deterministik karta yasash yordamchilari (AI YO'Q) ----------
+
+/** "Tushuncha — ta'rif" / "Tushuncha: ta'rif" ko'rinishini ikkiga bo'ladi.
+ *  Ajratgich bo'lmasa null (bunday satrdan karta yasalmaydi — soxta savol
+ *  yasashdan ko'ra kartani tashlab ketgan yaxshi). */
+function splitDefinition(raw: string): { front: string; back: string } | null {
+  const s = raw.trim();
+  const m = s.match(/^(.{2,80}?)\s*(?:—|–|:|\s-\s)\s*(.{4,})$/u);
+  if (!m) return null;
+  return { front: m[1].trim(), back: m[2].trim() };
+}
+
+/** Jumladagi birinchi son (o'lchov birligi bilan) — cloze uchun. */
+const NUMBER_RE =
+  /[~<>≥≤]?\s?\d[\d .,]*(?:\s*[–—-]\s*\d[\d.,]*)?(?:\s*(?:x\s*10\^\d+\/?\S*|%|g\/kg|mg\/kg|mmHg|kPa|mg|g|kg|ml|l|mm|sm|cm|million|baravar|marta|yil|soat|kun))?/u;
+
+/** Faktdan "bo'sh joyli" (cloze) karta: raqam yashiriladi, javob — o'sha raqam.
+ *  Raqam bo'lmasa konspekt atamasi yashiriladi; ikkalasi ham bo'lmasa null. */
+function clozeCard(raw: string, terms: { uz?: string; lat?: string }[]): { front: string; back: string } | null {
+  const s = raw.trim();
+  if (s.length < 12) return null;
+
+  const num = s.match(NUMBER_RE);
+  if (num && num[0].trim().length >= 1) {
+    const hidden = num[0].trim();
+    return { front: s.replace(hidden, " _____ ").replace(/\s{2,}/g, " ").trim(), back: hidden };
+  }
+
+  for (const term of terms) {
+    const key = (term.uz ?? "").trim();
+    if (key.length < 4) continue;
+    const re = new RegExp(`(?<![\\p{L}\\p{N}])${key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?![\\p{L}\\p{N}])`, "iu");
+    if (re.test(s)) return { front: s.replace(re, " _____ ").replace(/\s{2,}/g, " ").trim(), back: key };
+  }
+  return null;
+}
+
+/** Bir mavzudagi kartalar chegarasi — sessiya juda uzun bo'lib ketmasin. */
+const MAX_CARDS = 60;
 
 function optionAt(optionsJson: unknown, i: number): string {
   const arr = (optionsJson as string[]) ?? [];
   return arr[i] ?? "";
 }
 
-/** Kartalarni yig'adi + qulf holatini qaytaradi. */
+/** Kartalarni yig'adi.
+ *
+ *  ⚠️ 2026-07-28 QULF MODELI O'ZGARDI (buyurtmachi: "kartalar ko'proq bo'lishi
+ *  kerak"). Ilgari BUTUN to'plam test yakunlanmaguncha yopiq edi — lekin qulfning
+ *  sababi faqat "test javoblari oshkor bo'lmasin" edi. Konspekt atamasi/tushunchasi/
+ *  fakti talabaga o'qish ustunida ALLAQACHON ochiq, ya'ni ularni yashirishning
+ *  ma'nosi yo'q va aynan test OLDIDAN takrorlash eng kerak payt. Endi:
+ *    · konspektdan kelgan kartalar — HAR DOIM ochiq
+ *    · test savollari — faqat urinish yakunlangach
+ *    · keys qadamlari — faqat javob topshirilgach
+ */
 async function build(studentId: number, topicId: number) {
   const topic = await prisma.topic.findUnique({
     where: { id: topicId },
@@ -37,26 +91,104 @@ async function build(studentId: number, topicId: number) {
       digest: true,
       contentItems: {
         where: { status: "PUBLISHED" },
-        include: { quiz: { include: { questions: { orderBy: { orderIndex: "asc" } } } } },
+        include: { quiz: { include: { questions: { orderBy: { orderIndex: "asc" } } } }, clinicalCase: true },
       },
     },
   });
   if (!topic) throw notFound("Mavzu");
 
   const quiz = topic.contentItems.find((c) => c.kind === "QUIZ")?.quiz ?? null;
+  const clinicalCase = topic.contentItems.find((c) => c.kind === "CASE")?.clinicalCase ?? null;
 
-  // Test bor bo'lsa — yakunlangan urinish shart (javoblar oshkor bo'lmasin).
-  let locked = false;
-  if (quiz) {
-    const finished = await prisma.quizAttempt.count({
-      where: { studentId, quizId: quiz.id, finishedAt: { not: null } },
-    });
-    locked = finished === 0;
-  }
+  const [finishedAttempts, caseAttempt] = await Promise.all([
+    quiz
+      ? prisma.quizAttempt.count({ where: { studentId, quizId: quiz.id, finishedAt: { not: null } } })
+      : Promise.resolve(0),
+    clinicalCase
+      ? prisma.caseAttempt.findUnique({
+          where: { studentId_caseId: { studentId, caseId: clinicalCase.id } },
+          select: { id: true },
+        })
+      : Promise.resolve(null),
+  ]);
+  /** Test javoblari hali yopiqmi (shu qadar karta keyinroq qo'shiladi). */
+  const quizLocked = !!quiz && finishedAttempts === 0;
+  const caseLocked = !!clinicalCase && !caseAttempt;
 
   const cards: Flashcard[] = [];
+  const digest = topic.digest?.approvedByTeacher ? (topic.digest.digestJson as unknown as DigestJson) : null;
+  const terms = digest?.terms ?? [];
 
-  if (quiz && !locked) {
+  // ---- 1. Atamalar: uz → ru·lat va teskarisi (lat/ru → uz) ----
+  terms.forEach((term, i) => {
+    if (!term.uz && !term.ru) return;
+    const back = [term.ru, term.lat].filter(Boolean).join(" · ");
+    if (back) {
+      cards.push({ key: `t:${i}`, kind: "term", front: term.uz || term.ru, back, note: null, known: null });
+    }
+    // Teskari yo'nalish — atamani TANIB olish (lotincha/ruscha manbada uchraydi).
+    const cue = term.lat || term.ru;
+    if (cue && term.uz && cue.toLowerCase() !== term.uz.toLowerCase()) {
+      cards.push({ key: `tr:${i}`, kind: "termRev", front: cue, back: term.uz, note: null, known: null });
+    }
+  });
+
+  // ---- 2. Tushunchalar: "Nom — ta'rif" ----
+  (digest?.concepts ?? []).forEach((c, i) => {
+    const split = splitDefinition(c);
+    if (!split) return; // ajratgichsiz tushunchadan soxta savol yasalmaydi
+    cards.push({ key: `c:${i}`, kind: "concept", front: split.front, back: split.back, note: null, known: null });
+  });
+
+  // ---- 3. Faktlar: cloze (raqam/atama yashiriladi) ----
+  (digest?.facts ?? []).forEach((f, i) => {
+    const cz = clozeCard(f, terms);
+    if (!cz) return;
+    cards.push({ key: `f:${i}`, kind: "fact", front: cz.front, back: cz.back, note: f, known: null });
+  });
+
+  // ---- 4. Dozalar: "Preparat — doza" (tibbiy xavfsizlik uchun eng muhimi) ----
+  (digest?.dosages ?? []).forEach((d, i) => {
+    const split = splitDefinition(d) ?? clozeCard(d, terms);
+    if (!split) return;
+    cards.push({ key: `d:${i}`, kind: "dose", front: split.front, back: split.back, note: d, known: null });
+  });
+
+  // ---- 5. Bo'lim checkpoint savollari (konspektда allaqachon ochiq) ----
+  (digest?.sections ?? []).forEach((s, i) => {
+    const cp = s.checkpoint;
+    if (!cp || !Array.isArray(cp.options) || cp.options.length < 2) return;
+    const answer = cp.options[cp.correctIndex];
+    if (!answer) return;
+    cards.push({
+      key: `cp:${i}`,
+      kind: "check",
+      front: cp.question,
+      back: answer,
+      note: cp.explanation || null,
+      known: null,
+    });
+  });
+
+  // ---- 6. Klinik keys qadamlari — faqat javob topshirilgach ----
+  if (clinicalCase && !caseLocked) {
+    const steps = ((clinicalCase.caseJson as unknown as CaseJson)?.steps ?? []) as CaseStep[];
+    steps.forEach((st, i) => {
+      const right = st.options.find((o) => o.correct);
+      if (!st.prompt || !right?.text) return;
+      cards.push({
+        key: `cs:${i}`,
+        kind: "case",
+        front: st.prompt,
+        back: right.text,
+        note: right.feedback || null,
+        known: null,
+      });
+    });
+  }
+
+  // ---- 7. Test savollari — faqat urinish yakunlangach ----
+  if (quiz && !quizLocked) {
     for (const q of quiz.questions) {
       const explanations = (q.explanationJson as string[]) ?? [];
       cards.push({
@@ -70,28 +202,37 @@ async function build(studentId: number, topicId: number) {
     }
   }
 
-  const digest = topic.digest?.approvedByTeacher ? (topic.digest.digestJson as unknown as DigestJson) : null;
-  (digest?.terms ?? []).forEach((term, i) => {
-    if (!term.uz && !term.ru) return;
-    cards.push({
-      key: `t:${i}`,
-      kind: "term",
-      front: term.uz || term.ru,
-      back: [term.ru, term.lat].filter(Boolean).join(" · "),
-      note: null,
-      known: null,
-    });
-  });
-
-  return { cards, locked, hasQuiz: !!quiz };
+  const trimmed = cards.slice(0, MAX_CARDS);
+  /** Keyinroq ochiladigan kartalar soni (UI "yana N ta ochiladi" deydi). */
+  const pendingQuiz = quizLocked ? quiz!.questions.length : 0;
+  return {
+    cards: trimmed,
+    /** To'plam butunlay bo'shmi (eski `locked` semantikasi o'rnida). */
+    locked: trimmed.length === 0,
+    quizLocked,
+    caseLocked,
+    pendingQuiz,
+    hasQuiz: !!quiz,
+  };
 }
 
 export async function getFlashcards(studentId: number, topicId: number) {
   await assertTopicOpen(studentId, topicId);
-  const { cards, locked, hasQuiz } = await build(studentId, topicId);
+  const { cards, locked, hasQuiz, quizLocked, caseLocked, pendingQuiz } = await build(studentId, topicId);
 
   if (locked) {
-    return { locked: true, reason: "quiz_not_finished" as const, cards: [], total: 0, knownCount: 0 };
+    // Kontent hali yo'q (konspekt tasdiqlanmagan va test yakunlanmagan).
+    return {
+      locked: true,
+      reason: quizLocked ? ("quiz_not_finished" as const) : ("no_content" as const),
+      cards: [],
+      total: 0,
+      knownCount: 0,
+      quizLocked,
+      caseLocked,
+      pendingQuiz,
+      hasQuiz,
+    };
   }
 
   const reviews = await prisma.flashcardReview.findMany({ where: { studentId, topicId } });
@@ -104,6 +245,10 @@ export async function getFlashcards(studentId: number, topicId: number) {
     cards: withState,
     total: withState.length,
     knownCount: withState.filter((c) => c.known === true).length,
+    /** Test yakunlangach yana shuncha karta qo'shiladi (UI xabari). */
+    quizLocked,
+    caseLocked,
+    pendingQuiz,
     hasQuiz,
   };
 }
@@ -124,8 +269,9 @@ export async function reviewFlashcard(studentId: number, topicId: number, cardKe
 
   const { cards, locked } = await build(studentId, topicId);
   if (locked) {
-    throw new ApiError(403, "flashcards_locked", "Avval testni yakunlang", "Сначала завершите тест");
+    throw new ApiError(403, "flashcards_locked", "Kartalar hali tayyor emas", "Карточки ещё не готовы");
   }
+  // Karta ro'yxatda yo'q bo'lsa — hali ochilmagan (test/keys) yoki mavjud emas.
   if (!cards.some((c) => c.key === cardKey)) throw notFound("Karta");
 
   const prev = await prisma.flashcardReview.findUnique({

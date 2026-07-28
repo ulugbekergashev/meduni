@@ -7,9 +7,8 @@ import type { Lesson } from "../api";
 import { Panel } from "./Panel";
 import { firstContentView, nextOpenStage, type ContentView, type LessonView, type StageInfo, type StageKey } from "./stages";
 import { DigestView } from "./DigestView";
-import { MindmapView } from "./MindmapView";
 import { SectionReader } from "./SectionReader";
-import { MaterialTextView } from "./MaterialTextView";
+import { MaterialBar } from "./MaterialBar";
 import { NextStageBar } from "./NextStageBar";
 import { VideoTab } from "./VideoTab";
 import { SlidesTab } from "./SlidesTab";
@@ -21,6 +20,8 @@ import { FlashcardsTab } from "./FlashcardsTab";
 // Natija ekrani anime.js timeline'ini olib keladi (~22kb gzip) — u faqat shu
 // yuza ochilganda kerak, shuning uchun alohida chunk.
 const ResultPanel = lazy(() => import("./ResultPanel").then((m) => ({ default: m.ResultPanel })));
+// Mindmap React Flow + dagre (~130kb) olib keladi — xuddi shu sabab alohida chunk.
+const MindmapView = lazy(() => import("./MindmapView").then((m) => ({ default: m.MindmapView })));
 
 const SURFACE_ICON = {
   case: Stethoscope,
@@ -41,6 +42,8 @@ export function ContentPanel({
   seekTo = null,
   onSeekVideo,
   onJumpSection,
+  materialsLocked = false,
+  materialsLockedNote,
 }: {
   lesson: Lesson;
   topicId: number;
@@ -57,6 +60,9 @@ export function ContentPanel({
   onSeekVideo?: (sec: number) => void;
   /** Faza 2: mindmap bo'lim tugunidan konspektga sakrash. */
   onJumpSection?: (index: number) => void;
+  /** Test jarayonida asl material yopiladi (halollik). */
+  materialsLocked?: boolean;
+  materialsLockedNote?: string;
 }) {
   const { t } = useTranslation(undefined, { keyPrefix: "lesson" });
   const hasSections = (lesson.sections?.length ?? 0) > 0;
@@ -65,13 +71,11 @@ export function ContentPanel({
   if (lesson.digest || hasSections) contentTabs.push("konspekt");
   if (lesson.tabs.slides) contentTabs.push("slides");
   if (lesson.tabs.video) contentTabs.push("video");
-  if (lesson.materials.some((m) => m.hasText)) contentTabs.push("materials");
 
   const isContentView =
     view === "konspekt" ||
     view === "video" ||
     view === "slides" ||
-    view === "materials" ||
     view === "flashcards" ||
     view === "mindmap";
 
@@ -161,12 +165,20 @@ export function ContentPanel({
   if (view === "mindmap") {
     return (
       <Panel bodyClassName="p-0">
-        <MindmapView
-          topicTitle={lesson.title}
-          sections={lesson.sections ?? []}
-          terms={lesson.digest?.terms ?? []}
-          onJumpSection={(i) => onJumpSection?.(i)}
-        />
+        <Suspense
+          fallback={
+            <div className="flex h-full items-center justify-center">
+              <Spinner size={22} />
+            </div>
+          }
+        >
+          <MindmapView
+            topicTitle={lesson.title}
+            sections={lesson.sections ?? []}
+            terms={lesson.digest?.terms ?? []}
+            onJumpSection={(i) => onJumpSection?.(i)}
+          />
+        </Suspense>
       </Panel>
     );
   }
@@ -188,25 +200,47 @@ export function ContentPanel({
   // Bloklar chap ustunda tanlanadi — bu panelда faqat kontent. Shapka YO'Q:
   // faol blok nomi chap railda brand chip bilan allaqachon belgilangan
   // (ilgari bir tushuncha 3 ta shapkada takrorlanardi).
+  // 2026-07-28: asl material (PDF) endi alohida blok emas — konspekt USTIDA,
+  // o'qish oqimining boshida turadi va joyida ochiladi.
+  const materialBar = (
+    <MaterialBar
+      materials={lesson.materials}
+      links={lesson.links}
+      locked={materialsLocked}
+      lockedNote={materialsLockedNote}
+    />
+  );
+
   return (
-    <Panel bodyClassName={readerMode ? "p-0" : "p-4"}>
-      {active === "konspekt" &&
-        (readerMode ? (
-          <SectionReader
-            sections={lesson.sections}
-            terms={lesson.digest?.terms ?? []}
-            activeSection={section}
-            onVisibleSection={onVisibleSection}
-            onMarkRead={onMarkRead}
-            onFinished={nextAfterStudy ? () => onStage(nextAfterStudy.key) : undefined}
-            finishedLabel={nextAfterStudy ? `${t("nextStage")}: ${t(`stage_${nextAfterStudy.key}`)}` : undefined}
-            hasVideo={!!lesson.tabs.video}
-            onSeekVideo={onSeekVideo}
-            audioSrc={lesson.digestAudio ? `${API_URL}/api/v1/me/topics/${topicId}/digest-audio` : null}
-          />
-        ) : (
-          lesson.digest && <DigestView digest={lesson.digest} />
-        ))}
+    <Panel bodyClassName={active === "konspekt" ? "flex flex-col p-0" : "p-4"}>
+      {active === "konspekt" && (
+        <>
+          {materialBar}
+          {readerMode ? (
+            /* Reader o'z ichida skroll qiladi — material paneli ochilsa u qisqaradi. */
+            <div className="min-h-0 flex-1">
+              <SectionReader
+                sections={lesson.sections}
+                terms={lesson.digest?.terms ?? []}
+                activeSection={section}
+                onVisibleSection={onVisibleSection}
+                onMarkRead={onMarkRead}
+                onFinished={nextAfterStudy ? () => onStage(nextAfterStudy.key) : undefined}
+                finishedLabel={nextAfterStudy ? `${t("nextStage")}: ${t(`stage_${nextAfterStudy.key}`)}` : undefined}
+                hasVideo={!!lesson.tabs.video}
+                onSeekVideo={onSeekVideo}
+                audioSrc={lesson.digestAudio ? `${API_URL}/api/v1/me/topics/${topicId}/digest-audio` : null}
+              />
+            </div>
+          ) : (
+            lesson.digest && (
+              <div className="min-h-0 flex-1 overflow-y-auto p-4">
+                <DigestView digest={lesson.digest} />
+              </div>
+            )
+          )}
+        </>
+      )}
       {active === "video" && lesson.tabs.video && (
         <>
           <VideoTab topicId={topicId} data={lesson.tabs.video} threshold={lesson.thresholds.video} seekTo={seekTo} />
@@ -219,7 +253,6 @@ export function ContentPanel({
           {studyDone && <NextStageBar stages={stages} currentKey="study" onSelect={onStage} />}
         </>
       )}
-      {active === "materials" && <MaterialTextView materials={lesson.materials} />}
     </Panel>
   );
 }

@@ -1,14 +1,29 @@
-import { Fragment, useMemo } from "react";
+import { memo, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { motion, useReducedMotion } from "framer-motion";
-import { Check } from "lucide-react";
+import {
+  Background,
+  BackgroundVariant,
+  Controls,
+  Handle,
+  Position,
+  ReactFlow,
+  type Edge,
+  type Node,
+  type NodeProps,
+} from "@xyflow/react";
+import dagre from "@dagrejs/dagre";
+import { Check, Clock, Network } from "lucide-react";
 import { Icon, cls } from "@meduni/ui";
 import type { DigestBlock, LessonSection, Term } from "../api";
-import { TermChip } from "./TermTooltip";
+import "@xyflow/react/dist/style.css";
 
-// Faza 2 — MINDMAP: tasdiqlangan konspektning bo'limlari + atamalaridan AI'SIZ
-// quriladi (fleshkarta presedenti). Dekoratsiya emas — NAVIGATSIYA qatlami:
-// bo'lim tuguni → konspektning o'sha bo'limiga sakraydi; atama tuguni → tooltip.
+// 2026-07-28: mindmap qo'lda hisoblangan radial SVG edi — tugunlar bir-birining
+// ustiga tushardi, zoom/pan yo'q, uzun sarlavha kesilardi. Endi **React Flow**
+// (@xyflow/react) + **dagre** avto-tartibi: cheksiz kanvas, zoom/pan/fit,
+// tugunni surish. Style qatlami — o'z tokenlarimiz (CLAUDE.md §4).
+//
+// Mindmap DEKORATSIYA emas, NAVIGATSIYA qatlami: bo'lim tuguni bosilsa konspekt
+// o'sha bo'limga sakraydi; atama tuguni o'z bo'limiga olib boradi.
 
 function escapeRe(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -26,7 +41,7 @@ function sectionText(s: LessonSection): string {
 }
 
 /** Atamani birinchi uchragan bo'limga biriktiradi (so'z chegarasi bilan).
- *  Har bo'limga eng ko'pi 4 barg — shovqin bo'lmasin. */
+ *  Har bo'limga eng ko'pi 5 barg — daraxt o'qilishi qiyinlashmasin. */
 function assignTerms(sections: LessonSection[], terms: Term[]): Map<number, Term[]> {
   const texts = sections.map(sectionText);
   const byIndex = new Map<number, Term[]>();
@@ -44,10 +59,10 @@ function assignTerms(sections: LessonSection[], terms: Term[]): Map<number, Term
         break;
       }
     }
-    if (found === -1) continue;
-    const idx = sections[found].index;
+    // Mos bo'lim topilmasa — atama BIRINCHI bo'limga osiladi (yo'qolib ketmasin).
+    const idx = found === -1 ? sections[0].index : sections[found].index;
     const arr = byIndex.get(idx) ?? [];
-    if (arr.length < 4) {
+    if (arr.length < 5) {
       arr.push(term);
       byIndex.set(idx, arr);
       used.add(id);
@@ -56,18 +71,112 @@ function assignTerms(sections: LessonSection[], terms: Term[]): Map<number, Term
   return byIndex;
 }
 
-const W = 1040;
-const H = 760;
-const CX = W / 2;
-const CY = H / 2;
-const R1 = 215; // markaz → bo'lim
-const R2 = 128; // bo'lim → atama
+// ---------- Tugun turlari (o'z dizayn tokenlarimizda) ----------
 
-interface Node {
-  s: LessonSection;
-  x: number;
-  y: number;
-  leaves: { term: Term; x: number; y: number }[];
+const HANDLE = "!h-1.5 !w-1.5 !border-0 !bg-transparent";
+
+type RootData = { title: string; count: number };
+type SectionData = { index: number; title: string; minutes: number; read: boolean; onJump: (i: number) => void };
+type TermData = { uz: string; lat: string; ru: string; sectionIndex: number; onJump: (i: number) => void };
+
+const RootNode = memo(({ data }: NodeProps) => {
+  const d = data as unknown as RootData;
+  return (
+    <div className="w-[210px] rounded-card bg-gradient-to-br from-brand-deep to-brand px-4 py-3 text-white shadow-card">
+      <span className="mb-1 inline-flex items-center gap-1.5 text-micro font-extrabold uppercase tracking-wider opacity-80">
+        <Icon icon={Network} size={12} /> {d.count}
+      </span>
+      <p className="text-body font-extrabold leading-tight">{d.title}</p>
+      <Handle type="source" position={Position.Right} className={HANDLE} />
+    </div>
+  );
+});
+RootNode.displayName = "RootNode";
+
+const SectionNode = memo(({ data }: NodeProps) => {
+  const d = data as unknown as SectionData;
+  return (
+    <button
+      onClick={() => d.onJump(d.index)}
+      className={cls(
+        "w-[248px] rounded-card border bg-surface px-3 py-2.5 text-left shadow-card transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
+        d.read ? "border-emerald hover:bg-emerald-soft" : "border-line hover:border-brand hover:bg-brand-soft"
+      )}
+    >
+      <Handle type="target" position={Position.Left} className={HANDLE} />
+      <div className="mb-1 flex items-center gap-1.5">
+        <span
+          className={cls(
+            "flex h-5 w-5 items-center justify-center rounded-pill text-micro font-extrabold tabular-nums",
+            d.read ? "bg-emerald-soft text-emerald" : "bg-brand-soft text-brand-tint"
+          )}
+        >
+          {d.read ? <Icon icon={Check} size={11} strokeWidth={4} /> : d.index + 1}
+        </span>
+        <span className="inline-flex items-center gap-1 text-micro font-bold text-ink-faint">
+          <Icon icon={Clock} size={11} />
+          {d.minutes}
+        </span>
+      </div>
+      <p className="text-note font-bold leading-snug text-ink">{d.title}</p>
+      <Handle type="source" position={Position.Right} className={HANDLE} />
+    </button>
+  );
+});
+SectionNode.displayName = "SectionNode";
+
+const TermNode = memo(({ data }: NodeProps) => {
+  const d = data as unknown as TermData;
+  return (
+    <button
+      onClick={() => d.onJump(d.sectionIndex)}
+      title={d.ru || undefined}
+      className="w-[190px] rounded-control border border-line bg-surface-raised px-2.5 py-1.5 text-left transition-colors hover:border-violet hover:bg-violet-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+    >
+      <Handle type="target" position={Position.Left} className={HANDLE} />
+      <p className="truncate text-micro font-bold text-ink">{d.uz}</p>
+      {d.lat && <p className="truncate text-micro italic text-ink-faint">{d.lat}</p>}
+    </button>
+  );
+});
+TermNode.displayName = "TermNode";
+
+const nodeTypes = { root: RootNode, section: SectionNode, term: TermNode };
+
+const SIZE = {
+  root: { w: 210, h: 84 },
+  section: { w: 248, h: 74 },
+  term: { w: 190, h: 46 },
+} as const;
+
+/** Chapdan o'ngga daraxt tartibi (dagre) — tugunlar hech qachon ustma-ust tushmaydi. */
+function layout(nodes: Node[], edges: Edge[]): Node[] {
+  const g = new dagre.graphlib.Graph();
+  g.setDefaultEdgeLabel(() => ({}));
+  g.setGraph({ rankdir: "LR", nodesep: 16, ranksep: 70, marginx: 24, marginy: 24 });
+  for (const n of nodes) {
+    const s = SIZE[(n.type as keyof typeof SIZE) ?? "section"];
+    g.setNode(n.id, { width: s.w, height: s.h });
+  }
+  for (const e of edges) g.setEdge(e.source, e.target);
+  dagre.layout(g);
+  return nodes.map((n) => {
+    const p = g.node(n.id);
+    const s = SIZE[(n.type as keyof typeof SIZE) ?? "section"];
+    return { ...n, position: { x: p.x - s.w / 2, y: p.y - s.h / 2 } };
+  });
+}
+
+/** <html data-theme> ni kuzatadi — React Flow o'z boshqaruvlarini shunga moslaydi. */
+function useColorMode(): "light" | "dark" {
+  const read = () => (document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light");
+  const [mode, setMode] = useState<"light" | "dark">(read);
+  useEffect(() => {
+    const obs = new MutationObserver(() => setMode(read()));
+    obs.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+    return () => obs.disconnect();
+  }, []);
+  return mode;
 }
 
 export function MindmapView({
@@ -82,90 +191,98 @@ export function MindmapView({
   onJumpSection: (index: number) => void;
 }) {
   const { t } = useTranslation(undefined, { keyPrefix: "lesson" });
-  const reduce = useReducedMotion();
+  const colorMode = useColorMode();
 
-  const nodes = useMemo<Node[]>(() => {
+  const { nodes, edges } = useMemo(() => {
+    if (sections.length === 0) return { nodes: [] as Node[], edges: [] as Edge[] };
     const termsBy = assignTerms(sections, terms);
-    const n = sections.length;
-    return sections.map((s, i) => {
-      const baseDeg = -90 + i * (360 / n);
-      const ang = (baseDeg * Math.PI) / 180;
-      const x = CX + R1 * Math.cos(ang);
-      const y = CY + R1 * Math.sin(ang);
-      const ls = termsBy.get(s.index) ?? [];
-      const m = ls.length;
-      const spread = Math.min(64, 24 * m); // gradus
-      const leaves = ls.map((term, j) => {
-        const fa = m <= 1 ? baseDeg : baseDeg - spread / 2 + j * (spread / (m - 1));
-        const far = (fa * Math.PI) / 180;
-        return { term, x: x + R2 * Math.cos(far), y: y + R2 * Math.sin(far) };
+    const ns: Node[] = [
+      {
+        id: "root",
+        type: "root",
+        position: { x: 0, y: 0 },
+        data: { title: topicTitle, count: sections.length } satisfies RootData as unknown as Record<string, unknown>,
+      },
+    ];
+    const es: Edge[] = [];
+
+    sections.forEach((s) => {
+      const sid = `s${s.index}`;
+      ns.push({
+        id: sid,
+        type: "section",
+        position: { x: 0, y: 0 },
+        data: {
+          index: s.index,
+          title: s.title,
+          minutes: s.minutes,
+          read: s.read,
+          onJump: onJumpSection,
+        } satisfies SectionData as unknown as Record<string, unknown>,
       });
-      return { s, x, y, leaves };
+      es.push({
+        id: `e-root-${sid}`,
+        source: "root",
+        target: sid,
+        type: "smoothstep",
+        style: { stroke: s.read ? "var(--emerald)" : "var(--line-raised)", strokeWidth: 2 },
+      });
+
+      (termsBy.get(s.index) ?? []).forEach((term, j) => {
+        const tid = `${sid}-t${j}`;
+        ns.push({
+          id: tid,
+          type: "term",
+          position: { x: 0, y: 0 },
+          data: {
+            uz: term.uz || term.ru,
+            lat: term.lat ?? "",
+            ru: term.ru ?? "",
+            sectionIndex: s.index,
+            onJump: onJumpSection,
+          } satisfies TermData as unknown as Record<string, unknown>,
+        });
+        es.push({
+          id: `e-${sid}-${tid}`,
+          source: sid,
+          target: tid,
+          type: "smoothstep",
+          style: { stroke: "var(--line)", strokeWidth: 1.4 },
+        });
+      });
     });
-  }, [sections, terms]);
+
+    return { nodes: layout(ns, es), edges: es };
+  }, [sections, terms, topicTitle, onJumpSection]);
 
   if (sections.length === 0) return null;
 
   return (
-    <div className="h-full overflow-auto p-3">
-      <div className="relative mx-auto" style={{ width: W, height: H }}>
-        {/* Chiziqlar (edges) — SVG qatlam */}
-        <svg className="absolute inset-0 text-line" width={W} height={H} viewBox={`0 0 ${W} ${H}`} aria-hidden>
-          {nodes.map((n) => (
-            <Fragment key={n.s.index}>
-              <line x1={CX} y1={CY} x2={n.x} y2={n.y} stroke="currentColor" strokeWidth={2} />
-              {n.leaves.map((lf, j) => (
-                <line key={j} x1={n.x} y1={n.y} x2={lf.x} y2={lf.y} stroke="currentColor" strokeWidth={1.2} />
-              ))}
-            </Fragment>
-          ))}
-        </svg>
-
-        {/* Markaz — mavzu */}
-        <motion.div
-          initial={reduce ? false : { scale: 0.85, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ type: "spring", stiffness: 300, damping: 24 }}
-          className="absolute z-10 -translate-x-1/2 -translate-y-1/2"
-          style={{ left: CX, top: CY }}
-        >
-          <div className="max-w-[190px] rounded-card bg-brand px-4 py-2.5 text-center text-note font-extrabold leading-tight text-white shadow-card">
-            {topicTitle}
-          </div>
-        </motion.div>
-
-        {/* Bo'lim tugunlari + atama barglari */}
-        {nodes.map((n, i) => (
-          <Fragment key={n.s.index}>
-            {n.leaves.map((lf, j) => (
-              <div
-                key={j}
-                className="absolute z-10 -translate-x-1/2 -translate-y-1/2"
-                style={{ left: lf.x, top: lf.y }}
-              >
-                <span className="inline-block rounded-pill border border-line bg-surface px-2 py-0.5 text-micro text-ink-soft shadow-sm">
-                  <TermChip raw={lf.term.uz} term={lf.term} />
-                </span>
-              </div>
-            ))}
-            <motion.button
-              initial={reduce ? false : { scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: reduce ? 0 : 0.05 + i * 0.04, type: "spring", stiffness: 320, damping: 22 }}
-              onClick={() => onJumpSection(n.s.index)}
-              title={t("mindmapOpenSection")}
-              className={cls(
-                "absolute z-20 flex max-w-[170px] -translate-x-1/2 -translate-y-1/2 items-center gap-1.5 rounded-card border bg-surface px-3 py-2 text-left text-note font-bold shadow-card transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
-                n.s.read ? "border-emerald/50 text-ink hover:bg-emerald-soft" : "border-line text-ink hover:border-brand hover:bg-brand-soft"
-              )}
-              style={{ left: n.x, top: n.y }}
-            >
-              {n.s.read && <Icon icon={Check} size={13} className="shrink-0 text-emerald" strokeWidth={3} />}
-              <span className="line-clamp-2 leading-snug">{n.s.title}</span>
-            </motion.button>
-          </Fragment>
-        ))}
-      </div>
+    <div className="relative h-full w-full">
+      <ReactFlow
+        nodes={nodes}
+        edges={edges}
+        nodeTypes={nodeTypes}
+        colorMode={colorMode}
+        fitView
+        fitViewOptions={{ padding: 0.12 }}
+        // ⚠️ Mount paytida panel kengligi hali 0 bo'lishi mumkin — o'shanda
+        // `fitView` hech narsa qilmaydi va daraxtning o'ng chekkasi kesilib
+        // qoladi. Shuning uchun keyingi kadrda qayta moslaymiz.
+        onInit={(inst) => requestAnimationFrame(() => inst.fitView({ padding: 0.12 }))}
+        minZoom={0.25}
+        maxZoom={1.6}
+        nodesConnectable={false}
+        edgesFocusable={false}
+        proOptions={{ hideAttribution: false }}
+        className="bg-bg"
+      >
+        <Background variant={BackgroundVariant.Dots} gap={22} size={1} color="var(--line-raised)" />
+        <Controls showInteractive={false} position="bottom-left" />
+      </ReactFlow>
+      <p className="pointer-events-none absolute left-3 top-3 rounded-pill bg-surface px-2.5 py-1 text-micro font-bold text-ink-soft shadow-card">
+        {t("mindmapOpenSection")}
+      </p>
     </div>
   );
 }
