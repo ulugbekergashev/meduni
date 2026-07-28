@@ -50,6 +50,10 @@
     "startingTitle": "Bemor kabinetga kirmoqda…",
     "startingHint": "Bir necha soniya — bemor shikoyatini oʻzi aytadi, keyin savollaringizni bering.",
     "startError": "Bemorni chaqirib boʻlmadi",
+    "evaluating": "Baholanmoqda… bu bir necha soniya oladi",
+    "evaluatingShort": "Baholanmoqda…",
+    "finishError": "Baholab boʻlmadi. Qayta urinib koʻring.",
+    "actionError": "Amalni bajarib boʻlmadi. Qayta urinib koʻring.",
     "orderRunning": "Tekshiruv bajarilmoqda…",
     "suggests": [
       "Sizni nima bezovta qilyapti?",
