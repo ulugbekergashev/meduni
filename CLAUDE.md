@@ -1720,6 +1720,14 @@ Barcha modullar tugadi (1-17).
   **32/32**; Gemini kaliti jonli serverda ishlaydi (AI-tutor konspektga tayanib javob
   berdi). Yo'l-yo'lakay: CORS endi rate-limit'dan OLDIN (429 javobi CORS sarlavhasiz
   ketib, brauzerda "No Access-Control-Allow-Origin" bo'lib ko'rinardi).
+  **(E) Login sahifasi HAR QANDAY xatoni "parol noto'g'ri" derdi** — server
+  uxlab qolgan/deploy ketayotgan bo'lsa foydalanuvchi parolini qidirib ovora
+  bo'lardi (demo oldidan aynan shu holat yuz berdi). `lib/api.ts` endi fetch
+  yiqilishini `ApiError(0, "network_error")` ga o'raydi, `Login.tsx` esa faqat
+  401 da "Email yoki parol noto'g'ri" ko'rsatadi; qolganda server xabari
+  ("Server javob bermayapti. Bir necha soniyadan keyin qayta urining").
+  Brauzerda tekshirildi (playwright-core + Chrome): o'lik API → tarmoq xabari,
+  noto'g'ri parol → 401 xabari, to'g'ri parol → /app, konsol toza.
 
 ## 9. Loyiha holati va ishga tushirish (operatsion — sessiya 0)
 

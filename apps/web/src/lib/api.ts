@@ -16,14 +16,27 @@ export class ApiError extends Error {
 }
 
 export async function api<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_URL}${path}`, {
-    ...init,
-    credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-      ...init?.headers,
-    },
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}${path}`, {
+      ...init,
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        ...init?.headers,
+      },
+    });
+  } catch {
+    // ⚠️ Tarmoq/serverga umuman yetib bormadi (uxlab qolgan server, deploy,
+    // uzilgan internet). Buni ANIQ xato sifatida qaytaramiz — aks holda
+    // chaqiruvchi uni "parol noto'g'ri" kabi noto'g'ri talqin qiladi.
+    throw new ApiError(
+      0,
+      "network_error",
+      "Server javob bermayapti. Bir necha soniyadan keyin qayta urining.",
+      "Сервер не отвечает. Повторите через несколько секунд."
+    );
+  }
 
   if (!res.ok) {
     const body = await res.json().catch(() => null);
