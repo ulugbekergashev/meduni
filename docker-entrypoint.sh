@@ -13,11 +13,18 @@ until npx prisma db push --skip-generate; do
 done
 
 cd /app
+# ⚠️ Seed FAQAT bo'sh bazada ishlaydi. Ilgari u HAR ishga tushishда qayta
+# ishlardi: bepul tarifda konteyner uyqudan uyg'onganda ~30 soniya qo'shimcha
+# kutish va bazaga keraksiz yuk (demo ma'lumoti allaqachon joyida).
 if [ "$DEMO_SEED" = "1" ]; then
   echo "==> Birlamchi foydalanuvchilar (prisma seed)..."
   npx tsx packages/db/prisma/seed.ts || echo "   (birlamchi seed o'tkazib yuborildi)"
-  echo "==> Demo data (login akkauntlar)..."
-  npx tsx apps/api/src/scripts/demoRestore.ts || echo "   (demoRestore o'tkazib yuborildi)"
+  if [ "$DEMO_RESTORE" = "1" ]; then
+    echo "==> Demo data (demoRestore)..."
+    npx tsx apps/api/src/scripts/demoRestore.ts || echo "   (demoRestore o'tkazib yuborildi)"
+  else
+    echo "==> demoRestore o'tkazib yuborildi (DEMO_RESTORE=1 bo'lsa ishlaydi)"
+  fi
 fi
 
 echo "==> API ishga tushmoqda (:$PORT, web bilan)..."

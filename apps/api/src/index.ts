@@ -119,6 +119,18 @@ if (serveWeb) {
 
 app.use(errorMiddleware);
 
+// ⚠️ SERVERNI TIRIK SAQLASH. Node sukut bo'yicha ushlanmagan promise rad
+// etilishida BUTUN jarayonni o'ldiradi — bitta so'rovdagi mayda xato tufayli
+// hamma foydalanuvchi saytni yo'qotadi (Render'da bu qayta-qayta ko'tarilish
+// halqasiga aylanadi: "Application loading" ~15 daqiqada bir marta).
+// Xatoni YASHIRMAYMIZ — logga to'liq chiqaramiz, lekin jarayon o'lmaydi.
+process.on("unhandledRejection", (reason) => {
+  console.error("[unhandledRejection]", reason);
+});
+process.on("uncaughtException", (err) => {
+  console.error("[uncaughtException]", err);
+});
+
 app.listen(env.port, () => {
   console.log(`API ready on http://localhost:${env.port}`);
   // Deploy'da eng ko'p uchraydigan xato — noto'g'ri origin/cookie sozlamasi.

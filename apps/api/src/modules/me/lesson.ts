@@ -49,6 +49,19 @@ export async function getTopicLesson(studentId: number, topicId: number) {
   const progressPromise = prisma.progress.findUnique({ where: { studentId_topicId: { studentId, topicId } } });
   const readsPromise = prisma.sectionRead.findMany({ where: { studentId, topicId }, select: { sectionIndex: true } });
 
+  // ⚠️ Quyidagi kirish tekshiruvi 403 tashlashi mumkin — o'shanda yuqoridagi
+  // so'rovlar EGASIZ qoladi. Ular keyin rad etilsa Node "unhandledRejection"
+  // deb butun jarayonni o'ldiradi (prod'da shu sabab crash-loop bo'lgan).
+  // Bo'sh `.catch` xatoni yutmaydi: `await` paytida u baribir otiladi, faqat
+  // egasiz qolgan holatda jarayon yiqilmaydi.
+  const keepSafe = <T>(p: Promise<T>): Promise<T> => {
+    p.catch(() => undefined);
+    return p;
+  };
+  keepSafe(topicPromise);
+  keepSafe(progressPromise);
+  keepSafe(readsPromise);
+
   // Enrolled + published + unlocked tekshiruvi — bitta hisob-kitobda: shu yerda
   // "keyingi mavzu" ham chiqadi (dars tugagach to'g'ridan o'tish uchun).
   const enrolledCourseId = await enrolledCourseIdForTopic(studentId, topicId);
@@ -85,13 +98,16 @@ export async function getTopicLesson(studentId: number, topicId: number) {
   const quizAttemptsPromise = quizForMeta
     ? prisma.quizAttempt.findMany({ where: { studentId, quizId: quizForMeta.id }, orderBy: { attemptNo: "desc" } })
     : Promise.resolve([]);
+  keepSafe(quizAttemptsPromise);
   const caseAttemptPromise = caseForMeta
     ? prisma.caseAttempt.findUnique({ where: { studentId_caseId: { studentId, caseId: caseForMeta.id } } })
     : Promise.resolve(null);
+  keepSafe(caseAttemptPromise);
   const patientEvalPromise =
     caseForMeta || topic.digest?.approvedByTeacher === true
       ? prisma.patientMessage.findFirst({ where: { studentId, topicId, role: "eval" }, select: { id: true } })
       : Promise.resolve(null);
+  keepSafe(patientEvalPromise);
   const digestAudioPromise = topic.digest?.approvedByTeacher
     ? hasDigestAudio(topicId, topic.digest.version)
     : Promise.resolve(false);
