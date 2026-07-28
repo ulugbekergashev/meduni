@@ -218,6 +218,50 @@ function ensureSectionIds(digest: DigestJson): DigestJson {
   return digest;
 }
 
+/**
+ * Bloklarni TOZALASH — buzuq shakl bazaga tushmasin.
+ *
+ * ⚠️ Kuzatilgan real xato (2026-07-27): AI `list` blokini `items`siz, faqat
+ * `text`+`tone` bilan qaytardi. Zod `safeParse` yiqilgani uchun xom javob
+ * saqlangan, talaba tomonida esa `items.map(...)` butun dars sahifasini oq
+ * ekranga aylantirgan. Endi bunday blok paragrafga aylantiriladi, umuman
+ * matnsiz blok esa tashlab yuboriladi.
+ */
+type DigestSection = NonNullable<DigestJson["sections"]>[number];
+type DigestBlock = DigestSection["blocks"][number];
+
+export function normalizeDigestBlocks(digest: DigestJson): DigestJson {
+  for (const section of digest.sections ?? []) {
+    const blocks = Array.isArray(section.blocks) ? section.blocks : [];
+    const out: DigestBlock[] = [];
+    for (const b of blocks) {
+      const raw = b as { type?: string; text?: string; tone?: string; items?: unknown; ordered?: boolean };
+      const text = typeof raw.text === "string" ? raw.text.trim() : "";
+      if (raw.type === "list") {
+        const items = Array.isArray(raw.items)
+          ? (raw.items as { lead?: string; text?: string }[]).filter(
+              (it) => it && typeof it.text === "string" && it.text.trim()
+            )
+          : [];
+        if (items.length > 0) {
+          out.push({ type: "list", ordered: !!raw.ordered, items: items as { lead?: string; text: string }[] });
+        } else if (text) {
+          out.push({ type: "para", text }); // items yo'q — paragrafga aylantiramiz
+        }
+        continue;
+      }
+      if (!text) continue; // matnsiz blok — tashlab yuboriladi
+      if (raw.type === "callout") {
+        out.push({ type: "callout", tone: raw.tone === "warning" ? "warning" : "important", text });
+      } else {
+        out.push({ type: "para", text }); // para va noma'lum turlar
+      }
+    }
+    section.blocks = out;
+  }
+  return digest;
+}
+
 export async function generateDigest(topicId: number, teacherId: number) {
   await topicForTeacher(topicId, teacherId);
 
@@ -244,7 +288,7 @@ export async function generateDigest(topicId: number, teacherId: number) {
   });
 
   const parsed = digestSchema.safeParse(raw);
-  const digestJson: DigestJson = ensureSectionIds(parsed.success ? parsed.data : raw);
+  const digestJson: DigestJson = normalizeDigestBlocks(ensureSectionIds(parsed.success ? parsed.data : raw));
 
   const existing = await prisma.topicDigest.findUnique({ where: { topicId } });
   const digest = await prisma.topicDigest.upsert({
@@ -278,7 +322,7 @@ export async function updateDigest(topicId: number, teacherId: number, input: un
   const existing = await prisma.topicDigest.findUnique({ where: { topicId } });
   if (!existing) throw notFound("Konspekt");
 
-  const digestJson = ensureSectionIds(parsed.data);
+  const digestJson = normalizeDigestBlocks(ensureSectionIds(parsed.data));
   const digest = await prisma.topicDigest.update({
     where: { topicId },
     data: { digestJson: digestJson as object, version: existing.version + 1, approvedByTeacher: false },

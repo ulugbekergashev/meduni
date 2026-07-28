@@ -9,6 +9,21 @@ import { TermText } from "./TermTooltip";
 export function BlockView({ block, terms = [] }: { block: DigestBlock; terms?: Term[] }) {
   const { t } = useTranslation(undefined, { keyPrefix: "lesson" });
 
+  // ⚠️ AI ba'zan blokni noto'g'ri shaklda qaytaradi (masalan `list` — `items`siz,
+  // faqat `text` bilan). Bunday holda BUTUN dars sahifasi oq ekran bo'lib
+  // qolmasligi kerak: matni bo'lsa oddiy paragraf sifatida ko'rsatamiz, bo'lmasa
+  // blokni umuman chizmaymiz. (Backend ham normalizatsiya qiladi — bu ikkinchi
+  // himoya qatlami, eski/buzuq konspektlar uchun.)
+  const raw = block as { type?: string; text?: string; items?: unknown };
+  if (block.type === "list" && (!Array.isArray(raw.items) || raw.items.length === 0)) {
+    if (!raw.text) return null;
+    return (
+      <p className="text-ink-strong">
+        <TermText text={raw.text} terms={terms} />
+      </p>
+    );
+  }
+
   if (block.type === "para") {
     return (
       <p className="text-ink-strong">
