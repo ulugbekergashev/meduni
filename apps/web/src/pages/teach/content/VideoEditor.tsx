@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Download, FileDown, RefreshCw } from "lucide-react";
 import { Button, Card, Icon, Spinner, Textarea, useToast } from "@meduni/ui";
+import { authedFetch } from "../../../lib/api";
 import { API_BASE, useRebuildVideo, useUpdateContent, type ContentFull, type ScriptSegment } from "../topics/api";
 
 // Convert an SRT string to a WebVTT blob URL so <track> can render subtitles.
@@ -29,7 +30,7 @@ export function VideoEditor({ content }: { content: ContentFull }) {
   useEffect(() => {
     if (!video.hasSrt) return;
     let revoked: string | null = null;
-    fetch(`${API_BASE}/api/v1/videos/${video.id}/srt`, { credentials: "include" })
+    authedFetch(`${API_BASE}/api/v1/videos/${video.id}/srt`)
       .then((r) => (r.ok ? r.text() : ""))
       .then((srt) => {
         if (srt) {

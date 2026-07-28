@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ChevronDown, Download, ExternalLink, FileText, Link2 } from "lucide-react";
 import { Icon, Spinner, cls } from "@meduni/ui";
-import { API_URL } from "../../../lib/api";
+import { API_URL, authedFetch } from "../../../lib/api";
 import type { LessonLink, LessonMaterial } from "../api";
 
 // 2026-07-28 (buyurtmachi): "material matni bizga kerak emas, materialni o'zi
@@ -48,7 +48,7 @@ function useBlobUrl(url: string | null): { src: string | null; loading: boolean;
     let alive = true;
     setLoading(true);
     setFailed(false);
-    fetch(url, { credentials: "include" })
+    authedFetch(url)
       .then((r) => (r.ok ? r.blob() : Promise.reject(new Error(String(r.status)))))
       .then((blob) => {
         if (!alive) return;

@@ -1059,6 +1059,7 @@
     "formats": "PDF, Word (DOCX), PowerPoint (PPTX), текст (TXT)",
     "empty": "Пока нет материалов. Загрузите лекцию или методичку.",
     "uploading": "Загрузка...",
+    "uploadFailed": "Не удалось загрузить файл. Попробуйте ещё раз.",
     "status": {
       "pending": "В очереди",
       "processing": "Чтение",

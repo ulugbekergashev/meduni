@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { api } from "../../../lib/api";
+import { API_URL, api, apiUpload } from "../../../lib/api";
 
 export type TopicStatus = "draft" | "published";
 export type ParseStatus = "pending" | "processing" | "done" | "error";
@@ -270,21 +270,13 @@ export function useTopicDetail(id: number) {
 
 // ---- Materials ----
 
-const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
-
 export function useUploadMaterial(topicId: number) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (file: File) => {
+    mutationFn: (file: File) => {
       const form = new FormData();
       form.append("file", file);
-      const res = await fetch(`${API_URL}/api/v1/topics/${topicId}/materials`, {
-        method: "POST",
-        credentials: "include",
-        body: form,
-      });
-      if (!res.ok) throw new Error("upload_failed");
-      return (await res.json()) as Material;
+      return apiUpload<Material>(`/api/v1/topics/${topicId}/materials`, form);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["topic", topicId] }),
   });
@@ -381,7 +373,13 @@ export function useContent(id: number) {
   });
 }
 
-export const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
+/** ⚠️ 2026-07-29: bu yerda ilgari `import.meta.env.VITE_API_URL` TO'G'RIDAN
+ *  ishlatilardi — ya'ni Vercel'da so'rovlar `*.onrender.com` ga TO'G'RIDAN
+ *  ketardi va `lib/api.ts::resolveApiUrl()` dagi same-origin rewrite'ni CHETLAB
+ *  o'tardi. Natijada login cookie'si (vercel.app domeni uchun) yuborilmasdi va
+ *  o'qituvchining fayl yuklashi/media so'rovlari **401** bilan jimgina yiqilardi.
+ *  Endi butun ilova bitta bazaviy manzildan foydalanadi. */
+export const API_BASE = API_URL;
 
 export function useGeneratePresentation(topicId: number) {
   const qc = useQueryClient();
