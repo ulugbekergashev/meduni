@@ -6,6 +6,8 @@ import { AtSign, Lock, LogIn, Sparkles } from "lucide-react";
 
 import { LocaleSwitcher } from "../components/LocaleSwitcher";
 import { roleHome, useLogin } from "../lib/auth";
+import { ApiError } from "../lib/api";
+import { useLocale } from "../lib/useLocale";
 
 const cardVariants: Variants = {
   hidden: { opacity: 0, y: 28, scale: 0.97 },
@@ -26,8 +28,21 @@ export function Login() {
   const { t } = useTranslation(undefined, { keyPrefix: "login" });
   const navigate = useNavigate();
   const login = useLogin();
+  const locale = useLocale();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
+  // ⚠️ Har qanday xatoni "parol noto'g'ri" deb ko'rsatish MUMKIN EMAS: server
+  // uxlab qolgan yoki deploy ketayotgan bo'lsa foydalanuvchi parolini qidirib
+  // ovora bo'ladi. 401 — haqiqatan noto'g'ri ma'lumot; qolgani — server xabari.
+  const errorText = (() => {
+    const err = login.error;
+    if (!err) return null;
+    if (err instanceof ApiError && err.status !== 401) {
+      return locale === "ru" ? err.messageRu : err.messageUz;
+    }
+    return t("error");
+  })();
 
   const onSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -113,7 +128,7 @@ export function Login() {
                 animate={{ opacity: 1, y: 0 }}
                 className="rounded-[10px] border border-rose/30 bg-rose-soft px-4 py-3 text-[14px] font-semibold text-rose"
               >
-                {t("error")}
+                {errorText}
               </motion.p>
             )}
 
