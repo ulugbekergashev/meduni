@@ -2073,3 +2073,41 @@ dars sahifasi*.
 248px faqat bo'limi borida (talaba O'zlashtirish/Davomat, o'qituvchi kurs) —
 Bosh sahifa/admin/dars sahifasida panel yo'q; mobil 390px: segmented tasma bor,
 gorizontal toshish 0; konsol toza. tsc + build toza.
+
+---
+
+## 15. KONTENT YARATISH SODDALASHTIRILDI (2026-07-29, buyurtmachi)
+
+O'qituvchi kontent yaratish uchun **4 ta alohida kartada 4 marta sozlama tanlab,
+4 marta bosib, har birining tugashini kutib** o'tirardi; qadamlar orasida yana
+"Keyingi" ni bosardi. Endi:
+
+**(A) "Hammasini yaratish" — bitta bosish.** `modules/content/batch.ts`
+(`POST /topics/:id/generate/all`, `GET /topics/:id/generate/status`):
+test → keys → prezentatsiya (→ ixtiyoriy video) **server tomonda ketma-ket**
+yaratiladi, o'qituvchi sahifani yopib ketishi mumkin. Ketma-ket, parallel EMAS
+(Gemini 429 + xotira, §12). **Bitta tur yiqilsa qolganlari baribir yaratiladi**
+(xato o'sha qatorда ko'rinadi). Jonli progress xotirada (`runs` Map) — jarayon
+o'lsa yo'qoladi, lekin yaratilgan kontent bazada qoladi va UI baribir
+"Tayyor" ko'rsatadi. Takror boshlash → **409 batch_running**; konspekt
+tasdiqlanmagan bo'lsa → **403 digest_not_approved** (birinchi qulf saqlanadi).
+Tugma faqat YETISHMAYOTGAN turlarni so'raydi ("Yaratish (2 ta)").
+
+**(B) Sozlamalar yig'ildi.** Har kartada (test/keys/prezentatsiya) savol soni,
+qiyinlik, format, til endi "Sozlamalar" tugmasi ostida — asosiy amal bitta bosish.
+
+**(C) Konspekt: saqlash + tasdiqlash bitta amal.** Ilgari tahrir qilingan bo'lsa
+"Tasdiqlash" O'CHIQ turardi va avval "Saqlash" topilishi kerak edi. Endi
+`saveAndApprove` — kerak bo'lsa saqlaydi, tasdiqlaydi va **avtomatik
+Generatsiya qadamiga o'tadi**. Qulf kuchida: tasdiq baribir ongli bosish.
+
+**(D) Material → konspekt bir bosishda.** Material `done` bo'lishi bilan
+material qadamida CTA chiqadi ("Material tayyor — Konspekt yaratish"):
+`?step=digest&autogen=1` ochadi va generatsiyani O'ZI boshlaydi (bir marta,
+`autogen` darrov URL'dan olib tashlanadi).
+
+**Tekshirildi:** HTTP smoke 8/8 (real o'qituvchi: status bo'sh → boshlash →
+409 takror → running → done → kontent bazada); Chrome: batch kartasi, 4 ta
+yig'ilgan "Sozlamalar", material CTA `?step=digest&autogen=1` ga o'tkazadi,
+konsol toza. tsc + build toza. ⚠️ Smoke demo mavzu 1 testini qayta yaratgani
+uchun holati DRAFT bo'lib qolgandi — qayta chop etildi (demo toza).

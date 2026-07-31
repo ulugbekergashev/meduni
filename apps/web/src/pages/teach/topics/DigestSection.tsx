@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Check, ChevronDown, Plus, Sparkles, Trash2, TriangleAlert, Volume2 } from "lucide-react";
 import { Button, Card, Icon, Spinner, cls, useToast } from "@meduni/ui";
@@ -209,9 +210,36 @@ export function DigestSection({ topic }: { topic: TopicDetail }) {
   const update = useUpdateDigest(topic.id);
   const approve = useApproveDigest(topic.id);
   const genAudio = useGenerateDigestAudio(topic.id);
+  const [params, setParams] = useSearchParams();
+
+  /** Tasdiqlangach o'qituvchi darrov generatsiyada bo'ladi — "Keyingi"ni
+   *  qidirib o'tirmaydi. */
+  const goGenerate = () => {
+    const p = new URLSearchParams(params);
+    p.set("step", "generate");
+    p.delete("autogen");
+    setParams(p);
+  };
 
   const server = topic.digest;
   const [draft, setDraft] = useState<DigestJson | null>(server?.digestJson ?? null);
+
+  // Material qadamidan "Konspekt yaratish" bilan kelinganда — darrov boshlanadi
+  // (o'qituvchi yana bitta tugma qidirmaydi). Faqat BIR marta.
+  const autogen = params.get("autogen") === "1";
+  const started = useRef(false);
+  useEffect(() => {
+    if (!autogen || server || started.current || generate.isPending) return;
+    started.current = true;
+    generate.mutate(undefined, {
+      onSettled: () => {
+        const p = new URLSearchParams(params);
+        p.delete("autogen");
+        setParams(p, { replace: true });
+      },
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autogen, !!server]);
 
   useEffect(() => {
     setDraft(server?.digestJson ?? null);
@@ -248,6 +276,20 @@ export function DigestSection({ topic }: { topic: TopicDetail }) {
 
   const patch = (p: Partial<DigestJson>) => setDraft({ ...draft, ...p });
   const approved = server.approvedByTeacher && !dirty;
+
+  /** Tasdiqlash = (kerak bo'lsa) saqlash + tasdiqlash + keyingi qadamga o'tish.
+   *  Ilgari bu uchta alohida harakat edi. */
+  const saveAndApprove = () => {
+    const finish = () =>
+      approve.mutate(undefined, {
+        onSuccess: () => {
+          show(t("approvedToast"));
+          goGenerate();
+        },
+      });
+    if (dirty) update.mutate(draft, { onSuccess: finish });
+    else finish();
+  };
 
   // Faza 1: bo'limlar (runtime'da to'liq keladi; tip ixtiyoriy) — checkpoint tahriri.
   const sections = (draft.sections ?? []) as DigestSectionData[];
@@ -305,22 +347,20 @@ export function DigestSection({ topic }: { topic: TopicDetail }) {
         ) : (
           <>
             {dirty && (
-              <Button size="sm" onClick={() => update.mutate(draft, { onSuccess: () => show(t("saved")) })} disabled={update.isPending}>
+              <Button size="sm" variant="soft" onClick={() => update.mutate(draft, { onSuccess: () => show(t("saved")) })} disabled={update.isPending || approve.isPending}>
                 {t("save")}
               </Button>
             )}
-            <Button
-              size="sm"
-              variant="deep"
-              disabled={dirty || approve.isPending}
-              onClick={() => approve.mutate(undefined, { onSuccess: () => show(t("approvedToast")) })}
-            >
+            {/* ⚠️ Ilgari tahrir qilingan bo'lsa "Tasdiqlash" O'CHIQ turardi va
+                o'qituvchi avval "Saqlash"ni topishi kerak edi. Endi bitta amal:
+                kerak bo'lsa o'zi saqlaydi, keyin tasdiqlaydi (qulf saqlanadi —
+                tasdiq baribir ONGLI bosish). */}
+            <Button size="sm" variant="deep" disabled={approve.isPending || update.isPending} onClick={saveAndApprove}>
               {t("approve")}
             </Button>
             <span className="inline-flex items-center gap-1 text-[12.5px] text-amber">
               <Icon icon={TriangleAlert} size={12} /> {t("approveWarning")}
             </span>
-            {dirty && <span className="text-[12.5px] text-ink-faint">{t("saveBeforeApprove")}</span>}
           </>
         )}
         <div className="ml-auto flex items-center gap-2">

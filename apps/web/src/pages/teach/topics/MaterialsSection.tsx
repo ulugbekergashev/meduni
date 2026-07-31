@@ -1,6 +1,7 @@
 import { useRef, useState, type DragEvent } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { FileText, RotateCw, Trash2, TriangleAlert, Upload } from "lucide-react";
+import { FileText, RotateCw, Sparkles, Trash2, TriangleAlert, Upload } from "lucide-react";
 import { Badge, Button, Card, EmptyState, Icon, Modal, Spinner, useToast, type BadgeTone } from "@meduni/ui";
 import { ConfirmDialog } from "../../../components/ConfirmDialog";
 import { useLocale } from "../../../lib/useLocale";
@@ -36,6 +37,7 @@ export function MaterialsSection({ topicId, materials }: { topicId: number; mate
   const { t: tc } = useTranslation(undefined, { keyPrefix: "common" });
   const locale = useLocale();
   const { show } = useToast();
+  const [params, setParams] = useSearchParams();
 
   const upload = useUploadMaterial(topicId);
   const retry = useRetryMaterial(topicId);
@@ -170,6 +172,26 @@ export function MaterialsSection({ topicId, materials }: { topicId: number; mate
           </ul>
         )}
       </div>
+
+      {/* Material tayyor bo'lishi bilan keyingi qadam SHU YERDA taklif qilinadi —
+          o'qituvchi "Keyingi" ni qidirib, keyin "Konspekt yaratish"ni bosmaydi:
+          bitta bosish konspekt qadamini ochadi va generatsiyani boshlaydi. */}
+      {materials.some((m) => m.parseStatus === "done") && (
+        <div className="mt-4 flex flex-wrap items-center gap-3 rounded-card border border-brand-soft bg-brand-soft px-4 py-3">
+          <Icon icon={Sparkles} size={18} className="shrink-0 text-brand-deep" />
+          <p className="min-w-0 flex-1 text-body font-semibold text-brand-deep">{t("readyForDigest")}</p>
+          <Button
+            onClick={() => {
+              const p = new URLSearchParams(params);
+              p.set("step", "digest");
+              p.set("autogen", "1");
+              setParams(p);
+            }}
+          >
+            {t("goDigest")}
+          </Button>
+        </div>
+      )}
 
       {/* Extracted text viewer */}
       <Modal open={!!viewing} onClose={() => setViewing(null)} title={t("textTitle")} className="max-w-2xl">
