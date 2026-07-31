@@ -428,6 +428,43 @@ export function useRegenerateImage(presentationId: number) {
   });
 }
 
+// ---- "Hammasini yarat" (bitta bosish → server ketma-ket yaratadi) ----
+
+export type BatchKind = "quiz" | "case" | "presentation" | "video";
+export interface BatchStatus {
+  running: boolean;
+  steps: { kind: BatchKind; state: "queued" | "running" | "done" | "error"; error?: string }[];
+}
+
+export function useGenerateAll(topicId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    // Xato shu kartada ko'rsatiladi — global toast takrorlamasin.
+    meta: { silent: true },
+    mutationFn: (body: { language: "uz" | "ru"; kinds: BatchKind[]; questionCount?: number }) =>
+      api<BatchStatus>(`/api/v1/topics/${topicId}/generate/all`, { method: "POST", body: JSON.stringify(body) }),
+    onSuccess: (s) => qc.setQueryData(["batch", topicId], s),
+  });
+}
+
+/** Jonli progress. Generatsiya ketayotganда 2s da so'raladi — fon tabда ham
+ *  (o'qituvchi boshqa ishga o'tsa ham holat qotib qolmasin). */
+export function useBatchStatus(topicId: number, enabled: boolean) {
+  const qc = useQueryClient();
+  return useQuery({
+    queryKey: ["batch", topicId],
+    queryFn: async () => {
+      const s = await api<BatchStatus>(`/api/v1/topics/${topicId}/generate/status`);
+      // Tur tugaganда mavzu tafsiloti yangilansin (kartalar "Tayyor" bo'lsin).
+      qc.invalidateQueries({ queryKey: ["topic", topicId] });
+      return s;
+    },
+    enabled,
+    refetchInterval: (q) => ((q.state.data as BatchStatus | undefined)?.running ? 2000 : false),
+    refetchIntervalInBackground: true,
+  });
+}
+
 export function useGenerateVideo(topicId: number) {
   const qc = useQueryClient();
   return useMutation({

@@ -903,7 +903,22 @@
     "vLongHint": "Montaj 10–20 daqiqa davom etadi. Sahifani yopsangiz ham jarayon serverda davom etadi.",
     "vInterrupted": "Server qayta ishga tushgani uchun montaj uzildi ({{done}}/{{total}} segment ovozlangan). Bajarilgan ish saqlangan — davom ettiring.",
     "vResume": "Davom ettirish",
-    "vResumed": "Montaj davom etmoqda"
+    "vResumed": "Montaj davom etmoqda",
+    "advanced": "Sozlamalar",
+    "batchTitle": "Hammasini yaratish",
+    "batchHint": "Test, klinik keys va prezentatsiya — bitta bosishda, ketma-ket",
+    "batchRun": "Yaratish ({{n}} ta)",
+    "batchRegenerate": "Hammasini qayta yaratish",
+    "batchStarted": "Generatsiya boshlandi",
+    "batchBackground": "Server yaratmoqda — sahifani yopsangiz ham davom etadi.",
+    "batchStepError": "yaratilmadi",
+    "batchWithVideo": "Video ham yaratilsin (uzoq davom etadi)",
+    "kind": {
+      "quiz": "Test",
+      "case": "Klinik keys",
+      "presentation": "Prezentatsiya",
+      "video": "Video"
+    }
   },
   "videoEditor": {
     "back": "← Konstruktor",
@@ -1077,7 +1092,9 @@
     "parsed": "Fayl oʻqildi",
     "close": "Yopish",
     "confirmDeleteTitle": "Materialni oʻchirish",
-    "confirmDelete": "Bu faylni oʻchirasizmi?"
+    "confirmDelete": "Bu faylni oʻchirasizmi?",
+    "readyForDigest": "Material tayyor — endi konspekt yaratish mumkin",
+    "goDigest": "Konspekt yaratish"
   },
   "common": {
     "add": "Qoʻshish",

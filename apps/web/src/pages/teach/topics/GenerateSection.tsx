@@ -1,7 +1,21 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Check, ClipboardList, Film, Presentation, RotateCcw, Sparkles, Stethoscope } from "lucide-react";
+import {
+  Check,
+  ChevronDown,
+  ClipboardList,
+  Clock,
+  Film,
+  Loader2,
+  Presentation,
+  RotateCcw,
+  SlidersHorizontal,
+  Sparkles,
+  Stethoscope,
+  TriangleAlert,
+  Wand2,
+} from "lucide-react";
 import { Badge, Button, Card, Icon, Select, Spinner, cls, useToast } from "@meduni/ui";
 import { Field } from "../../../components/Field";
 import { apiErrorMessage } from "../../../lib/api";
@@ -11,11 +25,122 @@ import {
   useGenerateCase,
   useGeneratePresentation,
   useGenerateQuiz,
+  useGenerateAll,
+  useBatchStatus,
   useGenerateVideo,
   useResumeVideo,
+  type BatchKind,
   type ContentSummary,
   type TopicDetail,
 } from "./api";
+
+/** Karta sozlamalari — yig'iladi. Sukut bo'yicha YOPIQ: asosiy amal bitta bosish
+ *  (buyurtmachi: "kontent yaratish qismini osonlashtir"). */
+function Advanced({ children }: { children: React.ReactNode }) {
+  const { t } = useTranslation(undefined, { keyPrefix: "generate" });
+  const [open, setOpen] = useState(false);
+  return (
+    <div>
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="inline-flex items-center gap-1 text-note font-semibold text-ink-soft transition-colors hover:text-ink"
+      >
+        <Icon icon={SlidersHorizontal} size={13} />
+        {t("advanced")}
+        <Icon icon={ChevronDown} size={13} className={cls("transition-transform", open && "rotate-180")} />
+      </button>
+      {open && <div className="mt-2">{children}</div>}
+    </div>
+  );
+}
+
+/** Bitta bosishda hammasini yaratish + jonli progress. */
+function BatchCard({ topic }: { topic: TopicDetail }) {
+  const { t } = useTranslation(undefined, { keyPrefix: "generate" });
+  const locale = useLocale();
+  const { show } = useToast();
+  const run = useGenerateAll(topic.id);
+  const [language, setLanguage] = useState<"uz" | "ru">(locale);
+  const [withVideo, setWithVideo] = useState(false);
+
+  // Progress faqat generatsiya boshlangandan keyin so'raladi (bekorga emas).
+  const status = useBatchStatus(topic.id, run.isSuccess || run.isPending);
+  const steps = status.data?.steps ?? [];
+  const busy = run.isPending || !!status.data?.running;
+
+  const KINDS: BatchKind[] = withVideo ? ["quiz", "case", "presentation", "video"] : ["quiz", "case", "presentation"];
+  const has = (k: BatchKind) => topic.content.some((c) => c.kind === k);
+  const missing = KINDS.filter((k) => !has(k));
+
+  const STATE_ICON = { queued: Clock, running: Loader2, done: Check, error: TriangleAlert } as const;
+  const STATE_TONE = { queued: "text-ink-faint", running: "text-brand", done: "text-emerald", error: "text-rose" } as const;
+
+  return (
+    <Card className="flex flex-col gap-3 sm:col-span-2">
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand-deep">
+          <Icon icon={Wand2} size={20} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <h3 className="text-section font-bold text-ink">{t("batchTitle")}</h3>
+          <p className="text-note text-ink-soft">{t("batchHint")}</p>
+        </div>
+        <Button
+          size="lg"
+          icon={busy ? <Spinner size={16} /> : <Icon icon={Sparkles} size={16} />}
+          disabled={busy || (missing.length === 0 && !steps.length)}
+          onClick={() =>
+            run.mutate(
+              { language, kinds: missing.length ? missing : KINDS },
+              { onSuccess: () => show(t("batchStarted")) }
+            )
+          }
+        >
+          {missing.length === 0 && !busy ? t("batchRegenerate") : t("batchRun", { n: missing.length || KINDS.length })}
+        </Button>
+      </div>
+
+      {/* Jonli progress — qaysi tur yaratildi, qaysi biri navbatda */}
+      {steps.length > 0 && (
+        <div className="grid gap-1.5 sm:grid-cols-2">
+          {steps.map((s) => (
+            <div key={s.kind} className="flex items-center gap-2 rounded-control bg-bg px-3 py-2">
+              <Icon
+                icon={STATE_ICON[s.state]}
+                size={15}
+                className={cls("shrink-0", STATE_TONE[s.state], s.state === "running" && "animate-spin")}
+              />
+              <span className={cls("text-body font-semibold", s.state === "done" ? "text-emerald" : "text-ink")}>
+                {t(`kind.${s.kind}`)}
+              </span>
+              {s.state === "error" && <span className="ml-auto text-note text-rose">{t("batchStepError")}</span>}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {run.isError && <p className="text-body text-rose">{apiErrorMessage(run.error, locale) ?? t("error")}</p>}
+      {busy && <p className="text-note text-ink-faint">{t("batchBackground")}</p>}
+
+      <Advanced>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Field label={t("language")}>
+            <LangSelect value={language} onChange={setLanguage} />
+          </Field>
+          <label className="flex cursor-pointer items-center gap-2 self-end pb-2 text-body text-ink">
+            <input
+              type="checkbox"
+              checked={withVideo}
+              onChange={(e) => setWithVideo(e.target.checked)}
+              className="h-4 w-4 accent-[color:var(--brand)]"
+            />
+            {t("batchWithVideo")}
+          </label>
+        </div>
+      </Advanced>
+    </Card>
+  );
+}
 
 function LangSelect({ value, onChange }: { value: "uz" | "ru"; onChange: (v: "uz" | "ru") => void }) {
   return (
@@ -89,29 +214,31 @@ function QuizCard({ topic }: { topic: TopicDetail }) {
         <GeneratingPulse label={t("generatingQuiz")} />
       ) : (
         <>
-          <div className="grid grid-cols-2 gap-3">
-            <Field label={t("questionCount")}>
-              <Select value={questionCount} onChange={(e) => setQuestionCount(e.target.value)}>
-                {["5", "10", "15", "20"].map((n) => (
-                  <option key={n} value={n}>
-                    {n}
-                  </option>
-                ))}
-              </Select>
-            </Field>
-            <Field label={t("difficulty")}>
-              <Select value={difficulty} onChange={(e) => setDifficulty(e.target.value)}>
-                <option value="balanced">{t("difficultyBalanced")}</option>
-                <option value="easy">{t("difficultyEasy")}</option>
-                <option value="hard">{t("difficultyHard")}</option>
-              </Select>
-            </Field>
-            <div className="col-span-2">
-              <Field label={t("language")}>
-                <LangSelect value={language} onChange={setLanguage} />
+          <Advanced>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label={t("questionCount")}>
+                <Select value={questionCount} onChange={(e) => setQuestionCount(e.target.value)}>
+                  {["5", "10", "15", "20"].map((n) => (
+                    <option key={n} value={n}>
+                      {n}
+                    </option>
+                  ))}
+                </Select>
               </Field>
+              <Field label={t("difficulty")}>
+                <Select value={difficulty} onChange={(e) => setDifficulty(e.target.value)}>
+                  <option value="balanced">{t("difficultyBalanced")}</option>
+                  <option value="easy">{t("difficultyEasy")}</option>
+                  <option value="hard">{t("difficultyHard")}</option>
+                </Select>
+              </Field>
+              <div className="col-span-2">
+                <Field label={t("language")}>
+                  <LangSelect value={language} onChange={setLanguage} />
+                </Field>
+              </div>
             </div>
-          </div>
+          </Advanced>
           {gen.isError && <p className="text-body text-rose">{apiErrorMessage(gen.error, locale) ?? t("error")}</p>}
           <Button icon={<Icon icon={Sparkles} size={16} />} onClick={run}>
             {existing ? t("regenerate") : t("generateQuiz")}
@@ -150,17 +277,19 @@ function CaseCard({ topic }: { topic: TopicDetail }) {
         <GeneratingPulse label={t("generatingCase")} />
       ) : (
         <>
-          <div className="grid grid-cols-2 gap-3">
-            <Field label={t("format")}>
-              <Select value={format} onChange={(e) => setFormat(e.target.value as "SHORT" | "EXTENDED")}>
-                <option value="SHORT">{t("formatShort")}</option>
-                <option value="EXTENDED">{t("formatExtended")}</option>
-              </Select>
-            </Field>
-            <Field label={t("language")}>
-              <LangSelect value={language} onChange={setLanguage} />
-            </Field>
-          </div>
+          <Advanced>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label={t("format")}>
+                <Select value={format} onChange={(e) => setFormat(e.target.value as "SHORT" | "EXTENDED")}>
+                  <option value="SHORT">{t("formatShort")}</option>
+                  <option value="EXTENDED">{t("formatExtended")}</option>
+                </Select>
+              </Field>
+              <Field label={t("language")}>
+                <LangSelect value={language} onChange={setLanguage} />
+              </Field>
+            </div>
+          </Advanced>
           {gen.isError && <p className="text-body text-rose">{apiErrorMessage(gen.error, locale) ?? t("error")}</p>}
           <Button icon={<Icon icon={Sparkles} size={16} />} onClick={() => gen.mutate({ language, format }, { onSuccess: () => show("✨ " + t("ready")) })}>
             {existing ? t("regenerate") : t("generateCase")}
@@ -198,9 +327,11 @@ function PresentationCard({ topic }: { topic: TopicDetail }) {
         <GeneratingPulse label={t("generatingSlides")} />
       ) : (
         <>
-          <Field label={t("language")}>
-            <LangSelect value={language} onChange={setLanguage} />
-          </Field>
+          <Advanced>
+            <Field label={t("language")}>
+              <LangSelect value={language} onChange={setLanguage} />
+            </Field>
+          </Advanced>
           <p className="text-note text-ink-faint">{t("imagesNote")}</p>
           {gen.isError && <p className="text-body text-rose">{apiErrorMessage(gen.error, locale) ?? t("error")}</p>}
           <Button
@@ -350,6 +481,7 @@ function VideoCard({ topic }: { topic: TopicDetail }) {
 export function GenerateSection({ topic }: { topic: TopicDetail }) {
   return (
     <div className="grid gap-4 sm:grid-cols-2">
+      <BatchCard topic={topic} />
       <QuizCard topic={topic} />
       <CaseCard topic={topic} />
       <PresentationCard topic={topic} />

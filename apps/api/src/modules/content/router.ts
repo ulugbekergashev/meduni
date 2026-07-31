@@ -2,9 +2,11 @@ import { Router, type RequestHandler } from "express";
 import { z, type ZodTypeAny } from "zod";
 import { badRequest, notFound } from "../../lib/errors";
 import { requireRoles } from "../../middleware/rbac";
+import { topicForTeacher } from "../topics/service";
 import * as svc from "./service";
 import * as pres from "./presentation";
 import * as video from "./video";
+import * as batch from "./batch";
 
 const wrap =
   (fn: RequestHandler): RequestHandler =>
@@ -63,6 +65,29 @@ generateRouter.post(
   wrap(async (req, res) => {
     const contentId = await pres.generatePresentation(parseId(req.params.id), req.user!.id, parseBody(genPresSchema, req.body));
     res.json(await svc.getContent(contentId, req.user!.id));
+  })
+);
+
+// "Hammasini yarat" — bitta bosish, server ketma-ket yaratadi (fon).
+const genAllSchema = z.object({
+  language: z.enum(["uz", "ru"]),
+  kinds: z.array(z.enum(["quiz", "case", "presentation", "video"])).optional(),
+  questionCount: z.number().int().min(3).max(30).optional(),
+  voice: z.enum(["male", "female"]).optional(),
+});
+generateRouter.post(
+  "/:id/generate/all",
+  wrap(async (req, res) =>
+    res.json(await batch.startBatch(parseId(req.params.id), req.user!.id, parseBody(genAllSchema, req.body)))
+  )
+);
+
+generateRouter.get(
+  "/:id/generate/status",
+  wrap(async (req, res) => {
+    // Egalik: mavzuni ko'ra olsa — holatini ham ko'radi (getTopic o'zi tekshiradi).
+    await topicForTeacher(parseId(req.params.id), req.user!.id);
+    res.json(batch.getBatchStatus(parseId(req.params.id)) ?? { running: false, steps: [] });
   })
 );
 
