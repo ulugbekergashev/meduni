@@ -337,6 +337,15 @@ async function stageTtsAndRender(videoId: number) {
       slideImageBySection.set(sl.sectionId, url);
     }
   }
+  // ⚠️ ZAXIRA (2026-08-01): bo'lim bog'lanishi (sectionId) HAR DOIM ham bo'lmaydi —
+  // eski konspektlarda bo'lim ID'lari yo'q, AI ham -1 qaytarishi mumkin. O'shanda
+  // yuqoridagi xarita bo'sh qolib, video butunlay matn-kadrlardan iborat bo'lardi
+  // (o'lchandi: 9 segmentdan 0 tasi rasmli). Endi tayyor slayd rasmlari TARTIB
+  // bo'yicha segmentlarga taqsimlanadi — bepul va videoda bir nechta rasm bo'ladi.
+  const orderedSlideImages = slides
+    .map((sl) => (sl.imageSlots?.[0]?.status === "DONE" ? sl.imageSlots[0].url : null))
+    .filter((u): u is string => !!u);
+  let reusePtr = 0;
 
   const dir = await mkdtemp(path.join(os.tmpdir(), "meduni-video-"));
   try {
@@ -396,6 +405,10 @@ async function stageTtsAndRender(videoId: number) {
         if (!seg.visualImageUrl && seg.sectionId) {
           const reuse = slideImageBySection.get(seg.sectionId);
           if (reuse) seg.visualImageUrl = reuse;
+        }
+        if (!seg.visualImageUrl && orderedSlideImages.length) {
+          seg.visualImageUrl = orderedSlideImages[reusePtr % orderedSlideImages.length];
+          reusePtr++;
         }
         const wantsImage = seg.visual.kind === "points" || seg.visual.kind === "term";
         if (wantsImage || seg.visualImageUrl) {
