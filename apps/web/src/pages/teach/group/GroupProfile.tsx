@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { ArrowLeft, ArrowRight, BookOpen, CalendarDays, ChevronLeft, ChevronRight, ChevronRight as Chev, ClipboardCheck, DoorClosed, GraduationCap, ListPlus, Settings2, UserRoundPlus, UserX, Users2 } from "lucide-react";
 import { Badge, Button, Card, EmptyState, Icon, Input, Modal, ProgressBar, ProgressRing, Select, Spinner, cls, useToast } from "@meduni/ui";
 import { AsyncSection } from "../../../components/AsyncSection";
+import { SubNav } from "../../../components/SubNav";
 import { MonthCalendar, type CalEntry } from "../../../components/MonthCalendar";
 import { QuickTaskModal } from "../../../components/QuickTaskModal";
 import { Field } from "../../../components/Field";
@@ -580,17 +581,18 @@ export function GroupProfile() {
 
               <GroupStats group={group} />
 
-              <div className="mt-3 inline-flex max-w-full gap-1 overflow-x-auto rounded-control border border-line bg-surface p-1 shadow-card">
-                {TABS.map((x) => (
-                  <button
-                    key={x.key}
-                    onClick={() => setTab(x.key)}
-                    className={cls("flex shrink-0 items-center gap-2 whitespace-nowrap rounded-[8px] px-4 py-2 text-[15px] font-semibold transition-all", tab === x.key ? "bg-brand-soft text-brand-deep" : "text-ink-soft hover:bg-bg hover:text-ink")}
-                  >
-                    <Icon icon={x.icon} size={16} />
-                    {t(`tabs.${x.key}`)}
-                  </button>
-                ))}
+              {/* Guruh bo'limlari — yon panelda (mobilda tasma). */}
+              <div className="mt-3">
+                <SubNav
+                  title={group.name}
+                  activeKey={tab}
+                  items={TABS.map((x) => ({
+                    key: x.key,
+                    label: t(`tabs.${x.key}`),
+                    to: `/teach/groups/${groupId}?tab=${x.key}`,
+                    icon: <Icon icon={x.icon} size={16} />,
+                  }))}
+                />
               </div>
 
               <div className="mt-5">

@@ -1,8 +1,8 @@
-import { Outlet, useNavigate, useParams } from "react-router-dom";
+import { Outlet, useLocation, useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Users } from "lucide-react";
+import { BarChart3, BookOpen, FileText, Settings, Users, Users2 } from "lucide-react";
 import { Card, Icon } from "@meduni/ui";
-import { TabNav } from "../../../components/TabNav";
+import { SubNav } from "../../../components/SubNav";
 import { useTeachCourseMeta } from "../api";
 
 function HeaderSkeleton() {
@@ -20,6 +20,7 @@ export function TeacherCourseShell() {
   const courseId = Number(id);
   const { t } = useTranslation(undefined, { keyPrefix: "teach" });
   const navigate = useNavigate();
+  const { pathname } = useLocation();
 
   // Metadata only — keyed by courseId, so switching tabs (which changes the
   // child route, not this layout) never refetches the header.
@@ -52,6 +53,8 @@ export function TeacherCourseShell() {
 
   const c = meta.data;
   const base = `/teach/courses/${courseId}`;
+  // Faol bo'lim — URL'dan (`/teach/courses/:id/<bo'lim>`); bo'sh bo'lsa mavzular.
+  const activeKey = pathname.slice(base.length).split("/")[1] || "topics";
 
   return (
     <div>
@@ -87,15 +90,18 @@ export function TeacherCourseShell() {
         <span>{t("studentsN", { n: c.studentCount })}</span>
       </div>
 
-      {/* Tab bar (URL-driven) */}
+      {/* Kurs bo'limlari — yon paneldagi ikkinchi daraja (mobilda tasma).
+          Panel sarlavhasi = kurs nomi (Hostinger naqshi: kontekst + bo'limlari). */}
       <div className="mt-3">
-        <TabNav
+        <SubNav
+          title={c.subjectName}
+          activeKey={activeKey}
           items={[
-            { to: `${base}/topics`, label: t("tabs.topics") },
-            { to: `${base}/syllabus`, label: t("tabs.syllabus") },
-            { to: `${base}/groups`, label: t("tabs.groups") },
-            { to: `${base}/progress`, label: t("tabs.results") },
-            { to: `${base}/settings`, label: t("tabs.settings") },
+            { key: "topics", label: t("tabs.topics"), to: `${base}/topics`, icon: <Icon icon={BookOpen} size={16} /> },
+            { key: "syllabus", label: t("tabs.syllabus"), to: `${base}/syllabus`, icon: <Icon icon={FileText} size={16} /> },
+            { key: "groups", label: t("tabs.groups"), to: `${base}/groups`, icon: <Icon icon={Users2} size={16} /> },
+            { key: "progress", label: t("tabs.results"), to: `${base}/progress`, icon: <Icon icon={BarChart3} size={16} /> },
+            { key: "settings", label: t("tabs.settings"), to: `${base}/settings`, icon: <Icon icon={Settings} size={16} /> },
           ]}
         />
       </div>

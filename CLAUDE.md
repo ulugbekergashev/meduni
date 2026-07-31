@@ -2035,3 +2035,41 @@ hisoblagichi jadvali, route wiring (404/401); tsc ikkala tomonda toza.
 ⚠️ Mahalliy serverni JONLI bazaga ulab pipeline ishga tushirma — dev'da
 `STORAGE_DRIVER=disk`, media mahalliy diskka tushadi va jonli server uni
 ko'rmaydi (§ PILOT TAYYORGARLIGI (A) bilan bir xil tuzoq).
+
+---
+
+## 14. IKKI DARAJALI MENYU (2026-07-29, buyurtmachi: Hostinger hPanel naqshi)
+
+Menyu yassi edi (bitta 272px ustun), sahifa ichki bo'limlari esa sahifa ustidagi
+tab-barlarda yashiringan edi. Endi **hPanel naqshi**: tor ikonka reyi + bo'lim
+paneli. Buyurtmachi tanlovi: *sahifa tablari sidebarga ko'chsin*, *uchala rol +
+dars sahifasi*.
+
+- **1-daraja — `packages/ui/SidebarLayout` reyi (76px):** ikonka + 11px yorliq
+  (`shortLabel ?? label`), faol = `bg-side-active` + chap indikator (`layoutId`
+  bilan suzadi), badge ikonka ustida nuqta-hisob.
+- **2-daraja — bo'lim paneli (248px):** faol modul/kontekst bo'limlari.
+  **Bo'lim bo'lmasa panel UMUMAN chizilmaydi** (bo'sh ustun qolmasin, §4).
+  Header'dagi `PanelLeft` tugmasi faqat shu panelni yig'adi (localStorage
+  `meduni.navpanel` — eski `meduni.sidebar` qiymati ko'chirilmadi, aks holda
+  ilgari panelni yiqqan foydalanuvchi endi menyusiz qolardi).
+- **Manba — `components/SubNav.tsx`:** sahifa `<SubNav title items activeKey/>`
+  chaqiradi; u (a) kontekst orqali qobiqqa panelni beradi, (b) **mobilda**
+  o'sha joyda segmented tasma chizadi (mobilda yon panel yo'q — §11). Ya'ni
+  bitta manba, ikki ko'rinish; sahifada alohida tab-bar YOZILMAYDI.
+  `RoleShell` endi `SubNavProvider` ichida (`RoleShellInner` panelni o'qiydi).
+  ⚠️ `useEffect` bog'liqligi `items`/`footer` JSX obyektlari EMAS — `sig`
+  (kalit/yorliq/manzil/badge) bo'yicha, aks holda cheksiz render sikli.
+- **Ko'chirilgan tab-barlar:** talaba O'zlashtirish (Baholar/Takrorlash/
+  Mashg'ulotlar) va Davomat (Davomat/Dars jadvali); o'qituvchi kurs sahifasi
+  (Mavzular/Dastur/Guruhlar/Natijalar/Sozlamalar — panel sarlavhasi = kurs nomi)
+  va guruh profili (Jadval/Davomat/Talabalar/Kurslar). `components/TabNav.tsx`
+  endi ishlatilmaydi — O'CHIRILDI.
+- **Dars sahifasi ("o'rganish menyusi", `StudyRail`)** ham shu naqshga o'tdi:
+  68px ikonka reyi (Konspekt/Prezentatsiya/Video/Fikr xaritasi/Kartochkalar) +
+  tafsilot paneli (konspektda — bo'limlar TOC, boshqada holat qatori).
+
+**Tekshirildi (Chrome + Playwright, 3 rol):** rey 76px hamma sahifada; panel
+248px faqat bo'limi borida (talaba O'zlashtirish/Davomat, o'qituvchi kurs) —
+Bosh sahifa/admin/dars sahifasida panel yo'q; mobil 390px: segmented tasma bor,
+gorizontal toshish 0; konsol toza. tsc + build toza.

@@ -9,6 +9,7 @@ import { useLocale } from "../lib/useLocale";
 import { formatDate } from "../lib/date";
 import { LocaleSwitcher } from "./LocaleSwitcher";
 import { Avatar } from "./Avatar";
+import { SubNavPanel, SubNavProvider, useSubNavData } from "./SubNav";
 
 /** Adapter: SidebarLayout expects a component taking `href`; react-router's Link takes `to`. */
 function RouterLink({ href, className, children }: { href: string; className?: string; children: ReactNode }) {
@@ -49,7 +50,30 @@ export interface RoleShellItem {
   badge?: number;
 }
 
-export function RoleShell({
+/** Ikkinchi daraja (bo'lim paneli) sahifalardan keladi — shuning uchun qobiq
+ *  provayder ichida turadi: sahifa `SubNav` bilan yozadi, `Inner` o'qiydi. */
+export function RoleShell(props: RoleShellProps) {
+  return (
+    <SubNavProvider>
+      <RoleShellInner {...props} />
+    </SubNavProvider>
+  );
+}
+
+interface RoleShellProps {
+  brand: string;
+  items: RoleShellItem[];
+  children: ReactNode;
+  headerSlot?: ReactNode;
+  /** Header'dagi user bloki shu sahifaga olib boradi (rolga qarab profil/sozlamalar). */
+  profileHref: string;
+  /** Ishchi sahifa (dars paneli) — to'liq ekran, panel ichida skroll. */
+  fullBleed?: boolean;
+  /** Talaba tomoni faqat qorong'i — tema tugmasi ko'rsatilmaydi. */
+  showTheme?: boolean;
+}
+
+function RoleShellInner({
   brand,
   items,
   children,
@@ -75,6 +99,7 @@ export function RoleShell({
   const navigate = useNavigate();
   const logout = useLogout();
   const locale = useLocale();
+  const subNav = useSubNavData();
 
   const sidebarItems: SidebarItem[] = items.map((item) => ({
     href: item.href,
@@ -119,6 +144,7 @@ export function RoleShell({
       items={sidebarItems}
       headerSlot={headerSlot}
       fullBleed={fullBleed}
+      panel={subNav ? <SubNavPanel data={subNav} /> : undefined}
       LinkComponent={RouterLink}
       bottomNav={
         <BottomNav

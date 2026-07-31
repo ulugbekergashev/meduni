@@ -73,124 +73,136 @@ export function StudyRail({
     return false;
   }
 
+  const activeSub = blockSub(active);
+
   return (
-    <Panel title={t("stage_study")} icon={BookText} bodyClassName="flex flex-col p-2">
-      <div className="space-y-1">
+    <Panel title={t("stage_study")} icon={BookText} bodyClassName="flex min-h-0 flex-row p-0">
+      {/* 1-daraja — o'rganish turlari (ikonka reyi). Qobiq menyusi bilan bir xil
+          naqsh: ikonka + kichik yorliq, faol = brand chip. */}
+      <div className="flex w-[68px] shrink-0 flex-col gap-0.5 overflow-y-auto border-r border-line p-1.5">
         {blocks.map((v) => {
           const on = v === active;
           const done = blockDone(v);
           const blockLock = blockLocked(v);
-          const sub = blockSub(v);
           return (
-            <div key={v}>
-              <button
-                onClick={() => onBlock(v)}
+            <button
+              key={v}
+              onClick={() => onBlock(v)}
+              title={t(`tab_${v}`)}
+              className={cls(
+                "relative flex flex-col items-center gap-1 rounded-control px-1 py-2 text-center transition-colors",
+                FOCUS,
+                on ? (reduce ? "bg-brand-soft" : "") : "hover:bg-surface-raised"
+              )}
+            >
+              {on && !reduce && (
+                <motion.span
+                  layoutId="rail-block-active"
+                  className="absolute inset-0 rounded-control bg-brand-soft"
+                  transition={{ type: "spring", stiffness: 480, damping: 40 }}
+                />
+              )}
+              <span
                 className={cls(
-                  "relative flex w-full items-center gap-3 rounded-control px-2.5 py-2.5 text-left transition-colors",
-                  FOCUS,
-                  on ? (reduce ? "bg-brand-soft" : "") : "hover:bg-surface-raised"
+                  "relative z-[1] flex h-8 w-8 shrink-0 items-center justify-center rounded-control",
+                  // "Tugadi" — kontur belgi (§4: ekranda 10 ta yashil doira shovqin).
+                  done
+                    ? "bg-emerald-soft text-emerald"
+                    : blockLock
+                      ? "bg-surface-raised text-ink-dim"
+                      : on
+                        ? "bg-brand text-white"
+                        : "bg-surface-raised text-ink-soft"
                 )}
               >
-                {on && !reduce && (
-                  <motion.span
-                    layoutId="rail-block-active"
-                    className="absolute inset-0 rounded-control bg-brand-soft"
-                    transition={{ type: "spring", stiffness: 480, damping: 40 }}
-                  />
+                <Icon icon={done ? Check : blockLock ? Lock : BLOCK_ICON[v]} size={16} strokeWidth={done ? 3 : 2} />
+              </span>
+              <span
+                className={cls(
+                  "relative z-[1] line-clamp-2 w-full break-words text-[11px] font-semibold leading-tight",
+                  on ? "text-brand-tint" : blockLock ? "text-ink-dim" : "text-ink-soft"
                 )}
-                <motion.span
-                  key={done ? "done" : blockLock ? "locked" : "icon"}
-                  initial={reduce ? false : { scale: 0.7, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{ type: "spring", stiffness: 420, damping: 24 }}
-                  className={cls(
-                    "relative z-[1] flex h-9 w-9 shrink-0 items-center justify-center rounded-control",
-                    // "Tugadi" endi to'ldirilgan yashil emas — bir ekranda 10+
-                    // yorqin belgi bo'lmasin uchun kontur ko'rinishida.
-                    done
-                      ? "bg-emerald-soft text-emerald"
-                      : blockLock
-                        ? "bg-surface-raised text-ink-dim"
-                        : on
-                          ? "bg-brand text-white"
-                          : "bg-surface-raised text-ink-soft"
-                  )}
-                >
-                  <Icon
-                    icon={done ? Check : blockLock ? Lock : BLOCK_ICON[v]}
-                    size={17}
-                    strokeWidth={done ? 3 : 2}
-                  />
-                </motion.span>
-                <span className="relative z-[1] min-w-0 flex-1">
-                  <span
-                    className={cls(
-                      "block truncate text-body",
-                      on ? "font-bold text-brand-tint" : blockLock ? "font-semibold text-ink-soft" : "font-semibold text-ink"
-                    )}
-                  >
-                    {t(`tab_${v}`)}
-                  </span>
-                  {sub && <span className="block truncate text-note text-ink-soft">{sub}</span>}
-                </span>
-              </button>
-
-              {/* Faol blokning tafsiloti — shu blok ostida ochiladi */}
-              <AnimatePresence initial={false}>
-                {on && v === "konspekt" && sections.length > 0 && (
-                  <motion.ol
-                    initial={reduce ? false : { height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-                    className="overflow-hidden pl-2.5"
-                  >
-                    {sections.map((s) => {
-                      const cur = sectionActive === s.index;
-                      return (
-                        <li key={s.index}>
-                          <button
-                            onClick={() => onSection(s.index)}
-                            className={cls(
-                              "relative flex w-full items-start gap-2 rounded-control py-1 pl-2 pr-1.5 text-left transition-colors",
-                              FOCUS,
-                              cur ? (reduce ? "bg-brand-soft" : "") : "hover:bg-surface"
-                            )}
-                          >
-                            {cur && !reduce && (
-                              <motion.span
-                                layoutId="toc-active"
-                                className="absolute inset-0 rounded-control bg-brand-soft"
-                                transition={{ type: "spring", stiffness: 480, damping: 40 }}
-                              />
-                            )}
-                            <span
-                              className={cls(
-                                "relative z-[1] mt-[3px] flex h-4 w-4 shrink-0 items-center justify-center rounded-pill text-micro font-extrabold tabular-nums",
-                                cur ? "bg-brand text-white" : s.read ? "text-emerald" : "bg-line text-ink-dim"
-                              )}
-                            >
-                              {s.read && !cur ? <Icon icon={Check} size={10} strokeWidth={4} /> : s.index + 1}
-                            </span>
-                            <span
-                              className={cls(
-                                "relative z-[1] min-w-0 flex-1 text-note leading-snug",
-                                cur ? "font-semibold text-ink" : "text-ink-soft"
-                              )}
-                            >
-                              {s.title}
-                            </span>
-                          </button>
-                        </li>
-                      );
-                    })}
-                  </motion.ol>
-                )}
-
-              </AnimatePresence>
-            </div>
+              >
+                {t(`tab_${v}`)}
+              </span>
+            </button>
           );
         })}
+      </div>
+
+      {/* 2-daraja — faol turning tafsiloti: konspektda bo'limlar ro'yxati. */}
+      <div className="flex min-w-0 flex-1 flex-col overflow-y-auto p-2">
+        <div className="flex items-baseline gap-2 px-1.5 pb-1">
+          <p className="min-w-0 flex-1 truncate text-micro font-extrabold uppercase tracking-wider text-ink-faint">
+            {t(`tab_${active}`)}
+          </p>
+          {activeSub && <span className="shrink-0 text-micro text-ink-dim">{activeSub}</span>}
+        </div>
+
+        <AnimatePresence initial={false} mode="wait">
+          {active === "konspekt" && sections.length > 0 ? (
+            <motion.ol
+              key="toc"
+              initial={reduce ? false : { opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+            >
+              {sections.map((s) => {
+                const cur = sectionActive === s.index;
+                return (
+                  <li key={s.index}>
+                    <button
+                      onClick={() => onSection(s.index)}
+                      className={cls(
+                        "relative flex w-full items-start gap-2 rounded-control py-1.5 pl-2 pr-1.5 text-left transition-colors",
+                        FOCUS,
+                        cur ? (reduce ? "bg-brand-soft" : "") : "hover:bg-surface-raised"
+                      )}
+                    >
+                      {cur && !reduce && (
+                        <motion.span
+                          layoutId="toc-active"
+                          className="absolute inset-0 rounded-control bg-brand-soft"
+                          transition={{ type: "spring", stiffness: 480, damping: 40 }}
+                        />
+                      )}
+                      <span
+                        className={cls(
+                          "relative z-[1] mt-[3px] flex h-4 w-4 shrink-0 items-center justify-center rounded-pill text-micro font-extrabold tabular-nums",
+                          cur ? "bg-brand text-white" : s.read ? "text-emerald" : "bg-line text-ink-dim"
+                        )}
+                      >
+                        {s.read && !cur ? <Icon icon={Check} size={10} strokeWidth={4} /> : s.index + 1}
+                      </span>
+                      <span
+                        className={cls(
+                          "relative z-[1] min-w-0 flex-1 text-note leading-snug",
+                          cur ? "font-semibold text-ink" : "text-ink-soft"
+                        )}
+                      >
+                        {s.title}
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
+            </motion.ol>
+          ) : (
+            // Boshqa turlarda tafsilot yo'q — holatini bir qatorda aytamiz
+            // (bo'sh ustun qolmasin, §4 ZICHLIK).
+            <motion.p
+              key={`hint-${active}`}
+              initial={reduce ? false : { opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              className="px-1.5 text-note leading-relaxed text-ink-dim"
+            >
+              {blockLocked(active) ? t("flashLockedShort") : (activeSub ?? t("stage_study"))}
+            </motion.p>
+          )}
+        </AnimatePresence>
       </div>
     </Panel>
   );
