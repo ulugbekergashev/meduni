@@ -511,7 +511,12 @@ async function runPipeline(videoId: number, fromRebuild: boolean) {
   } catch (err) {
     const v = await prisma.video.findUnique({ where: { id: videoId } });
     const stage = v?.buildStatus === "SCRIPT" || v?.buildStatus === "PENDING" ? "SCRIPT" : v?.buildStatus === "TTS" ? "TTS" : "RENDER";
-    await setStatus(videoId, "ERROR", stage);
+    // ⚠️ Xato MATNI ham saqlanadi: ilgari faqat bosqich ("RENDER") yozilardi va
+    // jonli serverда sabab (ffmpeg yo'q? fayl topilmadi? xotira?) ko'rinmasdi —
+    // Render dashboard'iga kirmasdan tashxis qo'yib bo'lmasdi.
+    const raw = err instanceof Error ? `${err.message}` : String(err);
+    const detail = raw.replace(/\s+/g, " ").trim().slice(0, 300);
+    await setStatus(videoId, "ERROR", detail ? `${stage}: ${detail}` : stage);
     console.error("video pipeline error:", err);
   }
 }
