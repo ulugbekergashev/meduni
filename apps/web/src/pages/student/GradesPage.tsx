@@ -17,6 +17,7 @@ import {
 import { Badge, Card, Icon, ProgressBar, cls } from "@meduni/ui";
 import { HeroTile, RailCard } from "../../components/HeroStats";
 import { AsyncSection } from "../../components/AsyncSection";
+import { SubNav } from "../../components/SubNav";
 import { formatDate } from "../../lib/date";
 import { useLocale } from "../../lib/useLocale";
 import { useMyGrades, useReviewDue, type GradeCase, type GradeQuiz, type GradesCourse } from "./api";
@@ -196,46 +197,31 @@ type Filter = "all" | "quiz" | "case";
 /** O'zlashtirish moduli — 3 tab: Baholar | Takrorlash | Mashg'ulotlar (Modul 27). */
 export function GradesPage() {
   const { t } = useTranslation(undefined, { keyPrefix: "grades" });
-  const [params, setParams] = useSearchParams();
+  const [params] = useSearchParams();
   const dueQ = useReviewDue();
   const sub =
     params.get("sub") === "takrorlash" ? "takrorlash" : params.get("sub") === "mashgulot" ? "mashgulot" : "baholar";
 
-  const tabs = [
-    { key: "baholar", label: t("tabGrades"), icon: Award, badge: 0 },
-    { key: "takrorlash", label: t("tabReview"), icon: Repeat, badge: dueQ.data?.total ?? 0 },
-    { key: "mashgulot", label: t("tabPractice"), icon: Dumbbell, badge: 0 },
-  ] as const;
-
   return (
     <div>
       <h1 className="text-h1 font-bold text-ink">{t("title")}</h1>
-      <p className="mt-1 text-note text-ink-faint">{t("subtitle")}</p>
+      <p className="mb-3.5 mt-1 text-note text-ink-faint">{t("subtitle")}</p>
 
-      {/* Segmented tab — Davomat sahifasi bilan bir xil naqsh */}
-      <div className="mb-4 mt-3.5 inline-flex max-w-full gap-1 overflow-x-auto rounded-control border border-line bg-surface p-1">
-        {tabs.map((tab) => {
-          const on = sub === tab.key;
-          return (
-            <button
-              key={tab.key}
-              onClick={() => setParams(tab.key === "baholar" ? {} : { sub: tab.key }, { replace: true })}
-              className={cls(
-                "inline-flex shrink-0 items-center gap-2 rounded-[8px] px-4 py-2 text-body font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
-                on ? "bg-brand-soft text-brand-tint" : "text-ink-soft hover:bg-surface-raised hover:text-ink"
-              )}
-            >
-              <Icon icon={tab.icon} size={16} />
-              {tab.label}
-              {tab.badge > 0 && (
-                <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-brand px-1.5 text-micro font-bold text-white">
-                  {tab.badge}
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </div>
+      <SubNav
+        title={t("title")}
+        activeKey={sub}
+        items={[
+          { key: "baholar", label: t("tabGrades"), to: "/app/grades", icon: <Icon icon={Award} size={16} /> },
+          {
+            key: "takrorlash",
+            label: t("tabReview"),
+            to: "/app/grades?sub=takrorlash",
+            icon: <Icon icon={Repeat} size={16} />,
+            badge: dueQ.data?.total ?? 0,
+          },
+          { key: "mashgulot", label: t("tabPractice"), to: "/app/grades?sub=mashgulot", icon: <Icon icon={Dumbbell} size={16} /> },
+        ]}
+      />
 
       {sub === "takrorlash" ? <ReviewTab /> : sub === "mashgulot" ? <PracticeTab /> : <GradesHome />}
     </div>
