@@ -34,6 +34,13 @@ import { assertCourseTeacher } from "../topics/service";
 sharp.cache(false);
 sharp.concurrency(1);
 
+/** Chiqish kadri o'lchami. SVG kanvas 1920x1080 da chiziladi (koordinatalar
+ *  shunga moslangan), lekin PNG shu o'lchamga KICHRAYTIRILADI: 512 MB
+ *  konteynerда 1080p kadrlar sharp+x264 uchun juda og'ir edi. 720p — ma'ruza
+ *  videosi uchun yetarli; `VIDEO_HEIGHT=1080` bilan qaytarish mumkin. */
+const OUT_H = Number(process.env.VIDEO_HEIGHT ?? 720);
+const OUT_W = Math.round((OUT_H * 16) / 9);
+
 function forbidden(): ApiError {
   return new ApiError(403, "forbidden", "Bu sizning kursingiz emas", "Это не ваш курс");
 }
@@ -139,7 +146,7 @@ async function renderSlidePng(slide: Slide, imageBuf: Buffer | null): Promise<Bu
     const meta = await sharp(resized).metadata();
     base = base.composite([{ input: resized, left: W - (meta.width ?? 720) - 90, top: 300 }]);
   }
-  return base.png().toBuffer();
+  return base.resize(OUT_W, OUT_H, { fit: "fill" }).png({ compressionLevel: 6 }).toBuffer();
 }
 
 // ---------- Visual card -> PNG (NotebookLM-style lecture frames) ----------
@@ -169,7 +176,11 @@ async function renderVisualPng(visual: VideoVisual, imageBuf: Buffer | null): Pr
     const iw = meta.width ?? areaW, ih = meta.height ?? areaH;
     const left = Math.round((W - iw) / 2);
     const top = barH + Math.round((H - barH - ih) / 2);
-    return sharp(Buffer.from(svg)).composite([{ input: resized, left, top }]).png().toBuffer();
+    return sharp(Buffer.from(svg))
+      .composite([{ input: resized, left, top }])
+      .resize(OUT_W, OUT_H, { fit: "fill" })
+      .png({ compressionLevel: 6 })
+      .toBuffer();
   }
 
   // Text cards (no illustration): title intro, dosage warning, or points/term
@@ -202,7 +213,7 @@ async function renderVisualPng(visual: VideoVisual, imageBuf: Buffer | null): Pr
     }
   }
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}">${parts.join("")}</svg>`;
-  return sharp(Buffer.from(svg)).png().toBuffer();
+  return sharp(Buffer.from(svg)).resize(OUT_W, OUT_H, { fit: "fill" }).png({ compressionLevel: 6 }).toBuffer();
 }
 
 // ---------- TTS ----------
@@ -264,8 +275,20 @@ function buildSrt(segments: ScriptSegment[]): string {
 
 // ---------- Pipeline ----------
 
+/**
+ * ⚠️ `errorStage` FAQAT aniq berilganda yoziladi.
+ *
+ * Ilgari u har bosqichda `null` ga tushardi — ya'ni `recovery.ts` dagi
+ * avtomatik urinishlar hisoblagichi (`interrupted (2)`, `(3)`) montaj
+ * boshlanishi bilan O'CHIB ketardi. Natijada 2026-08-01 da jonli serverda
+ * cheksiz sikl bo'ldi: RENDER → OOM → restart → "urinish 1/3" → RENDER → …
+ * (MAX_AUTO_RESUME hech qachon ishlamasdi va API 502 bilan uchib turdi).
+ */
 async function setStatus(videoId: number, status: Prisma.VideoUpdateInput["buildStatus"], errorStage?: string | null) {
-  await prisma.video.update({ where: { id: videoId }, data: { buildStatus: status, errorStage: errorStage ?? null } });
+  await prisma.video.update({
+    where: { id: videoId },
+    data: { buildStatus: status, ...(errorStage !== undefined ? { errorStage } : {}) },
+  });
 }
 
 async function stageScript(videoId: number) {
