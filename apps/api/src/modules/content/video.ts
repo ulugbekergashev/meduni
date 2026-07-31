@@ -26,6 +26,14 @@ import {
 import { videoScriptSystemPrompt, videoScriptUserContent } from "../../ai/prompts/videoScript";
 import { assertCourseTeacher } from "../topics/service";
 
+// ⚠️ XOTIRA (2026-08-01, jonli 502): Render Free — 512 MB. sharp sukut bo'yicha
+// libvips keshini ushlab turadi va bir necha ipda ishlaydi; 1920x1080 kadrlarni
+// ketma-ket render qilganda konteyner OOM bilan o'lardi (montaj yarmida uzilib,
+// API 502 qaytardi). Kesh o'chirilib, bitta ipga tushirilsa — sekinroq, lekin
+// omon qoladi (montaj baribir fon-jobda).
+sharp.cache(false);
+sharp.concurrency(1);
+
 function forbidden(): ApiError {
   return new ApiError(403, "forbidden", "Bu sizning kursingiz emas", "Это не ваш курс");
 }
@@ -449,7 +457,10 @@ async function stageTtsAndRender(videoId: number) {
       FFMPEG,
       [
         "-y", "-f", "concat", "-safe", "0", "-i", "slides.txt", "-i", "audio.wav",
-        "-c:v", "libx264", "-pix_fmt", "yuv420p", "-r", "25", "-c:a", "aac", "-b:a", "192k", "-shortest", "video.mp4",
+        // `-threads 1` + `veryfast` — 512 MB konteynerда x264 xotirasi keskin
+        // kamayadi (ko'p ipli kodlashда har ip o'z bufer to'plamini oladi).
+        "-c:v", "libx264", "-preset", "veryfast", "-threads", "1",
+        "-pix_fmt", "yuv420p", "-r", "25", "-c:a", "aac", "-b:a", "192k", "-shortest", "video.mp4",
       ],
       { cwd: dir }
     );
