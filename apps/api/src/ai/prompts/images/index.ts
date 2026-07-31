@@ -37,6 +37,9 @@ const layoutHint: Record<SlideLayout, string> = {
 export function imagePromptForSlide(slide: Slide, basePrompt: string, lang: "uz" | "ru"): string {
   const labelHints = (slide.bullets ?? []).map((b) => b.trim()).filter(Boolean).slice(0, 4);
   const parts = [
+    // 2026-08-01: rasm endi slaydning BEZAGI emas — slaydning O'ZI (to'liq ekranda
+    // ko'rsatiladi), shuning uchun kompozitsiya mustaqil va to'liq bo'lishi kerak.
+    "This image IS the whole lecture slide — it will be shown full-screen on its own, so the composition must be self-contained and fill a 16:9 frame edge to edge.",
     `Create a clean, focused medical teaching diagram for a lecture slide titled "${slide.title}".`,
     basePrompt ? `What to draw: ${basePrompt}` : "",
     labelHints.length

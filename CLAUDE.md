@@ -2111,3 +2111,52 @@ material qadamida CTA chiqadi ("Material tayyor — Konspekt yaratish"):
 yig'ilgan "Sozlamalar", material CTA `?step=digest&autogen=1` ga o'tkazadi,
 konsol toza. tsc + build toza. ⚠️ Smoke demo mavzu 1 testini qayta yaratgani
 uchun holati DRAFT bo'lib qolgandi — qayta chop etildi (demo toza).
+
+---
+
+## 16. KONTENT SIFATI: rasmli taqdimot · qisqa video · 20 savol · 15+ karta · Mapify-mindmap (2026-08-01)
+
+Buyurtmachi talablari va ularning bajarilishi:
+
+**(A) "Prezentatsiyani prosta rasmdan nanobanana orqali qilib ber."** Taqdimot
+endi MATN emas, RASM: `slides.ts` promptи har slaydда `imagePrompt` MAJBURIY
+(8-10 slayd), `imagePromptForSlide` rasmni "slaydning O'ZI" deb ta'riflaydi
+(16:9, mustaqil kompozitsiya). `generatePresentation` slaydlarni saqlagach
+rasm joblarini **O'ZI navbatga qo'yadi** (ilgari o'qituvchi alohida "Rasm
+yasash" bosishi kerak edi va taqdimot matn-only qolardi). Talaba karuselida
+rasm butun panelni egallaydi (16:9 maydon), tezislar ostida ixcham izoh.
+PPTX/PDF eksporti ham rasmli: rasm butun slayd + tepada sarlavha lentasi,
+tezislar ma'ruzachi izohiga tushadi. **O'lchandi:** 8/8 slaydga Nano Banana
+rasmi yaratildi (uz yorliqlari to'g'ri).
+
+**(B) Video 2–3 daqiqa, bir nechta rasm bilan.** `videoScript.ts`: 12-16
+segment / 7-12 daqiqa → **8-10 segment, 2-3 daqiqa**, har `narration` 3-4
+jumla (~45-70 so'z), har segmentда BOSHQA vizual sarlavha. `video.ts`: tayyor
+slayd rasmini endi HAR TURDAGI segment qayta ishlatadi (ilgari faqat
+points/term) — ya'ni kirish/xulosa kadrlari ham rasmli, yangi rasm faqat
+tushuntiruvchi kartalarga generatsiya qilinadi (xarajat o'smaydi).
+
+**(C) Test — kamida 20 savol.** UI default 10 → **20** (variantlar 10/15/20/25/30),
+`batch.ts` default ham 20. O'lchandi: 20 ta savol yaratildi.
+
+**(D) Kartochka — kamida 15 ta.** `flashcards.ts` ga YANGI manba: konspekt
+**bo'lim bloklari** — ro'yxat elementlari (`lead — matn`) va callout'lar
+(MUHIM/OGOHLANTIRISH). Soxta karta yasalmaydi (ajratgich yo'q → karta yo'q).
+O'lchandi: mavzu 2 → **51 karta**, mavzu 3 → 37. ⚠️ Eski YASSI konspektli
+(bo'limsiz) mavzuда 10 ta chiqadi — u yerда material yo'q; konspektni qayta
+generatsiya qilish kerak.
+
+**(E) Mindmap — Mapify darajasi.** Ikki qavat (mavzu→bo'lim→atama) o'rniga
+**uch qavat**: bo'lim ichidagi TAYANCH NUQTALAR (ro'yxat elementi/callout,
+ogohlantirish amber ikonkasi bilan) qo'shildi. **Ikki tomonlama joylashuv**
+(`layoutBilateral`: tarmoqlar navbat bilan markazdan o'ngga/chapga — dagre ikki
+marta ishlaydi, chap tomon oynaga aylantiriladi) — ilgari bir tomonlama daraxt
+baland-tor bo'lib, `fitView` uni o'qib bo'lmas darajada kichraytirardi va
+ekranning yarmi bo'sh turardi. Tarmoq ranglari (§4 kategorial to'plam),
+bo'limni **yig'ish/yoyish** (chevron + "Yoyish/Yig'ish" tugmasi), bezier
+qirralar. Hammasi konspektdan hosila — **AI chaqiruvi YO'Q**.
+O'lchandi: 33 tugun / 32 qirra, yig'ilganда 6 tugun.
+
+⚠️ Yo'l-yo'lakay tuzatildi: `recovery.ts` endi rasm slotlarining **PENDING**
+holatini ham tiklaydi (ilgari faqat PROCESSING) — baza uzilganда navbatdagi
+rasmlar abadiy "kutmoqda" bo'lib qolardi va UI buni aytmasdi.

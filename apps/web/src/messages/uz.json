@@ -1766,7 +1766,9 @@
     "zoomImage": "Rasmni kattalashtirish",
     "close": "Yopish",
     "downloadPdf": "PDF yuklab olish",
-    "slidesDone": "Koʻrildi"
+    "slidesDone": "Koʻrildi",
+    "mindmapExpand": "Yoyish",
+    "mindmapCollapse": "Yigʻish"
   },
   "search": {
     "placeholder": "Qidirish… (talaba, guruh, kurs)",

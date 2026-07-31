@@ -389,15 +389,17 @@ async function stageTtsAndRender(videoId: number) {
         // with a Nano Banana illustration, generated once and cached on the
         // segment so rebuilds reuse it. Any failure falls back to a text card.
         let imgBuf: Buffer | null = null;
+        // 2026-08-01 (buyurtmachi: "videoda bir nechta rasm bo'lishi kerak"):
+        // TAYYOR slayd rasmini har turdagi segment ishlatishi mumkin (bepul,
+        // cheklovga kirmaydi) — shu bois kirish/xulosa kadrlari ham rasmli.
+        // YANGI rasm esa faqat tushuntiruvchi kartalarga generatsiya qilinadi.
+        if (!seg.visualImageUrl && seg.sectionId) {
+          const reuse = slideImageBySection.get(seg.sectionId);
+          if (reuse) seg.visualImageUrl = reuse;
+        }
         const wantsImage = seg.visual.kind === "points" || seg.visual.kind === "term";
-        if (wantsImage) {
-          // 3B: avval o'sha bo'limning tayyor slayd rasmini QAYTA ISHLAT (bepul);
-          // faqat mos slayd rasmi yo'q segmentlarga yangi rasm generatsiya qilinadi.
-          if (!seg.visualImageUrl && seg.sectionId) {
-            const reuse = slideImageBySection.get(seg.sectionId);
-            if (reuse) seg.visualImageUrl = reuse; // slayd rasm faylini ishlatamiz (cheklovga kirmaydi)
-          }
-          if (!seg.visualImageUrl && imagesMade < MAX_VIDEO_IMAGES) {
+        if (wantsImage || seg.visualImageUrl) {
+          if (wantsImage && !seg.visualImageUrl && imagesMade < MAX_VIDEO_IMAGES) {
             try {
               const img = await generateImage(imagePromptForVisual(seg.visual, v.language), {
                 kind: "IMAGE",

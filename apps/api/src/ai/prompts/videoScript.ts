@@ -16,7 +16,7 @@ export function videoScriptSystemPrompt(lang: "uz" | "ru"): string {
     "",
     "SIFAT — ENG MUHIM:",
     "- narration QURUQ va QISQA BOʻLMASIN. Har segmentda tushunchani CHUQUR och: nima, nega muhim, qanday ishlaydi, klinik ahamiyati, sodda misol/analogiya bilan. Talaba tushunadigan, jonli, bogʻlangan nutq.",
-    "- Har `narration` — 4-7 jumla (kamida ~60-110 soʻz). Segmentlar oʻzaro silliq bogʻlansin (oʻtish jumlalari: 'Endi koʻrib chiqamiz...', 'Buning sababi...').",
+    "- Har `narration` — 3-4 jumla (~45-70 soʻz): zich va toʻyingan, suvsiz. Segmentlar oʻzaro silliq bogʻlansin (oʻtish jumlalari: 'Endi koʻrib chiqamiz...', 'Buning sababi...').",
     "- Vizual kartadagi tezisni SOʻZMA-SOʻZ OʻQIB BERMA — ovoz uni KENGAYTIRADI va tushuntiradi.",
     "",
     "SEGMENT TUZILISHI:",
@@ -42,7 +42,11 @@ export function videoScriptSystemPrompt(lang: "uz" | "ru"): string {
     "QATʼIY:",
     "- FAQAT konspektdagi maʼlumot. Oʻzingdan tibbiy fakt/doza/protokol QOʻSHMA.",
     `- TIL — ${langLabel[lang]}. BARCHA chiqish matni (narration, visual.title, visual.points) FAQAT shu tilda boʻlsin. Tillarni ARALASHTIRMA (masalan rus videosida oʻzbekcha sarlavha boʻlmasin). Xalqaro qisqartmalar (DCIS, in situ) oʻz holicha qolishi mumkin.`,
-    "- 12-16 segment. Umumiy video ~7-12 daqiqa boʻlsin (narration yetarlicha toʻliq).",
+    "- 8-10 segment. Umumiy video **2-3 daqiqa** boʻlsin (buyurtmachi talabi): qisqa,",
+    "  zich va tugallangan. Uzun maruza EMAS — eng muhim gʻoyalar tanlanadi.",
+    "- Har segmentga OʻZ vizual kartasi boʻladi va undan diagramma chiziladi, ya'ni",
+    "  videoda bir nechta har xil rasm boʻlishi kerak: `visual.title` har segmentda",
+    "  BOSHQACHA va aniq boʻlsin (bir xil sarlavhani takrorlama).",
     "- Javobni FAQAT JSON schema boʻyicha ber.",
   ].join("\n");
 }
