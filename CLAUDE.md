@@ -2160,3 +2160,34 @@ O'lchandi: 33 tugun / 32 qirra, yig'ilganда 6 tugun.
 ⚠️ Yo'l-yo'lakay tuzatildi: `recovery.ts` endi rasm slotlarining **PENDING**
 holatini ham tiklaydi (ilgari faqat PROCESSING) — baza uzilganда navbatdagi
 rasmlar abadiy "kutmoqda" bo'lib qolardi va UI buni aytmasdi.
+
+---
+
+## 17. DEPLOY DARSI: montaj jonli serverda (2026-08-01)
+
+Deploydan keyin video montaji Render'da uch marta yiqildi. Uchala sabab ham
+har xil edi — va ikkitasi mahalliy mashinada UMUMAN ko'rinmasdi:
+
+1. **Cheksiz qayta-urinish sikli (eng jiddiy).** `setStatus()` har bosqichda
+   `errorStage`ni `null` qilardi → `recovery.ts` dagi urinishlar hisoblagichi
+   (`interrupted (2)`, `(3)`) montaj boshlanishi bilan o'chardi va
+   `MAX_AUTO_RESUME` HECH QACHON ishlamasdi: OOM → restart → "urinish 1/3" →
+   OOM … API ~20 daqiqa 502 bilan uchdi. Endi `errorStage` faqat ANIQ
+   berilganda yoziladi.
+2. **Xato sababi ko'rinmasdi.** `errorStage`da faqat bosqich ("RENDER")
+   turardi; Render dashboard'isiz tashxis qo'yib bo'lmasdi. Endi istisno matni
+   (ffmpeg `stderr` tailini ham qamrab, 300 belgigacha) saqlanadi va API orqali
+   o'qiladi. Aynan shu tuzatish keyingi bandni bir urinishda ochib berdi.
+3. **`sharp` konveyeri: resize composite'dan OLDIN bajariladi.** 720p ga
+   o'tkazganda `.composite(...).resize(...)` yozilgandi → kanvas kichrayib,
+   ustiga katta rasm qo'yilardi: *"Image to composite must have same dimensions
+   or smaller"*. To'g'ri yo'l — SVG'ni `viewBox` bilan TO'G'RIDAN chiqish
+   o'lchamida rasterlash va composite koordinatalarini `K` koeffitsiyenti bilan
+   moslash (`svgDoc()` yordamchisi).
+
+Qo'shimcha (512 MB / 0.1 CPU uchun): `sharp.cache(false)` + `sharp.concurrency(1)`,
+ffmpeg `-preset veryfast -threads 1`, kadrlar **720p** (`VIDEO_HEIGHT=1080` bilan
+qaytariladi).
+
+**Yakuniy jonli o'lchov:** video DONE · **2:51** · **9/9 kadr rasmli** · mp4 3.5 MB
+(`ftypisom`) talabaga oqadi · API barqaror (10/10 tekshiruv).
