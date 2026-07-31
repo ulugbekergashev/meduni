@@ -1766,7 +1766,9 @@
     "zoomImage": "Увеличить изображение",
     "close": "Закрыть",
     "downloadPdf": "Скачать PDF",
-    "slidesDone": "Просмотрено"
+    "slidesDone": "Просмотрено",
+    "mindmapExpand": "Развернуть",
+    "mindmapCollapse": "Свернуть"
   },
   "search": {
     "placeholder": "Поиск… (студент, группа, курс)",

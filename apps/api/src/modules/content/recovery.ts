@@ -78,7 +78,11 @@ export async function recoverStaleJobs(): Promise<void> {
       const next = slides.map((s) => ({
         ...s,
         imageSlots: (s.imageSlots ?? []).map((slot) => {
-          if (slot.status !== "PROCESSING") return slot;
+          // ⚠️ PENDING ham hisobga olinadi: rasm joblari navbatga qo'yiladi va
+          // jarayon o'lsa navbatdagilar ABADIY "kutmoqda" bo'lib qolardi
+          // (2026-08-01 da baza uzilganда aynan shunday bo'ldi: 4 rasm tayyor,
+          // qolgan 4 tasi hech qachon boshlanmadi va UI buni aytmasdi).
+          if (slot.status !== "PROCESSING" && slot.status !== "PENDING") return slot;
           touched = true;
           slotCount++;
           return { ...slot, status: "ERROR" as const };

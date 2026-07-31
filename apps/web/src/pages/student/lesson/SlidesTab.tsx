@@ -13,7 +13,18 @@ const MODE_KEY = "meduni.slidesMode";
  * o'qilmaydi — bosilganda to'liq ekranda ochiladi, yana bosilsa kattalashadi
  * (skroll bilan siljitiladi). Yopish: X, backdrop yoki Escape.
  */
-function SlideImage({ src, alt, className }: { src: string; alt: string; className?: string }) {
+function SlideImage({
+  src,
+  alt,
+  className,
+  wrapperClassName,
+}: {
+  src: string;
+  alt: string;
+  className?: string;
+  /** Tashqi tugma (rasm maydoni) klassi — karusel uni to'liq balandlikka qo'yadi. */
+  wrapperClassName?: string;
+}) {
   const [open, setOpen] = useState(false);
   const [zoom, setZoom] = useState(false);
   const { t } = useTranslation(undefined, { keyPrefix: "lesson" });
@@ -39,7 +50,10 @@ function SlideImage({ src, alt, className }: { src: string; alt: string; classNa
           setOpen(true);
         }}
         aria-label={t("zoomImage")}
-        className="group relative block w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+        className={cls(
+          "group relative block w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
+          wrapperClassName
+        )}
       >
         <img src={src} alt={alt} className={className} />
         <span className="absolute bottom-2 right-2 flex h-9 w-9 items-center justify-center rounded-full bg-ink/60 text-white opacity-90 transition-opacity group-hover:opacity-100">
@@ -190,30 +204,51 @@ export function SlidesTab({ topicId, data }: { topicId: number; data: SlidesTabD
               touchX.current = null;
             }}
           >
-            <div className="min-h-0 flex-1 overflow-y-auto p-4">
-              <div className="mb-3 flex items-start gap-3">
-                <div className="mt-1 h-7 w-1 shrink-0 rounded-pill bg-brand" />
+            {/* 2026-08-01: slayd — RASMNING O'ZI (Nano Banana diagrammasi).
+                Sarlavha ustida ixcham lenta, tezislar ostida izoh sifatida;
+                rasm qolgan bo'sh joyni to'liq egallaydi (ZICHLIK §4). */}
+            <div className="flex min-h-0 flex-1 flex-col">
+              <div className="flex shrink-0 items-start gap-2.5 px-4 pt-3">
+                <div className="mt-1 h-6 w-1 shrink-0 rounded-pill bg-brand" />
                 <h3 className="text-section font-extrabold leading-snug text-ink">{slide.title}</h3>
               </div>
-              {slide.imageUrl && (
-                <div className="my-4">
+
+              {slide.imageUrl ? (
+                // Rasm 16:9 (Nano Banana) — aniq nisbatli maydonga joylashadi.
+                // ⚠️ Ilgari `max-h-full` ishlatilgandi: flex-ota balandligi kontentдан
+                // hisoblangani uchun rasm kartadan CHIQIB ketardi va pastdagi
+                // tezislarni yopib qo'yardi.
+                <div className="flex min-h-0 flex-1 items-center justify-center px-3 py-2">
                   <SlideImage
                     src={`${API_URL}${slide.imageUrl}`}
                     alt={slide.title}
-                    // Mobilda viewport'ga nisbatan — 288px qat'iy balandlik
-                    // telefonda diagrammani juda kichraytirib yuborardi.
-                    className="max-h-[45dvh] w-full rounded-control border border-line object-contain sm:max-h-72"
+                    wrapperClassName="mx-auto aspect-video max-h-full w-auto max-w-full"
+                    className="h-full w-full rounded-control object-contain"
                   />
                 </div>
+              ) : (
+                <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
+                  <ul className="space-y-2.5">
+                    {slide.bullets.map((b, bi) => (
+                      <li key={bi} className="flex gap-2.5 text-body leading-relaxed text-ink-strong">
+                        <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-brand" />
+                        {b}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               )}
-              <ul className="mt-3 space-y-2.5">
-                {slide.bullets.map((b, bi) => (
-                  <li key={bi} className="flex gap-2.5 text-body leading-relaxed text-ink-strong">
-                    <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-brand" />
-                    {b}
-                  </li>
-                ))}
-              </ul>
+
+              {slide.imageUrl && slide.bullets.length > 0 && (
+                <ul className="max-h-[22%] shrink-0 space-y-1 overflow-y-auto border-t border-line px-4 py-2">
+                  {slide.bullets.map((b, bi) => (
+                    <li key={bi} className="flex gap-2 text-note leading-snug text-ink-soft">
+                      <span className="mt-[7px] h-1 w-1 shrink-0 rounded-full bg-brand" />
+                      {b}
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
             <div className="h-1 w-full shrink-0 bg-line">
               <div className="h-full bg-brand transition-all duration-300" style={{ width: `${((i + 1) / total) * 100}%` }} />

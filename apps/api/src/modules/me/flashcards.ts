@@ -154,6 +154,46 @@ async function build(studentId: number, topicId: number) {
     cards.push({ key: `d:${i}`, kind: "dose", front: split.front, back: split.back, note: d, known: null });
   });
 
+  // ---- 4b. Bo'lim BLOKLARI: "Nom — ta'rif" ro'yxatlari va callout'lar ----
+  // ⚠️ 2026-08-01 (buyurtmachi: "kartochka 15ta"). Ilgari kartalar faqat
+  // atama/tushuncha/fakt/doza'dan yig'ilardi va bo'limli konspektda ularning
+  // ko'pi bo'sh bo'lib, mavzuga 8-10 ta karta chiqardi. Bo'lim bloklarida esa
+  // aynan takrorlashga mos material bor: ro'yxat elementlari ("Asos (basis
+  // cordis) — yuqori qism"), MUHIM/OGOHLANTIRISH callout'lari. Soxta savol
+  // yasalmaydi: `lead` yoki ajratgich bo'lmasa karta ham bo'lmaydi.
+  (digest?.sections ?? []).forEach((sec, si) => {
+    (sec.blocks ?? []).forEach((b, bi) => {
+      if (b.type === "list") {
+        b.items.forEach((it, ii) => {
+          const lead = (it.lead ?? "").trim();
+          const text = (it.text ?? "").trim();
+          if (lead && text) {
+            cards.push({ key: `sl:${si}:${bi}:${ii}`, kind: "concept", front: lead, back: text, note: sec.title, known: null });
+            return;
+          }
+          // `lead` yo'q — matnning o'zida "Nom — ta'rif" bo'lsa ajratamiz.
+          const split = text ? splitDefinition(text) : null;
+          if (split) {
+            cards.push({ key: `sl:${si}:${bi}:${ii}`, kind: "concept", front: split.front, back: split.back, note: sec.title, known: null });
+          }
+        });
+      } else if (b.type === "callout") {
+        const text = (b.text ?? "").trim();
+        const split = splitDefinition(text) ?? clozeCard(text, terms);
+        if (split) {
+          cards.push({
+            key: `sc:${si}:${bi}`,
+            kind: b.tone === "warning" ? "dose" : "fact",
+            front: split.front,
+            back: split.back,
+            note: sec.title,
+            known: null,
+          });
+        }
+      }
+    });
+  });
+
   // ---- 5. Bo'lim checkpoint savollari (konspektда allaqachon ochiq) ----
   (digest?.sections ?? []).forEach((s, i) => {
     const cp = s.checkpoint;

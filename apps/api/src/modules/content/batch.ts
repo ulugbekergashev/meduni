@@ -70,7 +70,7 @@ async function runBatch(
       if (step.kind === "quiz") {
         await generateQuiz(topicId, teacherId, {
           language: opts.language,
-          questionCount: opts.questionCount ?? 10,
+          questionCount: opts.questionCount ?? 20,
           difficulty: "balanced",
         });
       } else if (step.kind === "case") {

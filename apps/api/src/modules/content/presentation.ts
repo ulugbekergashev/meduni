@@ -101,6 +101,19 @@ export async function generatePresentation(
     return item;
   });
 
+  // ⚠️ 2026-08-01 (buyurtmachi: "prezentatsiyani prosta rasmdan nanobanana orqali
+  // qilib ber"): taqdimot endi RASMLI — slaydlar yaratilishi bilan rasm joblari
+  // O'ZI boshlanadi (ilgari o'qituvchi alohida "Rasm yasash" bosishi kerak edi va
+  // taqdimot matn-only bo'lib qolardi). Navbat ketma-ket (§12 OOM).
+  const pres = await prisma.presentation.findUnique({ where: { contentItemId: content.id } });
+  if (pres) {
+    const targets = slides.flatMap((s, i) => s.imageSlots.map((_, slot) => ({ s: i, slot })));
+    if (targets.length) {
+      for (const t of targets) await updateSlot(pres.id, t.s, t.slot, { status: "PENDING" });
+      enqueueMediaJob(`images:${pres.id}`, () => runImageJob(pres.id, topicId, teacherId, opts.language, targets));
+    }
+  }
+
   return content.id;
 }
 
@@ -214,10 +227,20 @@ export async function exportPptx(presentationId: number, teacherId: number): Pro
     s.background = { color: "F7F8FA" };
     const img = await slotImageDataUri(slide.imageSlots[0]?.url ?? null);
 
+    // Rasm bor bo'lsa — RASM slaydning o'zi: to'liq kadr + tepada sarlavha lentasi,
+    // tezislar ma'ruzachi izohiga tushadi (2026-08-01 buyurtmachi qarori).
+    if (img) {
+      s.addImage({ data: img, x: 0, y: 0, w: 13.333, h: 7.5, sizing: { type: "contain", w: 13.333, h: 7.5 } });
+      s.addShape(pptx.ShapeType.rect, { x: 0, y: 0, w: 13.333, h: 1.0, fill: { color: BRAND, transparency: 8 } });
+      s.addText(slide.title, { x: 0.6, y: 0.12, w: 12.1, h: 0.76, fontSize: 24, bold: true, color: "FFFFFF" });
+      const notes = [slide.speakerNotes, ...(slide.bullets ?? [])].filter(Boolean).join("\n");
+      if (notes) s.addNotes(notes);
+      continue;
+    }
+
     if (slide.layout === "TITLE") {
       s.addShape(pptx.ShapeType.rect, { x: 0, y: 2.8, w: 13.333, h: 0.12, fill: { color: BRAND } });
       s.addText(slide.title, { x: 0.8, y: 1.8, w: 11.7, h: 1, fontSize: 40, bold: true, color: INK });
-      if (img) s.addImage({ data: img, x: 9.5, y: 3.4, w: 3, h: 3, sizing: { type: "contain", w: 3, h: 3 } });
     } else {
       s.addShape(pptx.ShapeType.rect, { x: 0, y: 0, w: 13.333, h: 1.1, fill: { color: BRAND } });
       s.addText(slide.title, { x: 0.6, y: 0.15, w: 12, h: 0.8, fontSize: 26, bold: true, color: "FFFFFF" });
@@ -254,23 +277,31 @@ export function buildPdf(slides: Slide[]): Promise<Buffer> {
         if (!first) doc.addPage({ size: [960, 540], margin: 0 });
         first = false;
         doc.rect(0, 0, 960, 540).fill("#F7F8FA");
-        doc.rect(0, 0, 960, 70).fill(`#${BRAND}`);
-        doc.fillColor("#FFFFFF").fontSize(24).text(slide.title, 40, 22, { width: 880 });
-
         const buf = slide.imageSlots[0]?.url ? await readFileBuffer(slide.imageSlots[0].url).catch(() => null) : null;
-        const textW = buf ? 520 : 880;
-        doc.fillColor(`#${INK}`).fontSize(15);
-        let y = 100;
-        for (const b of slide.bullets) {
-          doc.text(`•  ${b}`, 40, y, { width: textW });
-          y = doc.y + 8;
-        }
+
+        // Rasm bor — u SLAYDNING O'ZI (to'liq kadr), sarlavha tepada lenta bo'lib turadi.
         if (buf) {
+          let placed = false;
           try {
-            doc.image(buf, 580, 100, { fit: [340, 380] });
+            doc.image(buf, 0, 0, { fit: [960, 540], align: "center", valign: "center" });
+            placed = true;
           } catch {
             /* skip unrenderable image */
           }
+          if (placed) {
+            doc.rect(0, 0, 960, 62).fillOpacity(0.92).fill(`#${BRAND}`).fillOpacity(1);
+            doc.fillColor("#FFFFFF").fontSize(22).text(slide.title, 36, 20, { width: 888 });
+            continue;
+          }
+        }
+
+        doc.rect(0, 0, 960, 70).fill(`#${BRAND}`);
+        doc.fillColor("#FFFFFF").fontSize(24).text(slide.title, 40, 22, { width: 880 });
+        doc.fillColor(`#${INK}`).fontSize(15);
+        let y = 100;
+        for (const b of slide.bullets) {
+          doc.text(`•  ${b}`, 40, y, { width: 880 });
+          y = doc.y + 8;
         }
       }
       doc.end();

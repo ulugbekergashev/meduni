@@ -195,7 +195,7 @@ function QuizCard({ topic }: { topic: TopicDetail }) {
   const existing = topic.content.find((c) => c.kind === "quiz");
 
   const [language, setLanguage] = useState<"uz" | "ru">(locale);
-  const [questionCount, setQuestionCount] = useState("10");
+  const [questionCount, setQuestionCount] = useState("20");
   const [difficulty, setDifficulty] = useState("balanced");
 
   const run = () =>
@@ -218,7 +218,7 @@ function QuizCard({ topic }: { topic: TopicDetail }) {
             <div className="grid grid-cols-2 gap-3">
               <Field label={t("questionCount")}>
                 <Select value={questionCount} onChange={(e) => setQuestionCount(e.target.value)}>
-                  {["5", "10", "15", "20"].map((n) => (
+                  {["10", "15", "20", "25", "30"].map((n) => (
                     <option key={n} value={n}>
                       {n}
                     </option>
