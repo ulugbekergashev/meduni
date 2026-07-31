@@ -40,6 +40,16 @@ sharp.concurrency(1);
  *  videosi uchun yetarli; `VIDEO_HEIGHT=1080` bilan qaytarish mumkin. */
 const OUT_H = Number(process.env.VIDEO_HEIGHT ?? 720);
 const OUT_W = Math.round((OUT_H * 16) / 9);
+/** SVG 1920x1080 koordinatalarda chiziladi, lekin `viewBox` orqali TO'G'RIDAN
+ *  chiqish o'lchamida rasterlanadi — qo'shimcha resize bosqichi kerak emas.
+ *
+ *  ⚠️ Ilgari `.composite(...).resize(...)` yozilgandi. sharp konveyerida resize
+ *  composite'dan OLDIN bajariladi: kanvas 720p ga kichrayib, ustiga 1080p rasm
+ *  qo'yilardi va montaj "Image to composite must have same dimensions or smaller"
+ *  bilan yiqilardi (jonli serverда aynan shu bo'ldi). */
+const K = OUT_W / 1920;
+const svgDoc = (parts: string) =>
+  `<svg xmlns="http://www.w3.org/2000/svg" width="${OUT_W}" height="${OUT_H}" viewBox="0 0 1920 1080">${parts}</svg>`;
 
 function forbidden(): ApiError {
   return new ApiError(403, "forbidden", "Bu sizning kursingiz emas", "Это не ваш курс");
@@ -138,15 +148,18 @@ async function renderSlidePng(slide: Slide, imageBuf: Buffer | null): Promise<Bu
     y += lines.length * 46 + 30;
   }
 
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}">${parts.join("")}</svg>`;
-  let base = sharp(Buffer.from(svg));
+  let base = sharp(Buffer.from(svgDoc(parts.join(""))));
 
   if (imageBuf) {
-    const resized = await sharp(imageBuf).resize(720, 720, { fit: "inside" }).png().toBuffer();
+    // Kompozit chiqish kanvasi o'lchamida (K koeffitsiyenti) — undan katta bo'lsa sharp xato beradi.
+    const box = Math.round(720 * K);
+    const resized = await sharp(imageBuf).resize(box, box, { fit: "inside" }).png().toBuffer();
     const meta = await sharp(resized).metadata();
-    base = base.composite([{ input: resized, left: W - (meta.width ?? 720) - 90, top: 300 }]);
+    base = base.composite([
+      { input: resized, left: Math.round(W * K) - (meta.width ?? box) - Math.round(90 * K), top: Math.round(300 * K) },
+    ]);
   }
-  return base.resize(OUT_W, OUT_H, { fit: "fill" }).png({ compressionLevel: 6 }).toBuffer();
+  return base.png({ compressionLevel: 6 }).toBuffer();
 }
 
 // ---------- Visual card -> PNG (NotebookLM-style lecture frames) ----------
@@ -169,16 +182,15 @@ async function renderVisualPng(visual: VideoVisual, imageBuf: Buffer | null): Pr
     parts.push(`<rect width="${W}" height="${H}" fill="${BG}"/>`);
     parts.push(`<rect width="${W}" height="${barH}" fill="${BRAND}"/>`);
     wrap(visual.title, 50).slice(0, 1).forEach(() => parts.push(txt(70, 96, 50, 700, "#FFFFFF", visual.title)));
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}">${parts.join("")}</svg>`;
-    const areaW = W - 160, areaH = H - barH - 90;
+    // Rasm ham CHIQISH kanvasi o'lchamiga moslanadi (K), aks holda composite yiqiladi.
+    const areaW = Math.round((W - 160) * K), areaH = Math.round((H - barH - 90) * K);
     const resized = await sharp(imageBuf!).resize(areaW, areaH, { fit: "inside" }).png().toBuffer();
     const meta = await sharp(resized).metadata();
     const iw = meta.width ?? areaW, ih = meta.height ?? areaH;
-    const left = Math.round((W - iw) / 2);
-    const top = barH + Math.round((H - barH - ih) / 2);
-    return sharp(Buffer.from(svg))
+    const left = Math.round((OUT_W - iw) / 2);
+    const top = Math.round(barH * K) + Math.round((OUT_H - barH * K - ih) / 2);
+    return sharp(Buffer.from(svgDoc(parts.join(""))))
       .composite([{ input: resized, left, top }])
-      .resize(OUT_W, OUT_H, { fit: "fill" })
       .png({ compressionLevel: 6 })
       .toBuffer();
   }
@@ -212,8 +224,7 @@ async function renderVisualPng(visual: VideoVisual, imageBuf: Buffer | null): Pr
       y += lines.length * 58 + 40;
     }
   }
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}">${parts.join("")}</svg>`;
-  return sharp(Buffer.from(svg)).resize(OUT_W, OUT_H, { fit: "fill" }).png({ compressionLevel: 6 }).toBuffer();
+  return sharp(Buffer.from(svgDoc(parts.join("")))).png({ compressionLevel: 6 }).toBuffer();
 }
 
 // ---------- TTS ----------
