@@ -9,6 +9,7 @@ import { firstContentView, nextOpenStage, type ContentView, type LessonView, typ
 import { DigestView } from "../../../components/lesson/DigestView";
 import { SectionReader } from "./SectionReader";
 import { NextStageBar } from "./NextStageBar";
+import { PodcastTab } from "./PodcastTab";
 import { VideoTab } from "./VideoTab";
 import { SlidesTab } from "./SlidesTab";
 import { QuizTab } from "./QuizTab";
@@ -63,11 +64,18 @@ export function ContentPanel({
 
   const contentTabs: ContentView[] = [];
   if (lesson.digest || hasSections) contentTabs.push("konspekt");
+  // Audio-podkast — o'rganish yuzasi (tepadagi tasmadagi "Podkast" bloki).
+  if (lesson.podcast) contentTabs.push("podcast");
   if (lesson.tabs.slides) contentTabs.push("slides");
   if (lesson.tabs.video) contentTabs.push("video");
 
+  // ⚠️ Yangi o'rganish yuzasi qo'shsang, uni SHU RO'YXATGA ham qo'sh: aks holda
+  // pastdagi "baholash yuzasi" shoxi uni `case|quiz|result` deb qabul qiladi va
+  // `SURFACE_ICON[view]` undefined bo'lib sahifa OQ EKRANGA aylanadi
+  // (2026-08-02 da aynan shunday bo'ldi — podkast qo'shilganda).
   const isContentView =
     view === "konspekt" ||
+    view === "podcast" ||
     view === "video" ||
     view === "slides" ||
     view === "flashcards" ||
@@ -199,8 +207,18 @@ export function ContentPanel({
   // 2026-08-01: manbalar (asl PDF/havolalar) endi SHU PANELDA emas — tepadagi
   // "Manbalar" tugmasi ortida (LessonPage). O'qish maydoni to'liq kontentга.
 
+  // ⚠️ Media ko'rinishlari (slayd/video/podkast) — ixcham padding: ular SAHNA,
+  // ramka emas (buyurtmachi 2026-08-02: "фокус не на контенте остаётся").
   return (
-    <Panel bodyClassName={active === "konspekt" ? "flex flex-col p-0" : "p-4"}>
+    <Panel
+      bodyClassName={
+        active === "konspekt"
+          ? "flex flex-col p-0"
+          : active === "slides" || active === "video" || active === "podcast" || active === "mindmap"
+            ? "p-2"
+            : "p-4"
+      }
+    >
       {active === "konspekt" && (
         <>
           {readerMode ? (
@@ -216,7 +234,13 @@ export function ContentPanel({
                 finishedLabel={nextAfterStudy ? `${t("nextStage")}: ${t(`stage_${nextAfterStudy.key}`)}` : undefined}
                 hasVideo={!!lesson.tabs.video}
                 onSeekVideo={onSeekVideo}
-                audioSrc={lesson.digestAudio ? `${API_URL}/api/v1/me/topics/${topicId}/digest-audio` : null}
+                // Podkast bo'lsa — audio SHU YERDA emas, alohida "Podkast" blokida
+                // (ikkita pleyer bir ekranda takror bo'lardi, §4).
+                audioSrc={
+                  !lesson.podcast && lesson.digestAudio
+                    ? `${API_URL}/api/v1/me/topics/${topicId}/digest-audio`
+                    : null
+                }
               />
             </div>
           ) : (
@@ -228,6 +252,7 @@ export function ContentPanel({
           )}
         </>
       )}
+      {active === "podcast" && lesson.podcast && <PodcastTab topicId={topicId} data={lesson.podcast} />}
       {active === "video" && lesson.tabs.video && (
         <>
           <VideoTab topicId={topicId} data={lesson.tabs.video} threshold={lesson.thresholds.video} seekTo={seekTo} />

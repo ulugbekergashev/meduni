@@ -2218,6 +2218,87 @@ ochiladi (5 bo'lim), rasm 1281px; mobil 390 — toshish 0, konsol toza. tsc+buil
 
 ---
 
+## 19. AUDIO-PODKAST · SLAYD RASMLARI · EKRAN (2026-08-02, buyurtmachi)
+
+Uch talab: *"аудиоподкаст… где-то 20 минут… полностью раскрыть тему"*, *"в
+некоторых презентации слайды не видны, только текст"*, *"основную часть экрана
+занимает та часть, которая вообще не связана с учёбой… может быть два или один
+слой хватит"*.
+
+### (A) Audio-podkast — yangi kontent turi
+Eski "audio-konspekt" bitta TTS chaqiruvi edi va matn **4500 belgida KESILARDI**
+(~4 daq) — mavzuning oxiri ovozga umuman aylanmasdi. Yangi model:
+- Prisma **`TopicPodcast`** (topicId unique, digestVersion, scriptJson, audioUrl,
+  durationSec, buildStatus [VideoBuildStatus reuse], errorStage). Migratsiya
+  `20260802120000_topic_podcast` (additive). ⚠️ Jonli bazada `_prisma_migrations`
+  baseline emas → `prisma db execute --file` bilan qo'llandi.
+- **Ssenariy — har BO'LIM uchun alohida AI chaqiruvi** (`ai/prompts/podcast.ts`).
+  Butun 20 daqiqani bitta javobda so'rash chiqish limitiga urilardi va oxirgi
+  bo'limlar yuzaki chiqardi; endi "to'liq ochish" strukturaviy kafolat.
+- ⚠️ **Manba matni SHART**: konspektlar qisqa (o'lchandi: 120-310 so'z) — undan
+  20 daqiqa yasash modelni fakt o'ylab topishga majbur qilardi (§6). Har bobga
+  o'qituvchi yuklagan fayldan eng mos parchalar beriladi (`pickExcerpts` — AI'siz,
+  kalit so'z kesishuvi; bir parcha ikki bobda takrorlanmaydi).
+- **Ikki ovoz**: `host` (ayol) savol beradi, `expert` (erkak) tushuntiradi. Har
+  replika alohida ovozlanadi, `hash(voice::text)` bo'yicha keshlanadi va HAR
+  replikadan keyin saqlanadi (uzilsa qolgan joyidan). Concat → m4a (AAC 96k).
+  MP4 ham, kadr chizish ham YO'Q (§17 saboqi).
+- **`lib/tts.ts`** — umumiy TTS qatlami (video + podkast). `AI_TTS_PROVIDER=edge`
+  endi HAQIQATAN ishlaydi: edge-tts birinchi (BEPUL), Gemini fallback. Ilgari bu
+  env o'zgaruvchi kodda umuman yo'q edi.
+- Routes: `GET/POST /topics/:id/podcast[/generate|/audio]` (o'qituvchi),
+  `GET /me/topics/:id/podcast-audio` (talaba). Dars payloadida `podcast.chapters`.
+- UI: o'qituvchida `PodcastCard` (konspekt qadami ostida; jonli hisob "Ovoz:
+  12/34", eskirgan holat, boblar ro'yxati) — eski "Audio yaratish" tugmasi
+  OLIB TASHLANDI. Talabada `PodcastTab` — o'rganish tasmasida "Podkast" bloki:
+  pleyer + ±15s + 1/1.25/1.5× + **boblar** (bosilsa o'sha joyga o'tadi).
+- `batch.ts` "hammasini yarat" endi podkast boshlaydi (fon-jobda).
+- `recovery.ts` uzilgan podkastni ham davom ettiradi (video naqshi).
+
+### (B) Slayd rasmlari — sabab topildi va tuzatildi
+O'lchandi (jonli baza): topic 6 — 8 slayddan **4 tasi `status=ERROR`**, topic 4 —
+6 dan 6 tasi. Sabab: rasm modeli ketma-ket chaqiruvda **429** qaytaradi, kod esa
+bitta urinishdan keyin slotni ERROR qilib tashlab ketardi.
+- `generateImage` endi **provayder ZANJIRI**: primary yiqilsa keyingisi
+  (`pollinations` — kalitsiz, bepul flux; `AI_IMAGE_PROVIDER=pollinations` bilan
+  asosiy ham qilinadi). Sifat Nano Banana'dan past, lekin BO'SH slayddan yaxshi.
+- Slot uchun 2 urinish + slotlar orasida **3s pauza** (429 profilaktikasi).
+- Xato SABABI slotda saqlanadi (`imageSlots[].error`) va o'qituvchiga qaytariladi.
+- Rasm sloti YO'Q slaydga ham slot ochiladi (AI `imagePrompt` bermagan bo'lsa
+  prompt sarlavha+tezislardan quriladi) — ilgari bunday slayd abadiy matn-only edi.
+- ⚠️ 429 endi `generateStructured` da ham zanjirni to'xtatmaydi: limit HAR MODEL
+  uchun alohida (flash tugasa lite ishlaydi). Podkastda qo'shimcha `withQuotaRetry`
+  (45s × 3) — fon-jobda kutish muammo emas, yiqilish esa muammo.
+- **`scripts/fixSlideImages.ts`** (yangi) — ERROR bo'lib qolgan slaydlarni qayta
+  yuritadi. Jonli bazada ishlatildi: barcha 4 taqdimot **100% rasmli** bo'ldi.
+  ⚠️ Jonli baza bilan `STORAGE_DRIVER=db` SHART.
+
+### (C) Ekran — kontent ustidagi 3 qator → 2
+Dars sahifasida non ushoqlari, bosqichlar bari va o'rganish tasmasi alohida
+qatorlar edi (~136px + ilova shapkasi 57px).
+- Non ushoqlari + bosqichlar **BITTA qatorga** birlashdi (o'lchandi: **50px**).
+  Bosqich NOMLARI faqat FAOL bosqichda ko'rinadi, qolganlari marker (§4 ovoz
+  ierarxiyasi). Mobilda (<640) boshqaruv guruhi ikkinchi qatorga tushadi —
+  aks holda sarlavha nolgacha siqilardi.
+- Media ko'rinishlari (slayd/video/podkast/xarita) paneli `p-4` → `p-2`,
+  tashqi grid `gap-2.5 p-2.5` → `gap-2 p-1.5`.
+- Slaydda rasm ostidagi tezislar **yig'ildi** ("Tezislar N" tugmasi) — ular Nano
+  Banana slaydining o'zida allaqachon yorliq (§4). Rasm balandligi 400→**585px**.
+- ⛔ **TUZOQ**: `ContentPanel` da yangi o'rganish yuzasi qo'shsang, uni
+  `isContentView` VA `contentTabs` ikkalasiga qo'sh — aks holda u "baholash
+  yuzasi" deb qabul qilinib `SURFACE_ICON[view]` undefined bo'ladi va sahifa
+  **OQ EKRAN**ga aylanadi (podkast qo'shilganda aynan shunday bo'ldi).
+
+**Tekshirildi (Chrome + Playwright, real login):** bitta qator 50px, podkast
+pleyeri boblar bilan, slayd 2 (ilgari matn-only) endi rasmli, mobil 390 toshish 0,
+konsol toza; tsc + build ikkala tomonda toza. Podkast ovoz konveyeri uchi-uchiga
+o'lchandi (6 replika → 54s, boblar 0:00/0:39).
+⚠️ **Podkast ssenariysi real Gemini bilan sinalmagan** — o'sha kuni matn
+kvotasi (flash + lite) tugagan edi (rasm kvotasi alohida, u ishladi). Kvota
+tiklanganda o'qituvchi "Podkast yaratish" bosishi kerak.
+
+---
+
 ## 18. O'QITUVCHI UX SODDALASHTIRISH — Faza 0/1 (2026-08-02, buyurtmachi)
 
 Buyurtmachi: *"Если учитель зайдет сюда, он испугается от новой системы... нужно

@@ -332,6 +332,17 @@ meRouter.get(
   })
 );
 
+// Audio-podkast (~20 daqiqa) — boblar bilan ijro etiladi (`PodcastPlayer`).
+meRouter.get(
+  "/topics/:id/podcast-audio",
+  wrap(async (req, res) => {
+    const buf = await lesson.studentPodcastAudio(req.user!.id, parseId(req.params.id));
+    res.setHeader("Content-Type", "audio/mp4");
+    res.setHeader("Accept-Ranges", "bytes");
+    res.send(buf);
+  })
+);
+
 meRouter.get(
   "/presentations/:id/image/:slideIndex/:slotIndex",
   wrap(async (req, res) => {

@@ -315,6 +315,7 @@ model Topic {
   materials      SourceMaterial[]
   links          TopicLink[]
   digest         TopicDigest?
+  podcast        TopicPodcast?
   contentItems   ContentItem[]
   progress       Progress[]
   sectionReads   SectionRead[]
@@ -575,6 +576,29 @@ model TopicDigest {
   updatedAt         DateTime @updatedAt
 
   @@map("topic_digests")
+}
+
+/// Audio-podkast (~20 daqiqa) — mavzuni TO'LIQ ochadigan ikki ovozli suhbat.
+/// Konspektning har bo'limi uchun alohida bob yoziladi (AI), keyin har replika
+/// alohida ovozlanadi va bitta m4a ga birlashtiriladi. Bu MP4 emas — faqat ovoz,
+/// shuning uchun 512 MB konteynerda ham xavfsiz (§17 video montaji saboqi).
+model TopicPodcast {
+  id            Int              @id @default(autoincrement())
+  topicId       Int              @unique
+  topic         Topic            @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  /// Qaysi konspekt versiyasidan yozilgan — konspekt tahrirlansa podkast eskiradi.
+  digestVersion Int              @default(1)
+  language      Locale           @default(uz)
+  /// PodcastSegment[] — replika matni, ovoz, davomiylik, kesh hash'i.
+  scriptJson    Json
+  audioUrl      String?
+  durationSec   Int?
+  buildStatus   VideoBuildStatus @default(PENDING)
+  errorStage    String?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  @@map("topic_podcasts")
 }
 
 model AiUsage {

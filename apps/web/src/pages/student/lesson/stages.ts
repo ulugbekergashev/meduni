@@ -12,7 +12,7 @@ export type StageState = "done" | "open" | "pendingReview" | "soon";
  *  ⚠️ 2026-07-28: "materials" bloki OLIB TASHLANDI — asl material (PDF) endi
  *  konspekt ustidagi `MaterialBar`da (buyurtmachi: "material matni kerak emas,
  *  materialni o'zi pdfi konspektni tepasida bo'lsin"). */
-export type ContentView = "konspekt" | "video" | "slides" | "flashcards" | "mindmap";
+export type ContentView = "konspekt" | "podcast" | "video" | "slides" | "flashcards" | "mindmap";
 /** "overview" — kirish landing'i (layout v2); "patient" — virtual bemor roleplay
  *  (amaliyot, fokus rejim — bosqich emas). */
 export type LessonView = "overview" | ContentView | "case" | "quiz" | "result" | "patient";

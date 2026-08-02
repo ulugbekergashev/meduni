@@ -1,9 +1,10 @@
 import { GoogleGenAI } from "@google/genai";
 import { ApiError } from "../lib/errors";
 import { recordAiUsage } from "./usage";
-import { imageProvider, openaiImageConfig, openaiTextConfig, textProviderFor } from "./config";
+import { imageProvider, openaiImageConfig, openaiTextConfig, textProviderFor, type ImageProviderName } from "./config";
 import { generateStructuredOpenAI } from "./providers/openaiText";
 import { generateImageOpenAI } from "./providers/openaiImage";
+import { generateImagePollinations } from "./providers/pollinationsImage";
 import type { GenerateOpts } from "./textTypes";
 
 export type { GenerateOpts } from "./textTypes";
@@ -117,8 +118,15 @@ async function generateStructuredGemini<T>(opts: GenerateOpts): Promise<T> {
       } catch (err) {
         lastErr = err;
         const status = (err as { status?: number })?.status;
-        // Auth/quota won't self-resolve and won't differ across models → stop now.
-        if (status === 401 || status === 403 || status === 429) throw toApiError(err);
+        // Auth xatosi hech qaysi modelda o'zgarmaydi → darrov to'xtaymiz.
+        if (status === 401 || status === 403) throw toApiError(err);
+        // ⚠️ 429 (2026-08-02 tuzatildi): ilgari bu ham darrov tashlanardi
+        // ("kvota modelga bog'liq emas" degan taxmin bilan). Aslida limit HAR
+        // MODEL uchun alohida — flash tugaganda lite hali ishlaydi. Shuning
+        // uchun endi zanjirdagi keyingi modelga o'tamiz va faqat hammasi
+        // 429 bergandagina xato qaytaramiz (podkast/video kabi ko'p bosqichli
+        // generatsiya bitta 429 dan butunlay yiqilmasin).
+        if (status === 429) break;
         // Transient (503 "high demand" / 500 / timeout): back off and retry the same
         // model; if it stays down, the outer loop falls back to the next model.
         if (attempt < ATTEMPTS_PER_MODEL) await sleep(1200 * attempt);
@@ -138,21 +146,41 @@ export interface GeneratedImage {
 
 interface ImageOpts { kind: string; topicId?: number; departmentId?: number | null; userId?: number | null }
 
-/** Rasm generatsiyasi — provider ROUTER. Default Gemini (Nano Banana Pro — belgilangan
- *  tibbiy atlas sifati); open rasm modeli faqat AI_IMAGE_PROVIDER=openai + kredit
- *  bo'lsa, ISHLAMASA Gemini'ga qaytadi. */
+/**
+ * Rasm generatsiyasi — provider ZANJIRI. Default Gemini (Nano Banana Pro —
+ * belgilangan tibbiy atlas sifati), lekin u YIQILSA zanjir davom etadi.
+ *
+ * ⚠️ 2026-08-02 (buyurtmachi: "в некоторых презентации слайды не видны, только
+ * текст"): ilgari bitta urinish edi — kvota tugasa yoki kalit ishlamasa slot
+ * ERROR bo'lardi va slayd BUTUNLAY matnli qolardi. Endi birinchi provayder
+ * ishlamasa keyingisi sinaladi (`pollinations` — kalitsiz, bepul). Sifat past
+ * bo'lsa ham, BO'SH slayddan yaxshi; o'qituvchi xohlagan slaydni Nano Banana
+ * bilan qayta chiza oladi.
+ */
 export async function generateImage(prompt: string, opts: ImageOpts): Promise<GeneratedImage> {
-  if (imageProvider() === "openai") {
-    const cfg = openaiImageConfig();
-    if (cfg) {
-      try {
+  const primary = imageProvider();
+  const chain: ImageProviderName[] = [primary];
+  for (const p of ["gemini", "pollinations"] as const) if (!chain.includes(p)) chain.push(p);
+
+  let lastErr: unknown;
+  for (const provider of chain) {
+    try {
+      if (provider === "openai") {
+        const cfg = openaiImageConfig();
+        if (!cfg) continue;
         return await generateImageOpenAI(prompt, opts, cfg);
-      } catch (err) {
-        console.warn(`[ai] openai image failed → gemini fallback:`, (err as Error)?.message);
       }
+      if (provider === "pollinations") return await generateImagePollinations(prompt, opts);
+      if (!process.env.GEMINI_API_KEY) continue;
+      return await generateImageGemini(prompt, opts);
+    } catch (err) {
+      lastErr = err;
+      console.warn(`[ai] image provider "${provider}" failed:`, (err as Error)?.message);
     }
   }
-  return generateImageGemini(prompt, opts);
+  throw lastErr instanceof ApiError
+    ? lastErr
+    : new ApiError(502, "ai_no_image", "Rasm yaratilmadi", "Изображение не создано");
 }
 
 /** Generates a single image via Nano Banana Pro. Logs one AiUsage row. */

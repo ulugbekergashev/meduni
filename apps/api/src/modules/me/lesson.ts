@@ -3,7 +3,8 @@ import { ApiError, badRequest, notFound } from "../../lib/errors";
 import { readFileBuffer, readText } from "../../lib/storage";
 import { buildPdf } from "../content/presentation";
 import { digestAudioRel, hasDigestAudio } from "../topics/service";
-import type { CaseJson, DigestJson, ScriptSegment, Slide } from "../../ai/types";
+import { chaptersFromScript, type PodcastChapter } from "../content/podcast";
+import type { CaseJson, DigestJson, PodcastSegment, ScriptSegment, Slide } from "../../ai/types";
 import {
   assertTopicOpen,
   computeTopics,
@@ -111,6 +112,20 @@ export async function getTopicLesson(studentId: number, topicId: number) {
   const digestAudioPromise = topic.digest?.approvedByTeacher
     ? hasDigestAudio(topicId, topic.digest.version)
     : Promise.resolve(false);
+  // Audio-podkast: FAQAT tayyor (audioUrl bor) va konspekt tasdiqlangan bo'lsa.
+  // Yarim qurilgan podkast talaba uchun kontent emas (video saboqi — o'lik blok).
+  const podcastPromise: Promise<{ durationSec: number | null; chapters: PodcastChapter[] } | null> = topic.digest
+    ?.approvedByTeacher
+    ? prisma.topicPodcast.findUnique({ where: { topicId } }).then((p) =>
+        p?.audioUrl
+          ? {
+              durationSec: p.durationSec,
+              chapters: chaptersFromScript((p.scriptJson as unknown as PodcastSegment[]) ?? []),
+            }
+          : null
+      )
+    : Promise.resolve(null);
+  keepSafe(podcastPromise);
 
   // Faza 1: bo'lim ichiga media — o'sha bo'limni yorituvchi slayd diagrammasi va
   // videodagi boshlanish vaqti (Faza 0 sectionId xaritasi orqali). Bo'lim id'si
@@ -284,6 +299,8 @@ export async function getTopicLesson(studentId: number, topicId: number) {
     digest: digestJson,
     /** 1C: joriy konspekt versiyasiga audio tayyormi (o'qish ustuni pleyeri). */
     digestAudio: await digestAudioPromise,
+    /** Audio-podkast (~20 daq, ikki ovoz) — tayyor bo'lsa boblar bilan. */
+    podcast: await podcastPromise,
     /** v2 bo'limli o'qish (bo'sh bo'lsa — eski yassi konspekt renderi). */
     sections,
     /** Mavzuning taxminiy vaqti (bo'limlar + test + keys). */
@@ -739,6 +756,19 @@ export async function studentDigestAudio(studentId: number, topicId: number): Pr
   if (!digest?.approvedByTeacher) throw notFound("Audio");
   const buf = await readFileBuffer(digestAudioRel(topicId, digest.version)).catch(() => null);
   if (!buf) throw notFound("Audio");
+  return buf;
+}
+
+/** Audio-podkast (~20 daq). Himoya digest-audio bilan bir xil: mavzu ochiq +
+ *  konspekt tasdiqlangan bo'lishi shart. */
+export async function studentPodcastAudio(studentId: number, topicId: number): Promise<Buffer> {
+  await assertTopicOpen(studentId, topicId);
+  const digest = await prisma.topicDigest.findUnique({ where: { topicId } });
+  if (!digest?.approvedByTeacher) throw notFound("Podkast");
+  const p = await prisma.topicPodcast.findUnique({ where: { topicId } });
+  if (!p?.audioUrl) throw notFound("Podkast");
+  const buf = await readFileBuffer(p.audioUrl).catch(() => null);
+  if (!buf) throw notFound("Podkast");
   return buf;
 }
 

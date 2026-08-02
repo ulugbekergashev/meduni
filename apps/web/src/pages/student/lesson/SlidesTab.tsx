@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { AlignLeft, CheckCircle2, ChevronLeft, ChevronRight, Download, GalleryHorizontal, X, ZoomIn } from "lucide-react";
+import { AlignLeft, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, Download, GalleryHorizontal, X, ZoomIn } from "lucide-react";
 import { Icon, cls } from "@meduni/ui";
 import { API_URL } from "../../../lib/api";
 import { useSlidesViewed, type SlidesTabData } from "../api";
 
 /** Ko'rinish: slayd karuseli yoki matn (mini-konspekt) — tanlov eslab qolinadi. */
 const MODE_KEY = "meduni.slidesMode";
+const NOTES_KEY = "meduni.slideNotes";
 
 /**
  * Diagramma ko'rgichi. Telefon ekranida tibbiy atlas rasmidagi yozuvlar
@@ -95,6 +96,8 @@ export function SlidesTab({ topicId, data }: { topicId: number; data: SlidesTabD
   const [outline, setOutline] = useState(
     () => typeof window !== "undefined" && window.localStorage.getItem(MODE_KEY) === "outline"
   );
+  /** Rasmli slaydda tezislar YIG'ILGAN — rasm sahna (tanlov eslab qolinadi). */
+  const [notes, setNotes] = useState(() => typeof window !== "undefined" && window.localStorage.getItem(NOTES_KEY) === "open");
   const viewed = useSlidesViewed(topicId);
   const marked = useRef(data.viewed);
   const touchX = useRef<number | null>(null);
@@ -262,15 +265,32 @@ export function SlidesTab({ topicId, data }: { topicId: number; data: SlidesTabD
                 </div>
               )}
 
+              {/* ⚠️ 2026-08-02 (buyurtmachi: "презентация занимает пол-экрана"):
+                  tezislar bloki rasm balandligining ~22% ini doim yeb turardi,
+                  ustiga ular Nano Banana slaydining O'ZIDA yorliq sifatida
+                  allaqachon chizilgan (§4 "bitta fakt — bitta joy"). Endi u
+                  YIG'ILGAN: kerak bo'lsa bir bosishda ochiladi. */}
               {slide.imageUrl && slide.bullets.length > 0 && (
-                <ul className="max-h-[22%] shrink-0 space-y-1 overflow-y-auto border-t border-line px-4 py-2">
-                  {slide.bullets.map((b, bi) => (
-                    <li key={bi} className="flex gap-2 text-note leading-snug text-ink-soft">
-                      <span className="mt-[7px] h-1 w-1 shrink-0 rounded-full bg-brand" />
-                      {b}
-                    </li>
-                  ))}
-                </ul>
+                <div className="shrink-0 border-t border-line">
+                  <button
+                    onClick={() => setNotes((n) => !n)}
+                    className="flex w-full items-center gap-1.5 px-4 py-1.5 text-micro font-bold text-ink-dim transition-colors hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                  >
+                    <Icon icon={notes ? ChevronDown : ChevronRight} size={13} />
+                    {t("slideNotes")}
+                    <span className="tabular-nums text-ink-faint">{slide.bullets.length}</span>
+                  </button>
+                  {notes && (
+                    <ul className="max-h-[26vh] space-y-1 overflow-y-auto px-4 pb-2">
+                      {slide.bullets.map((b, bi) => (
+                        <li key={bi} className="flex gap-2 text-note leading-snug text-ink-soft">
+                          <span className="mt-[7px] h-1 w-1 shrink-0 rounded-full bg-brand" />
+                          {b}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
               )}
             </div>
             <div className="h-1 w-full shrink-0 bg-line">

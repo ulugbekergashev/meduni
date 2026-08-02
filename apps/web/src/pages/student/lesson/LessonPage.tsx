@@ -26,6 +26,7 @@ import {
 const ALL_VIEWS: LessonView[] = [
   "overview",
   "konspekt",
+  "podcast",
   "video",
   "slides",
   "mindmap",
@@ -45,6 +46,8 @@ function viewAvailable(v: LessonView, lesson: Lesson): boolean {
       // Har doim renderlanadi — kontent bo'lmasa ContentPanel "tayyorlanmoqda"
       // bo'sh-holatini ko'rsatadi (aks holda "O'rganish" jimgina hech narsa qilmasdi).
       return true;
+    case "podcast":
+      return !!lesson.podcast;
     case "video":
       return !!lesson.tabs.video;
     case "slides":
@@ -164,6 +167,8 @@ export function LessonPage() {
   // O'rganish bloklari (chap ustunda tanlanadi).
   const studyBlocks: ContentView[] = [];
   if (lesson.digest || sections.length > 0) studyBlocks.push("konspekt");
+  // Audio-podkast (~20 daq) — konspektdan keyin, o'qishning "quloq" varianti.
+  if (lesson.podcast) studyBlocks.push("podcast");
   if (lesson.tabs.slides) studyBlocks.push("slides");
   if (lesson.tabs.video) studyBlocks.push("video");
   // Mindmap — bo'limli konspekt bo'lsa (navigatsiya xaritasi, AI'siz).
@@ -176,6 +181,7 @@ export function LessonPage() {
     : firstContentView(lesson);
   const isStudyView =
     view === "konspekt" ||
+    view === "podcast" ||
     view === "slides" ||
     view === "video" ||
     view === "flashcards" ||
@@ -199,52 +205,60 @@ export function LessonPage() {
 
   return (
     <div className="flex flex-col lg:h-full">
-      {/* Breadcrumb — chap brand aksent chizig'i + mavzu chipi */}
-      <div className="relative flex shrink-0 flex-wrap items-center gap-x-2.5 gap-y-1 border-b border-line bg-surface py-2 pl-3 pr-3">
+      {/* ⚠️ 2026-08-02 — BITTA QATOR (buyurtmachi: ekranning yarmi o'quvga
+          aloqasiz edi). Ilgari bu ikki alohida qator edi: non ushoqlari va
+          bosqichlar bari. Endi: mavzu (chapda) + bosqichlar + % + AI-tutor
+          (o'ngda). Kontentga ~48px joy qo'shildi. */}
+      <div className="relative flex shrink-0 flex-wrap items-center gap-x-2 gap-y-1 border-b border-line bg-surface py-1.5 pl-3 pr-2">
         <span className="absolute inset-y-0 left-0 w-[3px] bg-gradient-to-b from-brand to-violet" aria-hidden />
         <button
           onClick={() => navigate(`/app/courses/${lesson.courseId}`)}
-          className="inline-flex items-center gap-1 rounded-pill px-2 py-1 text-note font-bold text-brand-tint transition-colors hover:bg-brand-soft"
+          title={lesson.subjectName}
+          className="inline-flex shrink-0 items-center gap-1 rounded-pill px-1.5 py-1 text-note font-bold text-brand-tint transition-colors hover:bg-brand-soft"
         >
           <Icon icon={ArrowLeft} size={14} />
-          {lesson.subjectName}
+          {/* Fan nomi tor ekranda o'rin egallamasin — orqaga tugmasi qoladi. */}
+          <span className="hidden max-w-[160px] truncate xl:inline">{lesson.subjectName}</span>
         </button>
-        <span className="rounded-pill bg-brand-soft px-2 py-0.5 text-micro font-bold uppercase tracking-wider text-brand-tint">
+        <span className="hidden shrink-0 rounded-pill bg-brand-soft px-2 py-0.5 text-micro font-bold uppercase tracking-wider text-brand-tint sm:inline">
           {t("topic")} {lesson.orderIndex}
         </span>
-        <h1 className="min-w-0 flex-1 truncate text-section font-extrabold tracking-tight text-ink">{lesson.title}</h1>
+        <h1 className="min-w-0 flex-1 truncate text-body font-extrabold tracking-tight text-ink">{lesson.title}</h1>
 
-        {/* O'rganish rejimidagi tugmalar: chap rail + AI-tutor chat toggle. */}
-        {!focusMode && (
-          <div className="flex shrink-0 items-center gap-1.5">
+        {/* Boshqaruv guruhi. Mobilda (390px) sarlavha bilan bir qatorga sig'maydi
+            va sarlavha nolgacha siqilardi — shuning uchun u yerda IKKINCHI
+            qatorga tushadi; sm+ da hammasi bitta qatorda qoladi. */}
+        <div className="flex w-full items-center justify-end gap-1.5 sm:w-auto">
+          {/* Bosqichlar — obzor ekranida ko'rsatilmaydi (u yerda bosqichlar
+              allaqachon katta ro'yxatda; ikki marta chizish shovqin edi). */}
+          {view !== "overview" && (
+            <StageStepper lesson={lesson} stages={stages} view={view} onSelect={onStage} onOverview={() => setView("overview")} />
+          )}
+
+          {/* AI-tutor chat toggle — faqat o'rganish rejimida. */}
+          {!focusMode && (
             <button
               onClick={toggleChat}
               title={t("chatTitle")}
               className={cls(
-                "inline-flex items-center gap-1.5 rounded-pill px-3 py-1.5 font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
+                "inline-flex shrink-0 items-center gap-1.5 rounded-pill px-2.5 py-1.5 font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
                 chatActive
                   ? "bg-brand-soft text-brand-tint ring-1 ring-brand/30"
                   : "border border-brand/30 bg-gradient-to-r from-brand/15 to-violet/15 text-brand-tint hover:from-brand/25 hover:to-violet/25"
               )}
             >
               <Icon icon={chatActive ? X : Sparkles} size={16} />
-              {/* Mobilda faqat ikonka — sarlavha qatorida joy tor. */}
-              <span className="hidden text-note sm:inline">{t("chatTitle")}</span>
+              {/* Matn faqat keng ekranda — sarlavha qatorida joy tor. */}
+              <span className="hidden text-note xl:inline">{t("chatTitle")}</span>
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
-
-      {/* Bosqichlar — obzor ekranida ko'rsatilmaydi (u yerda bosqichlar
-          allaqachon katta ro'yxatda; ikki marta chizish shovqin edi). */}
-      {view !== "overview" && (
-        <StageStepper lesson={lesson} stages={stages} view={view} onSelect={onStage} onOverview={() => setView("overview")} />
-      )}
 
       {focusMode ? (
         /* FOKUS REJIMI — test/keys/kartalar/natija/overview: yakka interfeys,
            rail ham chat ham YO'Q. */
-        <div className="flex min-h-0 flex-1 flex-col p-2">
+        <div className="flex min-h-0 flex-1 flex-col p-1.5">
           {view === "overview" ? (
             <Panel bodyClassName="lg:overflow-y-auto">
               <LessonOverview
@@ -278,7 +292,7 @@ export function LessonPage() {
            kenglikni oladi. */
         <div
           className={cls(
-            "grid gap-2.5 p-2.5 transition-[grid-template-columns] duration-200 ease-out lg:min-h-0 lg:flex-1",
+            "grid gap-2 p-1.5 transition-[grid-template-columns] duration-200 ease-out lg:min-h-0 lg:flex-1",
             chatOpen ? "lg:grid-cols-[minmax(0,1fr)_400px]" : "lg:grid-cols-[minmax(0,1fr)_0px]"
           )}
         >

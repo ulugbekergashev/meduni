@@ -291,6 +291,8 @@ export interface ImageSlot {
   prompt: string;
   url: string | null;
   status: SlotStatus;
+  /** ERROR sababi (qisqartirilgan) — o'qituvchi NEGA rasm yo'qligini ko'radi. */
+  error?: string | null;
 }
 
 export interface Slide {
@@ -392,6 +394,53 @@ export const videoScriptResponseSchema = {
   },
   required: ["segments"],
 };
+
+// ---------- Audio-podkast (~20 daqiqa, ikki ovoz) ----------
+
+/** Kim gapiryapti: `host` — boshlovchi (savol beradi, xulosa qiladi),
+ *  `expert` — mutaxassis (tushuntiradi). Har biriga ALOHIDA ovoz beriladi. */
+export const PODCAST_SPEAKERS = ["host", "expert"] as const;
+export type PodcastSpeaker = (typeof PODCAST_SPEAKERS)[number];
+
+export const podcastLineSchema = z.object({
+  speaker: z.enum(PODCAST_SPEAKERS),
+  text: z.string(),
+});
+export const podcastChapterGenSchema = z.object({ lines: z.array(podcastLineSchema) });
+export type PodcastChapterGen = z.infer<typeof podcastChapterGenSchema>;
+
+export const podcastChapterResponseSchema = {
+  type: Type.OBJECT,
+  properties: {
+    lines: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          speaker: { type: Type.STRING, enum: PODCAST_SPEAKERS as unknown as string[] },
+          text: { type: Type.STRING },
+        },
+        required: ["speaker", "text"],
+      },
+    },
+  },
+  required: ["lines"],
+};
+
+/** Bazada saqlanadigan replika (scriptJson elementi). */
+export interface PodcastSegment {
+  speaker: PodcastSpeaker;
+  text: string;
+  /** Bob (bo'lim) sarlavhasi — FAQAT bob boshlanadigan replikada. Talaba
+   *  pleyerida shu ro'yxat "boblar" bo'lib ko'rinadi va bosilsa o'sha joyga o'tadi. */
+  chapterTitle?: string | null;
+  /** Konspekt bo'limi ID'si (Faza 0 xaritasi) — bob ↔ bo'lim bog'lanishi. */
+  sectionId?: string | null;
+  durationSec: number;
+  /** Keshlangan ovoz (hash mos kelsa qayta ovozlanmaydi). */
+  audioUrl?: string | null;
+  audioHash?: string | null;
+}
 
 export const slidesResponseSchema = {
   type: Type.OBJECT,

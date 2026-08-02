@@ -11,7 +11,7 @@ import { ApiError } from "../../lib/errors";
 import { generateCase, generateQuiz } from "./service";
 import { generatePresentation } from "./presentation";
 import { generateVideo } from "./video";
-import { generateDigestAudio } from "../topics/service";
+import { generatePodcast } from "./podcast";
 
 export type BatchKind = "quiz" | "case" | "presentation" | "video" | "audio";
 export type BatchState = "queued" | "running" | "done" | "error";
@@ -83,8 +83,12 @@ async function runBatch(
       } else if (step.kind === "presentation") {
         await generatePresentation(topicId, teacherId, { language: opts.language });
       } else if (step.kind === "audio") {
-        // Audio-podkast — konspekt matnidan bitta TTS chaqiruvi.
-        await generateDigestAudio(topicId, teacherId);
+        // ⚠️ 2026-08-02: ilgari bu qisqa "audio-konspekt" edi (bitta TTS
+        // chaqiruvi, matn 4500 belgida KESILARDI ~4 daqiqa). Endi — to'liq
+        // audio-podkast (~20 daq): u ham fon-navbatiga tushadi, shuning uchun
+        // bu yerda faqat BOSHLANADI (montaj kabi).
+        await generatePodcast(topicId, teacherId, { language: opts.language });
+        step.background = true;
       } else {
         // Video — o'zi fon-navbatiga tushadi (montaj uzoq); bu yerda faqat BOSHLANADI.
         // Shuning uchun UI uni "tayyor" emas, "montaj boshlandi" deb ko'rsatadi.

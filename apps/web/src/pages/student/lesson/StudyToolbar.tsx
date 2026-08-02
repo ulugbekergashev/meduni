@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { BookText, Check, FolderOpen, Layers, List, Lock, Network, Sparkles, Video, X } from "lucide-react";
+import { BookText, Check, FolderOpen, Headphones, Layers, List, Lock, Network, Sparkles, Video, X } from "lucide-react";
 import { Icon, cls } from "@meduni/ui";
 import { useFlashcards, type Lesson } from "../api";
 import type { ContentView } from "./stages";
@@ -17,6 +17,7 @@ const FOCUS = "focus-visible:outline-none focus-visible:ring-2 focus-visible:rin
 
 const BLOCK_ICON: Record<ContentView, typeof BookText> = {
   konspekt: BookText,
+  podcast: Headphones,
   slides: Layers,
   video: Video,
   flashcards: Sparkles,
