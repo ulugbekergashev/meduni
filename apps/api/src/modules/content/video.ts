@@ -226,12 +226,19 @@ export async function renderVisualPng(visual: VideoVisual, imageBuf: Buffer | nu
     const startY = 470 - (lines.length - 1) * 45;
     lines.forEach((ln, i) => parts.push(txt(W / 2, startY + i * 90, 68, 700, "#FFFFFF", ln, "middle")));
 
-    // EKG motivi — mavzuning tibbiy konteksti (dekorativ, matnni to'smaydi)
+    // ⚠️ Bezak MAVZUGA BOG'LIQ BO'LMASIN (buyurtmachi: "bu yurak haqida
+    // bo'lmasachi?"). Ilgari bu yerda EKG chizig'i turardi — u faqat kardiologiya
+    // mavzusiga mos edi, botulizm yoki nefrologiyada esa bema'ni ko'rinardi.
+    // Endi neytral ajratgich: ingichka chiziq + markazda nuqta.
     const baseY = startY + lines.length * 90 + 40;
+    const half = 250;
     parts.push(
-      `<path d="M 460 ${baseY} H 780 l 30 -46 l 34 118 l 40 -160 l 36 132 l 26 -44 H ${W - 460}" ` +
-        `fill="none" stroke="#FFFFFF" stroke-opacity="0.75" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>`
+      `<line x1="${W / 2 - half}" y1="${baseY}" x2="${W / 2 - 30}" y2="${baseY}" stroke="#FFFFFF" stroke-opacity="0.45" stroke-width="4" stroke-linecap="round"/>`
     );
+    parts.push(
+      `<line x1="${W / 2 + 30}" y1="${baseY}" x2="${W / 2 + half}" y2="${baseY}" stroke="#FFFFFF" stroke-opacity="0.45" stroke-width="4" stroke-linecap="round"/>`
+    );
+    parts.push(`<circle cx="${W / 2}" cy="${baseY}" r="9" fill="#FFFFFF" opacity="0.8"/>`);
 
     // Tezislar — pastda ixcham chiplar (xulosa kadrida ayni muddao)
     const chips = (visual.points ?? []).map((p) => p.trim()).filter(Boolean).slice(0, 3);
