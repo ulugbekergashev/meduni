@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { CheckCircle2, Info, TriangleAlert } from "lucide-react";
 import { Icon, cls } from "@meduni/ui";
-import type { DigestBlock, Term } from "../api";
+import type { DigestBlock, Term } from "./digestTypes";
 import { TermText } from "./TermTooltip";
 
 /** Konspekt blokining renderi — 1a (ro'yxat) va 1b (kartochka) ikkalasida bir xil.

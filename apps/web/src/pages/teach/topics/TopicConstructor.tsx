@@ -18,6 +18,8 @@ import { GenerateSection } from "./GenerateSection";
 import { PublishSection } from "./PublishSection";
 import { TopicUnlockRule } from "./TopicUnlockRule";
 import { useTopicDetail, type TopicDetail } from "./api";
+import { useTeachCourses } from "../api";
+import { Disclosure } from "../../../components/Disclosure";
 
 type StepKey = "material" | "digest" | "generate" | "publish";
 type StepState = "done" | "current" | "locked";
@@ -74,9 +76,12 @@ export function TopicConstructor() {
   const [params, setParams] = useSearchParams();
 
   const detail = useTopicDetail(topicId);
+  // Breadcrumb uchun kurs nomi — ro'yxat allaqachon keshda (dashboard/kurslar).
+  const courses = useTeachCourses();
 
   // Derived step state (safe defaults while loading so hooks run unconditionally).
   const topic = detail.data;
+  const courseName = courses.data?.find((x) => x.id === topic?.courseId)?.subjectName;
   const { available, done } = topic
     ? computeSteps(topic)
     : { available: {} as Record<StepKey, boolean>, done: {} as Record<StepKey, boolean> };
@@ -135,12 +140,19 @@ export function TopicConstructor() {
 
   return (
     <div>
-      <button
-        onClick={() => navigate(topic.courseId ? `/teach/courses/${topic.courseId}/topics` : "/teach")}
-        className="text-body font-medium text-brand-deep hover:underline"
-      >
-        {t("back")}
-      </button>
+      {/* Breadcrumb — konstruktor kurs qobig'idan TASHQARIDA turadi (App.tsx),
+          ya'ni kurs SubNav paneli yo'qoladi. Quruq "← Orqaga" o'rniga kontekst:
+          o'qituvchi qaysi kursning qaysi mavzusida turganini ko'radi. */}
+      <nav className="flex flex-wrap items-center gap-1.5 text-note text-ink-faint">
+        <button
+          onClick={() => navigate(topic.courseId ? `/teach/courses/${topic.courseId}/topics` : "/teach")}
+          className="font-semibold text-brand-deep hover:underline"
+        >
+          {courseName ?? t("back")}
+        </button>
+        <span>/</span>
+        <span className="min-w-0 truncate font-medium text-ink-soft">{topic.title}</span>
+      </nav>
 
       <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
         <div>
@@ -215,9 +227,13 @@ export function TopicConstructor() {
         {active === "digest" && <DigestSection topic={topic} />}
         {active === "generate" && <GenerateSection topic={topic} />}
         {active === "publish" && (
-          <div className="space-y-4">
+          <div className="space-y-3">
             <PublishSection topic={topic} />
-            <TopicUnlockRule topic={topic} />
+            {/* Ochilish qoidasi — kamdan-kam kerak bo'ladi (kurs sozlamasi
+                sukut bo'yicha yetarli). Chop etish tugmalari yolg'iz qolsin. */}
+            <Disclosure label={t("unlockRuleTitle")} storageKey="meduni.teach.topicUnlockRule">
+              <TopicUnlockRule topic={topic} />
+            </Disclosure>
           </div>
         )}
       </section>

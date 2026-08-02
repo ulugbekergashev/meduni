@@ -834,7 +834,8 @@
     "nav": {
       "prev": "Oldingi",
       "next": "Keyingi"
-    }
+    },
+    "unlockRuleTitle": "Mavzu ochilish qoidasi"
   },
   "digest": {
     "generate": "Konspekt tuzish",
@@ -872,7 +873,16 @@
     "approve": "Konspektni tasdiqlash",
     "approved": "Konspekt tasdiqlangan",
     "approvedToast": "Konspekt tasdiqlandi",
-    "saveBeforeApprove": "Tasdiqlashdan oldin oʻzgarishlarni saqlang."
+    "saveBeforeApprove": "Tasdiqlashdan oldin oʻzgarishlarni saqlang.",
+    "approveAndNext": "Tasdiqlash va davom etish",
+    "modeRead": "Koʻrish",
+    "modeEdit": "Tahrirlash",
+    "unsaved": "Saqlanmagan oʻzgarishlar bor",
+    "sectionsTitle": "Konspekt boʻlimlari",
+    "sectionsHint": "Talaba aynan shu matnni oʻqiydi. Boʻlimni ochib tekshiring.",
+    "sectionMinutes": "{{n}} daq",
+    "sectionBlocks": "{{n}} blok",
+    "sectionHasCheckpoint": "Savol bor"
   },
   "generate": {
     "quizTitle": "Test",
@@ -933,7 +943,8 @@
       "case": "Klinik keys",
       "presentation": "Prezentatsiya",
       "video": "Video"
-    }
+    },
+    "perKindTitle": "Alohida turlar boʻyicha"
   },
   "videoEditor": {
     "back": "← Konstruktor",

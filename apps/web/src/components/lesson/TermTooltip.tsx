@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Languages } from "lucide-react";
 import { Icon } from "@meduni/ui";
-import type { Term } from "../api";
+import type { Term } from "./digestTypes";
 
 function escapeRe(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");

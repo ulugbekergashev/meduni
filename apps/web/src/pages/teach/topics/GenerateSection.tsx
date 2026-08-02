@@ -17,6 +17,7 @@ import {
   Wand2,
 } from "lucide-react";
 import { Badge, Button, Card, Icon, Select, Spinner, cls, useToast } from "@meduni/ui";
+import { Disclosure } from "../../../components/Disclosure";
 import { Field } from "../../../components/Field";
 import { apiErrorMessage } from "../../../lib/api";
 import { useLocale } from "../../../lib/useLocale";
@@ -76,7 +77,7 @@ function BatchCard({ topic }: { topic: TopicDetail }) {
   const STATE_TONE = { queued: "text-ink-faint", running: "text-brand", done: "text-emerald", error: "text-rose" } as const;
 
   return (
-    <Card className="flex flex-col gap-3 sm:col-span-2">
+    <Card className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-3">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand-deep">
           <Icon icon={Wand2} size={20} />
@@ -479,13 +480,20 @@ function VideoCard({ topic }: { topic: TopicDetail }) {
 }
 
 export function GenerateSection({ topic }: { topic: TopicDetail }) {
+  const { t } = useTranslation(undefined, { keyPrefix: "generate" });
   return (
-    <div className="grid gap-4 sm:grid-cols-2">
+    <div className="space-y-3">
+      {/* Asosiy yo'l — bitta bosish. Tur-bo'yicha kartalar (qayta yaratish,
+          alohida sozlash, tahrirlash) faqat kerak bo'lganda ochiladi. */}
       <BatchCard topic={topic} />
-      <QuizCard topic={topic} />
-      <CaseCard topic={topic} />
-      <PresentationCard topic={topic} />
-      <VideoCard topic={topic} />
+      <Disclosure label={t("perKindTitle")} storageKey="meduni.teach.generatePerKind">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <QuizCard topic={topic} />
+          <CaseCard topic={topic} />
+          <PresentationCard topic={topic} />
+          <VideoCard topic={topic} />
+        </div>
+      </Disclosure>
     </div>
   );
 }

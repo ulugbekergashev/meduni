@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { CheckCircle2, Lightbulb, ListChecks, Pill, TriangleAlert } from "lucide-react";
 import { Icon } from "@meduni/ui";
-import type { DigestJson } from "../api";
+import type { DigestLike } from "./digestTypes";
 
 function Section({
   icon,
@@ -28,7 +28,7 @@ function Section({
 }
 
 /** AI konspekt — o'qish uchun (tahrirsiz). Teacher DigestSection semantikasi. */
-export function DigestView({ digest }: { digest: DigestJson }) {
+export function DigestView({ digest }: { digest: DigestLike }) {
   const { t } = useTranslation(undefined, { keyPrefix: "lesson" });
 
   return (
