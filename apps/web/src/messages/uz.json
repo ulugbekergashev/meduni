@@ -835,7 +835,7 @@
     "sectionLocked": {
       "digest": "Kamida bitta material tayyor boʻlgach ochiladi.",
       "generate": "Konspekt tasdiqlangach ochiladi (qulf 1).",
-      "publish": "Faktcheck tugagach ochiladi (Modul 10)."
+      "publish": "Kontent yaratilgach ochiladi."
     },
     "generateSoon": "Konspekt tasdiqlangan. Generatsiya moduli (Modul 7) da qoʻshiladi.",
     "nav": {
@@ -938,20 +938,34 @@
     "vResumed": "Montaj davom etmoqda",
     "advanced": "Sozlamalar",
     "batchTitle": "Hammasini yaratish",
-    "batchHint": "Test, klinik keys va prezentatsiya — bitta bosishda, ketma-ket",
+    "batchHint": "Belgilangan barcha tarkib ketma-ket yaratiladi",
     "batchRun": "Yaratish ({{n}} ta)",
     "batchRegenerate": "Hammasini qayta yaratish",
     "batchStarted": "Generatsiya boshlandi",
     "batchBackground": "Server yaratmoqda — sahifani yopsangiz ham davom etadi.",
     "batchStepError": "yaratilmadi",
-    "batchWithVideo": "Video ham yaratilsin (uzoq davom etadi)",
+    "batchWithVideo": "Video-maruza ham yaratilsin",
     "kind": {
       "quiz": "Test",
       "case": "Klinik keys",
       "presentation": "Prezentatsiya",
-      "video": "Video"
+      "video": "Video-maruza",
+      "audio": "Audio-podkast",
+      "mindmap": "Fikr xaritasi",
+      "flashcards": "Fleshkartalar",
+      "patient": "Virtual bemor"
     },
-    "perKindTitle": "Alohida turlar boʻyicha"
+    "perKindTitle": "Alohida turlar boʻyicha",
+    "batchVideoNote": "Ovoz + montaj: 10-20 daqiqa. Sahifani yopsangiz ham davom etadi.",
+    "batchVideoStarted": "montaj boshlandi",
+    "kindNote": {
+      "quiz": "20 savol, izohlar bilan",
+      "case": "Bemor kartasi va qadamli qarorlar",
+      "presentation": "8-10 slayd, har biri rasmli",
+      "audio": "Konspekt ovozi — 2-4 daqiqa",
+      "video": "2-3 daqiqa, rasmli kadrlar — 10-20 daqiqa montaj"
+    },
+    "kindAuto": "Konspektdan avtomatik — yaratish shart emas"
   },
   "videoEditor": {
     "back": "← Konstruktor",

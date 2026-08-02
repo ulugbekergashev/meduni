@@ -174,6 +174,9 @@ export async function getTopicDetail(id: number, teacherId: number) {
           digestJson: digest.digestJson as unknown as DigestJson,
           version: digest.version,
           approvedByTeacher: digest.approvedByTeacher,
+          // Audio-podkast joriy versiyaga yaratilganmi (generatsiya ro'yxatida
+          // "tayyor" belgisi uchun).
+          hasAudio: await hasDigestAudio(id, digest.version),
         }
       : null,
     generateUnlocked: digest?.approvedByTeacher === true,

@@ -11,14 +11,16 @@ import { ApiError } from "../../lib/errors";
 import { generateCase, generateQuiz } from "./service";
 import { generatePresentation } from "./presentation";
 import { generateVideo } from "./video";
+import { generateDigestAudio } from "../topics/service";
 
-export type BatchKind = "quiz" | "case" | "presentation" | "video";
+export type BatchKind = "quiz" | "case" | "presentation" | "video" | "audio";
 export type BatchState = "queued" | "running" | "done" | "error";
 
 export interface BatchStatus {
   running: boolean;
   startedAt: string;
-  steps: { kind: BatchKind; state: BatchState; error?: string }[];
+  /** `background` — qadam faqat BOSHLANDI (video montaji fonda davom etadi). */
+  steps: { kind: BatchKind; state: BatchState; error?: string; background?: boolean }[];
 }
 
 /** Jonli progress — xotirada (jarayon o'lsa yo'qoladi, lekin YARATILGAN kontent
@@ -29,7 +31,10 @@ export function getBatchStatus(topicId: number): BatchStatus | null {
   return runs.get(topicId) ?? null;
 }
 
-const DEFAULT_KINDS: BatchKind[] = ["quiz", "case", "presentation"];
+/** Sukut bo'yicha HAMMASI (buyurtmachi, 2026-08-02). Fleshkarta, fikr xaritasi
+ *  va virtual bemor bu ro'yxatda YO'Q — ular konspektdan avtomatik hosil bo'ladi
+ *  (AI chaqiruvi ham, generatsiya qadami ham kerak emas). */
+const DEFAULT_KINDS: BatchKind[] = ["quiz", "case", "presentation", "audio", "video"];
 
 export async function startBatch(
   topicId: number,
@@ -48,7 +53,7 @@ export async function startBatch(
 
   const kinds = (opts.kinds?.length ? opts.kinds : DEFAULT_KINDS).filter((k, i, a) => a.indexOf(k) === i);
   // Video prezentatsiyadan keyin turishi SHART (u slaydlardan qurilaydi).
-  const order: BatchKind[] = ["quiz", "case", "presentation", "video"];
+  const order: BatchKind[] = ["quiz", "case", "presentation", "audio", "video"];
   const steps = order.filter((k) => kinds.includes(k)).map((kind) => ({ kind, state: "queued" as BatchState }));
 
   const status: BatchStatus = { running: true, startedAt: new Date().toISOString(), steps };
@@ -77,9 +82,14 @@ async function runBatch(
         await generateCase(topicId, teacherId, { language: opts.language, format: "SHORT" });
       } else if (step.kind === "presentation") {
         await generatePresentation(topicId, teacherId, { language: opts.language });
+      } else if (step.kind === "audio") {
+        // Audio-podkast — konspekt matnidan bitta TTS chaqiruvi.
+        await generateDigestAudio(topicId, teacherId);
       } else {
-        // Video — o'zi fon-navbatiga tushadi (montaj uzoq); bu yerda faqat boshlanadi.
+        // Video — o'zi fon-navbatiga tushadi (montaj uzoq); bu yerda faqat BOSHLANADI.
+        // Shuning uchun UI uni "tayyor" emas, "montaj boshlandi" deb ko'rsatadi.
         await generateVideo(topicId, teacherId, { language: opts.language, voice: opts.voice ?? "female" });
+        step.background = true;
       }
       step.state = "done";
     } catch (e) {

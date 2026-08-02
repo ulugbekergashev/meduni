@@ -62,16 +62,32 @@ function BatchCard({ topic }: { topic: TopicDetail }) {
   const { show } = useToast();
   const run = useGenerateAll(topic.id);
   const [language, setLanguage] = useState<"uz" | "ru">(locale);
-  const [withVideo, setWithVideo] = useState(false);
+
+  // ⚠️ 2026-08-02 (buyurtmachi): kontent yaratish — CHECKBOX ro'yxati va
+  // HAMMASI sukut bo'yicha yoqiq. Ro'yxat ikki xil: generatsiya talab
+  // qiladiganlar (AI chaqiruvi) va konspektdan AVTOMATIK hosil bo'ladiganlar.
+  const [picked, setPicked] = useState<Record<BatchKind, boolean>>({
+    quiz: true,
+    case: true,
+    presentation: true,
+    audio: true,
+    video: true,
+  });
+  const toggle = (k: BatchKind) => setPicked((p) => ({ ...p, [k]: !p[k] }));
 
   // Progress faqat generatsiya boshlangandan keyin so'raladi (bekorga emas).
   const status = useBatchStatus(topic.id, run.isSuccess || run.isPending);
   const steps = status.data?.steps ?? [];
   const busy = run.isPending || !!status.data?.running;
 
-  const KINDS: BatchKind[] = withVideo ? ["quiz", "case", "presentation", "video"] : ["quiz", "case", "presentation"];
-  const has = (k: BatchKind) => topic.content.some((c) => c.kind === k);
-  const missing = KINDS.filter((k) => !has(k));
+  const ORDER: BatchKind[] = ["quiz", "case", "presentation", "audio", "video"];
+  /** Konspektdan avtomatik hosil bo'ladi — generatsiya qadami YO'Q (AI'siz, bepul). */
+  const AUTO = ["mindmap", "flashcards", "patient"] as const;
+
+  const KINDS = ORDER.filter((k) => picked[k]);
+  const hasKind = (k: BatchKind) =>
+    k === "audio" ? !!topic.digest?.hasAudio : topic.content.some((c) => c.kind === k);
+  const missing = KINDS.filter((k) => !hasKind(k));
 
   const STATE_ICON = { queued: Clock, running: Loader2, done: Check, error: TriangleAlert } as const;
   const STATE_TONE = { queued: "text-ink-faint", running: "text-brand", done: "text-emerald", error: "text-rose" } as const;
@@ -111,9 +127,13 @@ function BatchCard({ topic }: { topic: TopicDetail }) {
                 size={15}
                 className={cls("shrink-0", STATE_TONE[s.state], s.state === "running" && "animate-spin")}
               />
-              <span className={cls("text-body font-semibold", s.state === "done" ? "text-emerald" : "text-ink")}>
+              <span className={cls("text-body font-semibold", s.state === "done" && !s.background ? "text-emerald" : "text-ink")}>
                 {t(`kind.${s.kind}`)}
               </span>
+              {/* Video faqat BOSHLANADI — montaj fonda davom etadi, "tayyor" demaymiz. */}
+              {s.state === "done" && s.background && (
+                <span className="ml-auto text-note text-ink-faint">{t("batchVideoStarted")}</span>
+              )}
               {s.state === "error" && <span className="ml-auto text-note text-rose">{t("batchStepError")}</span>}
             </div>
           ))}
@@ -123,21 +143,49 @@ function BatchCard({ topic }: { topic: TopicDetail }) {
       {run.isError && <p className="text-body text-rose">{apiErrorMessage(run.error, locale) ?? t("error")}</p>}
       {busy && <p className="text-note text-ink-faint">{t("batchBackground")}</p>}
 
+      {/* Nima yaratiladi — hammasi yoqiq, kerak bo'lmaganini o'chirish mumkin */}
+      <div className="grid gap-1.5 sm:grid-cols-2">
+        {ORDER.map((k) => {
+          const ready = hasKind(k);
+          return (
+            <label
+              key={k}
+              className="flex cursor-pointer items-start gap-2.5 rounded-control border border-line px-3 py-2 transition-colors hover:bg-bg"
+            >
+              <input
+                type="checkbox"
+                checked={picked[k]}
+                onChange={() => toggle(k)}
+                disabled={busy}
+                className="mt-0.5 h-4 w-4 shrink-0 accent-[color:var(--brand)]"
+              />
+              <span className="min-w-0 flex-1">
+                <span className="flex items-center gap-1.5 text-body font-semibold text-ink">
+                  {t(`kind.${k}`)}
+                  {ready && <Icon icon={Check} size={13} className="text-emerald" />}
+                </span>
+                <span className="block text-note text-ink-faint">{t(`kindNote.${k}`)}</span>
+              </span>
+            </label>
+          );
+        })}
+
+        {/* Avtomatik hosila — tanlov emas, lekin o'qituvchi ular BORLIGINI bilsin */}
+        {AUTO.map((k) => (
+          <div key={k} className="flex items-start gap-2.5 rounded-control border border-line bg-bg px-3 py-2 opacity-80">
+            <Icon icon={Check} size={15} className="mt-0.5 shrink-0 text-emerald" />
+            <span className="min-w-0 flex-1">
+              <span className="block text-body font-semibold text-ink">{t(`kind.${k}`)}</span>
+              <span className="block text-note text-ink-faint">{t("kindAuto")}</span>
+            </span>
+          </div>
+        ))}
+      </div>
+
       <Advanced>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <Field label={t("language")}>
-            <LangSelect value={language} onChange={setLanguage} />
-          </Field>
-          <label className="flex cursor-pointer items-center gap-2 self-end pb-2 text-body text-ink">
-            <input
-              type="checkbox"
-              checked={withVideo}
-              onChange={(e) => setWithVideo(e.target.checked)}
-              className="h-4 w-4 accent-[color:var(--brand)]"
-            />
-            {t("batchWithVideo")}
-          </label>
-        </div>
+        <Field label={t("language")}>
+          <LangSelect value={language} onChange={setLanguage} />
+        </Field>
       </Advanced>
     </Card>
   );
