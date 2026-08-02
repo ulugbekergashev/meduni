@@ -18,10 +18,7 @@ import { AuditPage } from "./pages/admin/audit/AuditPage";
 import { AdminTasksPage } from "./pages/admin/tasks/AdminTasksPage";
 import { TeachShell } from "./pages/teach/TeachShell";
 import { TeachDashboard } from "./pages/teach/TeachDashboard";
-import { TeachHomeShell } from "./pages/teach/home/TeachHomeShell";
-import { TeachTasksPage } from "./pages/teach/TeachTasksPage";
 import { TeachCoursesPage } from "./pages/teach/TeachCoursesPage";
-import { TeachSchedulePage } from "./pages/teach/TeachSchedulePage";
 import { TeachGroupsPage } from "./pages/teach/TeachGroupsPage";
 import { StudentDetailPage } from "./pages/teach/StudentDetailPage";
 import { TeacherCourseShell } from "./pages/teach/course/TeacherCourseShell";
@@ -87,14 +84,15 @@ export function App() {
           </RequireRole>
         }
       >
-        {/* Bosh sahifa BO'LIMI — Bugun | Vazifalar | Darslarim (SubNav bilan).
-            Yo'lsiz (pathless) route: URL'lar o'zgarmaydi, faqat uchalasi
-            bitta qobiq ichida turadi va panel qayta mount bo'lmaydi. */}
-        <Route element={<TeachHomeShell />}>
-          <Route index element={<TeachDashboard />} />
-          <Route path="tasks" element={<TeachTasksPage />} />
-          <Route path="schedule" element={<TeachSchedulePage />} />
-        </Route>
+        {/* Bosh sahifa — BITTA sahifa (2026-08-03, buyurtmachi: "vazifalar va
+            darslarimni ham bugun ichida bo'lsin va bu tablarni yo'qot").
+            Darslar va vazifalar endi shu sahifaning bloklari.
+            ⚠️ Eski manzillar SAQLANADI: backend vazifalari (tasks/service.ts)
+            aynan `/teach/tasks` va `/teach/schedule` deep-linklarini beradi —
+            ular kerakli blokni ochib beradi. */}
+        <Route index element={<TeachDashboard />} />
+        <Route path="tasks" element={<Navigate to="/teach?focus=tasks" replace />} />
+        <Route path="schedule" element={<Navigate to="/teach?focus=lessons" replace />} />
 
         <Route path="courses" element={<TeachCoursesPage />} />
         <Route path="groups" element={<TeachGroupsPage />} />

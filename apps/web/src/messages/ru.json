@@ -183,7 +183,8 @@
     "statusDone": "Выполнено",
     "statusOverdue": "Просрочено",
     "studentsAssignmentKind": "Задание студентам",
-    "sourceLabel": "Источник"
+    "sourceLabel": "Источник",
+    "showAll": "Все"
   },
   "teachAssign": {
     "newBtn": "Новая задача",
@@ -787,7 +788,11 @@
     "startStep3Hint": "Проверяете и утверждаете — только после этого видит студент.",
     "startGo": "Начать",
     "startDismiss": "Закрыть",
-    "startGuide": "Руководство по началу"
+    "startGuide": "Руководство по началу",
+    "heroLessons": "занятий сегодня",
+    "heroTasks": "задач",
+    "heroOverdue": "просрочено",
+    "heroPending": "ждут отметки"
   },
   "topics": {
     "subjectShared": "Темы принадлежат предмету — все курсы (группы) по этому предмету видят одни и те же темы.",
@@ -1164,7 +1169,8 @@
     "name": "Название",
     "genericError": "Произошла ошибка",
     "nameRequired": "Введите название",
-    "continue": "Продолжить"
+    "continue": "Продолжить",
+    "collapse": "Свернуть"
   },
   "structure": {
     "title": "Сотрудники и структура",

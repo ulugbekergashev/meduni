@@ -1,28 +1,21 @@
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { useMemo, useState } from "react";
 import {
-  BookOpen, CalendarDays, CheckCircle2, ChevronRight, ClipboardCheck,
+  BookOpen, CalendarDays, ChevronRight, ClipboardCheck, Clock,
   Trophy, Users2, UserX, type LucideIcon,
 } from "lucide-react";
-import { BarRow, Button, Card, Icon, ProgressBar, ProgressRing, cls } from "@meduni/ui";
+import { BarRow, Card, Icon, ProgressBar, ProgressRing, cls } from "@meduni/ui";
 import { AsyncSection } from "../../components/AsyncSection";
 import { Disclosure } from "../../components/Disclosure";
 import { useLocale } from "../../lib/useLocale";
 import { formatDate } from "../../lib/date";
 import { useMe } from "../../lib/auth";
-import { useTaskBoard, useTeacherLessons, useTeachCourses, useTeachDashboard, type DerivedLesson, type RankedStudent } from "./api";
-import { RollCallModal } from "./course/attendance/RollCallModal";
-import { TaskItemRow, type RollCallTarget } from "./tasks/TaskItemRow";
+import { useTaskBoard, useTeacherLessons, useTeachCourses, useTeachDashboard, type RankedStudent } from "./api";
+import { LessonsBlock, dayKey, type LessonMode } from "./home/LessonsBlock";
+import { TasksBlock } from "./home/TasksBlock";
 import { StarterCard } from "./home/StarterCard";
 import { CourseCard } from "./CourseCard";
-
-/** Bosh sahifada ko'rsatiladigan eng ko'p harakat qatori — qolgani "Vazifalar"da. */
-const MAX_TODO_ROWS = 5;
-
-function dayKeyLocal(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-}
 
 /** Reyting kartasi — eng yuqori yoki orqada qolgan talabalar. */
 function RankingCard({ title, icon, tone, rows, emptyText, onPick }: {
@@ -51,57 +44,113 @@ function RankingCard({ title, icon, tone, rows, emptyText, onPick }: {
   );
 }
 
+/** Salom bloki ichidagi jonli ko'rsatkich — bosilsa tegishli blokni ochadi. */
+function HeroChip({ icon, value, label, tone, onClick }: {
+  /** `null` — hali yuklanmoqda. ⚠️ Yuklanayotganda 0 chizish YOLG'ON signal
+   *  bo'lardi ("vazifa yo'q" deb tushuniladi) — shuning uchun "—". */
+  icon: LucideIcon; value: number | null; label: string; tone?: "warn"; onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={cls(
+        "flex items-center gap-2 rounded-control px-3 py-2 text-left backdrop-blur transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60",
+        tone === "warn" ? "bg-white/25 hover:bg-white/35" : "bg-white/15 hover:bg-white/25"
+      )}
+    >
+      <Icon icon={icon} size={17} className="shrink-0 text-white/90" />
+      <span className="text-h1 font-extrabold leading-none tabular-nums text-white">{value === null ? "—" : value}</span>
+      <span className="text-micro font-semibold leading-tight text-white/85">{label}</span>
+    </button>
+  );
+}
+
 /**
- * Bosh sahifa = "BUGUN NIMA QILAMAN" (2026-08-02 qayta qurish).
+ * O'QITUVCHI BOSH SAHIFASI — BITTA sahifa, tablarsiz (2026-08-03, buyurtmachi:
+ * "vazifalar va darslarimni ham bugun ichida bo'lsin va bu tablarni yo'qot,
+ * faqat aqlli qilgin, prosta qoyib qoymasdan").
  *
- * Ilgari bu yerda bitta skrollda 8 bo'lim bor edi (hero + 3 mini-stat, 4 tez
- * o'tish kartasi, bugungi darslar, 3 stat karta, analitika, kurslar) — ya'ni
- * hisobot, ish ro'yxati emas. Buyurtmachi: o'qituvchi "испугается".
+ * Ilgari uchta alohida sahifa bor edi (Bugun / Mening vazifalarim / Darslarim)
+ * va ular ikkinchi darajali tab-tasmada turardi. Endi hammasi shu yerda, lekin
+ * TO'KIB TASHLANMAGAN — har blok o'z ichida kengayadi:
+ *   Darslar  — Bugun ⇄ Hafta ⇄ Oy (sahifa almashmaydi)
+ *   Vazifalar — 5 ta shoshilinch ⇄ to'liq bort (ro'yxat ALMASHADI, qo'shilmaydi)
+ *   Analitika — yig'ilgan (o'zgarmadi)
  *
- * Endi ekranda: salom → bugungi darslar → BUGUN BAJARISH KERAK (aniq nomli
- * qatorlar, mavhum son emas) → qolgan hamma narsa "Analitika" ostida.
- * Hech narsa o'chirilmadi — faqat bir bosish narida (§ progressiv ochilish).
+ * Eski manzillar (`/teach/tasks`, `/teach/schedule`) ishlayveradi: ular
+ * `?focus=` bilan shu sahifaga yo'naltiriladi va kerakli blok ochilib,
+ * o'ziga skroll qiladi. ⚠️ Backend vazifalari aynan shu deep-linklarni beradi
+ * (tasks/service.ts) — ularni buzib bo'lmaydi.
  */
 export function TeachDashboard() {
   const { t } = useTranslation(undefined, { keyPrefix: "teach" });
   const { t: ttasks } = useTranslation(undefined, { keyPrefix: "tasks" });
   const locale = useLocale();
   const navigate = useNavigate();
+  const [params, setParams] = useSearchParams();
   const { data: me } = useMe();
   const dash = useTeachDashboard();
   const list = useTeachCourses();
   const board = useTaskBoard();
   const courses = list.data ?? [];
-  const todayKey = dayKeyLocal(new Date());
-  const todaySessions = useTeacherLessons({ from: todayKey, to: todayKey });
-  const [mark, setMark] = useState<DerivedLesson | null>(null);
-  const [rollCall, setRollCall] = useState<RollCallTarget | null>(null);
+  const todayKey = dayKey(new Date());
+  const todayLessons = useTeacherLessons({ from: todayKey, to: todayKey });
+
+  const focus = params.get("focus");
+  const [lessonMode, setLessonMode] = useState<LessonMode>(focus === "lessons" ? "week" : "today");
+  const [tasksOpen, setTasksOpen] = useState(focus === "tasks");
+
+  // Deep-linkdan kelinganda kerakli blokka skroll (aks holda foydalanuvchi
+  // sahifa tepasida qolib, nima o'zgarganini tushunmaydi).
+  useEffect(() => {
+    if (!focus) return;
+    const el = document.getElementById(focus === "tasks" ? "block-tasks" : "block-lessons");
+    el?.scrollIntoView({ behavior: "smooth", block: "start" });
+    const p = new URLSearchParams(params);
+    p.delete("focus");
+    setParams(p, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focus]);
+
   const stats = dash.data?.stats;
   const today = formatDate(locale === "ru" ? "ru" : "uz", new Date(), "long");
   const firstCourseId = courses[0]?.id;
   const publishedPct = stats && stats.totalTopics > 0 ? Math.round((stats.publishedTopics / stats.totalTopics) * 100) : 0;
 
-  // Bugungi ish: muddati o'tganlar birinchi, keyin eng eskisi.
-  const todo = useMemo(() => {
-    const open = (board.data?.items ?? []).filter((i) => i.status !== "done");
-    return [...open]
-      .sort((a, b) => {
-        if ((a.status === "overdue") !== (b.status === "overdue")) return a.status === "overdue" ? -1 : 1;
-        return (a.sinceIso ?? "").localeCompare(b.sinceIso ?? "");
-      })
-      .slice(0, MAX_TODO_ROWS);
-  }, [board.data]);
+  const lessonsToday = todayLessons.data ? todayLessons.data.length : null;
+  const pendingToday = (todayLessons.data ?? []).filter((l) => l.status !== "FULL").length;
+  const openTasks = board.data ? board.data.stats.toDo : null;
+  const overdue = board.data?.stats.overdue ?? 0;
 
-  const openCount = board.data?.stats.toDo ?? 0;
+  const goLessons = () => {
+    setLessonMode("today");
+    document.getElementById("block-lessons")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+  const goTasks = (open: boolean) => {
+    setTasksOpen(open);
+    document.getElementById("block-tasks")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
   return (
     <div className="space-y-3 pb-8">
-      {/* Salom — gradient urg'u band. Mini-statistika OLIB TASHLANDI:
-          talaba/kurs/guruh sonlari Guruhlar va Kurslar sahifalarida bor
-          (CLAUDE.md §4 "bitta fakt — bitta joy"). */}
-      <div className="relative overflow-hidden rounded-card bg-gradient-to-br from-brand-deep via-brand to-violet px-6 py-4 text-white shadow-card sm:px-8">
-        <h1 className="text-h1 font-extrabold leading-tight">{t("hello")}, {me?.full_name?.split(" ")[0]}</h1>
-        <p className="mt-1 text-note text-white/85">{today}</p>
+      {/* Salom — endi BEZAK emas: o'ng tomonda bugungi ish hajmi turadi va har
+          raqam bosiladi (§4 "har element o'z ma'nosiga ega"). Ilgari bu blok
+          faqat ism va sanani ko'rsatib, ekranning katta qismini yeb turardi. */}
+      <div className="relative overflow-hidden rounded-card bg-gradient-to-br from-brand-deep via-brand to-violet px-5 py-4 text-white shadow-card sm:px-6">
+        <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
+          <div className="min-w-0">
+            <h1 className="truncate text-h1 font-extrabold leading-tight">{t("hello")}, {me?.full_name?.split(" ")[0]}</h1>
+            <p className="mt-0.5 text-note text-white/85">{today}</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <HeroChip icon={CalendarDays} value={lessonsToday} label={t("heroLessons")} onClick={goLessons} />
+            {pendingToday > 0 && (
+              <HeroChip icon={ClipboardCheck} value={pendingToday} label={t("heroPending")} tone="warn" onClick={goLessons} />
+            )}
+            <HeroChip icon={ClipboardCheck} value={openTasks} label={t("heroTasks")} onClick={() => goTasks(true)} />
+            {overdue > 0 && <HeroChip icon={Clock} value={overdue} label={t("heroOverdue")} tone="warn" onClick={() => goTasks(true)} />}
+          </div>
+        </div>
       </div>
 
       {/* Birinchi kirish — hali hech narsa chop etilmagan bo'lsa */}
@@ -114,67 +163,22 @@ export function TeachDashboard() {
         />
       )}
 
-      {/* Bugungi darslar */}
-      <section className="space-y-2.5">
-        <div className="flex items-center justify-between">
-          <h2 className="text-section font-bold text-ink">{t("todayLessons")}</h2>
-          <button onClick={() => navigate("/teach/schedule")} className="inline-flex items-center gap-0.5 text-note font-semibold text-brand-deep hover:text-brand">{t("allLessons")} <Icon icon={ChevronRight} size={14} /></button>
+      {/* DARSLAR — Bugun / Hafta / Oy (alohida sahifa emas) */}
+      <div id="block-lessons" className="scroll-mt-4">
+        <LessonsBlock mode={lessonMode} onMode={setLessonMode} />
+      </div>
+
+      {/* VAZIFALAR — shoshilinch 5 ta ⇄ to'liq bort */}
+      <div id="block-tasks" className="scroll-mt-4">
+        <TasksBlock expanded={tasksOpen} onExpand={setTasksOpen} />
+        <div className="mt-1.5 px-1">
+          <button onClick={() => navigate("/teach/cases/review")} className="inline-flex items-center gap-0.5 text-note font-semibold text-ink-soft hover:text-ink">
+            {ttasks("casesReview")} <Icon icon={ChevronRight} size={14} />
+          </button>
         </div>
-        <AsyncSection
-          isLoading={todaySessions.isLoading}
-          isError={todaySessions.isError}
-          isEmpty={(todaySessions.data?.length ?? 0) === 0}
-          emptyIcon={<Icon icon={CalendarDays} size={24} />}
-          emptyText={t("noTodayLessons")}
-          onRetry={() => todaySessions.refetch()}
-        >
-          <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
-            {(todaySessions.data ?? []).map((s) => (
-              <Card key={s.slotId + s.dayKey} className="flex items-center gap-3">
-                <div className={cls("flex h-10 w-10 shrink-0 items-center justify-center rounded-control", s.status === "FULL" ? "bg-emerald-soft text-emerald" : s.status === "PARTIAL" ? "bg-amber-soft text-amber" : "bg-brand-soft text-brand-deep")}>
-                  <Icon icon={CalendarDays} size={18} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-note font-bold text-ink">{s.startTime} · {s.courseName}</p>
-                  <p className="truncate text-micro text-ink-soft">{s.groupName ? `${s.groupName} · ` : ""}{s.room ? `${s.room} · ` : ""}{s.markedCount}/{s.rosterSize}</p>
-                </div>
-                <Button size="sm" variant={s.status === "FULL" ? "ghost" : "primary"} icon={<Icon icon={ClipboardCheck} size={15} />} onClick={() => setMark(s)}>{t("markAttendance")}</Button>
-              </Card>
-            ))}
-          </div>
-        </AsyncSection>
-      </section>
+      </div>
 
-      {/* BUGUN BAJARISH KERAK — aniq qatorlar (ilgari 3 ta mavhum stat karta edi:
-          "3 · Keys tekshirish" — QAYSI keys? Endi ism/mavzu bilan). */}
-      <section className="space-y-2.5">
-        <h2 className="text-section font-bold text-ink">{t("todoTitle")}</h2>
-        <AsyncSection
-          isLoading={board.isLoading}
-          isError={board.isError}
-          isEmpty={todo.length === 0}
-          emptyIcon={<Icon icon={CheckCircle2} size={24} />}
-          emptyText={t("allDone")}
-          onRetry={() => board.refetch()}
-        >
-          <Card className="divide-y divide-line overflow-hidden p-0">
-            {todo.map((item) => (
-              <TaskItemRow key={item.id} item={item} onRollCall={setRollCall} />
-            ))}
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-2.5">
-              <button onClick={() => navigate("/teach/tasks")} className="inline-flex items-center gap-0.5 text-note font-semibold text-brand-deep hover:text-brand">
-                {t("todoAll", { n: openCount })} <Icon icon={ChevronRight} size={14} />
-              </button>
-              <button onClick={() => navigate("/teach/cases/review")} className="inline-flex items-center gap-0.5 text-note font-semibold text-ink-soft hover:text-ink">
-                {ttasks("casesReview")} <Icon icon={ChevronRight} size={14} />
-              </button>
-            </div>
-          </Card>
-        </AsyncSection>
-      </section>
-
-      {/* Analitika — sukut bo'yicha YIG'ILGAN. Hech narsa o'chirilmadi:
-          ilgari sahifada doim ochiq turgan hamma narsa shu yerda. */}
+      {/* Analitika — sukut bo'yicha YIG'ILGAN */}
       {stats && (
         <Disclosure label={t("analytics")} storageKey="meduni.teach.homeAnalytics">
           <div className="space-y-2.5">
@@ -258,28 +262,6 @@ export function TeachDashboard() {
           </ul>
         </AsyncSection>
       </section>
-
-      {mark && (
-        <RollCallModal
-          courseId={mark.courseId}
-          date={mark.dayKey}
-          startTime={mark.startTime}
-          groupId={mark.groupId ?? undefined}
-          heading={`${mark.startTime} · ${mark.courseName}${mark.groupName ? ` · ${mark.groupName}` : ""}`}
-          onClose={() => setMark(null)}
-        />
-      )}
-
-      {rollCall && (
-        <RollCallModal
-          courseId={rollCall.courseId}
-          date={rollCall.date}
-          startTime={rollCall.startTime}
-          groupId={rollCall.groupId ?? undefined}
-          heading={rollCall.heading}
-          onClose={() => setRollCall(null)}
-        />
-      )}
     </div>
   );
 }

@@ -183,7 +183,8 @@
     "statusDone": "Bajarildi",
     "statusOverdue": "Muddati oʻtgan",
     "studentsAssignmentKind": "Talabalarga topshiriq",
-    "sourceLabel": "Manba"
+    "sourceLabel": "Manba",
+    "showAll": "Hammasi"
   },
   "teachAssign": {
     "newBtn": "Yangi topshiriq",
@@ -761,7 +762,7 @@
     "noFacultyGroups": "Fakultetingizda guruh yo'q — admin bilan bog'laning",
     "academicYear": "Oʻquv yili",
     "groups": "Guruhlar",
-    "todayLessons": "Bugungi mashgʻulotlar",
+    "todayLessons": "Bugungi darslar",
     "noTodayLessons": "Bugun mashgʻulot yoʻq",
     "allLessons": "Barcha mashgʻulotlar",
     "markAttendance": "Yoʻqlama",
@@ -787,7 +788,11 @@
     "startStep3Hint": "Tekshirib tasdiqlaysiz — shundan keyin talaba ko‘radi.",
     "startGo": "Boshlash",
     "startDismiss": "Yopish",
-    "startGuide": "Boshlash qo‘llanmasi"
+    "startGuide": "Boshlash qo‘llanmasi",
+    "heroLessons": "bugungi dars",
+    "heroTasks": "vazifa",
+    "heroOverdue": "muddati o'tgan",
+    "heroPending": "yo'qlama kutmoqda"
   },
   "topics": {
     "subjectShared": "Mavzular fanga tegishli — bu fandan ochilgan barcha kurslar (guruhlar) bir xil mavzularni ko‘radi.",
@@ -1164,7 +1169,8 @@
     "name": "Nomi",
     "genericError": "Xatolik yuz berdi",
     "nameRequired": "Nomini kiriting",
-    "continue": "Davom etish"
+    "continue": "Davom etish",
+    "collapse": "Yig'ish"
   },
   "structure": {
     "title": "Xodimlar va tuzilma",
