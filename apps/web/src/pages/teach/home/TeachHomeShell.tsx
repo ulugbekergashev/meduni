@@ -35,6 +35,9 @@ export function TeachHomeShell() {
   return (
     <>
       <SubNav
+        // Bosh sahifada atigi 3 bo'lim — ular uchun 248px ustun ochish ortiqcha
+        // edi (buyurtmachi). Kurs/guruh sahifalarida panel qoladi.
+        variant="tabs"
         title={t("dashboard")}
         activeKey={activeKey}
         items={[
@@ -56,7 +59,7 @@ export function TeachHomeShell() {
               // (holat localStorage'da, React state'da emas).
               window.location.assign("/teach");
             }}
-            className="flex w-full items-center gap-2 rounded-control px-3 py-2 text-note font-semibold text-side-soft transition-colors hover:bg-side-hover hover:text-side-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+            className="mb-3 inline-flex items-center gap-1.5 rounded-control px-2 py-1 text-note font-semibold text-ink-faint transition-colors hover:bg-bg hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
           >
             <Icon icon={LifeBuoy} size={15} />
             {tt("startGuide")}
