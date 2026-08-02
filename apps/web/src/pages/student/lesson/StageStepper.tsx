@@ -161,13 +161,9 @@ export function StageStepper({
         </button>
       </div>
 
-      {/* Pastki nozik progress-trek — umumiy % (vizual urg'u) */}
-      <div className="h-[3px] w-full bg-surface-raised">
-        <div
-          className="h-full rounded-r-full bg-gradient-to-r from-brand to-violet transition-[width] duration-500 ease-out"
-          style={{ width: `${Math.max(0, Math.min(100, pct))}%` }}
-        />
-      </div>
+      {/* ⚠️ Bu yerda umumiy % UCHINCHI marta chizilardi (mini-halqa + raqam +
+          butun kenglikdagi gradient trek) — §4 "bitta fakt — bitta joy" buzilardi.
+          Qiymat o'ng chetdagi chipda (halqa + raqam) qoladi. */}
     </div>
   );
 }

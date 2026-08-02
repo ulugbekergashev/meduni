@@ -5,6 +5,7 @@ import { motion, type Variants } from "framer-motion";
 import { BookOpen, CheckCircle2, ChevronRight, PlayCircle, RotateCcw, Search, Users } from "lucide-react";
 import { Card, Icon, ProgressBar, ProgressRing, cls } from "@meduni/ui";
 import { HeroCard, HeroTile } from "../../components/HeroStats";
+import { Disclosure } from "../../components/Disclosure";
 import { AsyncSection } from "../../components/AsyncSection";
 import { PeriodFilter, PeriodSection, groupByPeriod, usePeriodOptions } from "../../components/PeriodGroups";
 import { useMyCourses, type CourseSummary } from "./api";
@@ -193,16 +194,24 @@ export function StudentCoursesPage() {
             className="w-full rounded-control border border-line bg-surface/60 py-3 pl-11 pr-4 text-body font-medium outline-none transition-all focus:border-brand focus:ring-4 focus:ring-brand/10 hover:border-line-raised hover:bg-surface/90"
           />
         </div>
-        <div className="flex items-center gap-2 rounded-control border border-line bg-surface/60 p-1.5 backdrop-blur-sm transition-all hover:bg-surface/90">
-          <PeriodFilter
-            years={options.years}
-            semesters={options.semesters}
-            year={year}
-            semester={semester}
-            onYear={onYear}
-            onSemester={onSemester}
-          />
-        </div>
+        {/* Davr filtri — sukut bo'yicha joriy semestr ochiladi, ya'ni bu
+            boshqaruv kamdan-kam kerak. Yig'ib qo'yildi (faol filtr soni bilan). */}
+        <Disclosure
+          label={t("periodFilter")}
+          count={(year ? 1 : 0) + (semester ? 1 : 0)}
+          storageKey="meduni.student.coursesPeriod"
+        >
+          <div className="flex items-center gap-2 rounded-control border border-line bg-surface p-1.5">
+            <PeriodFilter
+              years={options.years}
+              semesters={options.semesters}
+              year={year}
+              semester={semester}
+              onYear={onYear}
+              onSemester={onSemester}
+            />
+          </div>
+        </Disclosure>
         {!isCurrentDefault && newest && (
           <button
             onClick={backToCurrent}
