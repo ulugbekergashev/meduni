@@ -834,7 +834,8 @@
     "nav": {
       "prev": "Назад",
       "next": "Далее"
-    }
+    },
+    "unlockRuleTitle": "Правило открытия темы"
   },
   "digest": {
     "generate": "Составить конспект",
@@ -872,7 +873,16 @@
     "approve": "Утвердить конспект",
     "approved": "Конспект утверждён",
     "approvedToast": "Конспект утверждён",
-    "saveBeforeApprove": "Сохраните изменения перед утверждением."
+    "saveBeforeApprove": "Сохраните изменения перед утверждением.",
+    "approveAndNext": "Утвердить и продолжить",
+    "modeRead": "Просмотр",
+    "modeEdit": "Редактировать",
+    "unsaved": "Есть несохранённые изменения",
+    "sectionsTitle": "Разделы конспекта",
+    "sectionsHint": "Студент читает именно этот текст. Откройте раздел и проверьте.",
+    "sectionMinutes": "{{n}} мин",
+    "sectionBlocks": "{{n}} блок.",
+    "sectionHasCheckpoint": "Есть вопрос"
   },
   "generate": {
     "quizTitle": "Тест",
@@ -933,7 +943,8 @@
       "case": "Клинический кейс",
       "presentation": "Презентация",
       "video": "Видео"
-    }
+    },
+    "perKindTitle": "По отдельным типам"
   },
   "videoEditor": {
     "back": "← Конструктор",

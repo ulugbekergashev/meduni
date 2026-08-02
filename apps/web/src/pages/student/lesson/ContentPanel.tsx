@@ -6,7 +6,7 @@ import { API_URL } from "../../../lib/api";
 import type { Lesson } from "../api";
 import { Panel } from "./Panel";
 import { firstContentView, nextOpenStage, type ContentView, type LessonView, type StageInfo, type StageKey } from "./stages";
-import { DigestView } from "./DigestView";
+import { DigestView } from "../../../components/lesson/DigestView";
 import { SectionReader } from "./SectionReader";
 import { NextStageBar } from "./NextStageBar";
 import { VideoTab } from "./VideoTab";

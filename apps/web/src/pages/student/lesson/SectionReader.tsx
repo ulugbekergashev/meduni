@@ -5,7 +5,7 @@ import { ArrowRight, Check, Clock, FileText, HelpCircle, Minus, Play, Plus, X } 
 import { Icon, cls } from "@meduni/ui";
 import { API_URL } from "../../../lib/api";
 import type { LessonCheckpoint, LessonSection, Term } from "../api";
-import { BlockView } from "./BlockView";
+import { BlockView } from "../../../components/lesson/BlockView";
 
 /** Sekundni mm:ss ko'rinishiga. */
 function mmss(sec: number): string {
