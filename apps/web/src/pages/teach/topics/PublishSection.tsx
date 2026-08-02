@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Rocket } from "lucide-react";
-import { Badge, Button, Card, Icon, useToast } from "@meduni/ui";
+import { Badge, Button, Card, Icon, Spinner, useToast } from "@meduni/ui";
 import { ConfirmDialog } from "../../../components/ConfirmDialog";
 import { useLocale } from "../../../lib/useLocale";
 import { apiErrorMessage } from "../../../lib/api";
@@ -36,7 +36,11 @@ function ContentPublish({ topic, item }: { topic: TopicDetail; item: ContentSumm
   const isVideo = item.kind === "video";
   const videoDetail = useContent(isVideo && !published ? item.id : 0);
   const build = videoDetail.data?.video;
-  const videoReady = !isVideo || published || (build?.buildStatus === "done" && build?.hasMp4);
+  const stage = build?.buildStatus ?? "";
+  /** Ayni damda ishlayaptimi (server fon-jobi) — polling bilan jonli yangilanadi. */
+  const building = ["pending", "script", "tts", "render"].includes(stage);
+  const stopped = stage === "error";
+  const videoReady = !isVideo || published || (stage === "done" && build?.hasMp4);
   const resume = useResumeVideo(build?.id ?? 0);
   const publishError = publish.isError ? apiErrorMessage(publish.error, locale) : null;
 
@@ -66,19 +70,38 @@ function ContentPublish({ topic, item }: { topic: TopicDetail; item: ContentSumm
             >
               {t("publishBtn")}
             </Button>
+          ) : building ? (
+            /* ⚠️ Buyurtmachi: "bir video generatsiya bo'ldimi? yoqmi? to'xtab
+               qoldimi — bilmay o'tiribman". Endi karta AYNI DAMDAGI holatni
+               ko'rsatadi va o'zi yangilanib turadi (2s polling). */
+            <div className="space-y-2 rounded-control border border-brand bg-brand-soft px-3 py-2.5">
+              <p className="flex items-center gap-2 text-note font-semibold text-brand-tint">
+                <Spinner size={14} />
+                {tg(`vStep.${stage === "pending" ? "script" : stage}`)}
+                {stage === "tts" && build?.progress?.total
+                  ? ` — ${build.progress.done}/${build.progress.total}`
+                  : ""}
+              </p>
+              {stage === "tts" && !!build?.progress?.total && (
+                <div className="h-1 overflow-hidden rounded-pill bg-surface">
+                  <div
+                    className="h-full rounded-pill bg-brand transition-[width] duration-500"
+                    style={{ width: `${Math.max(Math.round((build.progress.done / build.progress.total) * 100), 3)}%` }}
+                  />
+                </div>
+              )}
+              <p className="text-micro text-ink-soft">{tg("vLongHint")}</p>
+            </div>
           ) : (
             <div className="space-y-2 rounded-control border border-amber bg-amber-soft px-3 py-2.5">
               <p className="text-note font-semibold text-amber">
-                {t("videoNotBuilt")}
-                {build?.errorStage ? ` (${build.errorStage})` : ""}
+                {stopped ? t("videoStopped") : t("videoNotBuilt")}
               </p>
-              <Button
-                size="sm"
-                variant="soft"
-                disabled={resume.isPending}
-                onClick={() => resume.mutate()}
-              >
-                {t("videoResume")}
+              {stopped && build?.errorStage && (
+                <p className="break-words text-micro text-ink-soft">{build.errorStage}</p>
+              )}
+              <Button size="sm" variant="soft" disabled={resume.isPending} onClick={() => resume.mutate()}>
+                {resume.isPending ? tg("vStep.script") : t("videoResume")}
               </Button>
             </div>
           )}
