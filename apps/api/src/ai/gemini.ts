@@ -1,7 +1,7 @@
 import { GoogleGenAI } from "@google/genai";
 import { ApiError } from "../lib/errors";
 import { recordAiUsage } from "./usage";
-import { imageProvider, openaiImageConfig, openaiTextConfig, textProviderFor, type ImageProviderName } from "./config";
+import { imageProvider, openaiImageConfig, openaiTextConfig, textChain, textProviderFor, type ImageProviderName } from "./config";
 import { generateStructuredOpenAI } from "./providers/openaiText";
 import { generateImageOpenAI } from "./providers/openaiImage";
 import { generateImagePollinations } from "./providers/pollinationsImage";
@@ -63,17 +63,34 @@ function toApiError(err: unknown): ApiError {
  *  open modelga yo'naltirilgan va kredit bo'lsa OpenAI-mos endpoint, ISHLAMASA
  *  jimgina Gemini'ga qaytadi (tibbiy pipeline hech qachon to'liq sinmaydi). */
 export async function generateStructured<T>(opts: GenerateOpts): Promise<T> {
-  if (textProviderFor(opts.kind) === "openai") {
-    const cfg = openaiTextConfig();
-    if (cfg) {
-      try {
-        return await generateStructuredOpenAI<T>(opts, cfg);
-      } catch (err) {
-        console.warn(`[ai] openai text failed for ${opts.kind} → gemini fallback:`, (err as Error)?.message);
+  // ⚠️ 2026-08-03 (buyurtmachi: "konspekt tuzishni bossam Gemini kalit tugadi
+  // dedi… geminini faqat rasm va TTS uchun ishlat"): matn endi ZANJIR bo'yicha
+  // yaratiladi. Bepul provayderlar ketma-ket sinaladi va faqat HAMMASI yiqilsa
+  // xato qaytadi — bitta model 429 bersa ham konspekt/test yaratilaveradi.
+  const chain = textChain(opts.kind);
+  let lastErr: unknown;
+  for (const link of chain) {
+    try {
+      const out = link.cfg
+        ? await generateStructuredOpenAI<T>(opts, link.cfg)
+        : await generateStructuredGemini<T>(opts);
+      if (link !== chain[0]) {
+        console.warn(`[ai] ${opts.kind}: "${link.name}" bilan yaratildi (oldingi(lar)i ishlamadi)`);
       }
+      return out;
+    } catch (err) {
+      lastErr = err;
+      console.warn(`[ai] ${opts.kind}: "${link.name}" ishlamadi →`, (err as Error)?.message?.slice(0, 200));
     }
   }
-  return generateStructuredGemini<T>(opts);
+  throw lastErr instanceof ApiError
+    ? lastErr
+    : new ApiError(
+        502,
+        "ai_all_failed",
+        "AI xizmatlari javob bermadi (barcha provayderlar). Biroz kutib qayta urining.",
+        "Сервисы ИИ не ответили (все провайдеры). Повторите через некоторое время."
+      );
 }
 
 /** Calls Gemini for structured JSON, logs token usage, retries transient failures. */

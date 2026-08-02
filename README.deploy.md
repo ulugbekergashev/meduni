@@ -210,3 +210,50 @@ Tekshirish: `https://meduni-api.onrender.com/health` → `{"ok":true}`
 Dockerfile hali ham web'ni o'zi tarqata oladi (bitta origin):
 `BUILD_WEB=1` build-arg + `SERVE_WEB=1` env → API `/` da web'ni ham beradi.
 Mahalliy/VM uchun: `docker compose -f docker-compose.deploy.yml up -d --build`.
+
+---
+
+## Matn AI: bepul provayderlar zanjiri (2026-08-03)
+
+**Nega:** Gemini krediti tugaganda konspekt/test/keys generatsiyasi butunlay
+to'xtardi. Endi matn ZANJIR bo'yicha yaratiladi — bepul modellar ketma-ket
+sinaladi, Gemini esa faqat **rasm va TTS** uchun (va matnda oxirgi chora).
+
+### Env (Render → Environment)
+
+```
+AI_TEXT_CHAIN = free1,free2,gemini
+
+FREE1_BASE_URL = https://api.groq.com/openai/v1
+FREE1_API_KEY  = gsk_...
+FREE1_MODEL    = llama-3.3-70b-versatile
+
+FREE2_BASE_URL = https://openrouter.ai/api/v1
+FREE2_API_KEY  = sk-or-...
+FREE2_MODEL    = deepseek/deepseek-chat-v3-0324:free
+```
+
+- Slot nomlari ERKIN (`free1`, `mygroq`, …) — `AI_TEXT_CHAIN` dagi nom
+  `<NOM>_BASE_URL / _API_KEY / _MODEL` env'lariga mos kelsa yetadi.
+- `<NOM>_MODEL_LITE` — ixtiyoriy (arzon/tez model: virtual bemor, AI-tutor).
+- Krediti to'liq bo'lmagan slot jimgina O'TKAZIB YUBORILADI.
+- `AI_TEXT_CHAIN` berilmasa — eski xatti-harakat (hammasi Gemini).
+- Server ishga tushganda faol zanjir logda ko'rinadi: `matn AI : free1 → free2 → gemini`.
+
+### Bepul kalitlar qayerdan
+
+| Provayder | Endpoint | Izoh |
+|---|---|---|
+| Groq | `https://api.groq.com/openai/v1` | console.groq.com — bepul tarif, juda tez |
+| OpenRouter | `https://openrouter.ai/api/v1` | openrouter.ai — `:free` qo'shimchali modellar |
+| Cerebras | `https://api.cerebras.ai/v1` | cloud.cerebras.ai — bepul tarif |
+
+⚠️ Model nomlari vaqt bilan o'zgaradi — provayder saytidagi joriy ro'yxatdan
+tanlang. O'zbek tilidagi tibbiy matn uchun kuchliroq modelni BIRINCHI qo'ying
+(DeepSeek V3 / Qwen kabi), Gemini esa oxirida zaxira bo'lib turadi.
+
+### Rasm va ovoz
+
+- `AI_IMAGE_PROVIDER = gemini | pollinations` — `pollinations` kalitsiz BEPUL
+  (sifat pastroq, lekin bo'sh slayddan yaxshiroq).
+- `AI_TTS_PROVIDER = gemini | edge` — `edge` bepul (edge-tts, python moduli).

@@ -43,6 +43,68 @@ export function textProviderFor(kind: string): Provider {
   return env("AI_TEXT_PROVIDER") === "openai" ? "openai" : "gemini";
 }
 
+/**
+ * MATN ZANJIRI (2026-08-03, buyurtmachi: "geminini faqat rasm va TTS uchun
+ * ishlat, matnni bepul modellar qilsin").
+ *
+ * Bitta provayder yetarli emas: bepul tariflarда tez-tez 429 (rate limit) va
+ * vaqtinchalik uzilish bo'ladi. Shuning uchun bir nechta krediт ketma-ket
+ * sinaladi va faqat HAMMASI yiqilsa xato qaytadi.
+ *
+ * Env (nomlar erkin, har biri OpenAI-mos endpoint):
+ *   AI_TEXT_CHAIN = "free1,free2,gemini"   ← tartib
+ *   FREE1_BASE_URL / FREE1_API_KEY / FREE1_MODEL [/ FREE1_MODEL_LITE]
+ *   FREE2_BASE_URL / FREE2_API_KEY / FREE2_MODEL [/ FREE2_MODEL_LITE]
+ * Eski `OPENAI_*` slot ham qo'llanadi (nomi `openai`).
+ *
+ * Berilmasa — zanjir `gemini` (eski xatti-harakat, nol o'zgarish).
+ */
+export interface TextLink {
+  /** Diagnostika uchun nom (log/AiUsage). */
+  name: string;
+  /** null → Gemini (SDK orqali), aks holda OpenAI-mos endpoint. */
+  cfg: OpenAiTextConfig | null;
+}
+
+function slotConfig(prefix: string): OpenAiTextConfig | null {
+  const baseUrl = env(`${prefix}_BASE_URL`);
+  const apiKey = env(`${prefix}_API_KEY`);
+  const model = env(`${prefix}_MODEL`);
+  if (!baseUrl || !apiKey || !model) return null;
+  return {
+    baseUrl: baseUrl.replace(/\/+$/, ""),
+    apiKey,
+    model,
+    modelLite: env(`${prefix}_MODEL_LITE`) ?? model,
+  };
+}
+
+export function textChain(kind: string): TextLink[] {
+  const raw = env("AI_TEXT_CHAIN");
+  if (!raw) {
+    // Zanjir berilmagan — eski yo'l: route/global default bo'yicha bitta provayder
+    // (+ openai bo'lsa Gemini zaxira).
+    return textProviderFor(kind) === "openai" && openaiTextConfig()
+      ? [{ name: "openai", cfg: openaiTextConfig() }, { name: "gemini", cfg: null }]
+      : [{ name: "gemini", cfg: null }];
+  }
+  const links: TextLink[] = [];
+  for (const rawName of raw.split(",")) {
+    const name = rawName.trim();
+    if (!name) continue;
+    if (name.toLowerCase() === "gemini") {
+      links.push({ name: "gemini", cfg: null });
+      continue;
+    }
+    const cfg = name.toLowerCase() === "openai" ? openaiTextConfig() : slotConfig(name.toUpperCase());
+    // Krediti yo'q slot jimgina o'tkazib yuboriladi (env yarim to'ldirilgan bo'lsa).
+    if (cfg) links.push({ name, cfg });
+  }
+  // Zanjir bo'sh qolmasin — oxirgi chora sifatida Gemini.
+  if (!links.length) links.push({ name: "gemini", cfg: null });
+  return links;
+}
+
 export interface OpenAiTextConfig {
   baseUrl: string;
   apiKey: string;
