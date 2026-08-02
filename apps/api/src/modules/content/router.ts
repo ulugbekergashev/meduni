@@ -215,6 +215,16 @@ videosRouter.get(
 );
 
 videosRouter.get(
+  "/:id/audio",
+  wrap(async (req, res) => {
+    const buf = await video.getVideoMedia(parseId(req.params.id), req.user!.id, "audio");
+    res.setHeader("Content-Type", "audio/mp4");
+    res.setHeader("Accept-Ranges", "bytes");
+    res.send(buf);
+  })
+);
+
+videosRouter.get(
   "/:id/srt",
   wrap(async (req, res) => {
     const buf = await video.getVideoMedia(parseId(req.params.id), req.user!.id, "srt");

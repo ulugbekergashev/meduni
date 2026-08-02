@@ -299,17 +299,33 @@ export async function getTopicLesson(studentId: number, topicId: number) {
       // "Video ma'ruza" blokini ko'rib bosardi va bo'sh xato ekraniga tushardi,
       // ustiga bosqich foizi ham hech qachon to'lmasdi. Tayyor bo'lmagan video —
       // talaba uchun kontent emas.
-      video: videoItem?.video?.mp4Url
+      // ⚠️ 2026-08-02: video endi mp4 FAYL emas — ovoz + vaqt jadvali (segmentlar),
+      // brauzer ularni sinxron ijro etadi (`SlideshowPlayer`). mp4 ixtiyoriy
+      // qoladi (VIDEO_MP4=1 bo'lgan hostда) va bo'lsa oddiy pleyer ishlatiladi.
+      // Shart: OVOZ tayyor bo'lsin — aks holda talabaga ko'rsatiladigan narsa yo'q.
+      video: videoItem?.video?.audioUrl || videoItem?.video?.mp4Url
         ? {
             present: true,
             videoId: videoItem.video.id,
             hasMp4: !!videoItem.video.mp4Url,
+            hasAudio: !!videoItem.video.audioUrl,
             hasSrt: !!videoItem.video.srtUrl,
             durationSec: videoItem.video.durationSec,
             watchedPct: progress?.videoWatchedPct ?? 0,
             positionSec: progress?.videoPositionSec ?? 0,
             done: (progress?.videoWatchedPct ?? 0) >= videoThreshold,
             language: videoItem.language,
+            /** Vaqt jadvali: har kadr qachon boshlanadi, nima ko'rsatiladi. */
+            segments: ((videoItem.video.scriptJson as unknown as ScriptSegment[]) ?? []).map((seg, si, arr) => ({
+              index: si,
+              startSec: Math.round(arr.slice(0, si).reduce((a, x) => a + (x.durationSec || 0), 0)),
+              durationSec: Math.round(seg.durationSec || 0),
+              title: seg.visual?.title ?? "",
+              points: seg.visual?.points ?? [],
+              kind: seg.visual?.kind ?? "points",
+              hasImage: !!seg.visualImageUrl,
+              narration: seg.narration,
+            })),
           }
         : null,
       slides: slidesItem?.presentation
@@ -680,11 +696,20 @@ async function readMediaOr404(rel: string, what: string): Promise<Buffer> {
   return buf;
 }
 
-export async function studentVideoMedia(studentId: number, videoId: number, kind: "mp4" | "srt"): Promise<Buffer> {
+export async function studentVideoMedia(studentId: number, videoId: number, kind: "mp4" | "srt" | "audio"): Promise<Buffer> {
   const v = await videoAccess(studentId, videoId);
-  const rel = kind === "mp4" ? v.mp4Url : v.srtUrl;
+  const rel = kind === "mp4" ? v.mp4Url : kind === "audio" ? v.audioUrl : v.srtUrl;
   if (!rel) throw notFound("Fayl");
   return readMediaOr404(rel, "Video");
+}
+
+/** Slayd-pleyer kadri — segmentning rasmi (bo'lsa). Rasm yo'q segmentda
+ *  brauzer matnli karta chizadi, shuning uchun bu 404 normal holat. */
+export async function studentVideoFrame(studentId: number, videoId: number, index: number): Promise<Buffer> {
+  const v = await videoAccess(studentId, videoId);
+  const seg = ((v.scriptJson as unknown as ScriptSegment[]) ?? [])[index];
+  if (!seg?.visualImageUrl) throw notFound("Kadr");
+  return readMediaOr404(seg.visualImageUrl, "Kadr");
 }
 
 async function presentationAccess(studentId: number, presentationId: number) {

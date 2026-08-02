@@ -40,7 +40,7 @@ function ContentPublish({ topic, item }: { topic: TopicDetail; item: ContentSumm
   /** Ayni damda ishlayaptimi (server fon-jobi) — polling bilan jonli yangilanadi. */
   const building = ["pending", "script", "tts", "render"].includes(stage);
   const stopped = stage === "error";
-  const videoReady = !isVideo || published || (stage === "done" && build?.hasMp4);
+  const videoReady = !isVideo || published || (stage === "done" && (build?.hasAudio || build?.hasMp4));
   const resume = useResumeVideo(build?.id ?? 0);
   const publishError = publish.isError ? apiErrorMessage(publish.error, locale) : null;
 

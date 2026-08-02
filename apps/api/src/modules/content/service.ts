@@ -92,6 +92,8 @@ function toContentOut(item: ContentFull) {
             imageSlots: slide.imageSlots.map((slot, sloti) => ({
               prompt: slot.prompt,
               status: slot.status,
+              // Rasm nega yasalmaganini o'qituvchi ko'radi (§17: sabab saqlanadi).
+              error: slot.error ?? null,
               // Expose a media URL (not the internal storage path) only when ready.
               url: slot.status === "DONE" ? `/api/v1/presentations/${item.presentation!.id}/image/${si}/${sloti}` : null,
             })),
@@ -113,6 +115,7 @@ function toContentOut(item: ContentFull) {
             total: ((item.video.scriptJson as unknown as ScriptSegment[]) ?? []).length,
           },
           hasMp4: !!item.video.mp4Url,
+          hasAudio: !!item.video.audioUrl,
           hasSrt: !!item.video.srtUrl,
         }
       : null,
@@ -359,8 +362,13 @@ export async function publishContent(contentId: number, teacherId: number) {
   // o'qituvchi panelida "Chop etilgan" deb turardi, talabada esa ko'radigan
   // narsa yo'q edi (mp4 yo'q). Chop etish endi TAYYOR faylni talab qiladi.
   if (item.kind === "VIDEO") {
-    const video = await prisma.video.findUnique({ where: { contentItemId: contentId }, select: { mp4Url: true } });
-    if (!video?.mp4Url) {
+    // ⚠️ 2026-08-02: video endi mp4 FAYL emas — ovoz + vaqt jadvali (brauzerda
+    // sinxron ijro). Shuning uchun shart ham o'zgardi: OVOZ tayyor bo'lsin.
+    const video = await prisma.video.findUnique({
+      where: { contentItemId: contentId },
+      select: { mp4Url: true, audioUrl: true },
+    });
+    if (!video?.audioUrl && !video?.mp4Url) {
       throw new ApiError(
         400,
         "video_not_built",

@@ -985,7 +985,8 @@
     "saved": "Сохранено",
     "building": "Видео готовится…",
     "buildError": "Ошибка монтажа ({{stage}})",
-    "duration": "Длительность"
+    "duration": "Длительность",
+    "audioPreviewHint": "Студент видит это как озвучку + слайды. Ниже можно прослушать звук."
   },
   "presEditor": {
     "back": "← Конструктор",
@@ -1822,7 +1823,9 @@
     "mindmapExpand": "Развернуть",
     "mindmapCollapse": "Свернуть",
     "sectionsBtn": "Разделы",
-    "sourcesBtn": "Источники"
+    "sourcesBtn": "Источники",
+    "play": "Воспроизвести",
+    "pause": "Пауза"
   },
   "search": {
     "placeholder": "Поиск… (студент, группа, курс)",
@@ -2155,13 +2158,13 @@
     "myTasks": "Задачи",
     "grades": "Оценки",
     "attendance": "Посещ.",
-    "students": "Студент",
-    "staff": "Кадры",
+    "students": "Студенты",
+    "staff": "Сотрудники",
     "lessons": "Занятия",
     "groups": "Группы",
     "profile": "Профиль",
     "ai": "AI",
     "audit": "Аудит",
-    "settings": "Настр."
+    "settings": "Настройки"
   }
 }

@@ -985,7 +985,8 @@
     "saved": "Saqlandi",
     "building": "Video tayyorlanmoqda…",
     "buildError": "Montajда xato ({{stage}})",
-    "duration": "Davomiyligi"
+    "duration": "Davomiyligi",
+    "audioPreviewHint": "Talaba buni ovoz + slaydlar ko’rinishida ko’radi. Quyida ovozni tinglashingiz mumkin."
   },
   "presEditor": {
     "back": "← Konstruktor",
@@ -1822,7 +1823,9 @@
     "mindmapExpand": "Yoyish",
     "mindmapCollapse": "Yigʻish",
     "sectionsBtn": "Boʻlimlar",
-    "sourcesBtn": "Manbalar"
+    "sourcesBtn": "Manbalar",
+    "play": "Ijro",
+    "pause": "Pauza"
   },
   "search": {
     "placeholder": "Qidirish… (talaba, guruh, kurs)",
@@ -2151,17 +2154,17 @@
     "dashboard": "Bosh",
     "myCourses": "Kurslar",
     "courses": "Kurslar",
-    "tasks": "Vazifa",
-    "myTasks": "Vazifa",
+    "tasks": "Vazifalar",
+    "myTasks": "Vazifalar",
     "grades": "Baholar",
     "attendance": "Davomat",
-    "students": "Talaba",
-    "staff": "Xodim",
-    "lessons": "Darslar",
-    "groups": "Guruh",
+    "students": "Talabalar",
+    "staff": "Xodimlar",
+    "lessons": "Darslarim",
+    "groups": "Guruhlar",
     "profile": "Profil",
     "ai": "AI",
     "audit": "Audit",
-    "settings": "Sozlama"
+    "settings": "Sozlamalar"
   }
 }

@@ -5,6 +5,7 @@ import { Captions, CheckCircle2, Maximize2 } from "lucide-react";
 import { Icon } from "@meduni/ui";
 import { API_URL, authedFetch } from "../../../lib/api";
 import { useVideoProgress, type VideoTabData } from "../api";
+import { SlideshowPlayer } from "./SlideshowPlayer";
 
 // SRT (comma millis) -> WebVTT (dot millis) so the native <track> can render it.
 function srtToVtt(srt: string): string {
@@ -35,6 +36,10 @@ export function VideoTab({
   const wasDone = useRef(data.done);
 
   const src = `${API_URL}/api/v1/me/videos/${data.videoId}/mp4`;
+
+  // ⚠️ mp4 fayl endi ixtiyoriy (VIDEO_MP4=1). Odatda video = ovoz + vaqt
+  // jadvali, ya'ni brauzerdagi slayd-pleyer (SlideshowPlayer).
+  const slideshow = !data.hasMp4 && !!data.hasAudio;
 
   // Build a VTT blob from the SRT endpoint the first time captions are turned on.
   useEffect(() => {
@@ -95,6 +100,11 @@ export function VideoTab({
       setIsPlaying(true);
     }
   };
+
+  // mp4 yo'q, lekin ovoz bor → slayd-pleyer (odatdagi holat).
+  if (slideshow) {
+    return <SlideshowPlayer topicId={topicId} data={data} threshold={threshold} seekTo={seekTo} />;
+  }
 
   if (failed || !data.hasMp4) {
     return (

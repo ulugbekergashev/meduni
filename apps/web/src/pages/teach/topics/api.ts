@@ -193,6 +193,8 @@ export interface VideoContent {
   /** Ovozlangan segmentlar hisobi — spinner o'rniga haqiqiy jarayon. */
   progress: { done: number; total: number };
   hasMp4: boolean;
+  /** Ovoz tayyor — talaba slayd-pleyerda ko'radi (mp4 shart emas). */
+  hasAudio?: boolean;
   hasSrt: boolean;
 }
 
