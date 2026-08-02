@@ -7,8 +7,21 @@ cd /app/packages/db
 i=0
 until npx prisma db push --skip-generate; do
   i=$((i+1))
-  if [ "$i" -ge 30 ]; then echo "!! baza ulanmadi (30 urinish)"; exit 1; fi
-  echo "   baza hali tayyor emas, qayta urinish $i..."
+  if [ "$i" -ge 10 ]; then
+    # ⚠️ 2026-08-02 (jonli sayt ~3 soat o'lik turdi): bu yerda `exit 1` bor edi.
+    # `db push` FAQAT baza uzilganda emas, SXEMA NOMUVOFIQLIGIDA ham yiqiladi —
+    # masalan bazada kod hali bilmaydigan jadval bo'lsa, push uni O'CHIRMOQCHI
+    # bo'ladi va Prisma rad etadi (--accept-data-loss yo'q). O'shanda konteyner
+    # har uyg'onishda status 1 bilan o'lardi va BUTUN sayt ishlamasdi.
+    #
+    # Endi push muvaffaqiyatsiz bo'lsa ham API KO'TARILADI: sayt ochiladi,
+    # login ishlaydi, faqat yangi jadvalga tegadigan joy xato beradi. Bu —
+    # to'liq uzilishdan ko'ra ancha yaxshi. Sabab logda ko'rinib turadi.
+    echo "!! prisma db push muvaffaqiyatsiz ($i urinish) — API baribir ko'tariladi"
+    echo "!! (sabab yuqorida: baza uzilgan YOKI sxema mos emas — deploy'ni yangilang)"
+    break
+  fi
+  echo "   baza hali tayyor emas / sxema mos emas, qayta urinish $i..."
   sleep 2
 done
 
