@@ -58,14 +58,17 @@ const sharedConfig: Partial<Config> = {
       // kichkina" dedi). Katta ekranlarda o'qishbop bo'lishi uchun ochiq
       // shkala. micro=13px — MUTLAQ minimum; text-[N] arbitrary TAQIQ.
       fontSize: {
-        h1: ["30px", { lineHeight: "1.2", letterSpacing: "-0.02em" }],
-        stat: ["42px", { lineHeight: "1.02", letterSpacing: "-0.02em" }],
-        section: ["20px", { lineHeight: "1.35", letterSpacing: "-0.01em" }],
-        body: ["17px", { lineHeight: "1.6" }],
-        note: ["15px", { lineHeight: "1.55" }],
+        /** 2026-08-03 (buyurtmachi: "juda kattalashib ketmaganmi? kichiraytir,
+         *  ozroqqa, juda kichiraytirma") — v3 shkalasidan BIR pog'ona pastga.
+         *  ⚠️ `micro` 13px TEGILMAYDI: §4 bo'yicha mutlaq minimum. */
+        h1: ["26px", { lineHeight: "1.2", letterSpacing: "-0.02em" }],
+        stat: ["34px", { lineHeight: "1.05", letterSpacing: "-0.02em" }],
+        section: ["18px", { lineHeight: "1.35", letterSpacing: "-0.01em" }],
+        body: ["16px", { lineHeight: "1.6" }],
+        note: ["14px", { lineHeight: "1.55" }],
         micro: ["13px", { lineHeight: "1.45" }],
         /** Uzun matn o'qish uchun (konspekt tanasi) — A−/A+ bilan boshqariladi. */
-        read: ["19px", { lineHeight: "1.8" }],
+        read: ["18px", { lineHeight: "1.8" }],
       },
       fontFamily: {
         sans: ["'Manrope Variable'", "Manrope", "Inter", "system-ui", "sans-serif"],
