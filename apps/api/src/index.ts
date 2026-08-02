@@ -141,5 +141,12 @@ app.listen(env.port, () => {
   console.log(`  cookies     : ${env.crossSiteCookies ? "SameSite=None; Secure (cross-site)" : "SameSite=Lax"}`);
   // Oldingi jarayonda uzilib qolgan video/rasm joblarini ERROR ga o'tkazamiz —
   // aks holda UI abadiy "ishlamoqda" spinnerini ko'rsatib turadi.
-  void recoverStaleJobs();
+  //
+  // ⚠️ KECHIKTIRILGAN (2026-08-02, jonli server o'lgach): tiklash og'ir ish
+  // (montaj/TTS) boshlashi mumkin. Uni listen bilan BIR VAQTDA ishga tushirish
+  // 512 MB / 0.1 CPU konteynerда birinchi soniyalardayoq event loop'ni bo'g'ib,
+  // Render'ning health check'ini yiqitardi → konteyner o'ldiriladi → yana boot.
+  // Endi server avval TINCH ko'tariladi, keyin tiklash boshlanadi.
+  const delayMs = Number(process.env.RECOVERY_DELAY_MS ?? 30_000);
+  setTimeout(() => void recoverStaleJobs(), delayMs).unref();
 });
