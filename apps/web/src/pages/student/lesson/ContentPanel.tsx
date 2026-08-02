@@ -8,7 +8,6 @@ import { Panel } from "./Panel";
 import { firstContentView, nextOpenStage, type ContentView, type LessonView, type StageInfo, type StageKey } from "./stages";
 import { DigestView } from "./DigestView";
 import { SectionReader } from "./SectionReader";
-import { MaterialBar } from "./MaterialBar";
 import { NextStageBar } from "./NextStageBar";
 import { VideoTab } from "./VideoTab";
 import { SlidesTab } from "./SlidesTab";
@@ -42,8 +41,6 @@ export function ContentPanel({
   seekTo = null,
   onSeekVideo,
   onJumpSection,
-  materialsLocked = false,
-  materialsLockedNote,
 }: {
   lesson: Lesson;
   topicId: number;
@@ -60,9 +57,6 @@ export function ContentPanel({
   onSeekVideo?: (sec: number) => void;
   /** Faza 2: mindmap bo'lim tugunidan konspektga sakrash. */
   onJumpSection?: (index: number) => void;
-  /** Test jarayonida asl material yopiladi (halollik). */
-  materialsLocked?: boolean;
-  materialsLockedNote?: string;
 }) {
   const { t } = useTranslation(undefined, { keyPrefix: "lesson" });
   const hasSections = (lesson.sections?.length ?? 0) > 0;
@@ -202,20 +196,13 @@ export function ContentPanel({
   // (ilgari bir tushuncha 3 ta shapkada takrorlanardi).
   // 2026-07-28: asl material (PDF) endi alohida blok emas — konspekt USTIDA,
   // o'qish oqimining boshida turadi va joyida ochiladi.
-  const materialBar = (
-    <MaterialBar
-      materials={lesson.materials}
-      links={lesson.links}
-      locked={materialsLocked}
-      lockedNote={materialsLockedNote}
-    />
-  );
+  // 2026-08-01: manbalar (asl PDF/havolalar) endi SHU PANELDA emas — tepadagi
+  // "Manbalar" tugmasi ortida (LessonPage). O'qish maydoni to'liq kontentга.
 
   return (
     <Panel bodyClassName={active === "konspekt" ? "flex flex-col p-0" : "p-4"}>
       {active === "konspekt" && (
         <>
-          {materialBar}
           {readerMode ? (
             /* Reader o'z ichida skroll qiladi — material paneli ochilsa u qisqaradi. */
             <div className="min-h-0 flex-1">

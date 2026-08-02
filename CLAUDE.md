@@ -2191,3 +2191,27 @@ qaytariladi).
 
 **Yakuniy jonli o'lchov:** video DONE · **2:51** · **9/9 kadr rasmli** · mp4 3.5 MB
 (`ftypisom`) talabaga oqadi · API barqaror (10/10 tekshiruv).
+
+---
+
+## 18. DARS SAHIFASI: KONTENT — SAHNA (2026-08-01, buyurtmachi)
+
+Shikoyat: *"когда изучение… фокус не на самом контенте остаётся"* — chap ustundagi
+o'rganish menyusi 280px ni doim egallardi, prezentatsiya esa qolgan joyga siqilardi.
+
+- **Chap ustun O'CHIRILDI** (`StudyRail.tsx` olib tashlandi). O'rniga
+  `StudyToolbar.tsx` — kontent ustidagi BITTA tasma: turlar (Konspekt ·
+  Prezentatsiya · Video · Fikr xaritasi · Kartochkalar) + ikkita tugma.
+- **"Bo'limlar N/M"** — konspekt bo'limlari ro'yxati popover'da ochiladi
+  (tashqariga bosilsa/Escape bilan yopiladi); bosilgan bo'lim reader'ga sakraydi.
+- **"Manbalar N"** — o'qituvchi yuklagan PDF/havolalar tasmasi faqat
+  so'ralganda ochiladi (ilgari konspekt ustida doim turardi).
+- **Slayd = sahna:** sarlavha CHIPI va alohida sahifalagich QATORI olib
+  tashlandi — navigatsiya rasm ustida suzadi, sarlavha esa Nano Banana
+  slaydining o'zida allaqachon bor (§4 "bitta fakt — bitta joy").
+  O'lchandi: rasm balandligi 400px → **496px**, kontent maydoni 1364/1440px.
+- Mobilda tasma gorizontal skroll qiladi, tugmalar ikonka+hisobga qisqaradi;
+  rail uchun `Sheet` endi kerak emas (o'chirildi).
+
+**Tekshirildi (Chrome):** desktop 1440 — tasma 5 tur + 2 tugma, manbalar/bo'limlar
+ochiladi (5 bo'lim), rasm 1281px; mobil 390 — toshish 0, konsol toza. tsc+build toza.

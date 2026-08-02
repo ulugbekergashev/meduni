@@ -1768,7 +1768,9 @@
     "downloadPdf": "Скачать PDF",
     "slidesDone": "Просмотрено",
     "mindmapExpand": "Развернуть",
-    "mindmapCollapse": "Свернуть"
+    "mindmapCollapse": "Свернуть",
+    "sectionsBtn": "Разделы",
+    "sourcesBtn": "Источники"
   },
   "search": {
     "placeholder": "Поиск… (студент, группа, курс)",

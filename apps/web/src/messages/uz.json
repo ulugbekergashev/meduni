@@ -1768,7 +1768,9 @@
     "downloadPdf": "PDF yuklab olish",
     "slidesDone": "Koʻrildi",
     "mindmapExpand": "Yoyish",
-    "mindmapCollapse": "Yigʻish"
+    "mindmapCollapse": "Yigʻish",
+    "sectionsBtn": "Boʻlimlar",
+    "sourcesBtn": "Manbalar"
   },
   "search": {
     "placeholder": "Qidirish… (talaba, guruh, kurs)",

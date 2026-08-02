@@ -204,30 +204,53 @@ export function SlidesTab({ topicId, data }: { topicId: number; data: SlidesTabD
               touchX.current = null;
             }}
           >
-            {/* 2026-08-01: slayd — RASMNING O'ZI (Nano Banana diagrammasi).
-                Sarlavha ustida ixcham lenta, tezislar ostida izoh sifatida;
-                rasm qolgan bo'sh joyni to'liq egallaydi (ZICHLIK §4). */}
+            {/* 2026-08-01 (buyurtmachi: "фокус — на контенте"): slayd = RASMNING
+                O'ZI. Sarlavha va sahifalagich rasm USTIDA suzadi, ya'ni ular
+                balandlikni yemaydi va diagramma maksimal katta ko'rinadi. */}
             <div className="flex min-h-0 flex-1 flex-col">
-              <div className="flex shrink-0 items-start gap-2.5 px-4 pt-3">
-                <div className="mt-1 h-6 w-1 shrink-0 rounded-pill bg-brand" />
-                <h3 className="text-section font-extrabold leading-snug text-ink">{slide.title}</h3>
-              </div>
-
               {slide.imageUrl ? (
                 // Rasm 16:9 (Nano Banana) — aniq nisbatli maydonga joylashadi.
                 // ⚠️ Ilgari `max-h-full` ishlatilgandi: flex-ota balandligi kontentдан
                 // hisoblangani uchun rasm kartadan CHIQIB ketardi va pastdagi
                 // tezislarni yopib qo'yardi.
-                <div className="flex min-h-0 flex-1 items-center justify-center px-3 py-2">
+                <div className="relative flex min-h-0 flex-1 items-center justify-center px-2 py-2">
                   <SlideImage
                     src={`${API_URL}${slide.imageUrl}`}
                     alt={slide.title}
                     wrapperClassName="mx-auto aspect-video max-h-full w-auto max-w-full"
                     className="h-full w-full rounded-control object-contain"
                   />
+                  {/* ⚠️ Sarlavha CHIPI yo'q: Nano Banana slaydining O'ZIDA sarlavha
+                      chizilgan — chip uni takrorlardi (§4 "bitta fakt — bitta joy"). */}
+                  {/* Sahifalagich — rasm ustida (alohida qator emas) */}
+                  <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-pill bg-surface/95 px-1.5 py-1 shadow-card">
+                    <button
+                      onClick={() => go(-1)}
+                      disabled={i === 0}
+                      aria-label="prev"
+                      className="flex h-8 w-8 items-center justify-center rounded-full text-ink-soft transition-colors hover:bg-surface-raised hover:text-ink disabled:opacity-30"
+                    >
+                      <Icon icon={ChevronLeft} size={16} />
+                    </button>
+                    <span className="min-w-[44px] text-center text-note font-extrabold tabular-nums text-ink-soft">
+                      {i + 1} / {total}
+                    </span>
+                    <button
+                      onClick={() => go(1)}
+                      disabled={i === total - 1}
+                      aria-label="next"
+                      className="flex h-8 w-8 items-center justify-center rounded-full text-ink-soft transition-colors hover:bg-surface-raised hover:text-ink disabled:opacity-30"
+                    >
+                      <Icon icon={ChevronRight} size={16} />
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
+                  <div className="mb-3 flex items-start gap-2.5">
+                    <div className="mt-1 h-6 w-1 shrink-0 rounded-pill bg-brand" />
+                    <h3 className="text-section font-extrabold leading-snug text-ink">{slide.title}</h3>
+                  </div>
                   <ul className="space-y-2.5">
                     {slide.bullets.map((b, bi) => (
                       <li key={bi} className="flex gap-2.5 text-body leading-relaxed text-ink-strong">
@@ -255,6 +278,7 @@ export function SlidesTab({ topicId, data }: { topicId: number; data: SlidesTabD
             </div>
           </div>
 
+          {!slide.imageUrl && (
           <div className="flex items-center justify-center gap-3">
             <button
               onClick={() => go(-1)}
@@ -276,6 +300,7 @@ export function SlidesTab({ topicId, data }: { topicId: number; data: SlidesTabD
               <Icon icon={ChevronRight} size={17} />
             </button>
           </div>
+          )}
         </>
       )}
     </div>
