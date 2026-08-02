@@ -1087,7 +1087,8 @@
     "needContent": "Avval kamida bitta kontent yarating.",
     "hint": "Tasdiqlangach talaba shu kontentni darrov ko'radi.",
     "videoNotBuilt": "Video hali tayyor emas — montaj yakunlanmagan",
-    "videoResume": "Montajni davom ettirish"
+    "videoResume": "Montajni davom ettirish",
+    "videoStopped": "Montaj toʻxtadi — davom ettirish kerak"
   },
   "settings": {
     "title": "Kurs sozlamalari",
