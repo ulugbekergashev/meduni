@@ -367,6 +367,9 @@ function TimetableSetupModal({ group, onClose }: { group: TeachGroup; onClose: (
   const [cycleEnd, setCycleEnd] = useState("");
   const [days, setDays] = useState(() => Array.from({ length: 7 }, () => ({ on: false, time: "09:00", room: "" })));
   const [err, setErr] = useState<string | null>(null);
+  // ~24 boshqaruv bitta oynada turardi (buyurtmachi: "qiyin"). Endi ikki qadam:
+  // 1) kurs + sikl davri → 2) kunlar va vaqtlar. Payload o'zgarmadi.
+  const [step, setStep] = useState<1 | 2>(1);
 
   // Tanlangan kursning MAVJUD siklini prefill qilamiz (tahrirlash uchun).
   const courseData = ttQ.data?.courses.find((c) => String(c.courseId) === courseId);
@@ -385,9 +388,16 @@ function TimetableSetupModal({ group, onClose }: { group: TeachGroup; onClose: (
   const setDay = (i: number, patch: Partial<{ on: boolean; time: string; room: string }>) =>
     setDays((d) => d.map((x, n) => (n === i ? { ...x, ...patch } : x)));
 
-  const submit = () => {
+  const goStep2 = () => {
     setErr(null);
     if (!cycleStart || !cycleEnd) { setErr(t("cycleNeedDates")); return; }
+    if (new Date(cycleEnd) < new Date(cycleStart)) { setErr(t("cycleNeedDates")); return; }
+    setStep(2);
+  };
+
+  const submit = () => {
+    setErr(null);
+    if (!cycleStart || !cycleEnd) { setErr(t("cycleNeedDates")); setStep(1); return; }
     const chosen = days.map((d, i) => ({ ...d, weekday: i })).filter((d) => d.on);
     if (chosen.length === 0) { setErr(t("cycleNeedDays")); return; }
     save.mutate(
@@ -399,6 +409,24 @@ function TimetableSetupModal({ group, onClose }: { group: TeachGroup; onClose: (
   return (
     <Modal open onClose={onClose} title={t("setupTimetable")} className="max-w-xl">
       <div className="space-y-4">
+        {/* Qadam ko'rsatkichi */}
+        <div className="flex items-center gap-2">
+          {([1, 2] as const).map((n) => (
+            <div key={n} className="flex flex-1 items-center gap-2">
+              <span className={cls(
+                "flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-micro font-bold",
+                step === n ? "bg-brand text-white" : step > n ? "bg-emerald text-white" : "bg-bg text-ink-faint"
+              )}>{n}</span>
+              <span className={cls("text-note font-semibold", step === n ? "text-ink" : "text-ink-faint")}>
+                {t(n === 1 ? "cycleStep1" : "cycleStep2")}
+              </span>
+              {n === 1 && <span className="h-px flex-1 bg-line" />}
+            </div>
+          ))}
+        </div>
+
+        {step === 1 && (
+        <>
         <p className="text-[13.5px] text-ink-soft">{t("cycleHint")}</p>
 
         <Field label={t("course")}>
@@ -407,7 +435,6 @@ function TimetableSetupModal({ group, onClose }: { group: TeachGroup; onClose: (
           </Select>
         </Field>
 
-        {/* 1-qadam: sikl davri */}
         <div>
           <p className="mb-1.5 text-[13px] font-bold text-ink">{t("cyclePeriod")}</p>
           <div className="grid gap-3 sm:grid-cols-2">
@@ -416,8 +443,10 @@ function TimetableSetupModal({ group, onClose }: { group: TeachGroup; onClose: (
           </div>
           {weeks > 0 && <p className="mt-1 text-[13px] font-semibold text-brand-deep">≈ {t("cycleWeeks", { n: weeks })}</p>}
         </div>
+        </>
+        )}
 
-        {/* 2-qadam: kunlar + har kunga o'z vaqti/xonasi */}
+        {step === 2 && (
         <div>
           <p className="mb-1.5 text-[13px] font-bold text-ink">{t("cycleDays")}</p>
           <div className="space-y-1.5">
@@ -439,11 +468,21 @@ function TimetableSetupModal({ group, onClose }: { group: TeachGroup; onClose: (
             ))}
           </div>
         </div>
+        )}
 
         {err && <p className="text-[13.5px] text-rose">{err}</p>}
         <div className="flex justify-end gap-2">
-          <Button variant="ghost" onClick={onClose}>{tc("cancel")}</Button>
-          <Button onClick={submit} disabled={save.isPending || !courseId}>{t("cycleCreate")}</Button>
+          {step === 1 ? (
+            <>
+              <Button variant="ghost" onClick={onClose}>{tc("cancel")}</Button>
+              <Button onClick={goStep2} disabled={!courseId}>{t("cycleNext")}</Button>
+            </>
+          ) : (
+            <>
+              <Button variant="ghost" onClick={() => { setErr(null); setStep(1); }}>{t("cycleBack")}</Button>
+              <Button onClick={submit} disabled={save.isPending || !courseId}>{t("cycleCreate")}</Button>
+            </>
+          )}
         </div>
       </div>
     </Modal>

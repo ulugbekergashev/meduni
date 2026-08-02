@@ -2352,8 +2352,22 @@ Xuddi shu STAT DIETASI qo'llandi:
 `ReviewTab` esa **`reviewTab`** prefiksini ishlatadi (Modul 28 sabog'i).
 Yangi kalitni qo'shishdan oldin komponentning `keyPrefix` ini TEKSHIR.
 
-**Tekshirildi (Playwright + real Chrome, uchala rol, 5 to'plam):**
-31/31 + 10/10 + 19/19 + 21/21 + 21/21 — menyu/faol holat/mobil "Yana" tuzog'i,
+### Faza 5/6 qoldiqlari yopildi (o'sha kun)
+- **`TimetableSetupModal` — IKKI QADAM** (~24 boshqaruv bitta oynada edi):
+  1) kurs + sikl davri (+ "≈ N hafta"), 2) kunlar/vaqt/xona. Qadam ko'rsatkichi,
+  "Keyingi"/"Orqaga", sanasiz o'tkazmaydi; `useSetupCycle` payload'i O'ZGARMADI.
+  ⚠️ Modal mavjud siklni PREFILL qiladi (ataylab) — validatsiyani sinaganda
+  sanalarni avval tozalash kerak.
+- **`StudentCoursesPage` davr filtri** (yil+semestr) `Disclosure` ostiga —
+  sukut bo'yicha joriy semestr ochilgani uchun u kamdan-kam kerak; qidiruv ochiq.
+- **`StageStepper`: umumiy % UCHINCHI marta chizilardi** (mini-halqa + raqam +
+  butun kenglikdagi gradient trek) — trek olib tashlandi (§4 "bitta fakt —
+  bitta joy"). Qiymat o'ng chetdagi chipda qoladi.
+⚠️ Rejadagi "dars sahifasi chap ustuni" bandi ESKIRGAN: `StudyRail` allaqachon
+`StudyToolbar` ga almashtirilgan (commit `e245d82`, parallel ish) — takrorlanmadi.
+
+**Tekshirildi (Playwright + real Chrome, uchala rol, 6 to'plam):**
+31/31 + 10/10 + 19/19 + 21/21 + 21/21 + 19/19 — menyu/faol holat/mobil "Yana" tuzog'i,
 konspekt o'qish rejimi (kartada 0 input) va tahrir saqlanishi, raqam dietasi,
 xatolar tabi + ko'rinish xotirasi, chiplar, keys filtrlari, talaba sahifalari
 (uz+ru, mobil 390 toshishsiz). tsc + build ikkala tomonda toza.

@@ -368,7 +368,11 @@
     "sortQuiz": "Test bahosi boʻyicha",
     "filterAll": "Hammasi",
     "filterLowAtt": "Past davomat",
-    "noMatch": "Mos talaba topilmadi."
+    "noMatch": "Mos talaba topilmadi.",
+    "cycleStep1": "Kurs va davr",
+    "cycleStep2": "Kunlar va vaqt",
+    "cycleNext": "Keyingi",
+    "cycleBack": "Orqaga"
   },
   "courseGroups": {
     "subtitle": "Bu kurs qaysi guruhlarda oʻtiladi. Guruhni bosing — profili (talabalar, jurnal, davomat).",
@@ -1979,7 +1983,8 @@
     "continueShort": "Davom",
     "allDone": "Barchasi bajarildi",
     "topics": "mavzu",
-    "summaryLine": "Jami {{all}} kurs · {{done}} tugallangan · mavzular {{topicsDone}}/{{topicsTotal}}"
+    "summaryLine": "Jami {{all}} kurs · {{done}} tugallangan · mavzular {{topicsDone}}/{{topicsTotal}}",
+    "periodFilter": "Davr boʻyicha"
   },
   "practice": {
     "patientTitle": "Virtual bemor amaliyoti",

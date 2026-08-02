@@ -368,7 +368,11 @@
     "sortQuiz": "По баллу теста",
     "filterAll": "Все",
     "filterLowAtt": "Низкая посещ.",
-    "noMatch": "Студенты не найдены."
+    "noMatch": "Студенты не найдены.",
+    "cycleStep1": "Курс и период",
+    "cycleStep2": "Дни и время",
+    "cycleNext": "Далее",
+    "cycleBack": "Назад"
   },
   "courseGroups": {
     "subtitle": "В каких группах ведётся этот курс. Нажмите на группу — её профиль (студенты, журнал, посещаемость).",
@@ -1979,7 +1983,8 @@
     "continueShort": "Продолжить",
     "allDone": "Все пройдено",
     "topics": "тем",
-    "summaryLine": "Всего {{all}} курсов · {{done}} завершено · темы {{topicsDone}}/{{topicsTotal}}"
+    "summaryLine": "Всего {{all}} курсов · {{done}} завершено · темы {{topicsDone}}/{{topicsTotal}}",
+    "periodFilter": "По периоду"
   },
   "practice": {
     "patientTitle": "Практика с виртуальным пациентом",
