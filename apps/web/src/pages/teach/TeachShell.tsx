@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import { Outlet } from "react-router-dom";
-import { BookOpen, CalendarDays, GraduationCap, Home, ListChecks, Settings, Users2 } from "lucide-react";
+import { BookOpen, GraduationCap, Home, Settings, Users2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Icon } from "@meduni/ui";
 import { RoleShell } from "../../components/RoleShell";
@@ -57,11 +57,21 @@ export function TeachShell() {
       brand="MedUni AI · Oʻqituvchi"
       headerSlot={<GlobalSearch fetch={search} />}
       profileHref="/teach/settings"
+      // ⚠️ 4 element + BottomNav sukut `primaryCount=4` = "Yana" tugmasi
+      // chizilmaydi va Chiqish mobilda yo'qoladi. 3 ta tab + Yana.
+      primaryCount={3}
       items={[
-        { href: "/teach", label: t("dashboard"), shortLabel: ts("dashboard"), icon: <Icon icon={Home} />, end: true },
-        { href: "/teach/tasks", label: t("myTasks"), shortLabel: ts("myTasks"), icon: <Icon icon={ListChecks} />, badge: openTasks },
+        {
+          href: "/teach",
+          label: t("dashboard"),
+          shortLabel: ts("dashboard"),
+          icon: <Icon icon={Home} />,
+          end: true,
+          // Vazifalar va Darslarim endi shu bo'lim ichida (TeachHomeShell SubNav).
+          alsoActiveOn: ["/teach/tasks", "/teach/schedule"],
+          badge: openTasks,
+        },
         { href: "/teach/courses", label: t("courses"), shortLabel: ts("courses"), icon: <Icon icon={BookOpen} /> },
-        { href: "/teach/schedule", label: t("lessons"), shortLabel: ts("lessons"), icon: <Icon icon={CalendarDays} /> },
         { href: "/teach/groups", label: t("groups"), shortLabel: ts("groups"), icon: <Icon icon={Users2} /> },
         { href: "/teach/settings", label: t("settings"), shortLabel: ts("settings"), icon: <Icon icon={Settings} /> },
       ]}

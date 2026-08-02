@@ -182,7 +182,8 @@
     "filterDone": "Выполнено",
     "statusDone": "Выполнено",
     "statusOverdue": "Просрочено",
-    "studentsAssignmentKind": "Задание студентам"
+    "studentsAssignmentKind": "Задание студентам",
+    "sourceLabel": "Источник"
   },
   "teachAssign": {
     "newBtn": "Новая задача",
@@ -766,7 +767,21 @@
     "newGroupTitle": "Новая группа",
     "createGroupBtn": "Новая группа",
     "groupYear": "Курс",
-    "groupNameLabel": "Название группы"
+    "groupNameLabel": "Название группы",
+    "navToday": "Сегодня",
+    "todoTitle": "Сегодня нужно сделать",
+    "todoAll": "Все задачи ({{n}})",
+    "startTitle": "Начало — 3 шага",
+    "startSubtitle": "Первое занятие готовится за три шага.",
+    "startStep1": "Создайте курс",
+    "startStep1Hint": "Название, группы и семестр — за минуту.",
+    "startStep2": "Добавьте тему и загрузите материал",
+    "startStep2Hint": "Загрузите PDF или Word — остальное подготовит ИИ.",
+    "startStep3": "Утвердите конспект и опубликуйте",
+    "startStep3Hint": "Проверяете и утверждаете — только после этого видит студент.",
+    "startGo": "Начать",
+    "startDismiss": "Закрыть",
+    "startGuide": "Руководство по началу"
   },
   "topics": {
     "subjectShared": "Темы принадлежат предмету — все курсы (группы) по этому предмету видят одни и те же темы.",

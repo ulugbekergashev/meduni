@@ -2215,3 +2215,90 @@ o'rganish menyusi 280px ni doim egallardi, prezentatsiya esa qolgan joyga siqila
 
 **Tekshirildi (Chrome):** desktop 1440 — tasma 5 tur + 2 tugma, manbalar/bo'limlar
 ochiladi (5 bo'lim), rasm 1281px; mobil 390 — toshish 0, konsol toza. tsc+build toza.
+
+---
+
+## 18. O'QITUVCHI UX SODDALASHTIRISH — Faza 0/1 (2026-08-02, buyurtmachi)
+
+Buyurtmachi: *"Если учитель зайдет сюда, он испугается от новой системы... нужно
+упростить, уменьшить данных, чтобы всё структурно плавно пошло."*
+To'liq reja (6 faza): **`.claude/plans/teacher-ux-simplify-2026-08.md`**.
+Buyurtmachi qarorlari: **avval o'qituvchi, keyin talaba**; **progressiv ochilish —
+hech narsa o'chirilmaydi**; fokus — birinchi kirish, dars yaratish, ortiqcha
+raqamlar, menyu.
+
+**O'lchangan muammo:** 6 nav bo'limi + ikkinchi/uchinchi daraja tab; **61 ta
+`StatCard`/`HeroTile` 12 sahifada**; Bosh sahifa bitta skrollda **8 bo'lim**
+(hisobot, ish ro'yxati emas). Loyihaning O'Z qoidasi (§4 "bitta fakt — bitta
+joy") buzilgan edi: bugungi darslar Dashboard+Jadvalda, vazifa sonlari
+Dashboard+TasksPage'da.
+
+### Qabul qilingan qoida — STAT DIETASI (§4 ga qo'shimcha)
+1. Sahifada eng ko'pi **bitta** stat qatori, va faqat kartalar **filtr** bo'lsa.
+2. Qatorda ko'pi bilan 4 karta. 3. Ota sahifadagi raqam bolada takrorlanmaydi.
+4. Hech kim harakat qilmaydigan raqam — **matn**, karta emas.
+
+### Faza 0 — umumiy qismlar
+- **`components/Disclosure.tsx`** (yangi) — yagona "Batafsil" mexanizmi
+  (`GenerateSection`dagi mahalliy `Advanced`dan umumlashtirildi); ixtiyoriy
+  `storageKey` bilan holat localStorage'da saqlanadi.
+- **`pages/teach/tasks/TaskItemRow.tsx`** (yangi) — vazifa qatori
+  (`KIND_META`, yosh matni, badge/trailing, yo'qlama/link klik) `TeachTasksPage`
+  dan ajratildi. Bosh sahifa va Vazifalar sahifasi AYNAN shu qatorni ishlatadi.
+
+### Faza 1 — menyu + Bosh sahifa + birinchi kirish
+- **Nav 6 → 4** (`TeachShell`): Bosh sahifa · Kurslar · Guruhlar · Sozlamalar.
+  Vazifalar va Darslarim **yangi bo'lim paneliga** ko'chdi
+  (`pages/teach/home/TeachHomeShell.tsx` — **yo'lsiz (pathless) layout route**,
+  `App.tsx`). **URL'lar o'zgarmadi** — `/teach/tasks`, `/teach/schedule` va
+  backend deep-linklari (`tasks/service.ts` → `/teach/schedule`) ishlayveradi.
+  Yo'lsiz route tanlangan sabab: `SubNav` unmount'da `set(null)` qiladi, uchta
+  aka-uka sahifa bo'lsa 248px panel har almashishda qayta mount bo'lib sakrardi.
+- ⛔ **IKKI TUZOQ (ikkalasi ham kodda topildi va tuzatildi):**
+  1. `RoleShell.tsx` faol holat: `/teach` da `end:true` bo'lgani uchun
+     `/teach/tasks` da birorta rey elementi yonmasdi. Yangi
+     `RoleShellItem.alsoActiveOn?: string[]`.
+  2. **`BottomNav` sukut `primaryCount = 4` + "Yana" faqat `rest.length > 0` da
+     chizilardi** → aynan 4 nav elementi bo'lganda mobil foydalanuvchi Til/Tema/
+     **Chiqish**ga umuman yeta olmasdi. `RoleShellProps.primaryCount` qo'shildi
+     (`TeachShell` 3 beradi) **va** `BottomNav` sharti `rest.length > 0 ||
+     moreExtra` ga o'zgartirildi (butun ilova uchun himoya).
+- **Bosh sahifa = "bugun nima qilaman"** (`TeachDashboard.tsx`, 259 → ~250 q,
+  lekin ekranda 8 bo'lim → 4): hero'dan 3 mini-stat va **4 ta tez-o'tish kartasi
+  olib tashlandi** (sof nav dublikati edi); 3 ta mavhum stat karta o'rniga
+  **"Bugun bajarish kerak" — ko'pi bilan 5 ta ANIQ qator** (`taskBoard.items`,
+  muddati o'tganlar birinchi, `TaskItemRow` bilan, yo'qlama qatori shu yerda
+  `RollCallModal` ochadi); butun analitika bloki **`Disclosure` ostiga** yig'ildi
+  (`meduni.teach.homeAnalytics` — hech narsa o'chmadi, tanlov saqlanadi);
+  bugungi darslar endi `AsyncSection` ichida (ilgari **xato holati yo'q edi**).
+- **Birinchi kirish** — `pages/teach/home/StarterCard.tsx` + `starterState.ts`:
+  chop etilgan mavzu bo'lmasa "3 qadam" kartasi (kurs → mavzu+material →
+  konspekt tasdiq+chop etish), keyingi bajarilmagan qadam yoritiladi.
+  Holat `localStorage["meduni.teachStart.<userId>"]` (foydalanuvchi bo'yicha).
+  Panel pastidagi **"Boshlash qo'llanmasi"** kartani qaytaradi.
+  `TeachCoursesPage` endi **`?new=1`** bilan yaratish oynasini ochadi.
+- **`TeachTasksPage` — filtr o'lchamlari ajratildi**: ilgari 6 holat BITTA
+  `filter` o'zgaruvchisiga yozardi va "Bajarilgan" boshqaruvi **ikki joyda**
+  (stat karta + chip) bir xil holatni qo'yardi. Endi **holat** (4 stat karta:
+  todo/overdue/waiting/done) × **manba** (chiplar: hammasi/kafedra/talabalar,
+  `MANBA:` yorlig'i bilan); dublikat chip olib tashlandi. Kartalar filtr bo'lgani
+  uchun STAT DIETASI bo'yicha qoladi.
+
+**Tekshirildi (Playwright + real Chrome, `teacher.m11demo@meduni.uz`):**
+asosiy to'plam **31/31**, regressiya **10/10** — rey 4 element, panel
+Bugun/Vazifalar/Darslarim, `/teach/tasks` va `/teach/schedule` da Bosh sahifa
+faol + to'g'ri panel elementi, todo 5 ta aniq qator, Analitika yopiq→ochiq→
+qayta yuklashda saqlanadi, uz **va** ru (xom kalit yo'q), `?new=1`,
+**mobil 390: 3 tab + "Yana" ichida Sozlamalar/Til/Chiqish** (tuzoq tekshiruvi),
+toshish 0, konsol toza; talaba tomoni regressiyasiz (rey 6, mobil 4+Yana).
+tsc + build ikkala tomonda toza.
+⚠️ Dev'dagi yagona konsol 404 — `/favicon.ico` (loyihada `public/` yo'q,
+index.html'da icon havolasi yo'q) — bu o'zgarishlarga aloqasiz, oldindan bor.
+
+**Keyingi fazalar (rejada, qurilmagan):** 2 — konspekt sukut bo'yicha O'QISH
+rejimi (`DigestSection` 20-60 input o'rniga preview + "Tasdiqlash va davom
+etish", talaba `DigestView`/`BlockView` renderlari qayta ishlatiladi);
+3 — raqam dietasi (Guruhlar/Jadval/StudentDetail/ProgressTab'dan 14 karta);
+4 — `MistakesMap`ni `ProgressTab`dan alohida "Xatolar" tabiga ajratish +
+sukut ko'rinish list; 5 — quvur chiplari/timetable master/review filtrlari;
+6 — **talaba tomoni** (buyurtmachi: "потом ученик").

@@ -96,7 +96,11 @@ export function BottomNav({ items, primaryCount = 4, moreLabel, moreExtra, LinkC
           </Link>
         ))}
 
-        {rest.length > 0 && (
+        {/* ⚠️ `moreExtra` ham shartga kiradi: elementlar soni `primaryCount` ga
+            teng bo'lsa `rest` bo'sh bo'ladi va ilgari "Yana" tugmasi umuman
+            chizilmasdi — natijada Til / Tema / **Chiqish** mobilda ochib
+            bo'lmasdi (foydalanuvchi tizimdan chiqa olmasdi). */}
+        {(rest.length > 0 || !!moreExtra) && (
           <button
             type="button"
             onClick={() => setMoreOpen(true)}

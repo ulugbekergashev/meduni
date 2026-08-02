@@ -1,5 +1,5 @@
 import { useMemo, useState, type FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { BookOpen, Info, Plus, Search, Users2 } from "lucide-react";
 import { Button, ChipSelect, Icon, Input, Modal, Select, useToast } from "@meduni/ui";
@@ -127,8 +127,19 @@ export function TeachCoursesPage() {
   const [search, setSearch] = useState("");
   const [year, setYear] = useState("");
   const [semester, setSemester] = useState("");
-  const [addOpen, setAddOpen] = useState(false);
+  // `?new=1` — Bosh sahifadagi "3 qadam" kartasi to'g'ridan yaratish oynasini ochadi.
+  const [params, setParams] = useSearchParams();
+  const [addOpen, setAddOpen] = useState(() => params.get("new") === "1");
   const options = usePeriodOptions(courses);
+
+  const closeAdd = () => {
+    setAddOpen(false);
+    if (params.get("new")) {
+      const p = new URLSearchParams(params);
+      p.delete("new");
+      setParams(p, { replace: true });
+    }
+  };
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -157,7 +168,7 @@ export function TeachCoursesPage() {
         </Button>
       </div>
 
-      {addOpen && <NewCourseModal onClose={() => setAddOpen(false)} />}
+      {addOpen && <NewCourseModal onClose={closeAdd} />}
 
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-2">

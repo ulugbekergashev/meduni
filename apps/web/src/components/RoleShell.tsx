@@ -48,6 +48,15 @@ export interface RoleShellItem {
   end?: boolean;
   /** Optional count pill (e.g. pending cases). */
   badge?: number;
+  /**
+   * Qo'shimcha manzillar — shu yo'llarda ham element FAOL ko'rinadi.
+   *
+   * Kerak bo'lgan sabab (2026-08-02): bo'lim ichida bir nechta sahifa bo'lsa
+   * (`/teach` → Bugun | Vazifalar | Jadval), `end: true` tufayli `/teach/tasks`
+   * da birorta rey elementi yonmasdi va menyu "buzuq" ko'rinardi; `end` ni olib
+   * tashlash esa har `/teach/*` sahifada Bosh sahifani yoqardi.
+   */
+  alsoActiveOn?: string[];
 }
 
 /** Ikkinchi daraja (bo'lim paneli) sahifalardan keladi — shuning uchun qobiq
@@ -71,6 +80,16 @@ interface RoleShellProps {
   fullBleed?: boolean;
   /** Talaba tomoni faqat qorong'i — tema tugmasi ko'rsatilmaydi. */
   showTheme?: boolean;
+  /**
+   * Mobil tab-barda nechta bo'lim ko'rinadi (qolgani "Yana" panelida).
+   *
+   * ⚠️ `BottomNav` sukut bo'yicha 4 ta ko'rsatadi va "Yana" tugmasini FAQAT
+   * yashiringan element qolganda chizadi. Ya'ni aynan 4 ta nav elementi bo'lsa
+   * "Yana" umuman chiqmaydi va uning ichidagi Til / Tema / **Chiqish**
+   * mobilda ochib bo'lmaydigan bo'lib qoladi. Shuning uchun 4 elementli
+   * rollarda bu qiymat 3 ga tushiriladi.
+   */
+  primaryCount?: number;
 }
 
 function RoleShellInner({
@@ -81,6 +100,7 @@ function RoleShellInner({
   profileHref,
   fullBleed = false,
   showTheme = true,
+  primaryCount,
 }: {
   brand: string;
   items: RoleShellItem[];
@@ -92,6 +112,16 @@ function RoleShellInner({
   fullBleed?: boolean;
   /** Talaba tomoni faqat qorong'i — tema tugmasi ko'rsatilmaydi. */
   showTheme?: boolean;
+  /**
+   * Mobil tab-barda nechta bo'lim ko'rinadi (qolgani "Yana" panelida).
+   *
+   * ⚠️ `BottomNav` sukut bo'yicha 4 ta ko'rsatadi va "Yana" tugmasini FAQAT
+   * yashiringan element qolganda chizadi. Ya'ni aynan 4 ta nav elementi bo'lsa
+   * "Yana" umuman chiqmaydi va uning ichidagi Til / Tema / **Chiqish**
+   * mobilda ochib bo'lmaydigan bo'lib qoladi. Shuning uchun 4 elementli
+   * rollarda bu qiymat 3 ga tushiriladi.
+   */
+  primaryCount?: number;
 }) {
   const { data: me } = useMe();
   const { t } = useTranslation(undefined, { keyPrefix: "nav" });
@@ -107,9 +137,9 @@ function RoleShellInner({
     shortLabel: item.shortLabel,
     icon: item.icon,
     badge: item.badge,
-    active: item.end
-      ? pathname === item.href
-      : pathname === item.href || pathname.startsWith(`${item.href}/`),
+    active:
+      (item.end ? pathname === item.href : pathname === item.href || pathname.startsWith(`${item.href}/`)) ||
+      (item.alsoActiveOn?.some((p) => pathname === p || pathname.startsWith(`${p}/`)) ?? false),
   }));
 
   const today = formatDate(locale === "ru" ? "ru" : "uz", new Date(), "long");
@@ -149,6 +179,7 @@ function RoleShellInner({
       bottomNav={
         <BottomNav
           items={sidebarItems}
+          primaryCount={primaryCount}
           moreLabel={t("more")}
           moreExtra={moreExtra}
           LinkComponent={RouterLink}
