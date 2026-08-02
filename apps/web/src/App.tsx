@@ -30,6 +30,7 @@ import { CourseGroupsTab } from "./pages/teach/course/CourseGroupsTab";
 import { SyllabusTab } from "./pages/teach/course/SyllabusTab";
 import { GroupProfile } from "./pages/teach/group/GroupProfile";
 import { ProgressTab } from "./pages/teach/course/ProgressTab";
+import { MistakesTab } from "./pages/teach/course/MistakesTab";
 import { SettingsTab } from "./pages/teach/course/SettingsTab";
 import { TopicConstructor } from "./pages/teach/topics/TopicConstructor";
 import { ContentEditor } from "./pages/teach/content/ContentEditor";
@@ -107,6 +108,7 @@ export function App() {
           {/* Attendance moved to the group profile; old links land on topics. */}
           <Route path="sessions" element={<Navigate to="../topics" replace />} />
           <Route path="progress" element={<ProgressTab />} />
+          <Route path="mistakes" element={<MistakesTab />} />
           {/* Guruh chati olib tashlandi (2026-07-23) — eski link topics'ga. */}
           <Route path="chat" element={<Navigate to="../topics" replace />} />
           <Route path="settings" element={<SettingsTab />} />

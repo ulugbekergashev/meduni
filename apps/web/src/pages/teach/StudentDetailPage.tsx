@@ -6,10 +6,11 @@ import {
   Lock, LockOpen, Mail, MessageCircle, Stethoscope, Users, X,
 } from "lucide-react";
 import {
-  Badge, Button, Card, Icon, Input, ProgressBar, ProgressRing, Spinner, StackedBar, StatCard,
+  Badge, Button, Card, Icon, Input, ProgressBar, ProgressRing, Spinner, StackedBar,
   cls, useToast, type BadgeTone,
 } from "@meduni/ui";
 import { AsyncSection } from "../../components/AsyncSection";
+import { SubNav } from "../../components/SubNav";
 import { QuickTaskModal, type QuickTaskPrefill } from "../../components/QuickTaskModal";
 import { formatDate } from "../../lib/date";
 import { useLocale } from "../../lib/useLocale";
@@ -257,7 +258,7 @@ export function StudentDetailPage() {
   const studentId = Number(id);
   const { t } = useTranslation(undefined, { keyPrefix: "studentDetail" });
   const navigate = useNavigate();
-  const [params, setParams] = useSearchParams();
+  const [params] = useSearchParams();
   const q = useStudentDetail(studentId);
   const d = q.data;
 
@@ -271,7 +272,6 @@ export function StudentDetailPage() {
     const r = params.get("tab");
     return r === "courses" || r === "journal" ? r : "overview";
   })();
-  const setTab = (k: TabKey) => setParams({ tab: k }, { replace: true });
 
   const doGrade = (caseAttemptId: number) => navigate(`/teach/cases/review?open=${caseAttemptId}`);
   const doUnlock = (courseId: number, topicId: number) =>
@@ -303,7 +303,6 @@ export function StudentDetailPage() {
   }, [d]);
 
   const initials = d ? d.student.fullName.split(" ").filter(Boolean).slice(0, 2).map((s) => s[0]?.toUpperCase()).join("") : "";
-  const gradeCount = attention.filter((a) => a.kind === "grade").length;
 
   const TABS: { key: TabKey; icon: typeof BookOpen }[] = [
     { key: "overview", icon: GraduationCap },
@@ -335,6 +334,9 @@ export function StudentDetailPage() {
                         <Icon icon={Users} size={12} /> {d.student.groupName}
                       </button>
                     )}
+                    <span className="inline-flex items-center gap-1.5">
+                      <Icon icon={BookOpen} size={14} /> {t("topicsCompleted")}: {completedTotal}/{topicsTotal}
+                    </span>
                   </div>
                 </div>
                 <div className="flex shrink-0 items-center gap-4">
@@ -342,28 +344,31 @@ export function StudentDetailPage() {
                     <ProgressRing value={overall} size={64} stroke={7} tone="brand" />
                     <span className="mt-1 text-micro font-semibold text-ink-soft">{t("overallShort")}</span>
                   </div>
+                  <div className="flex flex-col items-center">
+                    <span className={cls("text-stat font-extrabold leading-none tabular-nums", attPct !== null && attPct < 75 ? "text-rose" : "text-blue")}>
+                      {attPct !== null ? `${attPct}%` : "—"}
+                    </span>
+                    <span className="mt-1 text-micro font-semibold text-ink-soft">{t("attendance")}</span>
+                  </div>
                   <Button icon={<Icon icon={ListPlus} size={17} />} onClick={() => setAssign({ studentId: d.student.id, studentName: d.student.fullName })}>{t("assignTask")}</Button>
                 </div>
               </Card>
 
-              {/* ===== Stat strip ===== */}
-              <div className="grid grid-cols-2 gap-2.5 md:grid-cols-4 xl:grid-cols-5">
-                <StatCard compact icon={ClipboardList} tone="bg-blue-soft text-blue" value={attPct !== null ? `${attPct}%` : "—"} label={t("attendance")} hint={t("avgHint")} />
-                <StatCard compact icon={BookOpen} tone="bg-brand-soft text-brand-deep" value={`${completedTotal}/${topicsTotal}`} label={t("topicsCompleted")} hint={t("coursesN", { n: d.courses.length })} />
-                <StatCard compact icon={AlertTriangle} tone={gradeCount > 0 ? "bg-rose-soft text-rose" : "bg-bg text-ink-faint"} value={attention.length} label={t("attentionShort")} hint={t("gradeN", { n: gradeCount })} onClick={() => setTab("overview")} selected={tab === "overview"} />
-                <StatCard compact icon={Stethoscope} tone="bg-rose-soft text-rose" value={d.practiceSignals.patientSessions} label={t("practicePatient")} hint={d.practiceSignals.patientAvgScore !== null ? t("avgN", { n: d.practiceSignals.patientAvgScore }) : "—"} />
-                <StatCard compact icon={Check} tone="bg-emerald-soft text-emerald" value={d.practiceSignals.cardsReviewed} label={t("practiceCards")} hint={d.practiceSignals.cardsKnownPct !== null ? `${d.practiceSignals.cardsKnownPct}% ${t("known")}` : "—"} />
-              </div>
-
-              {/* ===== Tab bar ===== */}
-              <div className="inline-flex max-w-full gap-1 overflow-x-auto rounded-control border border-line bg-surface p-1 shadow-card">
-                {TABS.map((x) => (
-                  <button key={x.key} onClick={() => setTab(x.key)} className={cls("flex shrink-0 items-center gap-2 whitespace-nowrap rounded-[8px] px-4 py-2 text-note font-semibold transition-all", tab === x.key ? "bg-brand-soft text-brand-deep" : "text-ink-soft hover:bg-bg hover:text-ink")}>
-                    <Icon icon={x.icon} size={16} /> {t(`tabs.${x.key}`)}
-                    {x.key === "overview" && attention.length > 0 && <span className={cls("rounded-pill px-1.5 text-micro font-bold tabular-nums", gradeCount > 0 ? "bg-rose text-white" : "bg-ink-faint text-white")}>{attention.length}</span>}
-                  </button>
-                ))}
-              </div>
+              {/* Bo'limlar — xususiy pill-bar o'rniga umumiy SubNav (ilovadagi
+                  YAGONA ikkinchi daraja mexanizmi; desktopda yon panel, mobilda tasma).
+                  Eski 5 kartali strip olib tashlandi: mavzu/amaliyot raqamlari o'z
+                  tabida yorlig'i va konteksti bilan turadi (STAT DIETASI). */}
+              <SubNav
+                title={d.student.fullName}
+                activeKey={tab}
+                items={TABS.map((x) => ({
+                  key: x.key,
+                  label: t(`tabs.${x.key}`),
+                  to: `/teach/students/${d.student.id}?tab=${x.key}`,
+                  icon: <Icon icon={x.icon} size={16} />,
+                  badge: x.key === "overview" ? attention.length : undefined,
+                }))}
+              />
 
               {/* ===== Tab content ===== */}
               {tab === "overview" && (

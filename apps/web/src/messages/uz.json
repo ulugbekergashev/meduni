@@ -278,7 +278,8 @@
     "sortName": "Nomi boʻyicha",
     "sortProgress": "Progress boʻyicha",
     "sortAttendance": "Davomat boʻyicha",
-    "sortBehind": "Orqada qolganlar"
+    "sortBehind": "Orqada qolganlar",
+    "summaryLine": "{{groups}} guruh · {{students}} talaba · oʻrtacha oʻzlashtirish {{pct}}%"
   },
   "attMatrix": {
     "title": "Davomat matritsasi",
@@ -725,7 +726,8 @@
       "results": "Natijalar",
       "sessions": "Mashgʻulotlar",
       "progress": "Progress",
-      "settings": "Sozlamalar"
+      "settings": "Sozlamalar",
+      "mistakes": "Xatolar"
     },
     "placeholder": {
       "sessions": "Yoʻqlama moduli — keyingi sessiyada (Modul 15) qoʻshiladi.",
@@ -808,7 +810,8 @@
       "draft": "Qoralama",
       "published": "Chop etilgan"
     },
-    "added": "Mavzu qoʻshildi"
+    "added": "Mavzu qoʻshildi",
+    "chipContent": "Kontent"
   },
   "constructor": {
     "back": "← Mavzular",
@@ -1462,7 +1465,8 @@
     "patientLogTitle": "Virtual bemor amaliyoti",
     "patientLogEval": "AI bahosi: {{overall}} · anamnez {{anamnez}}",
     "patientLogNoEval": "{{n}} xabar — yakunlanmagan",
-    "patientDx": "Talabaning tashxisi"
+    "patientDx": "Talabaning tashxisi",
+    "moreFilters": "Qoʻshimcha filtrlar"
   },
   "attendance": {
     "tabSessions": "Mashgʻulotlar",
@@ -2114,7 +2118,8 @@
     "legendHint": "Katakni bosing — yoʻqlama",
     "viewWeek": "Hafta",
     "viewMonth": "Oy",
-    "noneThisDay": "Bu kuni dars yo'q"
+    "noneThisDay": "Bu kuni dars yo'q",
+    "summaryLine": "Bu davrda {{total}} dars · bugun {{today}} ta"
   },
   "navShort": {
     "dashboard": "Bosh",

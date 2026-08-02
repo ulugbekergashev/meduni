@@ -1,6 +1,6 @@
 import { Outlet, useLocation, useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { BarChart3, BookOpen, FileText, Settings, Users, Users2 } from "lucide-react";
+import { BarChart3, BookOpen, FileText, Settings, TriangleAlert, Users, Users2 } from "lucide-react";
 import { Card, Icon } from "@meduni/ui";
 import { SubNav } from "../../../components/SubNav";
 import { useTeachCourseMeta } from "../api";
@@ -101,6 +101,7 @@ export function TeacherCourseShell() {
             { key: "syllabus", label: t("tabs.syllabus"), to: `${base}/syllabus`, icon: <Icon icon={FileText} size={16} /> },
             { key: "groups", label: t("tabs.groups"), to: `${base}/groups`, icon: <Icon icon={Users2} size={16} /> },
             { key: "progress", label: t("tabs.results"), to: `${base}/progress`, icon: <Icon icon={BarChart3} size={16} /> },
+            { key: "mistakes", label: t("tabs.mistakes"), to: `${base}/mistakes`, icon: <Icon icon={TriangleAlert} size={16} /> },
             { key: "settings", label: t("tabs.settings"), to: `${base}/settings`, icon: <Icon icon={Settings} size={16} /> },
           ]}
         />
