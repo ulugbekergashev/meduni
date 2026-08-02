@@ -4,6 +4,7 @@ import { z, type ZodTypeAny } from "zod";
 import { badRequest, notFound } from "../../lib/errors";
 import { requireRoles } from "../../middleware/rbac";
 import * as svc from "./service";
+import * as podcast from "../content/podcast";
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 25 * 1024 * 1024 } });
 
@@ -118,6 +119,34 @@ topicsRouter.post(
 topicsRouter.post(
   "/:id/digest/audio",
   wrap(async (req, res) => res.json(await svc.generateDigestAudio(parseId(req.params.id), req.user!.id)))
+);
+
+// ---- Audio-podkast (~20 daqiqa, ikki ovozli suhbat) ----
+topicsRouter.get(
+  "/:id/podcast",
+  wrap(async (req, res) => res.json(await podcast.getPodcast(parseId(req.params.id), req.user!.id)))
+);
+
+topicsRouter.post(
+  "/:id/podcast/generate",
+  wrap(async (req, res) =>
+    res.json(
+      await podcast.generatePodcast(parseId(req.params.id), req.user!.id, {
+        rebuild: req.body?.rebuild === true,
+        language: req.body?.language === "ru" ? "ru" : req.body?.language === "uz" ? "uz" : undefined,
+      })
+    )
+  )
+);
+
+topicsRouter.get(
+  "/:id/podcast/audio",
+  wrap(async (req, res) => {
+    const buf = await podcast.getPodcastAudio(parseId(req.params.id), req.user!.id);
+    res.setHeader("Content-Type", "audio/mp4");
+    res.setHeader("Accept-Ranges", "bytes");
+    res.send(buf);
+  })
 );
 
 // ---- Materials router (/api/v1/materials) ----

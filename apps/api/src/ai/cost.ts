@@ -7,11 +7,13 @@ const TEXT_PRICING: Record<string, { in: number; out: number }> = {
   "gemini-2.5-flash-preview-tts": { in: 0.5, out: 10 }, // native TTS (audio out tokens)
 };
 const IMAGE_COST_USD = 0.04; // per generated image (estimate)
+/** Bepul rasm provayderlari — kvota hisobiga tushadi, pulga EMAS. */
+const FREE_IMAGE_MODELS = [/^pollinations\//];
 
 export function estimateCost(model: string, promptTokens: number, completionTokens: number, images: number): number {
   let cost = 0;
   const p = TEXT_PRICING[model];
   if (p) cost += (promptTokens / 1e6) * p.in + (completionTokens / 1e6) * p.out;
-  cost += images * IMAGE_COST_USD;
+  if (!FREE_IMAGE_MODELS.some((re) => re.test(model))) cost += images * IMAGE_COST_USD;
   return Math.round(cost * 1e6) / 1e6;
 }

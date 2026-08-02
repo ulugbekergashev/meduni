@@ -346,6 +346,51 @@ export function useGenerateDigestAudio(topicId: number) {
   });
 }
 
+// ---- Audio-podkast (~20 daqiqa, ikki ovozli suhbat) ----
+
+export interface PodcastChapter {
+  title: string;
+  startSec: number;
+  sectionId: string | null;
+}
+
+export interface PodcastState {
+  id: number;
+  status: "pending" | "script" | "tts" | "render" | "done" | "error";
+  errorStage: string | null;
+  language: "uz" | "ru";
+  durationSec: number | null;
+  hasAudio: boolean;
+  progress: { voiced: number; total: number };
+  chapters: PodcastChapter[];
+  /** Konspekt tahrirlangan — podkast eskirgan (qayta yaratish kerak). */
+  stale: boolean;
+}
+
+/** Qurilish jarayonida — jonli hisob uchun tez-tez so'raladi (fonda ham:
+ *  §12 saboqi — tab fonga o'tganda holat "qotib" qolardi). */
+export function usePodcast(topicId: number) {
+  return useQuery({
+    queryKey: ["podcast", topicId],
+    queryFn: () => api<PodcastState | null>(`/api/v1/topics/${topicId}/podcast`),
+    refetchInterval: (q) => {
+      const s = q.state.data?.status;
+      return s && s !== "done" && s !== "error" ? 5000 : false;
+    },
+    refetchIntervalInBackground: true,
+  });
+}
+
+export function useGeneratePodcast(topicId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    meta: { silent: true }, // xato kartaning o'zida ko'rsatiladi
+    mutationFn: (body?: { rebuild?: boolean }) =>
+      api<PodcastState>(`/api/v1/topics/${topicId}/podcast/generate`, { method: "POST", body: JSON.stringify(body ?? {}) }),
+    onSuccess: (data) => qc.setQueryData(["podcast", topicId], data),
+  });
+}
+
 // ---- Content generation & editing ----
 
 export function useGenerateQuiz(topicId: number) {

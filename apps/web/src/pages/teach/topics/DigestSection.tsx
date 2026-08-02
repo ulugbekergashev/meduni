@@ -1,16 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Check, Eye, Pencil, Sparkles, TriangleAlert, Volume2 } from "lucide-react";
+import { Check, Eye, Pencil, Sparkles, TriangleAlert } from "lucide-react";
 import { Button, Card, Icon, Spinner, useToast } from "@meduni/ui";
 import { apiErrorMessage } from "../../../lib/api";
 import { useLocale } from "../../../lib/useLocale";
 import { DigestEditor } from "./DigestEditor";
 import { DigestPreview } from "./DigestPreview";
+import { PodcastCard } from "./PodcastCard";
 import {
   useApproveDigest,
   useGenerateDigest,
-  useGenerateDigestAudio,
   useUpdateDigest,
   type DigestCheckpoint,
   type DigestJson,
@@ -38,7 +38,6 @@ export function DigestSection({ topic }: { topic: TopicDetail }) {
   const generate = useGenerateDigest(topic.id);
   const update = useUpdateDigest(topic.id);
   const approve = useApproveDigest(topic.id);
-  const genAudio = useGenerateDigestAudio(topic.id);
   const [params, setParams] = useSearchParams();
 
   const server = topic.digest;
@@ -129,6 +128,7 @@ export function DigestSection({ topic }: { topic: TopicDetail }) {
   const busy = approve.isPending || update.isPending;
 
   return (
+    <div className="space-y-3">
     <Card className="p-0">
       {editing ? (
         <DigestEditor draft={draft} onPatch={patch} sections={sections} onSetCheckpoint={setCheckpoint} />
@@ -183,19 +183,18 @@ export function DigestSection({ topic }: { topic: TopicDetail }) {
           <span className="text-[12.5px] font-semibold text-amber">{t("unsaved")}</span>
         )}
 
+        {/* ⚠️ "Audio yaratish" tugmasi OLIB TASHLANDI (2026-08-02): u 4500 belgi
+            bilan cheklangan qisqa o'qish edi va endi uning o'rnini pastdagi
+            PODKAST kartasi egalladi (~20 daq, mavzuni to'liq ochadi). Ikkita
+            audio tugmasi bir ekranda — §4 "bitta fakt, bitta joy" buzilishi. */}
         <div className="ml-auto flex items-center gap-2">
-          <Button
-            size="sm"
-            variant="ghost"
-            icon={<Icon icon={Volume2} size={15} />}
-            onClick={() => genAudio.mutate(undefined, { onSuccess: () => show(t("audioSaved")) })}
-            disabled={genAudio.isPending}
-          >
-            {genAudio.isPending ? t("audioGenerating") : t("generateAudio")}
-          </Button>
           <span className="text-[12.5px] text-ink-faint">v{server.version}</span>
         </div>
       </div>
     </Card>
+
+    {/* Audio-podkast — tasdiqlangan konspekt + manba fayldan */}
+    <PodcastCard topicId={topic.id} approved={server.approvedByTeacher} />
+    </div>
   );
 }

@@ -79,7 +79,10 @@ export async function generatePresentation(
     title: s.title,
     bullets: s.bullets,
     speakerNotes: s.speakerNotes,
-    imageSlots: s.imagePrompt?.trim() ? [{ prompt: s.imagePrompt.trim(), url: null, status: "PENDING" }] : [],
+    // Taqdimot RASMLI (§16) — shuning uchun har slaydga slot ochiladi. AI
+    // `imagePrompt` bermasa ham bo'sh prompt bilan ochamiz: `imagePromptForSlide`
+    // uni sarlavha + tezislardan quradi (aks holda slayd matn-only qolardi).
+    imageSlots: [{ prompt: s.imagePrompt?.trim() ?? "", url: null, status: "PENDING" as const }],
     sectionId: sectionIdAt(s.sectionIndex ?? -1),
   }));
 
@@ -123,7 +126,7 @@ async function updateSlot(
   presentationId: number,
   slideIndex: number,
   slotIndex: number,
-  patch: Partial<{ url: string | null; status: Slide["imageSlots"][number]["status"] }>
+  patch: Partial<{ url: string | null; status: Slide["imageSlots"][number]["status"]; error: string | null }>
 ) {
   const pres = await prisma.presentation.findUnique({ where: { id: presentationId } });
   if (!pres) return;
@@ -134,22 +137,49 @@ async function updateSlot(
   await prisma.presentation.update({ where: { id: presentationId }, data: { slidesJson: slides as object } });
 }
 
+/** Bitta slot uchun necha marta urinamiz (429 / vaqtinchalik uzilish uchun).
+ *  `generateImage` o'zi ham provayder zanjirini sinaydi — bu esa VAQT bo'yicha
+ *  ikkinchi imkoniyat (kvota tiklanishi, tarmoq). */
+const SLOT_ATTEMPTS = 2;
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/** Slotlar orasidagi pauza. ⚠️ 2026-08-02 o'lchandi: 8 slaydlik taqdimotda
+ *  rasm modeli ketma-ket chaqiruvda 429 beradi va slaydlarning YARMI ERROR
+ *  bo'lib qolardi (topic 6: 8 dan 4 tasi). Fon-jobda bir necha soniya kutish
+ *  hech kimga xalaqit bermaydi. */
+const SLOT_GAP_MS = 3000;
+
 async function runImageJob(presentationId: number, topicId: number, teacherId: number, lang: "uz" | "ru", targets: { s: number; slot: number }[]) {
   const departmentId = await departmentForTopic(topicId);
+  let first = true;
   for (const { s, slot } of targets) {
-    await updateSlot(presentationId, s, slot, { status: "PROCESSING" });
-    try {
-      const pres = await prisma.presentation.findUnique({ where: { id: presentationId } });
-      if (!pres) return;
-      const slide = slidesOf(pres)[s];
-      const slotObj = slide?.imageSlots[slot];
-      if (!slotObj) continue;
-      const prompt = imagePromptForSlide(slide, slotObj.prompt, lang);
-      const img = await generateImage(prompt, { kind: "IMAGE", topicId, departmentId, userId: teacherId });
-      const rel = await saveBytes(`topics/${topicId}/presentation/${presentationId}/s${s}_slot${slot}.png`, img.buffer);
-      await updateSlot(presentationId, s, slot, { url: rel, status: "DONE" });
-    } catch {
-      await updateSlot(presentationId, s, slot, { status: "ERROR" });
+    if (!first) await sleep(SLOT_GAP_MS);
+    first = false;
+    await updateSlot(presentationId, s, slot, { status: "PROCESSING", error: null });
+    let lastErr: unknown;
+    let done = false;
+    for (let attempt = 1; attempt <= SLOT_ATTEMPTS && !done; attempt++) {
+      try {
+        const pres = await prisma.presentation.findUnique({ where: { id: presentationId } });
+        if (!pres) return;
+        const slide = slidesOf(pres)[s];
+        const slotObj = slide?.imageSlots[slot];
+        if (!slotObj) break;
+        const prompt = imagePromptForSlide(slide, slotObj.prompt, lang);
+        const img = await generateImage(prompt, { kind: "IMAGE", topicId, departmentId, userId: teacherId });
+        const rel = await saveBytes(`topics/${topicId}/presentation/${presentationId}/s${s}_slot${slot}.png`, img.buffer);
+        await updateSlot(presentationId, s, slot, { url: rel, status: "DONE", error: null });
+        done = true;
+      } catch (err) {
+        lastErr = err;
+        if (attempt < SLOT_ATTEMPTS) await sleep(4000 * attempt);
+      }
+    }
+    if (!done) {
+      // ⚠️ SABABI saqlanadi (§17 saboqi: "xato sababi ko'rinmasdi" — o'qituvchi
+      // nega slayd matn-only qolganini bilmasdi va faqat qayta bosaverardi).
+      const msg = String((lastErr as Error)?.message ?? lastErr ?? "").slice(0, 200);
+      await updateSlot(presentationId, s, slot, { status: "ERROR", error: msg || null });
     }
   }
 }
@@ -163,6 +193,21 @@ export async function generateAllImages(presentationId: number, teacherId: numbe
   // (eski xatti-harakat). Matnli slaydga atlas-rasm generatsiya qilinmaydi.
   const pick = slideIds && slideIds.length ? new Set(slideIds) : null;
   const targets: { s: number; slot: number }[] = [];
+  // ⚠️ 2026-08-02: RASM SLOTI YO'Q slaydga ham rasm yasaladi. Ilgari faqat
+  // mavjud slotlar aylanib chiqilardi — AI `imagePrompt` bermagan slayd (eski
+  // taqdimotlarda ko'p) abadiy MATN-ONLY qolardi va "Rasm yasash" tugmasi
+  // unga umuman tegmasdi. Prompt bo'sh bo'lsa `imagePromptForSlide` uni
+  // sarlavha + tezislardan quradi.
+  let slotsAdded = false;
+  slides.forEach((slide) => {
+    if (pick && !pick.has(slide.id)) return;
+    if (!slide.imageSlots?.length) {
+      slide.imageSlots = [{ prompt: "", url: null, status: "PENDING" }];
+      slotsAdded = true;
+    }
+  });
+  if (slotsAdded) await prisma.presentation.update({ where: { id: presentationId }, data: { slidesJson: slides as object } });
+
   slides.forEach((slide, s) => {
     if (pick && !pick.has(slide.id)) return;
     slide.imageSlots.forEach((slot, i) => {

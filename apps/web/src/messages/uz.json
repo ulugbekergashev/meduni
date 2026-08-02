@@ -1825,7 +1825,16 @@
     "sectionsBtn": "Boʻlimlar",
     "sourcesBtn": "Manbalar",
     "play": "Ijro",
-    "pause": "Pauza"
+    "pause": "Pauza",
+    "tab_podcast": "Podkast",
+    "podcastTitle": "Audio-podkast",
+    "podcastHint": "Mavzu bo'yicha suhbat — quloq bilan o'rganish",
+    "podcastSeek": "Vaqtni tanlash",
+    "podcastPlay": "Ijro etish",
+    "podcastPause": "To'xtatish",
+    "podcastBack15": "15 soniya orqaga",
+    "podcastFwd15": "15 soniya oldinga",
+    "slideNotes": "Tezislar"
   },
   "search": {
     "placeholder": "Qidirish… (talaba, guruh, kurs)",
@@ -2166,5 +2175,19 @@
     "ai": "AI",
     "audit": "Audit",
     "settings": "Sozlamalar"
+  },
+  "podcast": {
+    "title": "Audio-podkast",
+    "hint": "Mavzuni to'liq ochadigan ~20 daqiqalik suhbat (ikki ovoz)",
+    "ready": "Tayyor — {{minutes}} daqiqa",
+    "generate": "Podkast yaratish",
+    "rebuild": "Qayta yaratish",
+    "listen": "Tinglash",
+    "needApprove": "Podkast tasdiqlangan konspektdan yoziladi — avval konspektni tasdiqlang.",
+    "stageScript": "Ssenariy yozilmoqda...",
+    "stageVoice": "Ovoz: {{done}}/{{total}}",
+    "keepWorking": "sahifani yopsangiz ham davom etadi",
+    "failed": "Podkast yaratilmadi",
+    "stale": "Konspekt o'zgargan — podkastni qayta yarating."
   }
 }

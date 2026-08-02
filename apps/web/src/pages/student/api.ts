@@ -161,6 +161,12 @@ export interface VideoSegment {
   narration: string;
 }
 
+/** Audio-podkast boblari — konspekt bo'limlari bilan bir xil nomlar. */
+export interface LessonPodcast {
+  durationSec: number | null;
+  chapters: { title: string; startSec: number; sectionId: string | null }[];
+}
+
 export interface VideoTabData {
   present: true;
   videoId: number;
@@ -337,6 +343,8 @@ export interface Lesson {
   digest: DigestJson | null;
   /** 1C: joriy konspekt versiyasiga audio tayyormi (o'qish ustuni pleyeri). */
   digestAudio?: boolean;
+  /** Audio-podkast (~20 daq) — tayyor bo'lsa boblar bilan (`PodcastTab`). */
+  podcast?: LessonPodcast | null;
   /** v2 bo'limli o'qish. Bo'sh bo'lsa — eski yassi konspekt renderi. */
   sections: LessonSection[];
   /** Mavzuning taxminiy vaqti (daqiqa). */

@@ -7,10 +7,10 @@ import type { Prisma } from "../../lib/prisma";
 import { prisma } from "../../lib/prisma";
 import { ApiError, badRequest, notFound } from "../../lib/errors";
 import { readFileBuffer, saveBytes } from "../../lib/storage";
-import { pcmToWav } from "../../lib/wav";
 import { FFMPEG, run } from "../../lib/exec";
 import { enqueueMediaJob } from "../../lib/jobQueue";
-import { generateImage, generateSpeech, generateStructured } from "../../ai/gemini";
+import { synthToWav, type TtsUsage } from "../../lib/tts";
+import { generateImage, generateStructured } from "../../ai/gemini";
 import { assertQuota } from "../../ai/quota";
 import { departmentForTopic } from "../../ai/glossary";
 import { imagePromptForVisual } from "../../ai/prompts/images";
@@ -284,12 +284,8 @@ export async function renderVisualPng(visual: VideoVisual, imageBuf: Buffer | nu
 }
 
 // ---------- TTS ----------
-// Primary: Gemini native TTS (studio quality). Fallback per segment: edge-tts.
-// Every segment is normalized to a 24 kHz mono 16-bit WAV so they concat cleanly.
-
-const TTS_RATE = 24000;
-
-interface TtsUsage { topicId?: number; departmentId?: number | null; userId?: number | null }
+// Dvigatel `lib/tts.ts` ga ko'chirildi (video + podkast ikkalasi ishlatadi);
+// tartibni `AI_TTS_PROVIDER` belgilaydi, ikkinchisi har doim fallback.
 
 /** Synthesize one segment to `${name}.wav` (24 kHz mono). Returns duration in seconds. */
 async function synthSegment(
@@ -300,21 +296,7 @@ async function synthSegment(
   name: string,
   usage: TtsUsage
 ): Promise<number> {
-  const wav = path.join(dir, `${name}.wav`);
-  try {
-    const { pcm, sampleRate } = await generateSpeech(text, geminiVoice, usage);
-    await writeFile(wav, pcmToWav(pcm, sampleRate));
-    return Math.max(1, Math.round(pcm.length / (sampleRate * 2)));
-  } catch {
-    // Fallback: edge-tts (python) → mp3 → normalized 24 kHz mono WAV.
-    const txtFile = path.join(dir, `${name}.txt`);
-    const mp3 = path.join(dir, `${name}.mp3`);
-    await writeFile(txtFile, text, "utf8");
-    await run("python", ["-m", "edge_tts", "--voice", edgeVoice, "--file", txtFile, "--write-media", mp3]);
-    await run(FFMPEG, ["-y", "-i", `${name}.mp3`, "-ar", String(TTS_RATE), "-ac", "1", `${name}.wav`], { cwd: dir });
-    const size = (await readFile(wav)).length;
-    return Math.max(1, Math.round((size - 44) / (TTS_RATE * 2)));
-  }
+  return synthToWav(text, { gemini: geminiVoice, edge: edgeVoice }, dir, name, usage);
 }
 
 // ---------- SRT builder (combined, cumulative) ----------

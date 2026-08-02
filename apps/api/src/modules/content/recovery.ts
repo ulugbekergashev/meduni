@@ -16,6 +16,7 @@
 import { prisma } from "../../lib/prisma";
 import type { Slide } from "../../ai/types";
 import { resumeVideo } from "./video";
+import { resumePodcast } from "./podcast";
 
 /** Video montajining oraliq (terminal bo'lmagan) holatlari. PENDING ham shu
  *  yerda: pipeline `setImmediate` bilan darrov boshlanadi, ya'ni yangi jarayon
@@ -67,6 +68,28 @@ export async function recoverStaleJobs(): Promise<void> {
       });
       await resumeVideo(v.id).catch((e) => console.error("[recoverStaleJobs] resume", v.id, e));
       console.log(`  tiklash    : video ${v.id} davom ettirilmoqda (urinish ${attempt}/${MAX_AUTO_RESUME})`);
+    }
+
+    // Audio-podkast — xuddi shu naqsh (u ham uzun fon-job: ssenariy + o'nlab
+    // TTS chaqiruvi). Ovozlangan replikalar keshda, shuning uchun davom ettirish
+    // arzon va har safar oldinga siljiydi.
+    const stalePods = await prisma.topicPodcast.findMany({
+      where: { buildStatus: { in: ["PENDING", "SCRIPT", "TTS", "RENDER"] } },
+      select: { id: true, errorStage: true },
+    });
+    for (const p of stalePods) {
+      const attempt = attemptOf(p.errorStage) + 1;
+      if (attempt > MAX_AUTO_RESUME) {
+        await prisma.topicPodcast.update({ where: { id: p.id }, data: { buildStatus: "ERROR", errorStage: "interrupted_giveup" } });
+        console.log(`  tiklash    : podkast ${p.id} — ${MAX_AUTO_RESUME} marta uzildi, avtomatik davom ettirilmaydi`);
+        continue;
+      }
+      await prisma.topicPodcast.update({
+        where: { id: p.id },
+        data: { buildStatus: "ERROR", errorStage: attempt > 1 ? `interrupted (${attempt})` : "interrupted" },
+      });
+      await resumePodcast(p.id).catch((e) => console.error("[recoverStaleJobs] podcast", p.id, e));
+      console.log(`  tiklash    : podkast ${p.id} davom ettirilmoqda (urinish ${attempt}/${MAX_AUTO_RESUME})`);
     }
 
     // Rasm slotlari slaydlar JSON ichida — har prezentatsiyani alohida yangilaymiz.
