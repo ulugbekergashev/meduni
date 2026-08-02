@@ -86,7 +86,7 @@ export function SidebarLayout({
           (272px panel 375px ekranda joyning uchdan ikkisini yeb qo'yardi). */}
       {/* 1-daraja — IKONKA REYI: modul ikonkasi + kichik yorlig'i (72px).
           Har doim ko'rinadi; matnli ikkinchi ustun — `panel`. */}
-      <aside className="sticky top-0 z-20 hidden h-screen w-[76px] shrink-0 flex-col border-r border-side-line bg-side lg:flex">
+      <aside className="sticky top-0 z-20 hidden h-screen w-[84px] shrink-0 flex-col border-r border-side-line bg-side lg:flex">
         <div className="flex h-[var(--header-h)] shrink-0 items-center justify-center border-b border-side-line text-[18px] font-bold tracking-tight text-side-ink">
           {typeof brand === "string" ? brand.charAt(0) : brand}
         </div>
