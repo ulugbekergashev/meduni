@@ -182,7 +182,7 @@ export function SchedulePage() {
       <motion.div variants={itemVariants}>
         <HeroCard
           title={t("title")}
-          subtitle={t("subtitle")}
+          subtitle={t("summaryLine", { total: sessions.length, attended, missed: missedCount })}
           left={
             <div className="flex flex-wrap items-center gap-2.5">
               {/* Hafta / Oy tanlagich */}
@@ -228,19 +228,8 @@ export function SchedulePage() {
             </div>
           }
         >
-          <HeroTile
-            icon={CalendarDays}
-            value={String(sessions.length)}
-            label={t("statLessons")}
-            tone="bg-brand-soft text-brand-tint"
-          />
-          <HeroTile icon={Check} value={String(attended)} label={t("statAttended")} tone="bg-emerald-soft text-emerald" />
-          <HeroTile
-            icon={X}
-            value={String(missedCount)}
-            label={t("statMissed")}
-            tone={missedCount > 0 ? "bg-rose-soft text-rose" : "bg-surface text-ink-faint"}
-          />
+          {/* STAT DIETASI: haftalik sonlar sarlavha ostidagi qatorga ko'chdi —
+              ular filtr ham, harakat ham emas edi. "Keyingi dars" qoladi. */}
           <HeroTile
             icon={Clock}
             value={

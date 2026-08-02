@@ -1406,7 +1406,8 @@
       "case_graded": "Keys baholandi"
     },
     "noCourses": "Kurslar yo'q",
-    "adminWillAdd": "Admin kurslarni qo'shadi"
+    "adminWillAdd": "Admin kurslarni qo'shadi",
+    "analyticsTitle": "Oʻzlashtirish tahlili"
   },
   "leaderboard": {
     "title": "Guruh reytingi",
@@ -1977,7 +1978,8 @@
     "emptyHint": "Boshqa semestrni tanlang",
     "continueShort": "Davom",
     "allDone": "Barchasi bajarildi",
-    "topics": "mavzu"
+    "topics": "mavzu",
+    "summaryLine": "Jami {{all}} kurs · {{done}} tugallangan · mavzular {{topicsDone}}/{{topicsTotal}}"
   },
   "practice": {
     "patientTitle": "Virtual bemor amaliyoti",
@@ -2057,7 +2059,8 @@
     "statMissed": "Qoldirdingiz",
     "statNextNone": "Keyingi dars yoʻq",
     "viewWeek": "Hafta",
-    "viewMonth": "Oy"
+    "viewMonth": "Oy",
+    "summaryLine": "Bu hafta {{total}} dars · keldingiz {{attended}} · qoldirdingiz {{missed}}"
   },
   "mistakes": {
     "title": "Guruh xatolari xaritasi",
@@ -2087,7 +2090,8 @@
     "emptyNext": "Keyingi takror: {{date}}",
     "emptyNoUpcoming": "Kartalarni darsdagi Kartonkalar blokida oʻrganing — takror jadvali shu yerda paydo boʻladi.",
     "upcomingTitle": "Kelgusi takrorlar",
-    "upcomingEmpty": "Rejalashtirilgan takror yoʻq."
+    "upcomingEmpty": "Rejalashtirilgan takror yoʻq.",
+    "summaryLine": "Bugun takrorlandi: {{today}} · bilaman: {{known}}% · keyingisi: {{next}}"
   },
   "teachSchedule": {
     "title": "Darslarim",

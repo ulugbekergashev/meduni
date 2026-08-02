@@ -24,6 +24,7 @@ import {
 import { Card, EmptyState, Icon, ProgressRing, BarRow, cls } from "@meduni/ui";
 import { AsyncSection } from "../../components/AsyncSection";
 import { HeroCard, HeroTile, RailCard } from "../../components/HeroStats";
+import { Disclosure } from "../../components/Disclosure";
 import { CheckInCard } from "./CheckInCard";
 import { useLocale } from "../../lib/useLocale";
 import { formatDate } from "../../lib/date";
@@ -428,54 +429,62 @@ export function StudentDashboard() {
                   </Card>
                 </motion.div>
 
-                {/* Davomat + o'zlashtirish */}
-                <motion.div variants={itemVariants} className="grid gap-3 sm:grid-cols-2">
-                  {/* Davomat */}
-                  <button
-                    onClick={() => navigate("/app/attendance")}
-                    className="group flex flex-col rounded-card border border-line bg-surface p-6 text-left shadow-card transition-all duration-300 hover:-translate-y-1 hover:border-brand/30 hover:shadow-card-hover"
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-soft text-blue">
-                        <Icon icon={CalendarCheck2} size={16} />
+                {/* O'zlashtirish tahlili — sukut bo'yicha YIG'ILGAN.
+                    Bosh sahifa kunlik ISH markazi: davom ettirish, bugungi
+                    darslar va vazifalar. Raqamlar (davomat/o'zlashtirish)
+                    harakat emas — kerak bo'lganda ochiladi (STAT DIETASI). */}
+                <motion.div variants={itemVariants}>
+                  <Disclosure label={t("analyticsTitle")} storageKey="meduni.student.homeAnalytics">
+                  {/* Davomat + o'zlashtirish */}
+                  <motion.div variants={itemVariants} className="grid gap-3 sm:grid-cols-2">
+                    {/* Davomat */}
+                    <button
+                      onClick={() => navigate("/app/attendance")}
+                      className="group flex flex-col rounded-card border border-line bg-surface p-6 text-left shadow-card transition-all duration-300 hover:-translate-y-1 hover:border-brand/30 hover:shadow-card-hover"
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-soft text-blue">
+                          <Icon icon={CalendarCheck2} size={16} />
+                        </div>
+                        <p className="text-note font-bold uppercase tracking-wide text-ink-soft">{t("semesterAttendance")}</p>
                       </div>
-                      <p className="text-note font-bold uppercase tracking-wide text-ink-soft">{t("semesterAttendance")}</p>
-                    </div>
-                    <div className="mt-3 flex items-end justify-between">
-                      <span className={cls("text-stat font-bold tabular-nums", attPct !== null && attPct < 75 ? "text-rose" : "text-ink")}>
-                        {attPct !== null ? `${attPct}%` : "—"}
-                      </span>
-                      {attMissed > 0 && (
-                        <span className="mb-1 rounded-pill bg-rose-soft px-2.5 py-0.5 text-note font-bold text-rose">
-                          {t("missedN", { count: attMissed })}
+                      <div className="mt-3 flex items-end justify-between">
+                        <span className={cls("text-stat font-bold tabular-nums", attPct !== null && attPct < 75 ? "text-rose" : "text-ink")}>
+                          {attPct !== null ? `${attPct}%` : "—"}
                         </span>
-                      )}
-                    </div>
-                  </button>
-
-                  {/* O'zlashtirish */}
-                  <button
-                    onClick={() => navigate("/app/grades")}
-                    className="group flex flex-col rounded-card border border-line bg-surface p-6 text-left shadow-card transition-all duration-300 hover:-translate-y-1 hover:border-brand/30 hover:shadow-card-hover"
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-soft text-brand-tint">
-                        <Icon icon={GraduationCap} size={16} />
-                      </div>
-                      <p className="text-note font-bold uppercase tracking-wide text-ink-soft">{t("mastery")}</p>
-                    </div>
-                    <div className="mt-3 flex items-center gap-4">
-                      <ProgressRing value={masteryAvg ?? 0} size={56} stroke={7} />
-                      <div className="min-w-0 flex-1 space-y-1.5">
-                        {masteryCourses.slice(0, 3).map((c) => (
-                          <BarRow key={c.courseId} label={c.subjectName} value={c.avgQuiz ?? 0} />
-                        ))}
-                        {masteryCourses.length === 0 && (
-                          <p className="text-note text-ink-faint">{t("avgQuizShort")}: —</p>
+                        {attMissed > 0 && (
+                          <span className="mb-1 rounded-pill bg-rose-soft px-2.5 py-0.5 text-note font-bold text-rose">
+                            {t("missedN", { count: attMissed })}
+                          </span>
                         )}
                       </div>
-                    </div>
-                  </button>
+                    </button>
+  
+                    {/* O'zlashtirish */}
+                    <button
+                      onClick={() => navigate("/app/grades")}
+                      className="group flex flex-col rounded-card border border-line bg-surface p-6 text-left shadow-card transition-all duration-300 hover:-translate-y-1 hover:border-brand/30 hover:shadow-card-hover"
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-soft text-brand-tint">
+                          <Icon icon={GraduationCap} size={16} />
+                        </div>
+                        <p className="text-note font-bold uppercase tracking-wide text-ink-soft">{t("mastery")}</p>
+                      </div>
+                      <div className="mt-3 flex items-center gap-4">
+                        <ProgressRing value={masteryAvg ?? 0} size={56} stroke={7} />
+                        <div className="min-w-0 flex-1 space-y-1.5">
+                          {masteryCourses.slice(0, 3).map((c) => (
+                            <BarRow key={c.courseId} label={c.subjectName} value={c.avgQuiz ?? 0} />
+                          ))}
+                          {masteryCourses.length === 0 && (
+                            <p className="text-note text-ink-faint">{t("avgQuizShort")}: —</p>
+                          )}
+                        </div>
+                      </div>
+                    </button>
+                  </motion.div>
+                  </Disclosure>
                 </motion.div>
 
                 {/* Kurslarga o'tish */}
