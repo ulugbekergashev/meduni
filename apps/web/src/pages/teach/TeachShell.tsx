@@ -67,7 +67,8 @@ export function TeachShell() {
           shortLabel: ts("dashboard"),
           icon: <Icon icon={Home} />,
           end: true,
-          // Vazifalar va Darslarim endi shu bo'lim ichida (TeachHomeShell SubNav).
+          // Vazifalar va Darslarim endi bosh sahifaning BLOKLARI (tab yo'q);
+          // eski manzillar shu sahifaga ?focus= bilan yo'naltiriladi.
           alsoActiveOn: ["/teach/tasks", "/teach/schedule"],
           badge: openTasks,
         },
