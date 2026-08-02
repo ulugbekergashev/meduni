@@ -182,7 +182,8 @@
     "filterDone": "Bajarilgan",
     "statusDone": "Bajarildi",
     "statusOverdue": "Muddati oʻtgan",
-    "studentsAssignmentKind": "Talabalarga topshiriq"
+    "studentsAssignmentKind": "Talabalarga topshiriq",
+    "sourceLabel": "Manba"
   },
   "teachAssign": {
     "newBtn": "Yangi topshiriq",
@@ -766,7 +767,21 @@
     "newGroupTitle": "Yangi guruh",
     "createGroupBtn": "Yangi guruh",
     "groupYear": "Kurs",
-    "groupNameLabel": "Guruh nomi"
+    "groupNameLabel": "Guruh nomi",
+    "navToday": "Bugun",
+    "todoTitle": "Bugun bajarish kerak",
+    "todoAll": "Barcha vazifalar ({{n}})",
+    "startTitle": "Boshlash — 3 qadam",
+    "startSubtitle": "Birinchi darsingizni shu uch qadamda tayyorlaysiz.",
+    "startStep1": "Kurs yarating",
+    "startStep1Hint": "Nomi, guruhlari va semestri — bir daqiqada.",
+    "startStep2": "Mavzu qo‘shing va material yuklang",
+    "startStep2Hint": "PDF yoki Word yuklang — AI qolganini o‘zi tayyorlaydi.",
+    "startStep3": "Konspektni tasdiqlang va chop eting",
+    "startStep3Hint": "Tekshirib tasdiqlaysiz — shundan keyin talaba ko‘radi.",
+    "startGo": "Boshlash",
+    "startDismiss": "Yopish",
+    "startGuide": "Boshlash qo‘llanmasi"
   },
   "topics": {
     "subjectShared": "Mavzular fanga tegishli — bu fandan ochilgan barcha kurslar (guruhlar) bir xil mavzularni ko‘radi.",

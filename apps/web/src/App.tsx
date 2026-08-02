@@ -18,6 +18,7 @@ import { AuditPage } from "./pages/admin/audit/AuditPage";
 import { AdminTasksPage } from "./pages/admin/tasks/AdminTasksPage";
 import { TeachShell } from "./pages/teach/TeachShell";
 import { TeachDashboard } from "./pages/teach/TeachDashboard";
+import { TeachHomeShell } from "./pages/teach/home/TeachHomeShell";
 import { TeachTasksPage } from "./pages/teach/TeachTasksPage";
 import { TeachCoursesPage } from "./pages/teach/TeachCoursesPage";
 import { TeachSchedulePage } from "./pages/teach/TeachSchedulePage";
@@ -85,11 +86,16 @@ export function App() {
           </RequireRole>
         }
       >
-        <Route index element={<TeachDashboard />} />
-        <Route path="tasks" element={<TeachTasksPage />} />
+        {/* Bosh sahifa BO'LIMI — Bugun | Vazifalar | Darslarim (SubNav bilan).
+            Yo'lsiz (pathless) route: URL'lar o'zgarmaydi, faqat uchalasi
+            bitta qobiq ichida turadi va panel qayta mount bo'lmaydi. */}
+        <Route element={<TeachHomeShell />}>
+          <Route index element={<TeachDashboard />} />
+          <Route path="tasks" element={<TeachTasksPage />} />
+          <Route path="schedule" element={<TeachSchedulePage />} />
+        </Route>
 
         <Route path="courses" element={<TeachCoursesPage />} />
-        <Route path="schedule" element={<TeachSchedulePage />} />
         <Route path="groups" element={<TeachGroupsPage />} />
         <Route path="groups/:id" element={<GroupProfile />} />
         <Route path="students/:id" element={<StudentDetailPage />} />
