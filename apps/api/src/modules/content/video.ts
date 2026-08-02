@@ -159,7 +159,7 @@ async function renderSlidePng(slide: Slide, imageBuf: Buffer | null): Promise<Bu
       { input: resized, left: Math.round(W * K) - (meta.width ?? box) - Math.round(90 * K), top: Math.round(300 * K) },
     ]);
   }
-  return base.png({ compressionLevel: 6 }).toBuffer();
+  return base.jpeg({ quality: 86, mozjpeg: false }).toBuffer();
 }
 
 // ---------- Visual card -> PNG (NotebookLM-style lecture frames) ----------
@@ -195,7 +195,7 @@ export async function renderVisualPng(visual: VideoVisual, imageBuf: Buffer | nu
     const top = Math.round(barH * K) + Math.round((OUT_H - barH * K - ih) / 2);
     return sharp(Buffer.from(svgDoc(parts.join(""))))
       .composite([{ input: resized, left, top }])
-      .png({ compressionLevel: 6 })
+      .jpeg({ quality: 86, mozjpeg: false })
       .toBuffer();
   }
 
@@ -279,7 +279,7 @@ export async function renderVisualPng(visual: VideoVisual, imageBuf: Buffer | nu
       y += cardH + 26;
     });
   }
-  return sharp(Buffer.from(svgDoc(parts.join("")))).png({ compressionLevel: 6 }).toBuffer();
+  return sharp(Buffer.from(svgDoc(parts.join("")))).jpeg({ quality: 86, mozjpeg: false }).toBuffer();
 }
 
 // ---------- TTS ----------
@@ -549,20 +549,24 @@ async function stageTtsAndRender(videoId: number) {
         if (slide?.imageSlots?.[0]?.status === "DONE" && url) imgBuf = await readFileBuffer(url).catch(() => null);
         png = await renderSlidePng(slide ?? { id: "", layout: "BULLETS", title: "", bullets: [], speakerNotes: "", imageSlots: [] }, imgBuf);
       }
-      await writeFile(path.join(dir, `slide${i}.png`), png);
-      listLines.push(`file 'slide${i}.png'`, `duration ${seg.durationSec}`);
+      await writeFile(path.join(dir, `slide${i}.jpg`), png);
+      listLines.push(`file 'slide${i}.jpg'`, `duration ${seg.durationSec}`);
     }
-    listLines.push(`file 'slide${segments.length - 1}.png'`); // concat needs last frame repeated
+    listLines.push(`file 'slide${segments.length - 1}.jpg'`); // concat needs last frame repeated
     await writeFile(path.join(dir, "slides.txt"), listLines.join("\n"), "utf8");
 
     await run(
       FFMPEG,
       [
         "-y", "-f", "concat", "-safe", "0", "-i", "slides.txt", "-i", "audio.wav",
-        // `-threads 1` + `veryfast` — 512 MB konteynerда x264 xotirasi keskin
-        // kamayadi (ko'p ipli kodlashда har ip o'z bufer to'plamini oladi).
-        "-c:v", "libx264", "-preset", "veryfast", "-threads", "1",
-        "-pix_fmt", "yuv420p", "-r", "25", "-c:a", "aac", "-b:a", "192k", "-shortest", "video.mp4",
+        // ⚠️ Kadrlar STATIK slaydlar — 25 fps bilan kodlash bekorga CPU yeydi.
+        // 2026-08-02: uzunroq video (232 s) Render Free (0.1 CPU) da montaj
+        // paytida konteynerni cho'ktirardi (502). Endi:
+        //   -r 10           — statik kadr uchun yetarli, kodlash ~2.5x tezroq
+        //   -tune stillimage — x264 statik kontentga moslashadi
+        //   -threads 1 + veryfast — 512 MB xotira chegarasi (§17)
+        "-c:v", "libx264", "-preset", "veryfast", "-tune", "stillimage", "-threads", "1", "-crf", "26",
+        "-pix_fmt", "yuv420p", "-r", "10", "-c:a", "aac", "-b:a", "160k", "-shortest", "video.mp4",
       ],
       { cwd: dir }
     );
