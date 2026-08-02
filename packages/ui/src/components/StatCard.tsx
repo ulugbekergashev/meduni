@@ -49,7 +49,7 @@ export function StatCard({
           <Icon icon={icon} size={compact ? 18 : 22} />
         </div>
       )}
-      <span className={cls("font-extrabold leading-none tabular-nums text-ink", compact ? "text-[32px]" : "text-stat")}>
+      <span className={cls("font-extrabold leading-none tabular-nums text-ink", compact ? "text-h1" : "text-stat")}>
         {value ?? "—"}
       </span>
       <div>
