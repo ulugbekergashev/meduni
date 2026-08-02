@@ -92,6 +92,19 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
   if (!res.ok) {
     const body = await res.json().catch(() => null);
     const detail = body?.error;
+    // ⚠️ 502/503/504 — bu ILOVA xatosi EMAS, server ko'tarilmagan/uyquda
+    // (Render Free 15 daqiqadan keyin uxlaydi va sovuq start 30-60s oladi).
+    // Bunday javobda JSON ham bo'lmaydi (proxy HTML qaytaradi), shuning uchun
+    // ilgari ekranda mavhum "Xatolik yuz berdi" chiqardi va foydalanuvchi
+    // parolini qidirib ovora bo'lardi (2026-08-02 da aynan shunday bo'ldi).
+    if (!detail && (res.status === 502 || res.status === 503 || res.status === 504)) {
+      throw new ApiError(
+        res.status,
+        "server_unavailable",
+        "Server hozir javob bermayapti (uyquda yoki yangilanmoqda). 1-2 daqiqadan keyin qayta urining.",
+        "Сервер сейчас не отвечает (спит или обновляется). Повторите через 1–2 минуты."
+      );
+    }
     throw new ApiError(
       res.status,
       detail?.code ?? "unknown_error",

@@ -29,6 +29,21 @@ const RUNNING_VIDEO = ["PENDING", "SCRIPT", "TTS", "RENDER"] as const;
  *  keyin to'xtaymiz (cheksiz sikl bo'lmasin). */
 const MAX_AUTO_RESUME = 3;
 
+/**
+ * ⚠️ BITTA BOOTDA NECHTA og'ir job qayta boshlanadi.
+ *
+ * 2026-08-02 (jonli server o'lib qoldi): oldingi uzilishdan keyin bazada UCHTA
+ * video "ishlayapti" holatida qolgan edi va server ko'tarilishi bilan uchalasi
+ * ham navbatga tushdi. Navbat concurrency=1 bo'lsa ham, 512 MB / 0.1 CPU
+ * konteynerда birinchi jobning o'zi event loop'ni bo'g'adi → Render health
+ * check javob olmaydi → konteynerni o'ldiradi → boot → yana resume…
+ *
+ * Endi bootда ENG KO'PI BITTA ish davom ettiriladi; qolganlari ERROR bo'lib
+ * turadi va o'qituvchi "Davom ettirish" tugmasi bilan o'zi boshlaydi (ish
+ * yo'qolmaydi — ovozlangan segmentlar keshda).
+ */
+const MAX_RESUME_PER_BOOT = Number(process.env.MAX_RESUME_PER_BOOT ?? 1);
+
 /** `interrupted`, `interrupted (2)`, `interrupted (3)` → urinish raqami.
  *  `interrupted_giveup` → limit (qaytadan avtomatik urinilmaydi; faqat
  *  o'qituvchi o'zi bosganda hisob nolga tushadi). */
@@ -39,6 +54,7 @@ function attemptOf(errorStage: string | null): number {
 }
 
 export async function recoverStaleJobs(): Promise<void> {
+  let resumed = 0;
   try {
     // Uzilgan montajlar — belgilashdan OLDIN o'qiymiz (davom ettirish uchun).
     const stale = await prisma.video.findMany({
@@ -66,6 +82,11 @@ export async function recoverStaleJobs(): Promise<void> {
         where: { id: v.id },
         data: { errorStage: attempt > 1 ? `interrupted (${attempt})` : "interrupted" },
       });
+      if (resumed >= MAX_RESUME_PER_BOOT) {
+        console.log(`  tiklash    : video ${v.id} navbatda qoldirildi (bootда ${MAX_RESUME_PER_BOOT} ish chegarasi)`);
+        continue;
+      }
+      resumed++;
       await resumeVideo(v.id).catch((e) => console.error("[recoverStaleJobs] resume", v.id, e));
       console.log(`  tiklash    : video ${v.id} davom ettirilmoqda (urinish ${attempt}/${MAX_AUTO_RESUME})`);
     }
@@ -88,6 +109,11 @@ export async function recoverStaleJobs(): Promise<void> {
         where: { id: p.id },
         data: { buildStatus: "ERROR", errorStage: attempt > 1 ? `interrupted (${attempt})` : "interrupted" },
       });
+      if (resumed >= MAX_RESUME_PER_BOOT) {
+        console.log(`  tiklash    : podkast ${p.id} navbatda qoldirildi (bootда ${MAX_RESUME_PER_BOOT} ish chegarasi)`);
+        continue;
+      }
+      resumed++;
       await resumePodcast(p.id).catch((e) => console.error("[recoverStaleJobs] podcast", p.id, e));
       console.log(`  tiklash    : podkast ${p.id} davom ettirilmoqda (urinish ${attempt}/${MAX_AUTO_RESUME})`);
     }
