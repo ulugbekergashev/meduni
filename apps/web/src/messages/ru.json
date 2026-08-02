@@ -280,7 +280,11 @@
     "sortProgress": "По прогрессу",
     "sortAttendance": "По посещаемости",
     "sortBehind": "По отстающим",
-    "summaryLine": "{{groups}} групп · {{students}} студентов · средняя успеваемость {{pct}}%"
+    "summaryLine": "{{groups}} групп · {{students}} студентов · средняя успеваемость {{pct}}%",
+    "newGroupTitle": "Новая группа",
+    "groupNameLabel": "Название группы",
+    "groupNamePlaceholder": "Например: 301-группа",
+    "groupYear": "Учебный год"
   },
   "attMatrix": {
     "title": "Матрица посещаемости",
@@ -792,7 +796,11 @@
     "heroLessons": "занятий сегодня",
     "heroTasks": "задач",
     "heroOverdue": "просрочено",
-    "heroPending": "ждут отметки"
+    "heroPending": "ждут отметки",
+    "cancel": "Отмена",
+    "added": "Добавлено",
+    "genericError": "Произошла ошибка",
+    "add": "Добавить"
   },
   "topics": {
     "subjectShared": "Темы принадлежат предмету — все курсы (группы) по этому предмету видят одни и те же темы.",
@@ -1237,7 +1245,20 @@
     "faculty": "Факультет",
     "department": "Кафедра",
     "coursesSection": "Курсы",
-    "noCoursesInDept": "На этой кафедре пока нет курсов"
+    "noCoursesInDept": "На этой кафедре пока нет курсов",
+    "noAdmin": "Не назначен",
+    "appointBtn": "Назначить",
+    "resetPw": "Сбросить пароль",
+    "profile": "Профиль",
+    "resetPwConfirm": "Обновить пароль? Старый перестанет работать.",
+    "fields": {
+      "fullName": "Ф.И.О.",
+      "email": "Email",
+      "phone": "Телефон",
+      "position": "Должность",
+      "password": "Пароль",
+      "passwordHint": "Если оставить пустым — пароль создастся автоматически"
+    }
   },
   "users": {
     "title": "Пользователи",
@@ -1435,7 +1456,20 @@
     },
     "noCourses": "Нет курсов",
     "adminWillAdd": "Админ добавит курсы",
-    "analyticsTitle": "Анализ успеваемости"
+    "analyticsTitle": "Анализ успеваемости",
+    "topic": "Тема",
+    "statusDone": "Завершено",
+    "statusCurrent": "Текущая",
+    "done": "пройдено",
+    "elVideo": "видео",
+    "elSlides": "слайды",
+    "elQuiz": "тест",
+    "elCase": "кейс",
+    "review": "Просмотреть",
+    "back": "К курсам",
+    "noTopics": "Темы ещё не добавлены",
+    "topics": "тем",
+    "allDone": "Все темы пройдены!"
   },
   "leaderboard": {
     "title": "Рейтинг группы",
@@ -1840,7 +1874,12 @@
     "podcastPause": "Пауза",
     "podcastBack15": "15 секунд назад",
     "podcastFwd15": "15 секунд вперёд",
-    "slideNotes": "Тезисы"
+    "slideNotes": "Тезисы",
+    "todoTitle": "Осталось для завершения темы",
+    "todo_study": "Дочитайте конспект",
+    "todo_case": "Сдайте клинический кейс",
+    "todo_quiz": "Пройдите тест",
+    "todo_patient": "Потренируйтесь с виртуальным пациентом"
   },
   "search": {
     "placeholder": "Поиск… (студент, группа, курс)",

@@ -280,7 +280,11 @@
     "sortProgress": "Progress boʻyicha",
     "sortAttendance": "Davomat boʻyicha",
     "sortBehind": "Orqada qolganlar",
-    "summaryLine": "{{groups}} guruh · {{students}} talaba · oʻrtacha oʻzlashtirish {{pct}}%"
+    "summaryLine": "{{groups}} guruh · {{students}} talaba · oʻrtacha oʻzlashtirish {{pct}}%",
+    "newGroupTitle": "Yangi guruh",
+    "groupNameLabel": "Guruh nomi",
+    "groupNamePlaceholder": "Masalan: 301-guruh",
+    "groupYear": "O'quv yili"
   },
   "attMatrix": {
     "title": "Davomat matritsasi",
@@ -792,7 +796,11 @@
     "heroLessons": "bugungi dars",
     "heroTasks": "vazifa",
     "heroOverdue": "muddati o'tgan",
-    "heroPending": "yo'qlama kutmoqda"
+    "heroPending": "yo'qlama kutmoqda",
+    "cancel": "Bekor qilish",
+    "added": "Qo'shildi",
+    "genericError": "Xatolik yuz berdi",
+    "add": "Qo'shish"
   },
   "topics": {
     "subjectShared": "Mavzular fanga tegishli — bu fandan ochilgan barcha kurslar (guruhlar) bir xil mavzularni ko‘radi.",
@@ -1237,7 +1245,20 @@
     "faculty": "Fakultet",
     "department": "Kafedra",
     "coursesSection": "Kurslar",
-    "noCoursesInDept": "Bu kafedrada hali kurs yoʻq"
+    "noCoursesInDept": "Bu kafedrada hali kurs yoʻq",
+    "noAdmin": "Tayinlanmagan",
+    "appointBtn": "Tayinlash",
+    "resetPw": "Parolni tiklash",
+    "profile": "Profil",
+    "resetPwConfirm": "Parol yangilansinmi? Eski parol ishlamay qoladi.",
+    "fields": {
+      "fullName": "F.I.SH.",
+      "email": "Email",
+      "phone": "Telefon",
+      "position": "Lavozim",
+      "password": "Parol",
+      "passwordHint": "Bo'sh qoldirilsa — parol avtomatik yaratiladi"
+    }
   },
   "users": {
     "title": "Foydalanuvchilar",
@@ -1435,7 +1456,20 @@
     },
     "noCourses": "Kurslar yo'q",
     "adminWillAdd": "Admin kurslarni qo'shadi",
-    "analyticsTitle": "Oʻzlashtirish tahlili"
+    "analyticsTitle": "Oʻzlashtirish tahlili",
+    "topic": "Mavzu",
+    "statusDone": "Tugallandi",
+    "statusCurrent": "Joriy",
+    "done": "bajarildi",
+    "elVideo": "video",
+    "elSlides": "slaydlar",
+    "elQuiz": "test",
+    "elCase": "keys",
+    "review": "Ko'rib chiqish",
+    "back": "Kurslarga qaytish",
+    "noTopics": "Mavzular hali qo'shilmagan",
+    "topics": "mavzu",
+    "allDone": "Barcha mavzular tugallandi!"
   },
   "leaderboard": {
     "title": "Guruh reytingi",
@@ -1840,7 +1874,12 @@
     "podcastPause": "To'xtatish",
     "podcastBack15": "15 soniya orqaga",
     "podcastFwd15": "15 soniya oldinga",
-    "slideNotes": "Tezislar"
+    "slideNotes": "Tezislar",
+    "todoTitle": "Mavzuni tugatish uchun qoldi",
+    "todo_study": "Konspektni oxirigacha o'qing",
+    "todo_case": "Klinik keysni topshiring",
+    "todo_quiz": "Test sinovini topshiring",
+    "todo_patient": "Virtual bemor bilan mashq qiling"
   },
   "search": {
     "placeholder": "Qidirish… (talaba, guruh, kurs)",

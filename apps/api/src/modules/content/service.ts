@@ -132,6 +132,31 @@ async function approvedDigest(topicId: number, teacherId: number): Promise<Diges
 
 // ---------- Generate: quiz ----------
 
+/**
+ * Javob variantlarini aralashtiradi va to'g'ri javobning yangi indeksini
+ * qaytaradi (Fisher-Yates).
+ *
+ * Nega kerak: til modeli to'g'ri javobni deyarli har doim BIRINCHI (yoki
+ * ikkinchi) qilib yozadi. Jonli bazada o'lchandi — 90 savol: A 40%, B 48%,
+ * C 12%, D 0%. Bunday testda mavzuni bilmagan talaba ham "A yoki B" deb
+ * yuqori ball oladi, ya'ni baho haqiqiy bilimni ko'rsatmaydi.
+ *
+ * ⚠️ Faqat GENERATSIYADA qo'llanadi. O'qituvchi qo'lda tahrirlaganda
+ * (`updateContent`) aralashtirilmaydi — u variantlar tartibini ataylab
+ * qo'ygan bo'lishi mumkin (masalan "Hammasi to'g'ri" oxirida turishi kerak).
+ */
+export function shuffleOptions(options: string[], correctIndex: number): { options: string[]; correctIndex: number } {
+  const idx = options.map((_, i) => i);
+  for (let i = idx.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [idx[i], idx[j]] = [idx[j], idx[i]];
+  }
+  return {
+    options: idx.map((i) => options[i]),
+    correctIndex: idx.indexOf(correctIndex),
+  };
+}
+
 export async function generateQuiz(
   topicId: number,
   teacherId: number,
@@ -171,16 +196,25 @@ export async function generateQuiz(
     });
     await tx.question.deleteMany({ where: { quizId: quiz.id } });
     await tx.question.createMany({
-      data: questions.map((q, i) => ({
-        quizId: quiz.id,
-        text: q.text,
-        optionsJson: q.options,
-        correctIndex: Math.max(0, Math.min(q.correctIndex, q.options.length - 1)),
-        explanationJson: q.explanations,
-        difficulty: q.difficulty,
-        sourceFragment: q.sourceFragment || null,
-        orderIndex: i,
-      })),
+      data: questions.map((q, i) => {
+        // ⚠️ VARIANTLAR ARALASHTIRILADI (2026-08-03, buyurtmachi: "testlarda
+        // ko'pi A javob to'g'ri bo'layapdi ketma-ket"). O'lchandi (90 savol):
+        // A 40% · B 48% · C 12% · D 0% — ya'ni talaba mavzuni bilmasa ham
+        // "A yoki B" deb taxmin qilib o'tib ketardi. Model o'zi to'g'ri javobni
+        // birinchi yozishga moyil; buni PROMPT bilan emas, shu yerda hal qilamiz
+        // (deterministik, AI chaqiruvsiz, nol xarajat).
+        const s = shuffleOptions(q.options, Math.max(0, Math.min(q.correctIndex, q.options.length - 1)));
+        return {
+          quizId: quiz.id,
+          text: q.text,
+          optionsJson: s.options,
+          correctIndex: s.correctIndex,
+          explanationJson: q.explanations,
+          difficulty: q.difficulty,
+          sourceFragment: q.sourceFragment || null,
+          orderIndex: i,
+        };
+      }),
     });
     return content;
   });
