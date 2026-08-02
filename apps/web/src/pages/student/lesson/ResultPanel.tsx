@@ -17,7 +17,15 @@ import {
 } from "lucide-react";
 import { Icon, ProgressRing, cls } from "@meduni/ui";
 import { useAttempt, useFlashcards, type Lesson } from "../api";
-import { finalScore, type LessonView } from "./stages";
+import { buildStages, finalScore, stageToView, type LessonView, type StageKey } from "./stages";
+
+/** "Nima qoldi" qatori ikonkasi — bosqich turiga qarab. */
+const TODO_ICON: Partial<Record<StageKey, typeof ClipboardList>> = {
+  study: BookText,
+  case: Stethoscope,
+  quiz: ClipboardList,
+  patient: Stethoscope,
+};
 
 function Row({
   icon,
@@ -116,6 +124,11 @@ export function ResultPanel({ lesson, onView }: { lesson: Lesson; onView?: (v: L
     (q) => q.correctIndex !== undefined && q.studentAnswer !== q.correctIndex
   );
 
+  // Bajarilmagan bosqichlar (natija va ixtiyoriy "virtual bemor"dan tashqari).
+  const todo = buildStages(lesson).filter(
+    (st) => st.key !== "result" && st.key !== "patient" && st.state === "open"
+  );
+
   const next = lesson.nextTopic;
   const nextOpen = !!next && next.state !== "LOCKED";
   const cards = cardsQ.data;
@@ -201,6 +214,37 @@ export function ResultPanel({ lesson, onView }: { lesson: Lesson; onView?: (v: L
           />
         )}
       </div>
+
+      {/* ⚠️ NIMA QOLDI (2026-08-03, buyurtmachi: "75% yechgan bo'lsam ham
+          keyingisini ko'rsatmayapdi"). Talaba testni topshirgach mavzu
+          tugagandek his qilardi, lekin keyingi mavzu ochilmasdi va SABABI
+          hech qayerda ko'rinmasdi. Endi u aynan shu yerda, tugmasi bilan. */}
+      {!lesson.completed && todo.length > 0 && (
+        <div className="rounded-card border border-amber/40 bg-amber-soft/40 p-3">
+          <p className="mb-2 flex items-center gap-1.5 text-micro font-extrabold uppercase tracking-wider text-amber">
+            <Icon icon={TriangleAlert} size={12} />
+            {t("todoTitle")}
+          </p>
+          <div className="space-y-1.5">
+            {todo.map((st) => (
+              <button
+                key={st.key}
+                onClick={onView ? () => onView(stageToView(st.key, lesson)) : undefined}
+                className="flex w-full items-center gap-2.5 rounded-control bg-surface px-3 py-2 text-left transition-colors hover:bg-surface-raised focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+              >
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-control bg-amber-soft text-amber">
+                  <Icon icon={TODO_ICON[st.key] ?? ClipboardList} size={13} />
+                </span>
+                <span className="min-w-0 flex-1 truncate text-note font-bold text-ink">
+                  {t(`todo_${st.key}`)}
+                </span>
+                {st.hint && <span className="shrink-0 text-micro font-bold tabular-nums text-ink-dim">{st.hint}</span>}
+                <Icon icon={ArrowRight} size={13} className="shrink-0 text-ink-dim" />
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Xato javoblar tahlili */}
       {wrong.length > 0 && (

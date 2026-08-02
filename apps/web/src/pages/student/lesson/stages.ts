@@ -85,9 +85,18 @@ export function buildStages(lesson: Lesson): StageInfo[] {
 
   // Fleshkartalar bosqichlar qatorida EMAS — endi u chap "o'rganish" raili
   // bloki (takrorlash quroli), stepper stage'i emas.
-  const caseTerminal = !cs || !!cs.attempt;
-  const quizTerminal = !qz || qz.attempt?.status === "finished";
-  const resultOpen = caseTerminal && quizTerminal;
+  // ⚠️ 2026-08-03 (buyurtmachi: "test oxirida natijaga o'tmayapdi, natija bloki
+  // o'zi disable"): ilgari natija FAQAT keys VA test ikkalasi tugagandagina
+  // ochilardi. Ya'ni testni 75% ga topshirgan talaba o'z natijasini umuman
+  // ko'ra olmasdi va nima qolganini ham bilmasdi — ekranda shunchaki qulf.
+  //
+  // Natija — "qayerdaman va nima qoldi" ekrani, mukofot emas. Shuning uchun u
+  // BAHOLANADIGAN birinchi qadam tugashi bilan ochiladi; qolgan talablar esa
+  // o'sha ekranda ro'yxat bo'lib, tugmasi bilan ko'rsatiladi (ResultPanel).
+  const quizFinished = qz?.attempt?.status === "finished";
+  const caseSubmitted = !!cs?.attempt;
+  const nothingGraded = !qz && !cs;
+  const resultOpen = completed || quizFinished || caseSubmitted || (nothingGraded && studyDone);
   stages.push({ key: "result", state: completed ? "done" : resultOpen ? "open" : "soon" });
 
   return stages;
