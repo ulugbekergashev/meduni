@@ -1,13 +1,14 @@
 import { useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, PanelLeft, Sparkles, X } from "lucide-react";
+import { ArrowLeft, Sparkles, X } from "lucide-react";
 import { COMPACT_QUERY, Icon, Sheet, Spinner, cls, useMediaQuery } from "@meduni/ui";
 import { apiErrorMessage } from "../../../lib/api";
 import { useLocale } from "../../../lib/useLocale";
 import { useLesson, useMarkSectionRead, type Lesson } from "../api";
 import { Panel } from "./Panel";
-import { StudyRail } from "./StudyRail";
+import { StudyToolbar } from "./StudyToolbar";
+import { MaterialBar } from "./MaterialBar";
 import { ContentPanel } from "./ContentPanel";
 import { ChatPanel } from "./ChatPanel";
 import { StageStepper } from "./StageStepper";
@@ -67,7 +68,6 @@ function viewAvailable(v: LessonView, lesson: Lesson): boolean {
 /** Chap ustun (o'rganish bloklari + materiallar) holati. Endi u asosiy
  *  navigatsiya — shuning uchun default OCHIQ; tugma faqat kontentga
  *  to'liq fokuslanmoqchi bo'lganda yopadi. */
-const RAIL_KEY = "meduni.lesson.rail";
 /** AI-tutor chat default YOPIQ — fokus markazda; tugma bilan ochiladi. */
 const CHAT_KEY = "meduni.lesson.chat";
 
@@ -88,24 +88,13 @@ export function LessonPage() {
   /** Mobilda (lg dan kichik) 3 ustun sig'maydi: kontent yolg'iz qoladi, rail va
    *  chat esa pastdan chiqadigan `Sheet`da ochiladi. Desktop tartibi o'zgarmaydi. */
   const compact = useMediaQuery(COMPACT_QUERY);
-  /** Mobil panellar HAR DOIM yopiq boshlanadi (desktopdagi "rail default ochiq"
-   *  qoidasi bu yerda ishlamaydi — sahifa ochilishi bilan sheet chiqib kelardi). */
-  const [mobileRail, setMobileRail] = useState(false);
+  /** Mobil chat paneli HAR DOIM yopiq boshlanadi. */
   const [mobileChat, setMobileChat] = useState(false);
 
-  const [railOpen, setRailOpen] = useState(
-    () => typeof window === "undefined" || window.localStorage.getItem(RAIL_KEY) !== "closed"
-  );
-  const toggleRail = () => {
-    if (compact) return setMobileRail((o) => !o);
-    setRailOpen((o) => {
-      const next = !o;
-      try {
-        window.localStorage.setItem(RAIL_KEY, next ? "open" : "closed");
-      } catch {}
-      return next;
-    });
-  };
+  // 2026-08-01: chap ustun (rail) o'rniga tepadagi tasma — bo'limlar ro'yxati va
+  // manbalar TUGMA ortida turadi va faqat so'ralganda ochiladi (kontent sahna).
+  const [sectionsOpen, setSectionsOpen] = useState(false);
+  const [sourcesOpen, setSourcesOpen] = useState(false);
   // Chat default YOPIQ (foydalanuvchi: "chat ko'rinmasin, fokus markazda").
   const [chatOpen, setChatOpen] = useState(
     () => typeof window !== "undefined" && window.localStorage.getItem(CHAT_KEY) === "open"
@@ -200,12 +189,8 @@ export function LessonPage() {
   // O'rganish kontenti umuman bo'lmasa (faqat test bor demo mavzu kabi) — bo'sh
   // rail ko'rsatmaymiz; ContentPanel "tayyorlanmoqda" bo'sh-holatini to'liq eninда beradi.
   const hasStudy = studyBlocks.length > 0;
-  /** Desktop: rail grid ustuni sifatida. Mobil: `Sheet` ichida. */
-  const showRail = !compact && railOpen && hasStudy;
-  const railSheetOpen = compact && mobileRail && hasStudy;
   const chatSheetOpen = compact && mobileChat;
-  /** Tugmalarning "yoqilgan" ko'rinishi ekran o'lchamiga qarab. */
-  const railActive = compact ? mobileRail : railOpen;
+  /** Tugmaning "yoqilgan" ko'rinishi ekran o'lchamiga qarab. */
   const chatActive = compact ? mobileChat : chatOpen;
 
   /** Test jarayonida (tugallanmagan urinish) — halollik rejimi (o'rganish
@@ -232,16 +217,6 @@ export function LessonPage() {
         {/* O'rganish rejimidagi tugmalar: chap rail + AI-tutor chat toggle. */}
         {!focusMode && (
           <div className="flex shrink-0 items-center gap-1.5">
-            <button
-              onClick={toggleRail}
-              title={t("stage_study")}
-              className={cls(
-                "inline-flex items-center rounded-control p-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
-                railActive ? "bg-brand-soft text-brand-tint" : "text-ink-faint hover:bg-surface-raised hover:text-ink"
-              )}
-            >
-              <Icon icon={PanelLeft} size={17} />
-            </button>
             <button
               onClick={toggleChat}
               title={t("chatTitle")}
@@ -293,50 +268,60 @@ export function LessonPage() {
               seekTo={seekTo}
               onSeekVideo={seekVideo}
               onJumpSection={jumpToSection}
-              materialsLocked={quizRunning}
-              materialsLockedNote={t("materialsLockedQuiz")}
             />
           )}
         </div>
       ) : (
-        /* O'RGANISH REJIMI — markazda kontent; chap rail va AI-chat toggle bilan.
-           Chat YOPIQ bo'lsa fokus markazda; ochilsa keng (400px) panel. */
+        /* O'RGANISH REJIMI — KONTENT SAHNA: o'rganish menyusi endi chap ustun
+           emas, tepadagi bitta tasma (StudyToolbar). Bo'limlar va manbalar
+           tugma ortida — bosilganda ochiladi. Chat yopiq bo'lsa kontent butun
+           kenglikni oladi. */
         <div
           className={cls(
             "grid gap-2.5 p-2.5 transition-[grid-template-columns] duration-200 ease-out lg:min-h-0 lg:flex-1",
-            showRail
-              ? chatOpen
-                ? "lg:grid-cols-[280px_minmax(0,1fr)_400px]"
-                : "lg:grid-cols-[280px_minmax(0,1fr)_0px]"
-              : chatOpen
-                ? "lg:grid-cols-[0px_minmax(0,1fr)_400px]"
-                : "lg:grid-cols-[0px_minmax(0,1fr)_0px]"
+            chatOpen ? "lg:grid-cols-[minmax(0,1fr)_400px]" : "lg:grid-cols-[minmax(0,1fr)_0px]"
           )}
         >
-          {showRail && (
-            <div className="order-3 flex min-h-0 flex-col overflow-hidden lg:order-1">
-              {/* O'rganish bloklari + bo'limlar TOC + materiallar.
-                  Halollik: test tugallanmagan bo'lsa materiallar qulf. */}
-              <StudyRail
+          <div className="order-1 flex min-h-0 min-w-0 flex-col overflow-hidden rounded-card border border-line bg-surface">
+            {hasStudy && (
+              <StudyToolbar
                 lesson={lesson}
                 blocks={studyBlocks}
                 active={activeBlock}
                 onBlock={(v) => {
                   setJumpTo(null);
+                  setSectionsOpen(false);
                   setView(v);
                 }}
-                sectionActive={visibleSection}
+                sections={lesson.sections ?? []}
+                visibleSection={visibleSection}
                 onSection={(i) => {
                   if (view !== "konspekt") setView("konspekt");
                   setJumpTo(i);
+                  setSectionsOpen(false);
                   // Bir xil bo'limni qayta bosish ham ishlashi uchun darhol tozalanadi.
                   setTimeout(() => setJumpTo(null), 600);
                 }}
+                sectionsOpen={sectionsOpen}
+                onToggleSections={() => setSectionsOpen((o) => !o)}
+                sourcesCount={(lesson.materials?.length ?? 0) + (lesson.links?.length ?? 0)}
+                sourcesOpen={sourcesOpen}
+                onToggleSources={() => setSourcesOpen((o) => !o)}
               />
-            </div>
-          )}
+            )}
 
-          <div className="order-1 flex min-h-0 min-w-0 flex-col lg:order-2">
+            {/* Manbalar — faqat so'ralganda (o'qish maydonini yemasin) */}
+            {sourcesOpen && (
+              <div className="shrink-0 border-b border-line px-2 py-2">
+                <MaterialBar
+                  materials={lesson.materials}
+                  links={lesson.links}
+                  locked={quizRunning}
+                  lockedNote={t("materialsLockedQuiz")}
+                />
+              </div>
+            )}
+
             <ContentPanel
               lesson={lesson}
               topicId={topicId}
@@ -350,8 +335,6 @@ export function LessonPage() {
               seekTo={seekTo}
               onSeekVideo={seekVideo}
               onJumpSection={jumpToSection}
-              materialsLocked={quizRunning}
-              materialsLockedNote={t("materialsLockedQuiz")}
             />
           </div>
 
@@ -367,26 +350,6 @@ export function LessonPage() {
           ular umuman ochilmaydi — halollik strukturaviy. ——— */}
       {compact && !focusMode && (
         <>
-          <Sheet open={railSheetOpen} onClose={() => setMobileRail(false)} title={t("stage_study")}>
-            <StudyRail
-              lesson={lesson}
-              blocks={studyBlocks}
-              active={activeBlock}
-              onBlock={(v) => {
-                setJumpTo(null);
-                setView(v);
-                setMobileRail(false);
-              }}
-              sectionActive={visibleSection}
-              onSection={(i) => {
-                if (view !== "konspekt") setView("konspekt");
-                setJumpTo(i);
-                setMobileRail(false);
-                setTimeout(() => setJumpTo(null), 600);
-              }}
-            />
-          </Sheet>
-
           {/* Chat sheet'i balandroq: yozishmani ko'rish uchun. `disableDrag` —
               ichidagi skroll bilan tortish jesti to'qnashmasin. */}
           <Sheet
