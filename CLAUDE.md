@@ -2295,10 +2295,65 @@ tsc + build ikkala tomonda toza.
 ⚠️ Dev'dagi yagona konsol 404 — `/favicon.ico` (loyihada `public/` yo'q,
 index.html'da icon havolasi yo'q) — bu o'zgarishlarga aloqasiz, oldindan bor.
 
-**Keyingi fazalar (rejada, qurilmagan):** 2 — konspekt sukut bo'yicha O'QISH
-rejimi (`DigestSection` 20-60 input o'rniga preview + "Tasdiqlash va davom
-etish", talaba `DigestView`/`BlockView` renderlari qayta ishlatiladi);
-3 — raqam dietasi (Guruhlar/Jadval/StudentDetail/ProgressTab'dan 14 karta);
-4 — `MistakesMap`ni `ProgressTab`dan alohida "Xatolar" tabiga ajratish +
-sukut ko'rinish list; 5 — quvur chiplari/timetable master/review filtrlari;
-6 — **talaba tomoni** (buyurtmachi: "потом ученик").
+### Faza 2 — dars yaratish: konspekt sukut bo'yicha O'QISH rejimida
+Konstruktor 2-qadami ochilishi bilan 20-60+ input chizardi. Endi:
+`DigestSection` = konteyner (rejim/draft/dirty/approve), `DigestEditor.tsx` =
+tahrirlagich (AYNAN ko'chirildi), **`DigestPreview.tsx` = o'qish ko'rinishi**.
+Preview talabaning `DigestView`/`BlockView` renderlarini QAYTA ISHLATADI —
+ular `pages/student/lesson/` dan **`components/lesson/`** ga ko'chdi (git mv),
+tiplar `digestTypes.ts` da (rollar bir-birini import qilmaydi, §5); yangi i18n
+satri kerak emas, ustiga o'qituvchi talabaning aynan matnini ko'radi.
+**Bo'limlar (`sections[].blocks`) birinchi marta ochildi** — ilgari AI nima
+yozganini ko'rish uchun chop etib, talaba bo'lib kirish kerak edi.
+Amal paneli: doim bitta asosiy amal — "Tasdiqlash va davom etish";
+"Tahrirlash"/"Koʻrish" almashtiradi, `draft` konteynerda (rejim almashganda
+tahrir yo'qolmaydi), `?edit=1` qo'llanadi. Shu fazada: `GenerateSection` 4 tur
+kartasi va `PublishSection` dagi `TopicUnlockRule` — `Disclosure` ostiga;
+`TopicConstructor` ga "Kurs / Mavzu" breadcrumb (konstruktor kurs qobig'idan
+tashqarida — kontekst yo'qolardi). Stepper `SubNav` ga AYLANTIRILMADI:
+`SubNavItem` done/current/locked ni ifodalay olmaydi.
+
+### Faza 3 — raqam dietasi (14 karta ketdi)
+- `TeachGroupsPage` 4 karta → xulosa qatori + "Orqada" rose filtr-pill.
+- `TeachSchedulePage` 4 karta → xulosa qatori; **"Kutilmoqda" endi BOSILADIGAN
+  filtr** (yo'qlama kutayotgan darslar) — kartalar faqat nazarda tutgan amal
+  haqiqatan paydo bo'ldi. Stat butun oraliqdan hisoblanadi (filtr o'zini yemaydi).
+- `StudentDetailPage` 5 karta + **xususiy 3-pill bar** → identity kartada 2
+  raqam + bo'limlar umumiy `SubNav` ga (endi SubNav — ilovadagi YAGONA ikkinchi
+  daraja mexanizmi).
+- `ProgressTab` 5 → 4 (4 tasi filtr, qoladi); "O'rtacha %" matnga tushdi.
+- `TeachTasksPage` kartalariga TEGILMADI — ular filtr (qoidaga mos).
+
+### Faza 4 — kurs tablari
+`MistakesMap` `ProgressTab` ichidan chiqarildi (bitta tabda IKKI to'liq analitika
+moduli turardi) → `course/MistakesTab.tsx` + route `/teach/courses/:id/mistakes`
++ SubNav 6-elementi "Xatolar". **Natijalar sukut ko'rinishi RO'YXAT** (heatmap
+telefonda o'qilmaydi — aynan "kabina" taassuroti), tanlov
+`localStorage["meduni.teach.progressView"]` da.
+
+### Faza 5 — sayqal
+`TopicListSection` qatorida 6 quvur chipi → 2 jamlanma (Material N, **Kontent
+k/4**; tur chiplari bosilganda ochiladi, ~11 element → ~6).
+`CaseReviewQueue` 5 filtr → holat + qidiruv ko'rinadi, kurs/mavzu/tartib
+"Qo'shimcha filtrlar" `Disclosure` ostida (faol filtr soni bilan).
+
+### Faza 6 — TALABA tomoni
+Xuddi shu STAT DIETASI qo'llandi:
+- `StudentCoursesPage` 4 tile → **1** (faqat "joriy semestr" — u FILTR) +
+  xulosa qatori.
+- `SchedulePage` 4 tile → 1 ("keyingi dars") + xulosa qatori.
+- `grades/ReviewTab` 4 tile → 1 ("bugun takrorlash kerak") + xulosa qatori.
+- `StudentDashboard`: "Davomat + o'zlashtirish" analitika bloki `Disclosure`
+  ostiga (`meduni.student.homeAnalytics`) — bosh sahifa kunlik ISH markazi
+  bo'lib qoladi (davom ettirish / bugungi darslar / vazifalar), raqamlar
+  kerak bo'lganda ochiladi. Rail kartalari (takrorlash/bildirishnoma/faollik)
+  tegilmadi — ular kontekst ustunida.
+⚠️ **i18n tuzog'i yana chiqdi:** `review` — O'QITUVCHI bo'limi, talaba
+`ReviewTab` esa **`reviewTab`** prefiksini ishlatadi (Modul 28 sabog'i).
+Yangi kalitni qo'shishdan oldin komponentning `keyPrefix` ini TEKSHIR.
+
+**Tekshirildi (Playwright + real Chrome, uchala rol, 5 to'plam):**
+31/31 + 10/10 + 19/19 + 21/21 + 21/21 — menyu/faol holat/mobil "Yana" tuzog'i,
+konspekt o'qish rejimi (kartada 0 input) va tahrir saqlanishi, raqam dietasi,
+xatolar tabi + ko'rinish xotirasi, chiplar, keys filtrlari, talaba sahifalari
+(uz+ru, mobil 390 toshishsiz). tsc + build ikkala tomonda toza.

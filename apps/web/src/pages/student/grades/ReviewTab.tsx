@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { ArrowRight, CalendarClock, Check, CheckCircle2, Repeat, Sparkles, X } from "lucide-react";
+import { ArrowRight, CalendarClock, Check, CheckCircle2, Repeat, X } from "lucide-react";
 import { Card, EmptyState, Icon, ProgressRing, Spinner, cls } from "@meduni/ui";
 import { HeroTile, RailCard } from "../../../components/HeroStats";
 import { formatDate } from "../../../lib/date";
@@ -147,32 +147,22 @@ export function ReviewTab() {
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
       <div className="min-w-0 space-y-4">
-        {/* Hero ko'rsatkichlari */}
-        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+        {/* STAT DIETASI: 4 tile ham filtr emas edi — asosiy amal kartani
+            takrorlash. Bitta tile ("bugun takrorlash kerak") + xulosa qatori. */}
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,220px)_1fr] sm:items-center">
           <HeroTile
             icon={Repeat}
             value={String(stats?.dueNow ?? "—")}
             label={t("statDue")}
             tone={stats && stats.dueNow > 0 ? "bg-brand-soft text-brand-tint" : "bg-surface text-ink-faint"}
           />
-          <HeroTile
-            icon={CheckCircle2}
-            value={String(stats?.reviewedToday ?? "—")}
-            label={t("statToday")}
-            tone="bg-emerald-soft text-emerald"
-          />
-          <HeroTile
-            icon={Sparkles}
-            value={stats?.knownPct !== null && stats !== undefined ? `${stats.knownPct}%` : "—"}
-            label={t("statKnown")}
-            tone="bg-violet-soft text-violet"
-          />
-          <HeroTile
-            icon={CalendarClock}
-            value={stats?.nextDueAt ? fmt(stats.nextDueAt) : "—"}
-            label={t("statNext")}
-            tone="bg-blue-soft text-blue"
-          />
+          <p className="text-note text-ink-soft">
+            {t("summaryLine", {
+              today: stats?.reviewedToday ?? 0,
+              known: stats?.knownPct ?? 0,
+              next: stats?.nextDueAt ? fmt(stats.nextDueAt) : "—",
+            })}
+          </p>
         </div>
 
         {/* Sessiya / natija / bo'sh holat */}

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { motion, type Variants } from "framer-motion";
-import { BookOpen, CheckCircle2, ChevronRight, Layers, PlayCircle, RotateCcw, Search, Users } from "lucide-react";
+import { BookOpen, CheckCircle2, ChevronRight, PlayCircle, RotateCcw, Search, Users } from "lucide-react";
 import { Card, Icon, ProgressBar, ProgressRing, cls } from "@meduni/ui";
 import { HeroCard, HeroTile } from "../../components/HeroStats";
 import { AsyncSection } from "../../components/AsyncSection";
@@ -162,7 +162,7 @@ export function StudentCoursesPage() {
       <motion.div variants={itemVariants}>
         <HeroCard
           title={t("title")}
-          subtitle={t("subtitle")}
+          subtitle={t("summaryLine", { all: courses.length, done: doneCourses, topicsDone, topicsTotal })}
           left={
             <div className="flex items-center gap-4">
               <ProgressRing value={avgProgress} size={64} stroke={8} tone="brand" />
@@ -170,7 +170,8 @@ export function StudentCoursesPage() {
             </div>
           }
         >
-          <HeroTile icon={BookOpen} value={String(courses.length)} label={t("statAll")} tone="bg-brand-soft text-brand-tint" />
+          {/* STAT DIETASI: faqat FILTR vazifasini bajaradigan tile qoladi;
+              qolgan uch raqam sarlavha ostidagi xulosa qatoriga tushdi. */}
           <HeroTile
             icon={PlayCircle}
             value={String(currentCount)}
@@ -179,8 +180,6 @@ export function StudentCoursesPage() {
             selected={isCurrentDefault}
             onClick={newest ? backToCurrent : undefined}
           />
-          <HeroTile icon={Layers} value={`${topicsDone}/${topicsTotal}`} label={t("statTopics")} tone="bg-violet-soft text-violet" />
-          <HeroTile icon={CheckCircle2} value={String(doneCourses)} label={t("statDone")} tone="bg-emerald-soft text-emerald" />
         </HeroCard>
       </motion.div>
 

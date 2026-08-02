@@ -1406,7 +1406,8 @@
       "case_graded": "Кейс оценен"
     },
     "noCourses": "Нет курсов",
-    "adminWillAdd": "Админ добавит курсы"
+    "adminWillAdd": "Админ добавит курсы",
+    "analyticsTitle": "Анализ успеваемости"
   },
   "leaderboard": {
     "title": "Рейтинг группы",
@@ -1977,7 +1978,8 @@
     "emptyHint": "Выберите другой семестр",
     "continueShort": "Продолжить",
     "allDone": "Все пройдено",
-    "topics": "тем"
+    "topics": "тем",
+    "summaryLine": "Всего {{all}} курсов · {{done}} завершено · темы {{topicsDone}}/{{topicsTotal}}"
   },
   "practice": {
     "patientTitle": "Практика с виртуальным пациентом",
@@ -2057,7 +2059,8 @@
     "statMissed": "Пропустили",
     "statNextNone": "Занятий больше нет",
     "viewWeek": "Неделя",
-    "viewMonth": "Месяц"
+    "viewMonth": "Месяц",
+    "summaryLine": "На этой неделе {{total}} занятий · были {{attended}} · пропустили {{missed}}"
   },
   "mistakes": {
     "title": "Карта ошибок группы",
@@ -2087,7 +2090,8 @@
     "emptyNext": "Следующее повторение: {{date}}",
     "emptyNoUpcoming": "Изучайте карточки в блоке «Карточки» урока — расписание повторений появится здесь.",
     "upcomingTitle": "Предстоящие повторения",
-    "upcomingEmpty": "Запланированных повторений нет."
+    "upcomingEmpty": "Запланированных повторений нет.",
+    "summaryLine": "Сегодня повторено: {{today}} · знаю: {{known}}% · следующее: {{next}}"
   },
   "teachSchedule": {
     "title": "Мои занятия",
