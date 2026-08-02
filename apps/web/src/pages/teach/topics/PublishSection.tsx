@@ -4,7 +4,8 @@ import { Rocket } from "lucide-react";
 import { Badge, Button, Card, Icon, useToast } from "@meduni/ui";
 import { ConfirmDialog } from "../../../components/ConfirmDialog";
 import { useLocale } from "../../../lib/useLocale";
-import { usePublishContent, type ContentSummary, type TopicDetail } from "./api";
+import { apiErrorMessage } from "../../../lib/api";
+import { useContent, usePublishContent, useResumeVideo, type ContentSummary, type TopicDetail } from "./api";
 
 const kindKey: Record<string, string> = {
   quiz: "quizTitle",
@@ -27,6 +28,18 @@ function ContentPublish({ topic, item }: { topic: TopicDetail; item: ContentSumm
   const kindName = tg(kindKey[item.kind] ?? "quizTitle");
   const published = item.status === "published";
 
+  // ⚠️ 2026-08-02 (buyurtmachi: "videoni chop etishda xato berayapdi"): server
+  // to'g'ri rad etardi (montaj tugamagan), lekin UI faqat umumiy "Xatolik yuz
+  // berdi" chiqarardi — o'qituvchi sababni ham, yechimni ham bilmasdi. Endi
+  // video kartasi montaj holatini O'ZI biladi: tugmani bermaydi, sababni
+  // yozadi va "Davom ettirish" taklif qiladi.
+  const isVideo = item.kind === "video";
+  const videoDetail = useContent(isVideo && !published ? item.id : 0);
+  const build = videoDetail.data?.video;
+  const videoReady = !isVideo || published || (build?.buildStatus === "done" && build?.hasMp4);
+  const resume = useResumeVideo(build?.id ?? 0);
+  const publishError = publish.isError ? apiErrorMessage(publish.error, locale) : null;
+
   return (
     <Card className={published ? "border-emerald/30 bg-emerald-soft" : "space-y-3"}>
       <div className="flex items-center justify-between gap-2">
@@ -44,14 +57,31 @@ function ContentPublish({ topic, item }: { topic: TopicDetail; item: ContentSumm
       ) : (
         <>
           <p className="text-note text-ink-soft">{t("hint")}</p>
-          <Button
-            variant="deep"
-            icon={<Icon icon={Rocket} size={16} />}
-            disabled={publish.isPending}
-            onClick={() => setConfirm(true)}
-          >
-            {t("publishBtn")}
-          </Button>
+          {videoReady ? (
+            <Button
+              variant="deep"
+              icon={<Icon icon={Rocket} size={16} />}
+              disabled={publish.isPending}
+              onClick={() => setConfirm(true)}
+            >
+              {t("publishBtn")}
+            </Button>
+          ) : (
+            <div className="space-y-2 rounded-control border border-amber bg-amber-soft px-3 py-2.5">
+              <p className="text-note font-semibold text-amber">
+                {t("videoNotBuilt")}
+                {build?.errorStage ? ` (${build.errorStage})` : ""}
+              </p>
+              <Button
+                size="sm"
+                variant="soft"
+                disabled={resume.isPending}
+                onClick={() => resume.mutate()}
+              >
+                {t("videoResume")}
+              </Button>
+            </div>
+          )}
         </>
       )}
 
@@ -62,6 +92,7 @@ function ContentPublish({ topic, item }: { topic: TopicDetail; item: ContentSumm
         confirmLabel={t("confirmBtn")}
         confirmVariant="primary"
         loading={publish.isPending}
+        errorMessage={publishError}
         onConfirm={() =>
           publish.mutate(item.id, {
             onSuccess: () => {
