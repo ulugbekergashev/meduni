@@ -5,6 +5,7 @@ import cookieParser from "cookie-parser";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import { env, isAllowedOrigin } from "./env";
+import { textChain } from "./ai/config";
 import { authMiddleware } from "./middleware/auth";
 import { errorMiddleware } from "./middleware/error";
 import { authRouter } from "./modules/auth/router";
@@ -139,6 +140,9 @@ app.listen(env.port, () => {
   console.log(`  web origins : ${env.webOrigins.join(", ")}`);
   if (env.vercelProject) console.log(`  vercel prev : ${env.vercelProject}-*.vercel.app`);
   console.log(`  cookies     : ${env.crossSiteCookies ? "SameSite=None; Secure (cross-site)" : "SameSite=Lax"}`);
+  // Matn provayderlari zanjiri — sozlama to'g'ri o'qilganini bir qarashda ko'rish
+  // uchun (buyurtmachi: "Gemini kalit tugadi" xatosidan keyin).
+  console.log(`  matn AI     : ${textChain("DIGEST").map((l) => l.name).join(" → ")}`);
   // Oldingi jarayonda uzilib qolgan video/rasm joblarini ERROR ga o'tkazamiz —
   // aks holda UI abadiy "ishlamoqda" spinnerini ko'rsatib turadi.
   //
