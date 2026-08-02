@@ -164,7 +164,8 @@ async function renderSlidePng(slide: Slide, imageBuf: Buffer | null): Promise<Bu
 
 // ---------- Visual card -> PNG (NotebookLM-style lecture frames) ----------
 
-async function renderVisualPng(visual: VideoVisual, imageBuf: Buffer | null): Promise<Buffer> {
+/** Eksport — kadr dizaynini testda ko'z bilan tekshirish uchun. */
+export async function renderVisualPng(visual: VideoVisual, imageBuf: Buffer | null): Promise<Buffer> {
   const W = 1920, H = 1080;
   const BRAND = "#4F46E5", INK = "#101828", BG = "#F6F7F9";
   const AMBER = "#D97706", AMBER_BG = "#FEF3E2";
@@ -175,7 +176,10 @@ async function renderVisualPng(visual: VideoVisual, imageBuf: Buffer | null): Pr
   // HERO layout: when a diagram exists, make it the star — a title bar on top and
   // the large labeled illustration centered below (the diagram carries its own
   // labels, so no competing bullet text). Applies to points/term cards.
-  const hero = !!imageBuf && (visual.kind === "points" || visual.kind === "term");
+  // ⚠️ Rasm BOR bo'lsa — har turdagi kadr HERO ko'rinishida chiziladi (kirish/
+  // xulosa ham). Faqat `warning` (doza ogohlantirishi) matn kartada qoladi:
+  // u yerda o'qilishi rasm estetikasidan muhimroq.
+  const hero = !!imageBuf && visual.kind !== "warning";
   if (hero) {
     const barH = 150;
     const parts: string[] = [];
@@ -195,16 +199,51 @@ async function renderVisualPng(visual: VideoVisual, imageBuf: Buffer | null): Pr
       .toBuffer();
   }
 
-  // Text cards (no illustration): title intro, dosage warning, or points/term
-  // when image generation was unavailable.
+  // ⚠️ 2026-08-01 (buyurtmachi: "в начале и в конце очень простой рисунок…
+  // просто такой текст показывается"): kirish va xulosa kadrlari sof matn edi va
+  // 5–30 soniya shu ko'rinishda turardi. Endi matnli kadrlar ham KOMPOZITSIYA:
+  // gradient fon, brend aksenti, EKG motivi, raqamlangan tezis qatorlari.
   const parts: string[] = [];
   const bg = visual.kind === "warning" ? AMBER_BG : BG;
   const accent = visual.kind === "warning" ? AMBER : BRAND;
   parts.push(`<rect width="${W}" height="${H}" fill="${bg}"/>`);
 
   if (visual.kind === "title") {
-    parts.push(`<rect x="0" y="518" width="${W}" height="8" fill="${BRAND}"/>`);
-    wrap(visual.title, 34).slice(0, 3).forEach((ln, i) => parts.push(txt(W / 2, 430 + i * 78, 60, 700, INK, ln, "middle")));
+    // KIRISH/XULOSA kadri — to'liq gradient sahna: katta sarlavha, ostida
+    // yupqa EKG chizig'i va tezislar (bo'lsa) chip sifatida.
+    parts.length = 0;
+    parts.push(
+      `<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">` +
+        `<stop offset="0%" stop-color="#3730A3"/><stop offset="55%" stop-color="${BRAND}"/><stop offset="100%" stop-color="#6D28D9"/>` +
+        `</linearGradient></defs>`
+    );
+    parts.push(`<rect width="${W}" height="${H}" fill="url(#g)"/>`);
+    // Yumshoq dekorativ doiralar (chuqurlik hissi)
+    parts.push(`<circle cx="${W - 180}" cy="170" r="240" fill="#FFFFFF" opacity="0.06"/>`);
+    parts.push(`<circle cx="150" cy="${H - 120}" r="300" fill="#FFFFFF" opacity="0.05"/>`);
+
+    const lines = wrap(visual.title, 30).slice(0, 3);
+    const startY = 470 - (lines.length - 1) * 45;
+    lines.forEach((ln, i) => parts.push(txt(W / 2, startY + i * 90, 68, 700, "#FFFFFF", ln, "middle")));
+
+    // EKG motivi — mavzuning tibbiy konteksti (dekorativ, matnni to'smaydi)
+    const baseY = startY + lines.length * 90 + 40;
+    parts.push(
+      `<path d="M 460 ${baseY} H 780 l 30 -46 l 34 118 l 40 -160 l 36 132 l 26 -44 H ${W - 460}" ` +
+        `fill="none" stroke="#FFFFFF" stroke-opacity="0.75" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>`
+    );
+
+    // Tezislar — pastda ixcham chiplar (xulosa kadrida ayni muddao)
+    const chips = (visual.points ?? []).map((p) => p.trim()).filter(Boolean).slice(0, 3);
+    if (chips.length) {
+      let cy = baseY + 130;
+      for (const c of chips) {
+        const line = wrap(c, 58)[0];
+        parts.push(`<rect x="${W / 2 - 560}" y="${cy - 44}" width="1120" height="66" rx="33" fill="#FFFFFF" opacity="0.14"/>`);
+        parts.push(txt(W / 2, cy, 38, 600, "#FFFFFF", line, "middle"));
+        cy += 88;
+      }
+    }
   } else if (visual.kind === "term") {
     parts.push(`<rect x="0" y="0" width="18" height="${H}" fill="${BRAND}"/>`);
     parts.push(txt(120, 300, 72, 700, BRAND, visual.title));
@@ -216,13 +255,22 @@ async function renderVisualPng(visual: VideoVisual, imageBuf: Buffer | null): Pr
   } else {
     parts.push(`<rect width="${W}" height="150" fill="${accent}"/>`);
     parts.push(txt(70, 98, 52, 700, "#FFFFFF", visual.kind === "warning" ? "⚠ " + visual.title : visual.title));
-    let y = 320;
-    for (const p of visual.points) {
-      const lines = wrap(p, 52);
-      parts.push(`<circle cx="90" cy="${y - 16}" r="10" fill="${accent}"/>`);
-      lines.forEach((ln, i) => parts.push(txt(130, y + i * 58, 46, 500, INK, ln)));
-      y += lines.length * 58 + 40;
-    }
+    // Har tezis — o'z kartasida, raqamlangan doira bilan (quruq ro'yxat emas).
+    // Blok shapka ostidagi maydonда VERTIKAL MARKAZLANADI (pastda bo'sh joy
+    // qolmasin — §4 ZICHLIK).
+    const cardHeights = visual.points.map((p) => wrap(p, 46).length * 58 + 56);
+    const stackH = cardHeights.reduce((a, h) => a + h + 26, 0) - 26;
+    let y = Math.max(210, 150 + Math.round((H - 150 - stackH) / 2));
+    visual.points.forEach((p, idx) => {
+      const lines = wrap(p, 46);
+      const cardH = cardHeights[idx];
+      parts.push(`<rect x="70" y="${y}" width="${W - 140}" height="${cardH}" rx="24" fill="#FFFFFF"/>`);
+      parts.push(`<rect x="70" y="${y}" width="10" height="${cardH}" rx="5" fill="${accent}"/>`);
+      parts.push(`<circle cx="150" cy="${y + cardH / 2}" r="30" fill="${accent}" opacity="0.14"/>`);
+      parts.push(txt(150, y + cardH / 2 + 14, 38, 700, accent, String(idx + 1), "middle"));
+      lines.forEach((ln, i) => parts.push(txt(210, y + 62 + i * 58, 44, 500, INK, ln)));
+      y += cardH + 26;
+    });
   }
   return sharp(Buffer.from(svgDoc(parts.join("")))).png({ compressionLevel: 6 }).toBuffer();
 }
@@ -379,6 +427,13 @@ async function stageTtsAndRender(videoId: number) {
       slideImageBySection.set(sl.sectionId, url);
     }
   }
+  /** Barcha tayyor slayd rasmlari (tartibda) — kirish/xulosa kadrlari uchun.
+   *  ⚠️ Buyurtmachi (2026-08-01): video BOSHI va OXIRI sof matn kadr edi va
+   *  o'nlab soniya shunday turardi. Taqdimotning 1-slaydi aynan mavzu muqovasi,
+   *  oxirgisi — xulosa: ularni BEPUL qayta ishlatamiz (yangi rasm yasalmaydi). */
+  const readySlideImages = slides
+    .filter((sl) => sl.imageSlots?.[0]?.status === "DONE" && sl.imageSlots[0].url)
+    .map((sl) => sl.imageSlots[0].url as string);
   // ⚠️ ZAXIRA (2026-08-01): bo'lim bog'lanishi (sectionId) HAR DOIM ham bo'lmaydi —
   // eski konspektlarda bo'lim ID'lari yo'q, AI ham -1 qaytarishi mumkin. O'shanda
   // yuqoridagi xarita bo'sh qolib, video butunlay matn-kadrlardan iborat bo'lardi
@@ -447,6 +502,12 @@ async function stageTtsAndRender(videoId: number) {
         if (!seg.visualImageUrl && seg.sectionId) {
           const reuse = slideImageBySection.get(seg.sectionId);
           if (reuse) seg.visualImageUrl = reuse;
+        }
+        // Kirish (birinchi) va xulosa (oxirgi) kadri — mos bo'lim topilmasa ham
+        // taqdimotning muqova/yakun slaydi bilan to'ldiriladi.
+        if (!seg.visualImageUrl && readySlideImages.length) {
+          if (i === 0) seg.visualImageUrl = readySlideImages[0];
+          else if (i === segments.length - 1) seg.visualImageUrl = readySlideImages[readySlideImages.length - 1];
         }
         if (!seg.visualImageUrl && orderedSlideImages.length) {
           seg.visualImageUrl = orderedSlideImages[reusePtr % orderedSlideImages.length];
