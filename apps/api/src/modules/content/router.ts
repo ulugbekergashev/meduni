@@ -71,7 +71,7 @@ generateRouter.post(
 // "Hammasini yarat" — bitta bosish, server ketma-ket yaratadi (fon).
 const genAllSchema = z.object({
   language: z.enum(["uz", "ru"]),
-  kinds: z.array(z.enum(["quiz", "case", "presentation", "video"])).optional(),
+  kinds: z.array(z.enum(["quiz", "case", "presentation", "video", "audio"])).optional(),
   questionCount: z.number().int().min(3).max(30).optional(),
   voice: z.enum(["male", "female"]).optional(),
 });

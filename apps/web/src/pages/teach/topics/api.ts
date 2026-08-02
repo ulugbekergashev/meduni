@@ -68,6 +68,8 @@ export interface Digest {
   digestJson: DigestJson;
   version: number;
   approvedByTeacher: boolean;
+  /** Joriy versiyaga audio-podkast yaratilganmi. */
+  hasAudio?: boolean;
 }
 
 export type ContentKind = "quiz" | "case" | "presentation" | "video";
@@ -430,10 +432,11 @@ export function useRegenerateImage(presentationId: number) {
 
 // ---- "Hammasini yarat" (bitta bosish → server ketma-ket yaratadi) ----
 
-export type BatchKind = "quiz" | "case" | "presentation" | "video";
+export type BatchKind = "quiz" | "case" | "presentation" | "audio" | "video";
 export interface BatchStatus {
   running: boolean;
-  steps: { kind: BatchKind; state: "queued" | "running" | "done" | "error"; error?: string }[];
+  /** `background` — qadam faqat boshlandi (video montaji fonda davom etadi). */
+  steps: { kind: BatchKind; state: "queued" | "running" | "done" | "error"; error?: string; background?: boolean }[];
 }
 
 export function useGenerateAll(topicId: number) {
