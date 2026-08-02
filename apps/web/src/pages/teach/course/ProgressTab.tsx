@@ -5,7 +5,6 @@ import { AlertTriangle, Download, GraduationCap, LayoutGrid, List, ListPlus, Sea
 import { Badge, Button, Card, Icon, Modal, Spinner, StatCard, cls, useToast } from "@meduni/ui";
 import { AsyncSection } from "../../../components/AsyncSection";
 import { QuickTaskModal } from "../../../components/QuickTaskModal";
-import { MistakesMap } from "./MistakesMap";
 import {
   API_URL,
   useCourseProgress,
@@ -16,6 +15,9 @@ import {
   type ProgressStudent,
   type ProgressTopic,
 } from "../api";
+
+/** Ko'rinish tanlovi eslab qolinadi — tajribali o'qituvchi har safar heatmapga qaytmasin. */
+const VIEW_KEY = "meduni.teach.progressView";
 
 type Filter = "all" | "active" | "behind" | "completed";
 
@@ -218,7 +220,21 @@ export function ProgressTab() {
   const q = useCourseProgress(courseId);
   const data = q.data;
 
-  const [view, setView] = useState<"heatmap" | "list">("heatmap");
+  const [view, setView] = useState<"heatmap" | "list">(() => {
+    try {
+      return localStorage.getItem(VIEW_KEY) === "heatmap" ? "heatmap" : "list";
+    } catch {
+      return "list";
+    }
+  });
+  const pickView = (v: "heatmap" | "list") => {
+    setView(v);
+    try {
+      localStorage.setItem(VIEW_KEY, v);
+    } catch {
+      /* private rejim */
+    }
+  };
   const [filter, setFilter] = useState<Filter>("all");
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<"progress" | "name">("progress");
@@ -254,13 +270,16 @@ export function ProgressTab() {
           {data && (
             <>
               {/* Stat cards */}
-              <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-5">
+              {/* Hammasi FILTR — shuning uchun qator qoladi (STAT DIETASI).
+                  "O'rtacha %" kartasi olib tashlandi: u filtr emas edi, qiymati
+                  esa quyidagi guruh-o'rtacha qatorida allaqachon bor. */}
+              <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4">
                 <StatCard compact icon={Users} label={t("statTotal")} value={data.stats.total} tone="bg-blue-soft text-blue" selected={filter === "all"} onClick={() => setFilter("all")} />
                 <StatCard compact icon={TrendingUp} label={t("statActive")} value={data.stats.active} tone="bg-brand-soft text-brand-deep" selected={filter === "active"} onClick={() => setFilter("active")} />
                 <StatCard compact icon={AlertTriangle} label={t("statBehind")} value={data.stats.behind} tone="bg-rose-soft text-rose" selected={filter === "behind"} onClick={() => setFilter("behind")} />
-                <StatCard compact icon={TrendingUp} label={t("statAvg")} value={`${data.stats.avgProgress}%`} tone="bg-amber-soft text-amber" onClick={() => setFilter("all")} />
                 <StatCard compact icon={GraduationCap} label={t("statCompleted")} value={data.stats.completed} tone="bg-emerald-soft text-emerald" selected={filter === "completed"} onClick={() => setFilter("completed")} />
               </div>
+              <p className="mt-2 text-note text-ink-soft">{t("statAvg")}: <span className="font-bold tabular-nums text-ink">{data.stats.avgProgress}%</span></p>
 
               {/* Filter bar */}
               <div className="mt-5 flex flex-wrap items-center gap-2">
@@ -278,10 +297,10 @@ export function ProgressTab() {
                   <option value="name">{t("sortName")}</option>
                 </select>
                 <div className="flex overflow-hidden rounded-control border border-line">
-                  <button onClick={() => setView("heatmap")} className={cls("flex items-center gap-1 px-3 py-2 text-note font-medium", view === "heatmap" ? "bg-brand-soft text-brand-deep" : "text-ink-soft hover:bg-bg")}>
+                  <button onClick={() => pickView("heatmap")} className={cls("flex items-center gap-1 px-3 py-2 text-note font-medium", view === "heatmap" ? "bg-brand-soft text-brand-deep" : "text-ink-soft hover:bg-bg")}>
                     <Icon icon={LayoutGrid} size={15} /> {t("heatmap")}
                   </button>
-                  <button onClick={() => setView("list")} className={cls("flex items-center gap-1 px-3 py-2 text-note font-medium", view === "list" ? "bg-brand-soft text-brand-deep" : "text-ink-soft hover:bg-bg")}>
+                  <button onClick={() => pickView("list")} className={cls("flex items-center gap-1 px-3 py-2 text-note font-medium", view === "list" ? "bg-brand-soft text-brand-deep" : "text-ink-soft hover:bg-bg")}>
                     <Icon icon={List} size={15} /> {t("list")}
                   </button>
                 </div>
@@ -330,8 +349,6 @@ export function ProgressTab() {
         prefill={assignTo ? { studentId: assignTo.id, studentName: assignTo.name } : undefined}
       />
 
-      {/* Guruh xatolari xaritasi (Modul 28) — savol/qadam darajasidagi tahlil */}
-      <MistakesMap courseId={courseId} />
     </div>
   );
 }

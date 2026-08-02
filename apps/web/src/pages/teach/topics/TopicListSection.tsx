@@ -33,13 +33,28 @@ function StageChip({ label, state }: { label: string; state: "done" | "pending" 
   );
 }
 
-/** Per-topic pipeline summary: material → konspekt → kontent turlari. */
+/** Per-topic pipeline summary.
+ *
+ *  2026-08-02: har qatorda 6 chip turardi (~11 bosiladigan element) — ro'yxat
+ *  shovqinga aylanardi. Endi 2 ta jamlanma: Material N va "Kontent k/4";
+ *  tur-bo'yicha chiplar bosilganda ochiladi (progressiv ochilish). */
+const CONTENT_KINDS = [
+  { kind: "quiz", labelKey: "chipQuiz" },
+  { kind: "case", labelKey: "chipCase" },
+  { kind: "presentation", labelKey: "chipSlides" },
+  { kind: "video", labelKey: "chipVideo" },
+] as const;
+
 function PipelineChips({ tp, t }: { tp: TopicRow; t: (k: string) => string }) {
+  const [open, setOpen] = useState(false);
   const kindState = (k: string): "done" | "pending" | "missing" => {
     const c = tp.contentKinds.find((x) => x.kind === k);
     if (!c) return "missing";
     return c.status === "published" ? "done" : "pending";
   };
+  const doneCount = CONTENT_KINDS.filter((k) => kindState(k.kind) === "done").length;
+  const anyPending = CONTENT_KINDS.some((k) => kindState(k.kind) === "pending");
+
   return (
     <div className="mt-1 flex flex-wrap items-center gap-1">
       <StageChip label={`${t("chipMaterial")} ${tp.materialCount}`} state={tp.materialCount > 0 ? "done" : "missing"} />
@@ -47,10 +62,21 @@ function PipelineChips({ tp, t }: { tp: TopicRow; t: (k: string) => string }) {
         label={t("chipDigest")}
         state={tp.digestState === "approved" ? "done" : tp.digestState === "draft" ? "pending" : "missing"}
       />
-      <StageChip label={t("chipQuiz")} state={kindState("quiz")} />
-      <StageChip label={t("chipCase")} state={kindState("case")} />
-      <StageChip label={t("chipSlides")} state={kindState("presentation")} />
-      <StageChip label={t("chipVideo")} state={kindState("video")} />
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          setOpen((o) => !o);
+        }}
+        aria-expanded={open}
+        className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded-pill"
+      >
+        <StageChip
+          label={`${t("chipContent")} ${doneCount}/${CONTENT_KINDS.length}`}
+          state={doneCount === CONTENT_KINDS.length ? "done" : doneCount > 0 || anyPending ? "pending" : "missing"}
+        />
+      </button>
+      {open &&
+        CONTENT_KINDS.map((k) => <StageChip key={k.kind} label={t(k.labelKey)} state={kindState(k.kind)} />)}
     </div>
   );
 }

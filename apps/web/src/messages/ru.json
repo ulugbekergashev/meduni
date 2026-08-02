@@ -278,7 +278,8 @@
     "sortName": "По названию",
     "sortProgress": "По прогрессу",
     "sortAttendance": "По посещаемости",
-    "sortBehind": "По отстающим"
+    "sortBehind": "По отстающим",
+    "summaryLine": "{{groups}} групп · {{students}} студентов · средняя успеваемость {{pct}}%"
   },
   "attMatrix": {
     "title": "Матрица посещаемости",
@@ -725,7 +726,8 @@
       "results": "Результаты",
       "sessions": "Занятия",
       "progress": "Прогресс",
-      "settings": "Настройки"
+      "settings": "Настройки",
+      "mistakes": "Ошибки"
     },
     "placeholder": {
       "sessions": "Модуль посещаемости — появится в следующей сессии (Модуль 15).",
@@ -808,7 +810,8 @@
       "draft": "Черновик",
       "published": "Опубликовано"
     },
-    "added": "Тема добавлена"
+    "added": "Тема добавлена",
+    "chipContent": "Контент"
   },
   "constructor": {
     "back": "← Темы",
@@ -1462,7 +1465,8 @@
     "patientLogTitle": "Практика с виртуальным пациентом",
     "patientLogEval": "Оценка AI: {{overall}} · анамнез {{anamnez}}",
     "patientLogNoEval": "{{n}} сообщ. — не завершена",
-    "patientDx": "Диагноз студента"
+    "patientDx": "Диагноз студента",
+    "moreFilters": "Дополнительные фильтры"
   },
   "attendance": {
     "tabSessions": "Занятия",
@@ -2114,7 +2118,8 @@
     "legendHint": "Нажмите ячейку — отметить",
     "viewWeek": "Неделя",
     "viewMonth": "Месяц",
-    "noneThisDay": "В этот день занятий нет"
+    "noneThisDay": "В этот день занятий нет",
+    "summaryLine": "В этом периоде {{total}} занятий · сегодня {{today}}"
   },
   "navShort": {
     "dashboard": "Главная",

@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { CalendarCheck, CalendarDays, ChevronLeft, ChevronRight, ClipboardCheck, Clock, DoorClosed, Search, Users2 } from "lucide-react";
-import { Button, Card, Icon, Select, Spinner, StatCard, cls } from "@meduni/ui";
+import { CalendarDays, ChevronLeft, ChevronRight, ClipboardCheck, DoorClosed, Search, Users2 } from "lucide-react";
+import { Button, Card, Icon, Select, Spinner, cls } from "@meduni/ui";
 import { AsyncSection } from "../../components/AsyncSection";
 import { MonthCalendar, type CalEntry } from "../../components/MonthCalendar";
 import { formatDate } from "../../lib/date";
@@ -67,6 +67,8 @@ export function TeachSchedulePage() {
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [groupId, setGroupId] = useState<number | "">("");
+  // Kartalar faqat SON ko'rsatardi; endi "yo'qlama kutmoqda" — haqiqiy filtr.
+  const [onlyPending, setOnlyPending] = useState(false);
   const [roll, setRoll] = useState<DerivedLesson | null>(null);
 
   // O'qituvchining guruhlari — guruh bo'yicha filtr uchun.
@@ -90,11 +92,15 @@ export function TeachSchedulePage() {
   const range = view === "week" ? { from: dayKey(weekDays[0]), to: dayKey(weekDays[6]) } : monthRange;
   const q = useTeacherLessons({ from: range.from, to: range.to, search: search.trim() || undefined });
   // Guruh filtri — mijoz tomonda (DerivedLesson.groupId bo'yicha).
-  const lessons = useMemo(() => {
+  const lessonsAll = useMemo(() => {
     const all = q.data ?? [];
     return groupId === "" ? all : all.filter((l) => l.groupId === groupId);
   }, [q.data, groupId]);
-  const filtered = search.trim() !== "" || groupId !== "";
+  const lessons = useMemo(
+    () => (onlyPending ? lessonsAll.filter((l) => l.status !== "FULL") : lessonsAll),
+    [lessonsAll, onlyPending]
+  );
+  const filtered = search.trim() !== "" || groupId !== "" || onlyPending;
 
   // Katak indeksi: "dayKey|startTime" → darslar.
   const cellMap = useMemo(() => {
@@ -144,12 +150,12 @@ export function TeachSchedulePage() {
 
   // Hafta xulosasi.
   const stats = useMemo(() => {
-    const total = lessons.length;
-    const marked = lessons.filter((l) => l.status === "FULL").length;
-    const pending = lessons.filter((l) => l.status !== "FULL").length;
-    const todayN = lessons.filter((l) => l.dayKey === todayKey).length;
+    const total = lessonsAll.length;
+    const marked = lessonsAll.filter((l) => l.status === "FULL").length;
+    const pending = lessonsAll.filter((l) => l.status !== "FULL").length;
+    const todayN = lessonsAll.filter((l) => l.dayKey === todayKey).length;
     return { total, marked, pending, todayN };
-  }, [lessons, todayKey]);
+  }, [lessonsAll, todayKey]);
 
   const weekLabel = `${formatDate(locale === "ru" ? "ru" : "uz", weekDays[0], "short")} – ${formatDate(locale === "ru" ? "ru" : "uz", weekDays[6], "short")}`;
 
@@ -158,7 +164,26 @@ export function TeachSchedulePage() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-h1 font-bold text-ink">{t("title")}</h1>
-          <p className="mt-1 text-note text-ink-soft">{t("subtitleAuto")}</p>
+          <p className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-note text-ink-soft">
+            <span>{t("summaryLine", { total: stats.total, today: stats.todayN })}</span>
+            {stats.pending > 0 && (
+              <>
+                <span aria-hidden>·</span>
+                {/* Ilgari bu shunchaki raqamli karta edi — endi amal: bosilsa
+                    faqat yo'qlama kutayotgan darslar qoladi. */}
+                <button
+                  onClick={() => setOnlyPending((v) => !v)}
+                  className={cls(
+                    "inline-flex items-center gap-1 rounded-pill border px-2.5 py-0.5 font-semibold transition-all",
+                    onlyPending ? "border-amber bg-amber-soft text-amber" : "border-line text-amber hover:bg-amber-soft"
+                  )}
+                >
+                  <Icon icon={ClipboardCheck} size={13} />
+                  {t("statPending")}: {stats.pending}
+                </button>
+              </>
+            )}
+          </p>
         </div>
         <div className="inline-flex gap-1 rounded-control border border-line bg-surface p-1">
           {(["week", "month"] as const).map((v) => (
@@ -176,13 +201,6 @@ export function TeachSchedulePage() {
         </div>
       </div>
 
-      {/* Hafta xulosasi */}
-      <div className="grid grid-cols-2 gap-2.5 md:grid-cols-4">
-        <StatCard compact icon={CalendarDays} tone="bg-brand-soft text-brand-deep" value={stats.total} label={t("statTotal")} />
-        <StatCard compact icon={CalendarCheck} tone="bg-emerald-soft text-emerald" value={stats.marked} label={t("statMarked")} />
-        <StatCard compact icon={ClipboardCheck} tone={stats.pending > 0 ? "bg-amber-soft text-amber" : "bg-bg text-ink-faint"} value={stats.pending} label={t("statPending")} />
-        <StatCard compact icon={Clock} tone="bg-blue-soft text-blue" value={stats.todayN} label={t("statToday")} />
-      </div>
 
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-2">

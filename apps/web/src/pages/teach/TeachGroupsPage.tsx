@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ChevronRight, GraduationCap, Plus, Search, TrendingUp, UserX, Users2 } from "lucide-react";
-import { Badge, Button, Card, Icon, Input, Modal, ProgressRing, Select, StatCard, cls, useToast } from "@meduni/ui";
+import { ChevronRight, GraduationCap, Plus, Search, UserX, Users2 } from "lucide-react";
+import { Badge, Button, Card, Icon, Input, Modal, ProgressRing, Select, cls, useToast } from "@meduni/ui";
 import { AsyncSection } from "../../components/AsyncSection";
 import { Field } from "../../components/Field";
 import { apiErrorMessage } from "../../lib/api";
@@ -150,22 +150,16 @@ export function TeachGroupsPage() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-h1 font-bold text-ink">{t("title")}</h1>
-          <p className="mt-1 text-note text-ink-soft">{t("subtitle")}</p>
+          <p className="mt-1 text-note text-ink-soft">
+            {groups.length > 0
+              ? t("summaryLine", { groups: summary.count, students: summary.students, pct: summary.avgProgress })
+              : t("subtitle")}
+          </p>
         </div>
         <Button icon={<Icon icon={Plus} size={16} />} onClick={() => setAddOpen(true)}>{tc("createGroupBtn")}</Button>
       </div>
 
       {addOpen && <NewGroupModal onClose={() => setAddOpen(false)} />}
-
-      {/* Xulosa */}
-      {groups.length > 0 && (
-        <div className="grid grid-cols-2 gap-2.5 md:grid-cols-4">
-          <StatCard compact icon={Users2} tone="bg-brand-soft text-brand-deep" value={summary.count} label={t("sGroups")} />
-          <StatCard compact icon={GraduationCap} tone="bg-blue-soft text-blue" value={summary.students} label={t("sStudents")} />
-          <StatCard compact icon={TrendingUp} tone="bg-emerald-soft text-emerald" value={`${summary.avgProgress}%`} label={t("sAvgProgress")} />
-          <StatCard compact icon={UserX} tone={summary.behind > 0 ? "bg-rose-soft text-rose" : "bg-bg text-ink-faint"} value={summary.behind} label={t("sBehind")} selected={onlyBehind} onClick={() => setOnlyBehind((v) => !v)} />
-        </div>
-      )}
 
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-2">
@@ -184,6 +178,21 @@ export function TeachGroupsPage() {
           <option value="attendance">{t("sortAttendance")}</option>
           <option value="behind">{t("sortBehind")}</option>
         </Select>
+        {summary.behind > 0 && (
+          <button
+            onClick={() => setOnlyBehind((v) => !v)}
+            className={cls(
+              "inline-flex items-center gap-1.5 rounded-pill border px-3 py-1.5 text-note font-semibold transition-all",
+              onlyBehind
+                ? "border-rose bg-rose-soft text-rose"
+                : "border-line bg-surface text-ink-soft hover:bg-bg hover:text-ink"
+            )}
+          >
+            <Icon icon={UserX} size={14} />
+            {t("sBehind")}
+            <span className="rounded-pill px-1.5 text-micro tabular-nums text-rose">{summary.behind}</span>
+          </button>
+        )}
         <span className="text-note font-semibold text-ink-soft">{tc("totalN", { n: filtered.length })}</span>
       </div>
 

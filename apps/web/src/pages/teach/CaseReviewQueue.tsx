@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { ArrowLeft, CheckCircle2, ChevronDown, ClipboardCheck, Clock, FlaskConical, HeartPulse, ListPlus, Search, Sparkles, Stethoscope, User } from "lucide-react";
 import { Badge, Button, Card, Icon, Spinner, cls, useToast } from "@meduni/ui";
 import { AsyncSection } from "../../components/AsyncSection";
+import { Disclosure } from "../../components/Disclosure";
 import { QuickTaskModal } from "../../components/QuickTaskModal";
 import {
   useAiSuggest,
@@ -426,30 +427,40 @@ export function CaseReviewQueue() {
       </button>
       <h1 className="text-h1 font-bold text-ink">{t("title")}</h1>
 
-      {/* Filters */}
+      {/* Filtrlar — sukut bo'yicha faqat holat + qidiruv (navbat FIFO ishlaydi).
+          Kurs/mavzu/tartib kamdan-kam kerak → "Batafsil" ostida (5 boshqaruv
+          bir qatorda turgani sahifani og'irlashtirardi). */}
       <div className="mt-4 flex flex-wrap items-center gap-2">
-        <select value={query.courseId ?? ""} onChange={(e) => patch({ courseId: e.target.value ? Number(e.target.value) : undefined, topicId: undefined })} className="rounded-control border border-line bg-surface px-2 py-2 text-note outline-none focus:border-brand">
-          <option value="">{t("allCourses")}</option>
-          {filtersQ.data?.courses.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-        </select>
-        <select value={query.topicId ?? ""} onChange={(e) => patch({ topicId: e.target.value ? Number(e.target.value) : undefined })} className="rounded-control border border-line bg-surface px-2 py-2 text-note outline-none focus:border-brand">
-          <option value="">{t("allTopics")}</option>
-          {topicsForCourse.map((tp) => <option key={tp.id} value={tp.id}>{tp.title}</option>)}
-        </select>
         <select value={query.status} onChange={(e) => patch({ status: e.target.value as QueueQuery["status"] })} className="rounded-control border border-line bg-surface px-2 py-2 text-note outline-none focus:border-brand">
           <option value="PENDING">{t("pending")}</option>
           <option value="REVIEWED">{t("reviewed")}</option>
           <option value="all">{t("all")}</option>
-        </select>
-        <select value={query.sort} onChange={(e) => patch({ sort: e.target.value as QueueQuery["sort"] })} className="rounded-control border border-line bg-surface px-2 py-2 text-note outline-none focus:border-brand">
-          <option value="oldest">{t("oldest")}</option>
-          <option value="newest">{t("newest")}</option>
         </select>
         <div className="relative min-w-[160px] flex-1">
           <Icon icon={Search} size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-faint" />
           <input value={query.search} onChange={(e) => patch({ search: e.target.value })} placeholder={t("searchStudent")} className="w-full rounded-control border border-line bg-surface py-2 pl-9 pr-3 text-note outline-none focus:border-brand" />
         </div>
       </div>
+      <Disclosure
+        label={t("moreFilters")}
+        count={(query.courseId ? 1 : 0) + (query.topicId ? 1 : 0) + (query.sort !== "oldest" ? 1 : 0)}
+        className="mt-2"
+      >
+        <div className="flex flex-wrap items-center gap-2">
+          <select value={query.courseId ?? ""} onChange={(e) => patch({ courseId: e.target.value ? Number(e.target.value) : undefined, topicId: undefined })} className="rounded-control border border-line bg-surface px-2 py-2 text-note outline-none focus:border-brand">
+            <option value="">{t("allCourses")}</option>
+            {filtersQ.data?.courses.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+          <select value={query.topicId ?? ""} onChange={(e) => patch({ topicId: e.target.value ? Number(e.target.value) : undefined })} className="rounded-control border border-line bg-surface px-2 py-2 text-note outline-none focus:border-brand">
+            <option value="">{t("allTopics")}</option>
+            {topicsForCourse.map((tp) => <option key={tp.id} value={tp.id}>{tp.title}</option>)}
+          </select>
+          <select value={query.sort} onChange={(e) => patch({ sort: e.target.value as QueueQuery["sort"] })} className="rounded-control border border-line bg-surface px-2 py-2 text-note outline-none focus:border-brand">
+            <option value="oldest">{t("oldest")}</option>
+            <option value="newest">{t("newest")}</option>
+          </select>
+        </div>
+      </Disclosure>
 
       {/* Two-pane */}
       <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,35%)_minmax(0,1fr)]">
