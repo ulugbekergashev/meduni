@@ -38,6 +38,7 @@ sharp.concurrency(1);
  *  shunga moslangan), lekin PNG shu o'lchamga KICHRAYTIRILADI: 512 MB
  *  konteynerда 1080p kadrlar sharp+x264 uchun juda og'ir edi. 720p — ma'ruza
  *  videosi uchun yetarli; `VIDEO_HEIGHT=1080` bilan qaytarish mumkin. */
+const NL = String.fromCharCode(10);
 const OUT_H = Number(process.env.VIDEO_HEIGHT ?? 720);
 const OUT_W = Math.round((OUT_H * 16) / 9);
 /** SVG 1920x1080 koordinatalarda chiziladi, lekin `viewBox` orqali TO'G'RIDAN
@@ -487,97 +488,111 @@ async function stageTtsAndRender(videoId: number) {
     // concat audio (all segments are 24 kHz mono s16 → copy-concat is safe)
     await writeFile(path.join(dir, "audio.txt"), segWavs.map((f) => `file '${f}'`).join("\n"), "utf8");
     await run(FFMPEG, ["-y", "-f", "concat", "-safe", "0", "-i", "audio.txt", "-c", "copy", "audio.wav"], { cwd: dir });
-    const audioRel = await saveBytes(`topics/${topicId}/video/${v.id}/audio.wav`, await readFile(path.join(dir, "audio.wav")));
+    // Talabaga WAV emas, AAC (m4a) beriladi: 232 s uchun ~11 MB o'rniga ~3 MB,
+    // kodlash esa arzon (faqat audio — bir necha soniya CPU).
+    await run(FFMPEG, ["-y", "-i", "audio.wav", "-c:a", "aac", "-b:a", "96k", "-movflags", "+faststart", "audio.m4a"], { cwd: dir });
+    const audioRel = await saveBytes(`topics/${topicId}/video/${v.id}/audio.m4a`, await readFile(path.join(dir, "audio.m4a")));
     await prisma.video.update({ where: { id: videoId }, data: { scriptJson: segments as object, audioUrl: audioRel } });
 
-    // --- RENDER ---
+    // --- VIZUAL TAYYORLASH (kadr chizish YO'Q) ---
+    //
+    // ⚠️ 2026-08-02 — ENG KATTA ARXITEKTURA O'ZGARISHI (buyurtmachi: "$7 tarif
+    // yo'q, eng arzoni $25", "baribir ko'p vaqt oladi").
+    //
+    // Ilgari bu bosqichda har segment uchun 1280x720 kadr chizilib (sharp),
+    // keyin x264 bilan mp4 yig'ilardi. Aynan shu ikki ish Render Free (0.1 CPU)
+    // konteynerini o'ldirardi — o'lchandi: montaj mahalliy mashinada 183 s,
+    // Render'da esa umuman tugamasdi (uch marta 502).
+    //
+    // Yechim: MP4 FAYL YASALMAYDI. Talaba ko'radigan narsa o'zgarmaydi —
+    // brauzer ovozni ijro etadi va vaqt bo'yicha rasm/matnni almashtiradi
+    // (`SlideshowPlayer`). Serverda faqat ovoz birlashtiriladi (~5 s CPU).
+    // Haqiqiy mp4 kerak bo'lsa: VIDEO_MP4=1 (kuchliroq hostда).
     await setStatus(videoId, "RENDER");
     let imagesMade = 0;
-    const listLines: string[] = [];
     for (let i = 0; i < segments.length; i++) {
       const seg = segments[i];
-      let png: Buffer;
-      if (seg.visual) {
-        // NotebookLM-style card. Explanatory cards (points/term) are enriched
-        // with a Nano Banana illustration, generated once and cached on the
-        // segment so rebuilds reuse it. Any failure falls back to a text card.
-        let imgBuf: Buffer | null = null;
-        // 2026-08-01 (buyurtmachi: "videoda bir nechta rasm bo'lishi kerak"):
-        // TAYYOR slayd rasmini har turdagi segment ishlatishi mumkin (bepul,
-        // cheklovga kirmaydi) — shu bois kirish/xulosa kadrlari ham rasmli.
-        // YANGI rasm esa faqat tushuntiruvchi kartalarga generatsiya qilinadi.
-        if (!seg.visualImageUrl && seg.sectionId) {
-          const reuse = slideImageBySection.get(seg.sectionId);
-          if (reuse) seg.visualImageUrl = reuse;
-        }
-        // Kirish (birinchi) va xulosa (oxirgi) kadri — mos bo'lim topilmasa ham
-        // taqdimotning muqova/yakun slaydi bilan to'ldiriladi.
-        if (!seg.visualImageUrl && readySlideImages.length) {
-          if (i === 0) seg.visualImageUrl = readySlideImages[0];
-          else if (i === segments.length - 1) seg.visualImageUrl = readySlideImages[readySlideImages.length - 1];
-        }
-        if (!seg.visualImageUrl && orderedSlideImages.length) {
-          seg.visualImageUrl = orderedSlideImages[reusePtr % orderedSlideImages.length];
-          reusePtr++;
-        }
-        const wantsImage = seg.visual.kind === "points" || seg.visual.kind === "term";
-        if (wantsImage || seg.visualImageUrl) {
-          if (wantsImage && !seg.visualImageUrl && imagesMade < MAX_VIDEO_IMAGES) {
-            try {
-              const img = await generateImage(imagePromptForVisual(seg.visual, v.language), {
-                kind: "IMAGE",
-                topicId,
-                departmentId,
-                userId: teacherId,
-              });
-              seg.visualImageUrl = await saveBytes(`topics/${topicId}/video/${v.id}/seg${i}.png`, img.buffer);
-              imagesMade++;
-              // Rasm pullik — uzilib qolsa qayta to'lanmasin (segmentда keshlanadi).
-              await prisma.video.update({ where: { id: videoId }, data: { scriptJson: segments as object } });
-            } catch {
-              seg.visualImageUrl = null; // quota/429/etc → clean text card
-            }
-          }
-          if (seg.visualImageUrl) imgBuf = await readFileBuffer(seg.visualImageUrl).catch(() => null);
-        }
-        png = await renderVisualPng(seg.visual, imgBuf);
-      } else {
-        // Legacy fallback: slide-narration videos rebuild without breaking.
-        const slide = slides[seg.slideIndex ?? 0] ?? slides[0];
-        let imgBuf: Buffer | null = null;
-        const url = slide?.imageSlots?.[0]?.url;
-        if (slide?.imageSlots?.[0]?.status === "DONE" && url) imgBuf = await readFileBuffer(url).catch(() => null);
-        png = await renderSlidePng(slide ?? { id: "", layout: "BULLETS", title: "", bullets: [], speakerNotes: "", imageSlots: [] }, imgBuf);
+      if (!seg.visual) continue;
+      // Tayyor slayd rasmini QAYTA ISHLATAMIZ (bepul): bo'lim bo'yicha →
+      // kirish/xulosa uchun muqova/yakun slaydi → qolganiga tartib bo'yicha.
+      if (!seg.visualImageUrl && seg.sectionId) {
+        const reuse = slideImageBySection.get(seg.sectionId);
+        if (reuse) seg.visualImageUrl = reuse;
       }
-      await writeFile(path.join(dir, `slide${i}.jpg`), png);
-      listLines.push(`file 'slide${i}.jpg'`, `duration ${seg.durationSec}`);
+      if (!seg.visualImageUrl && readySlideImages.length) {
+        if (i === 0) seg.visualImageUrl = readySlideImages[0];
+        else if (i === segments.length - 1) seg.visualImageUrl = readySlideImages[readySlideImages.length - 1];
+      }
+      if (!seg.visualImageUrl && orderedSlideImages.length) {
+        seg.visualImageUrl = orderedSlideImages[reusePtr % orderedSlideImages.length];
+        reusePtr++;
+      }
+      // Mos slayd rasmi umuman bo'lmasa — tushuntiruvchi kartaga yangi rasm.
+      const wantsImage = seg.visual.kind === "points" || seg.visual.kind === "term";
+      if (wantsImage && !seg.visualImageUrl && imagesMade < MAX_VIDEO_IMAGES) {
+        try {
+          const img = await generateImage(imagePromptForVisual(seg.visual, v.language), {
+            kind: "IMAGE",
+            topicId,
+            departmentId,
+            userId: teacherId,
+          });
+          seg.visualImageUrl = await saveBytes(`topics/${topicId}/video/${v.id}/seg${i}.png`, img.buffer);
+          imagesMade++;
+          // Rasm pullik — uzilib qolsa qayta to'lanmasin (segmentда keshlanadi).
+          await prisma.video.update({ where: { id: videoId }, data: { scriptJson: segments as object } });
+        } catch {
+          seg.visualImageUrl = null; // kvota/429 → brauzer matnli karta chizadi
+        }
+      }
     }
-    listLines.push(`file 'slide${segments.length - 1}.jpg'`); // concat needs last frame repeated
-    await writeFile(path.join(dir, "slides.txt"), listLines.join("\n"), "utf8");
 
-    await run(
-      FFMPEG,
-      [
-        "-y", "-f", "concat", "-safe", "0", "-i", "slides.txt", "-i", "audio.wav",
-        // ⚠️ Kadrlar STATIK slaydlar — 25 fps bilan kodlash bekorga CPU yeydi.
-        // 2026-08-02: uzunroq video (232 s) Render Free (0.1 CPU) da montaj
-        // paytida konteynerni cho'ktirardi (502). Endi:
-        //   -r 10           — statik kadr uchun yetarli, kodlash ~2.5x tezroq
-        //   -tune stillimage — x264 statik kontentga moslashadi
-        //   -threads 1 + veryfast — 512 MB xotira chegarasi (§17)
-        "-c:v", "libx264", "-preset", "veryfast", "-tune", "stillimage", "-threads", "1", "-crf", "26",
-        "-pix_fmt", "yuv420p", "-r", "10", "-c:a", "aac", "-b:a", "160k", "-shortest", "video.mp4",
-      ],
-      { cwd: dir }
-    );
-    const mp4Rel = await saveBytes(`topics/${topicId}/video/${v.id}/video.mp4`, await readFile(path.join(dir, "video.mp4")));
     const srtRel = await saveBytes(`topics/${topicId}/video/${v.id}/subtitles.srt`, Buffer.from(buildSrt(segments), "utf8"));
     const total = segments.reduce((a, s) => a + s.durationSec, 0);
 
+    // Ixtiyoriy: haqiqiy mp4 (kuchli host uchun). Sukut bo'yicha O'CHIQ.
+    let mp4Rel: string | null = null;
+    if (process.env.VIDEO_MP4 === "1") {
+      const listLines: string[] = [];
+      for (let i = 0; i < segments.length; i++) {
+        const seg = segments[i];
+        let imgBuf: Buffer | null = null;
+        if (seg.visualImageUrl) imgBuf = await readFileBuffer(seg.visualImageUrl).catch(() => null);
+        const png = seg.visual
+          ? await renderVisualPng(seg.visual, imgBuf)
+          : await renderSlidePng(
+              slides[seg.slideIndex ?? 0] ?? { id: "", layout: "BULLETS", title: "", bullets: [], speakerNotes: "", imageSlots: [] },
+              imgBuf
+            );
+        await writeFile(path.join(dir, `slide${i}.jpg`), png);
+        listLines.push(`file 'slide${i}.jpg'`, `duration ${seg.durationSec}`);
+      }
+      listLines.push(`file 'slide${segments.length - 1}.jpg'`);
+      await writeFile(path.join(dir, "slides.txt"), listLines.join(NL), "utf8");
+      await run(
+        FFMPEG,
+        [
+          "-y", "-f", "concat", "-safe", "0", "-i", "slides.txt", "-i", "audio.wav",
+          "-c:v", "libx264", "-preset", "veryfast", "-tune", "stillimage", "-threads", "1", "-crf", "26",
+          "-pix_fmt", "yuv420p", "-r", "10", "-c:a", "aac", "-b:a", "160k", "-shortest", "video.mp4",
+        ],
+        { cwd: dir }
+      );
+      mp4Rel = await saveBytes(`topics/${topicId}/video/${v.id}/video.mp4`, await readFile(path.join(dir, "video.mp4")));
+    }
+
     await prisma.video.update({
       where: { id: videoId },
-      // Persist segments again so cached illustration URLs (set during render) survive rebuilds.
-      data: { scriptJson: segments as object, mp4Url: mp4Rel, srtUrl: srtRel, durationSec: total, buildStatus: "DONE", errorStage: null },
+      data: {
+        scriptJson: segments as object,
+        // ⚠️ mp4 yasalmagan bo'lsa ESKISI ham o'chiriladi: u eski skript/ovoz
+        // bilan qurilgan bo'lardi va yangi narration bilan mos kelmasdi.
+        mp4Url: mp4Rel,
+        srtUrl: srtRel,
+        durationSec: total,
+        buildStatus: "DONE",
+        errorStage: null,
+      },
     });
   } finally {
     await rm(dir, { recursive: true, force: true });
@@ -669,9 +684,9 @@ export async function rebuildVideo(videoId: number, teacherId: number) {
   enqueueMediaJob(`video:${v.id}`, () => runPipeline(v.id, true));
 }
 
-export async function getVideoMedia(videoId: number, teacherId: number, kind: "mp4" | "srt") {
+export async function getVideoMedia(videoId: number, teacherId: number, kind: "mp4" | "srt" | "audio") {
   const v = await videoForTeacher(videoId, teacherId);
-  const rel = kind === "mp4" ? v.mp4Url : v.srtUrl;
+  const rel = kind === "mp4" ? v.mp4Url : kind === "audio" ? v.audioUrl : v.srtUrl;
   if (!rel) throw notFound("Fayl");
   // Yozuv bor, fayl yo'q (eski disk-drayver davridagi media) → 500 emas, 404.
   const buf = await readFileBuffer(rel).catch(() => null);

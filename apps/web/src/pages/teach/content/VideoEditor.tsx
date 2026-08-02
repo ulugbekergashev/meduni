@@ -117,6 +117,14 @@ export function VideoEditor({ content }: { content: ContentFull }) {
               {vttUrl && <track kind="subtitles" srcLang={content.language} src={vttUrl} default />}
             </video>
           </div>
+        ) : video.hasAudio ? (
+          /* ⚠️ 2026-08-02: video endi mp4 fayl emas — ovoz + slaydlar (talaba
+             brauzerida sinxron ijro). O'qituvchi bu yerda OVOZNI tinglaydi,
+             kadrlar esa quyidagi skript ro'yxatida ko'rinadi. */
+          <Card className="space-y-2">
+            <p className="text-[13.5px] text-ink-soft">{t("audioPreviewHint")}</p>
+            <audio controls className="w-full" src={`${API_BASE}/api/v1/videos/${video.id}/audio`} />
+          </Card>
         ) : null}
       </div>
 

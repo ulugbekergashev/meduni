@@ -291,6 +291,27 @@ meRouter.get(
   })
 );
 
+// Slayd-pleyer: ovoz (m4a) + kadr rasmlari (mp4 fayl o'rniga).
+meRouter.get(
+  "/videos/:id/audio",
+  wrap(async (req, res) => {
+    const buf = await lesson.studentVideoMedia(req.user!.id, parseId(req.params.id), "audio");
+    res.setHeader("Content-Type", "audio/mp4");
+    res.setHeader("Accept-Ranges", "bytes");
+    res.send(buf);
+  })
+);
+
+meRouter.get(
+  "/videos/:id/frame/:index",
+  wrap(async (req, res) => {
+    const buf = await lesson.studentVideoFrame(req.user!.id, parseId(req.params.id), Number(req.params.index));
+    res.setHeader("Content-Type", "image/png");
+    res.setHeader("Cache-Control", "private, max-age=3600");
+    res.send(buf);
+  })
+);
+
 meRouter.get(
   "/videos/:id/srt",
   wrap(async (req, res) => {

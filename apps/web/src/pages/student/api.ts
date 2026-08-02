@@ -149,10 +149,25 @@ export interface LessonSlide {
   imageUrl: string | null;
 }
 
+/** Slayd-pleyer kadri (mp4 o'rniga vaqt jadvali). */
+export interface VideoSegment {
+  index: number;
+  startSec: number;
+  durationSec: number;
+  title: string;
+  points: string[];
+  kind: string;
+  hasImage: boolean;
+  narration: string;
+}
+
 export interface VideoTabData {
   present: true;
   videoId: number;
   hasMp4: boolean;
+  /** Ovoz tayyor — slayd-pleyer shu bilan ishlaydi. */
+  hasAudio?: boolean;
+  segments?: VideoSegment[];
   hasSrt: boolean;
   durationSec: number | null;
   watchedPct: number;
