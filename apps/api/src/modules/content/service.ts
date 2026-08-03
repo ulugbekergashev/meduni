@@ -267,14 +267,45 @@ export async function generateCase(
 
 // ---------- Get / Update / Approve ----------
 
+/**
+ * KONTENT SALOMATLIGI — tizim o'zini o'zi tekshiradi (2026-08-03, buyurtmachi:
+ * "nima men hamma videoni senga ayttirib qilishim kerakmi? tizimni o'zidan
+ * qilsa bo'lmaydimi?").
+ *
+ * Muammo: bazada yozuv bor, fayl esa yo'q bo'lishi mumkin (uzilgan montaj,
+ * boshqa muhitda yaratilgan media, o'chib ketgan blob). Bunday holda karta
+ * yashil "Chop etilgan" bo'lib turardi va buzilganini FAQAT talaba aytganda
+ * bilinardi. Endi server javobning o'zida aytadi — UI esa "Tuzatish" tugmasini
+ * ko'rsatadi (ishni o'qituvchi bir bosishda hal qiladi, dasturchi kerak emas).
+ *
+ * Arzon: kontent ochilganda 1-2 ta yengil tekshiruv (blob mavjudligi).
+ */
+async function contentHealth(item: ContentFull): Promise<{ ok: boolean; problem: string | null }> {
+  if (item.video) {
+    const rel = item.video.audioUrl ?? item.video.mp4Url;
+    // Montaj hali ketayotgan bo'lsa bu muammo emas — build holati o'zi aytadi.
+    const building = ["PENDING", "SCRIPT", "TTS", "RENDER"].includes(item.video.buildStatus);
+    if (!building) {
+      if (!rel) return { ok: false, problem: "video_not_built" };
+      if (!(await fileExists(rel))) return { ok: false, problem: "video_file_missing" };
+    }
+  }
+  if (item.presentation) {
+    const slides = (item.presentation.slidesJson as unknown as Slide[]) ?? [];
+    const failed = slides.filter((s) => s.imageSlots?.some((x) => x.status === "ERROR")).length;
+    if (failed > 0) return { ok: false, problem: "images_failed" };
+  }
+  return { ok: true, problem: null };
+}
+
 export async function getContent(contentId: number, teacherId: number) {
-  const item = await contentForTeacher(contentId, teacherId);
+  let item = await contentForTeacher(contentId, teacherId);
   // Mark "opened in editor" the first time it's fetched (publish gate #2).
   if (item.reviewOpenedAt === null) {
     await prisma.contentItem.update({ where: { id: contentId }, data: { reviewOpenedAt: new Date() } });
-    return toContentOut(await contentForTeacher(contentId, teacherId));
+    item = await contentForTeacher(contentId, teacherId);
   }
-  return toContentOut(item);
+  return { ...toContentOut(item), health: await contentHealth(item) };
 }
 
 /** Editing content reverts any prior approval/publish (medical safety). */

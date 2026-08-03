@@ -200,6 +200,14 @@ export interface VideoContent {
   hasSrt: boolean;
 }
 
+/** Server o'zi aniqlagan nosozlik — UI "Tuzatish" tugmasini shunga qarab beradi.
+ *  `video_file_missing` — bazada yo'l bor, fayl yo'q; `images_failed` — slaydda
+ *  rasm yaratilmagan; `video_not_built` — montaj umuman bo'lmagan. */
+export interface ContentHealth {
+  ok: boolean;
+  problem: "video_file_missing" | "video_not_built" | "images_failed" | null;
+}
+
 export interface ContentFull {
   id: number;
   topicId: number;
@@ -212,6 +220,8 @@ export interface ContentFull {
   clinicalCase: { caseJson: CaseJson; format: "SHORT" | "EXTENDED" } | null;
   presentation: PresentationContent | null;
   video: VideoContent | null;
+  /** Faqat GET /content/:id javobida bo'ladi. */
+  health?: ContentHealth;
 }
 
 // ---- Topics ----
