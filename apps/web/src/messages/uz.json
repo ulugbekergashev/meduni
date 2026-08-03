@@ -1110,7 +1110,14 @@
     "nImages": "{{n}}/{{total}} rasm",
     "nFrames": "{{n}} kadr",
     "audioReady": "ovoz tayyor",
-    "audioMissing": "ovoz fayli yo'q"
+    "audioMissing": "ovoz fayli yo'q",
+    "healthFix": "Tuzatish",
+    "healthFixing": "Tuzatilmoqda...",
+    "health": {
+      "video_file_missing": "Video fayli topilmadi — talaba uni ko'ra olmaydi",
+      "video_not_built": "Video montaji yakunlanmagan",
+      "images_failed": "Ba'zi slaydlarda rasm yaratilmagan"
+    }
   },
   "settings": {
     "title": "Kurs sozlamalari",

@@ -1110,7 +1110,14 @@
     "nImages": "{{n}}/{{total}} изображений",
     "nFrames": "{{n}} кадров",
     "audioReady": "звук готов",
-    "audioMissing": "нет файла звука"
+    "audioMissing": "нет файла звука",
+    "healthFix": "Исправить",
+    "healthFixing": "Исправляется...",
+    "health": {
+      "video_file_missing": "Файл видео не найден — студент его не увидит",
+      "video_not_built": "Монтаж видео не завершён",
+      "images_failed": "На некоторых слайдах нет изображения"
+    }
   },
   "settings": {
     "title": "Настройки курса",

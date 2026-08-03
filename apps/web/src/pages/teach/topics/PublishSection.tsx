@@ -1,11 +1,19 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Rocket } from "lucide-react";
+import { Rocket, TriangleAlert } from "lucide-react";
 import { Badge, Button, Card, Icon, Spinner, useToast } from "@meduni/ui";
 import { ConfirmDialog } from "../../../components/ConfirmDialog";
 import { useLocale } from "../../../lib/useLocale";
 import { apiErrorMessage } from "../../../lib/api";
-import { useContent, usePublishContent, useResumeVideo, type ContentFull, type ContentSummary, type TopicDetail } from "./api";
+import {
+  useContent,
+  useGenerateImages,
+  usePublishContent,
+  useResumeVideo,
+  type ContentFull,
+  type ContentSummary,
+  type TopicDetail,
+} from "./api";
 
 const kindKey: Record<string, string> = {
   quiz: "quizTitle",
@@ -100,7 +108,18 @@ function ContentPublish({ topic, item }: { topic: TopicDetail; item: ContentSumm
   const stopped = stage === "error";
   const videoReady = !isVideo || published || (stage === "done" && (build?.hasAudio || build?.hasMp4));
   const resume = useResumeVideo(build?.id ?? 0);
+  const regenImages = useGenerateImages(detail.data?.presentation?.id ?? 0);
   const publishError = publish.isError ? apiErrorMessage(publish.error, locale) : null;
+
+  // Server aniqlagan nosozlik → bitta "Tuzatish" tugmasi (video montajini
+  // davom ettiradi yoki yetishmagan rasmlarni qayta yaratadi).
+  const health = detail.data?.health;
+  const sick = !!health && !health.ok && !building;
+  const repairing = resume.isPending || regenImages.isPending;
+  const repair = () => {
+    if (health?.problem === "images_failed") regenImages.mutate(undefined);
+    else resume.mutate();
+  };
 
   return (
     <Card className={published ? "border-emerald/30 bg-emerald-soft" : "space-y-3"}>
@@ -111,6 +130,23 @@ function ContentPublish({ topic, item }: { topic: TopicDetail; item: ContentSumm
         </div>
         {published && <Badge tone="emerald">{t("published")}</Badge>}
       </div>
+
+      {/* ⚠️ O'Z-O'ZINI TEKSHIRISH (2026-08-03, buyurtmachi: "tizimni o'zidan
+          qilsa bo'lmaydimi?"). Server kontent salomatligini o'zi aytadi:
+          fayl yo'q yoki rasm yaratilmagan bo'lsa, karta YASHIL "chop etilgan"
+          bo'lib turmaydi — muammoni yozadi va BIR BOSISHDA tuzatish tugmasini
+          beradi. Ilgari buni faqat talaba shikoyat qilganda bilinardi. */}
+      {sick && (
+        <div className="space-y-2 rounded-control border border-rose bg-rose-soft px-3 py-2.5">
+          <p className="flex items-center gap-1.5 text-note font-semibold text-rose">
+            <Icon icon={TriangleAlert} size={14} />
+            {t(`health.${health!.problem}`)}
+          </p>
+          <Button size="sm" variant="soft" disabled={repairing} onClick={repair}>
+            {repairing ? t("healthFixing") : t("healthFix")}
+          </Button>
+        </div>
+      )}
 
       {published ? (
         <p className="mt-1 text-note text-emerald">
