@@ -181,6 +181,8 @@ export interface ScriptSegment {
   narration: string;
   durationSec: number;
   visual?: VideoVisual;
+  /** Kadr rasmi (bo'lsa) — chop etishdan oldingi tayyorlik qatorida sanaladi. */
+  visualImageUrl?: string | null;
 }
 
 export interface VideoContent {

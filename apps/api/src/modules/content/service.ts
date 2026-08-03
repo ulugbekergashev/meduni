@@ -1,6 +1,6 @@
 import { Prisma, prisma } from "../../lib/prisma";
 import { ApiError, badRequest, notFound } from "../../lib/errors";
-import { readText } from "../../lib/storage";
+import { fileExists, readText } from "../../lib/storage";
 import { generateStructured } from "../../ai/gemini";
 import { assertQuota } from "../../ai/quota";
 import { departmentForTopic } from "../../ai/glossary";
@@ -408,6 +408,19 @@ export async function publishContent(contentId: number, teacherId: number) {
         "video_not_built",
         "Video hali tayyor emas — avval montajni yakunlang",
         "Видео ещё не готово — сначала завершите монтаж"
+      );
+    }
+    // ⚠️ 2026-08-03: bazadagi YO'L yetarli emas — FAYL ham bo'lishi kerak.
+    // O'lchandi (topic 7): montaj mahalliy mashinada ishlagan, fayl mahalliy
+    // diskka tushgan, jonli xotiraga esa YO'Q. Natijada o'qituvchida
+    // "Chop etilgan", talabada "Video hozircha tayyor emas" (/audio → 404).
+    const rel = video.audioUrl ?? video.mp4Url!;
+    if (!(await fileExists(rel))) {
+      throw new ApiError(
+        400,
+        "video_file_missing",
+        "Video fayli topilmadi — montajni qayta ishga tushiring",
+        "Файл видео не найден — перезапустите монтаж"
       );
     }
   }

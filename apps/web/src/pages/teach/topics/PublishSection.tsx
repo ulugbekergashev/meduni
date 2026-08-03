@@ -5,7 +5,7 @@ import { Badge, Button, Card, Icon, Spinner, useToast } from "@meduni/ui";
 import { ConfirmDialog } from "../../../components/ConfirmDialog";
 import { useLocale } from "../../../lib/useLocale";
 import { apiErrorMessage } from "../../../lib/api";
-import { useContent, usePublishContent, useResumeVideo, type ContentSummary, type TopicDetail } from "./api";
+import { useContent, usePublishContent, useResumeVideo, type ContentFull, type ContentSummary, type TopicDetail } from "./api";
 
 const kindKey: Record<string, string> = {
   quiz: "quizTitle",
@@ -13,6 +13,58 @@ const kindKey: Record<string, string> = {
   presentation: "presentationTitle",
   video: "videoTitle",
 };
+
+/**
+ * Kontent TARKIBI bir qatorda — o'qituvchi har birini ochmasdan nima chop
+ * etayotganini ko'radi (buyurtmachi 2026-08-03).
+ *
+ * Rasm yetishmasa yoki video fayli yo'q bo'lsa — amber, chunki aynan shu ikki
+ * holat talabada "bo'sh ekran" bo'lib chiqadi (o'lchandi: topic 7 videosining
+ * ovoz fayli jonli xotirada yo'q edi, karta esa "Chop etilgan" derdi).
+ */
+function ReadyLine({ detail, loading }: { detail?: ContentFull; loading: boolean }) {
+  const { t } = useTranslation(undefined, { keyPrefix: "publish" });
+  if (loading || !detail) return <p className="mt-0.5 text-micro text-ink-faint">…</p>;
+
+  const parts: { text: string; warn?: boolean }[] = [];
+
+  if (detail.quiz) parts.push({ text: t("nQuestions", { n: detail.quiz.questions.length }) });
+
+  if (detail.clinicalCase) {
+    const steps = (detail.clinicalCase.caseJson as { steps?: unknown[] })?.steps?.length ?? 0;
+    parts.push({ text: steps ? t("nSteps", { n: steps }) : t("caseReady") });
+  }
+
+  if (detail.presentation) {
+    const slides = detail.presentation.slides.length;
+    const withImg = detail.presentation.slides.filter((s) => s.imageSlots.some((x) => x.status === "DONE")).length;
+    parts.push({ text: t("nSlides", { n: slides }) });
+    parts.push({ text: t("nImages", { n: withImg, total: slides }), warn: withImg < slides });
+  }
+
+  if (detail.video) {
+    const d = detail.video.durationSec ?? 0;
+    if (d > 0) parts.push({ text: `${Math.floor(d / 60)}:${String(d % 60).padStart(2, "0")}` });
+    const frames = (detail.video.script ?? []).filter((s) => !!s.visualImageUrl).length;
+    if (frames) parts.push({ text: t("nFrames", { n: frames }) });
+    parts.push({
+      text: detail.video.hasAudio || detail.video.hasMp4 ? t("audioReady") : t("audioMissing"),
+      warn: !(detail.video.hasAudio || detail.video.hasMp4),
+    });
+  }
+
+  if (!parts.length) return null;
+  return (
+    <p className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-micro">
+      {parts.map((p, i) => (
+        <span key={i} className={p.warn ? "font-semibold text-amber" : "text-ink-soft"}>
+          {i > 0 && <span className="mr-1.5 text-ink-faint">·</span>}
+          {p.text}
+        </span>
+      ))}
+    </p>
+  );
+}
 
 /** Bitta kontent — bitta bosishda tasdiqlab chop etiladi (tayyorlik ro'yxati YO'Q;
  *  buyurtmachi qarori 2026-07-27). Yagona to'siq — tasdiq oynasi, chunki chop
@@ -28,14 +80,20 @@ function ContentPublish({ topic, item }: { topic: TopicDetail; item: ContentSumm
   const kindName = tg(kindKey[item.kind] ?? "quizTitle");
   const published = item.status === "published";
 
+  // ⚠️ 2026-08-03 (buyurtmachi: "chop etishdan oldin video, prezentatsiya va
+  // boshqalar tayyorligini o'qituvchi ko'rsin, ichiga kirishi shart emas"):
+  // har karta o'z TARKIBINI qisqa fakt qatorida ko'rsatadi — nechta savol,
+  // nechta slayd va ulardan nechtasida rasm bor, video necha daqiqa.
+  // Ilgari buni bilish uchun har birini alohida ochish kerak edi.
+  const detail = useContent(item.id);
+
   // ⚠️ 2026-08-02 (buyurtmachi: "videoni chop etishda xato berayapdi"): server
   // to'g'ri rad etardi (montaj tugamagan), lekin UI faqat umumiy "Xatolik yuz
   // berdi" chiqarardi — o'qituvchi sababni ham, yechimni ham bilmasdi. Endi
   // video kartasi montaj holatini O'ZI biladi: tugmani bermaydi, sababni
   // yozadi va "Davom ettirish" taklif qiladi.
   const isVideo = item.kind === "video";
-  const videoDetail = useContent(isVideo && !published ? item.id : 0);
-  const build = videoDetail.data?.video;
+  const build = detail.data?.video;
   const stage = build?.buildStatus ?? "";
   /** Ayni damda ishlayaptimi (server fon-jobi) — polling bilan jonli yangilanadi. */
   const building = ["pending", "script", "tts", "render"].includes(stage);
@@ -47,7 +105,10 @@ function ContentPublish({ topic, item }: { topic: TopicDetail; item: ContentSumm
   return (
     <Card className={published ? "border-emerald/30 bg-emerald-soft" : "space-y-3"}>
       <div className="flex items-center justify-between gap-2">
-        <h3 className="text-section font-bold text-ink">{kindName}</h3>
+        <div className="min-w-0">
+          <h3 className="text-section font-bold text-ink">{kindName}</h3>
+          <ReadyLine detail={detail.data} loading={detail.isLoading} />
+        </div>
         {published && <Badge tone="emerald">{t("published")}</Badge>}
       </div>
 

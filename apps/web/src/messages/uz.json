@@ -843,7 +843,7 @@
       "materials": "Materiallar",
       "digest": "Konspekt",
       "generate": "Generatsiya",
-      "publish": "Chop etish va tasdiqlash"
+      "publish": "Chop etish"
     },
     "sectionLocked": {
       "digest": "Kamida bitta material tayyor boʻlgach ochiladi.",
@@ -1091,7 +1091,7 @@
     ]
   },
   "publish": {
-    "publishBtn": "Tasdiqlash va chop etish",
+    "publishBtn": "Chop etish",
     "confirmTitle": "Chop etish",
     "confirmMsg": "Bu kontent talabalarga ochiladi. Tasdiqlaysizmi?",
     "confirmBtn": "Chop etish",
@@ -1102,7 +1102,15 @@
     "hint": "Tasdiqlangach talaba shu kontentni darrov ko'radi.",
     "videoNotBuilt": "Video hali tayyor emas — montaj yakunlanmagan",
     "videoResume": "Montajni davom ettirish",
-    "videoStopped": "Montaj toʻxtadi — davom ettirish kerak"
+    "videoStopped": "Montaj toʻxtadi — davom ettirish kerak",
+    "nQuestions": "{{n}} savol",
+    "nSteps": "{{n}} qadam",
+    "caseReady": "keys tayyor",
+    "nSlides": "{{n}} slayd",
+    "nImages": "{{n}}/{{total}} rasm",
+    "nFrames": "{{n}} kadr",
+    "audioReady": "ovoz tayyor",
+    "audioMissing": "ovoz fayli yo'q"
   },
   "settings": {
     "title": "Kurs sozlamalari",
