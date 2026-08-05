@@ -75,18 +75,6 @@
     "countDdx": "{{n}} versiya",
     "orderLab": "Laboratoriya",
     "orderInstr": "Instrumental",
-    "labTests": [
-      "Umumiy qon tahlili",
-      "Biokimyoviy tahlil",
-      "Troponin",
-      "Umumiy siydik tahlili"
-    ],
-    "instrTests": [
-      "EKG",
-      "EKO-KG",
-      "Rentgen",
-      "UZI"
-    ],
     "orderCustom": "Boshqa tekshiruv…",
     "orderCustomBtn": "Buyurish",
     "askPlaceholder": "Bemorga savol bering…",
@@ -123,7 +111,20 @@
     "correctDx": "Toʻgʻri tashxis",
     "strengths": "Yaxshi tomonlari",
     "improvements": "Yaxshilash kerak",
-    "retry": "Qaytadan mashq qilish"
+    "retry": "Qaytadan mashq qilish",
+    "costUnit": "ming soʻm",
+    "costHint": "Har tekshiruv bemorning puliga tushadi — faqat kerakligini buyuring. Yakunda reja baholanadi.",
+    "budgetWarn": "Xarajat oshib ketdi. Ortiqcha tekshiruv baholashда ball tushiradi.",
+    "spentTitle": "Shu qabulda sarflandi",
+    "rationality": "Reja",
+    "planTitle": "Tekshiruv rejasi",
+    "planSpent": "Sarflandi",
+    "planWasted": "Shundan ortiqcha",
+    "planNoOrders": "Hech qanday tekshiruv buyurilmagan.",
+    "planMissed": "Buyurilmagan, lekin shart edi",
+    "verdictRequired": "Shart edi",
+    "verdictOptional": "Oʻrinli",
+    "verdictUnnecessary": "Keraksiz"
   },
   "tasks": {
     "myTasks": "Mening vazifalarim",
@@ -1544,7 +1545,11 @@
     "patientLogEval": "AI bahosi: {{overall}} · anamnez {{anamnez}}",
     "patientLogNoEval": "{{n}} xabar — yakunlanmagan",
     "patientDx": "Talabaning tashxisi",
-    "moreFilters": "Qoʻshimcha filtrlar"
+    "moreFilters": "Qoʻshimcha filtrlar",
+    "patientPlan": "Tekshiruv rejasi:",
+    "patientPlanScore": "oqilonalik {{n}}",
+    "patientPlanSpent": "sarflandi {{n}} ming soʻm",
+    "patientPlanWasted": "ortiqcha {{n}} ming soʻm"
   },
   "attendance": {
     "tabSessions": "Mashgʻulotlar",

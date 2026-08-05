@@ -129,9 +129,12 @@ export async function getCaseAttemptForReview(teacherId: number, attemptId: numb
     take: 200,
   });
   let patientEval: unknown = null;
+  // ⚠️ "scenario" — bemorning yashirin haqiqati (JSON blob): logga tushsa
+  // o'qituvchi ekranida xom JSON bo'lib chiqadi. "test" esa AYNAN kerak —
+  // talaba qaysi tekshiruvni buyurganini o'qituvchi shu yerda ko'radi.
   const patientChat = patientMsgs
-    .filter((m) => m.role !== "eval")
-    .map((m) => ({ role: m.role as "student" | "patient", text: m.text }));
+    .filter((m) => m.role === "student" || m.role === "patient" || m.role === "test")
+    .map((m) => ({ role: m.role as "student" | "patient" | "test", text: m.text }));
   const evalRow = patientMsgs.find((m) => m.role === "eval");
   if (evalRow) {
     try {

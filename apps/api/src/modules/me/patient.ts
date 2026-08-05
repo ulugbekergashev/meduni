@@ -26,10 +26,13 @@ import {
   testResultSystemPrompt,
   testResultUserContent,
   type DDxItem,
+  type ExamPlan,
+  type ExamVerdict,
   type PatientEval,
 } from "../../ai/prompts/patient";
 import { caseResponseSchema, caseSchema, type CaseJson, type DigestJson } from "../../ai/types";
 import { assertTopicOpen } from "./service";
+import { BUDGET_SOFT, catalogFor, costOf } from "./testCatalog";
 
 const HISTORY_TAKE = 16;
 
@@ -67,10 +70,28 @@ interface PatientMsgOut {
   role: "student" | "patient" | "eval" | "test";
   text: string;
   eval?: PatientEval;
+  /** Faqat "test" xabarida — tekshiruv narxi (ming so'm). */
+  cost?: number;
   createdAt: Date;
 }
 
+/** "test" xabaridan tekshiruv nomi (matnning birinchi qatori). */
+function testName(text: string): string {
+  return (text || "").split("\n")[0] ?? "";
+}
+
+/** Tekshiruv narxi. Hayotiy ko'rsatkichlarni o'lchash — fizikal ko'rikning bir
+ *  qismi, pul turmaydi (aks holda talaba AB o'lchashdan ham qo'rqadi). */
+function testCost(text: string): number {
+  const name = testName(text);
+  if (VITALS_LABELS.some((l) => name.startsWith(l))) return 0;
+  return costOf(name);
+}
+
 function serialize(m: { id: number; role: string; text: string; createdAt: Date }): PatientMsgOut {
+  if (m.role === "test") {
+    return { id: m.id, role: "test", text: m.text, cost: testCost(m.text), createdAt: m.createdAt };
+  }
   if (m.role === "eval") {
     let parsed: PatientEval | undefined;
     try {
@@ -157,7 +178,8 @@ async function ensureTruth(studentId: number, topicId: number, lang: "uz" | "ru"
 
 export async function getPatient(studentId: number, topicId: number) {
   await assertTopicOpen(studentId, topicId);
-  const [messages, truth, source] = await Promise.all([
+  const [lang, messages, truth, source] = await Promise.all([
+    localeOf(studentId),
     // "scenario" ichki yozuv — talabaga ko'rsatilmaydi. "test" — buyurilgan tekshiruv natijasi.
     prisma.patientMessage.findMany({
       where: { studentId, topicId, role: { in: ["student", "patient", "eval", "test"] } },
@@ -178,6 +200,11 @@ export async function getPatient(studentId: number, topicId: number) {
     /** Bemor allaqachon gapirgan (qabul boshlangan)? */
     started: out.length > 0,
     vitals: measured && hasVitals(truth?.vitals) ? truth!.vitals! : null,
+    /** Tekshiruv katalogi narxi bilan — talaba nimani buyurishini pul bilan tanlaydi. */
+    catalog: catalogFor(lang),
+    /** Shu qabulда sarflangan (ming so'm) va "oqilona" chegara. */
+    spent: out.reduce((s, m) => s + (m.cost ?? 0), 0),
+    budgetSoft: BUDGET_SOFT,
     messages: out,
   };
 }
@@ -387,6 +414,52 @@ export async function getDDx(studentId: number, topicId: number): Promise<{ ddx:
   return { ddx };
 }
 
+/** Solishtirish uchun normal ko'rinish (AI nomni biroz o'zgartirib qaytarishi mumkin). */
+function normName(s: string): string {
+  return (s || "").toLowerCase().replace(/[ʻʼ'`´]/g, "").replace(/\s+/g, " ").trim();
+}
+
+function toVerdict(v: unknown): ExamVerdict {
+  const s = (v ?? "").toString().toLowerCase();
+  if (s.startsWith("req")) return "required";
+  if (s.startsWith("unn")) return "unnecessary";
+  return "optional";
+}
+
+/** Tekshiruv rejasi: RO'YXAT — server haqiqati (talaba nimani buyurgan bo'lsa
+ *  o'shasi, narxi katalogdan), HUKM — AI dan. Ya'ni model tekshiruv "unutib
+ *  qoldirsa" ham ro'yxat va xarajat to'g'ri qoladi; xarajat AI ga ishonib
+ *  hisoblanmaydi. */
+export function buildExamPlan(orders: { name: string; cost: number }[], raw: PatientEval["examPlan"]): ExamPlan {
+  const clamp = (n: unknown) => Math.max(0, Math.min(100, Math.round(Number(n) || 0)));
+
+  const judged = new Map<string, { verdict: ExamVerdict; note: string }>();
+  for (const it of raw?.items ?? []) {
+    judged.set(normName(String(it?.test ?? "")), {
+      verdict: toVerdict(it?.verdict),
+      note: (it?.note ?? "").toString(),
+    });
+  }
+
+  const items = orders.map((o) => {
+    const j = judged.get(normName(o.name));
+    return { test: o.name, verdict: j?.verdict ?? "optional", note: j?.note ?? "", cost: o.cost };
+  });
+
+  const missed = (raw?.missed ?? [])
+    .map((m) => ({ test: (m?.test ?? "").toString(), why: (m?.why ?? "").toString() }))
+    .filter((m) => m.test)
+    .slice(0, 6);
+
+  return {
+    rationalityScore: clamp(raw?.rationalityScore),
+    spent: items.reduce((s, i) => s + i.cost, 0),
+    wasted: items.filter((i) => i.verdict === "unnecessary").reduce((s, i) => s + i.cost, 0),
+    items,
+    missed,
+  };
+}
+
 export async function finishPatient(studentId: number, topicId: number, diagnosisRaw: string) {
   const diagnosis = (diagnosisRaw ?? "").trim();
   await assertTopicOpen(studentId, topicId);
@@ -410,9 +483,16 @@ export async function finishPatient(studentId: number, topicId: number, diagnosi
   const lang = await localeOf(studentId);
   const history = convo.map((m) => ({ role: m.role, text: m.text }));
 
+  // Buyurilgan tekshiruvlar — SERVER haqiqati (narx katalogdan qayta hisoblanadi).
+  // Bepul o'lchovlar (vitallar) rejaga kirmaydi.
+  const orders = convo
+    .filter((m) => m.role === "test")
+    .map((m) => ({ name: testName(m.text), cost: testCost(m.text) }))
+    .filter((o) => o.cost > 0);
+
   const result = await generateStructured<PatientEval>({
     systemInstruction: evalSystemPrompt(lang, kase),
-    userContent: evalUserContent(history, diagnosis),
+    userContent: evalUserContent(history, diagnosis, orders),
     responseSchema: evalResponseSchema,
     kind: "PATIENT_EVAL",
     topicId,
@@ -432,6 +512,7 @@ export async function finishPatient(studentId: number, topicId: number, diagnosi
     overallScore: clamp(result?.overallScore),
     strengths: (result?.strengths ?? "").toString(),
     improvements: (result?.improvements ?? "").toString(),
+    examPlan: buildExamPlan(orders, result?.examPlan),
   };
 
   const saved = await prisma.patientMessage.create({

@@ -2452,3 +2452,58 @@ Yangi kalitni qo'shishdan oldin komponentning `keyPrefix` ini TEKSHIR.
 konspekt o'qish rejimi (kartada 0 input) va tahrir saqlanishi, raqam dietasi,
 xatolar tabi + ko'rinish xotirasi, chiplar, keys filtrlari, talaba sahifalari
 (uz+ru, mobil 390 toshishsiz). tsc + build ikkala tomonda toza.
+
+---
+
+## 20. VIRTUAL BEMOR: TEKSHIRUV REJASI BAHOLANADI (2026-08-06, buyurtmachi)
+
+Buyurtmachi: *"bemorga ham EKG ham siydik ham boshqa analiz shart bo'lmasligi
+mumkin. va hammasini topshirsa qimmatga tushadiku real hayotda — shu joyini ham
+tartibga solishimiz kerak."* Ilgari talaba katalogdagi hamma tugmani bosib
+chiqsa **yutardi** (ko'proq ma'lumot = yaxshiroq tashxis), holbuki real klinikada
+bu xato. Endi tanlovning NARXI bor va reja **baholanadi**.
+
+**Migratsiya YO'Q** — narx nomdan qayta hisoblanadi, reja tahlili esa mavjud
+`PatientMessage(role="eval")` JSON ichiga tushadi (eski baholarda maydon yo'q →
+UI uni chizmaydi).
+
+- **`modules/me/testCatalog.ts` (yangi)** — 16 tekshiruv (8 lab + 8 instrumental),
+  narxi **ming so'mda** (EKG 30 … MRT 900), uz/ru nomlari bilan. Erkin yozilgan
+  buyurtma narxi kalit so'z evristikasi bilan (AI chaqiruvi YO'Q, deterministik).
+  ⚠️ **Kirill uchun `\b` ISHLATILMAYDI**: JS'da `\b` `\w`=[A-Za-z0-9_] ga tayanadi,
+  ya'ni `\bкт\b` hech qachon mos kelmaydi (o'lchandi) — o'rniga unicode lookaround
+  (`(?<![\p{L}\p{N}])…`). **Hayotiy ko'rsatkichlar — BEPUL** (fizikal ko'rikning
+  qismi; aks holda talaba AB o'lchashdan ham qo'rqadi).
+- **Talaba tomoni** (`PatientTab`): katalog endi i18n massivi emas — **serverdan**
+  (`data.catalog`, narxi bilan); har tugmada narx, panel shapkasida **jonli
+  xarajat hisoblagichi**, `budgetSoft` (350) oshsa amber ogohlantirish.
+  **Qat'iy qulf YO'Q** — ba'zi holatda qimmat tekshiruv haqiqatan shart; hisob
+  yakunda beriladi.
+- **Baholash** (`evalSystemPrompt` + `evalResponseSchema`): yangi **`examPlan`** —
+  har buyurilgan tekshiruvga hukm (`required` / `optional` / `unnecessary`) +
+  izoh, **`missed[]`** (buyurilmagan, lekin shart bo'lgan), `rationalityScore`.
+  `examinationScore` endi IKKI tomondan tushadi (o'tkazib yuborilgan ham,
+  ortiqcha ham). Natijada 6-chi ball ustuni ("Reja") + "Tekshiruv rejasi" bloki
+  (sarflandi / shundan ortiqcha / qatorma-qator hukm / qoldirilganlar).
+- ⚠️ **RO'YXAT — server haqiqati, HUKM — AI dan** (`buildExamPlan`): qatorlar
+  talaba haqiqatan buyurgan testlardan quriladi, narx katalogdan; AI faqat
+  hukm/izoh beradi. Ya'ni model test "unutib qoldirsa" yoki xarajatni noto'g'ri
+  qo'shsa ham hisob buzilmaydi (AI raqamga ishonilmaydi).
+- ⚠️ `verdict` uchun responseSchema'ga **`enum` ATAYLAB qo'yilmagan** —
+  sxemaning har qo'shimcha maydoni 400 INVALID_ARGUMENT xavfi (§3
+  `thinkingBudget` sabog'i); ruxsat etilgan qiymatlar promptda, server esa
+  normalizatsiya qiladi.
+- **O'qituvchi** (`CaseReviewQueue` bemor logi): reja xulosasi qatori
+  (oqilonalik / sarflandi / ortiqcha) + buyurilgan tekshiruvlar chatda ko'rinadi.
+  Yo'l-yo'lakay **bug tuzatildi**: log `role !== "eval"` bo'yicha filtrlanardi,
+  ya'ni **`scenario`** (bemorning yashirin haqiqati) xom JSON blob bo'lib
+  o'qituvchi ekraniga chiqardi — endi faqat `student|patient|test`.
+
+**Tekshirildi:** mantiqiy smoke `scripts/smokeExamPlan.ts` **30/30** (narx,
+kirill/apostrof normalizatsiyasi, AI xato raqami/begona test/noto'g'ri verdict —
+hammasi server tomonda tiklanadi); **real Gemini uchi-uchiga**: sirroz bemoriga
+"Bosh miya KT si" → `unnecessary` (550 ortiqcha), UAK → `required`, MRT →
+`optional`, qoldirilgan sifatida FibroScan + biokimyo nomlandi, tekshiruv balli
+55 ga tushdi; Chrome (Playwright) — katalog narx bilan, hisoblagich, natija bloki
+uz+ru, eski (rejasiz) baho ham buzilmay chiziladi, mobil 390 toshish 0, konsol toza.
+tsc + build ikkala tomonda toza.

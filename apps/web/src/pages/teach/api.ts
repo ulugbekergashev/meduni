@@ -561,7 +561,8 @@ export interface AiSuggest {
 }
 
 export interface PatientSessionLog {
-  messages: { role: "student" | "patient"; text: string }[];
+  /** "test" — talaba buyurgan tekshiruv va uning natijasi. */
+  messages: { role: "student" | "patient" | "test"; text: string }[];
   eval: {
     diagnosis: string;
     correct: boolean;
@@ -570,6 +571,14 @@ export interface PatientSessionLog {
     overallScore: number;
     strengths: string;
     improvements: string;
+    /** Tekshiruv rejasi tahlili (2026-08-06 dan; eski loglarda yo'q). */
+    examPlan?: {
+      rationalityScore: number;
+      spent: number;
+      wasted: number;
+      items: { test: string; verdict: "required" | "optional" | "unnecessary"; note: string; cost: number }[];
+      missed: { test: string; why: string }[];
+    };
   } | null;
 }
 

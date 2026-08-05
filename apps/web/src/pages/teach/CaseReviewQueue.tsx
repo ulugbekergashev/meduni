@@ -137,21 +137,47 @@ function PatientSessionCard({ session }: { session: PatientSessionLog }) {
               )}
             </div>
           )}
+          {/* Tekshiruv rejasi — o'qituvchi talabaning diagnostik tejamkorligini ko'radi */}
+          {ev?.examPlan && (
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-line px-4 py-2 text-note">
+              <span className="font-bold text-ink">{t("patientPlan")}</span>
+              <span className="text-ink-soft">
+                {t("patientPlanScore", { n: ev.examPlan.rationalityScore })}
+              </span>
+              <span className="text-ink-soft tabular-nums">
+                {t("patientPlanSpent", { n: ev.examPlan.spent })}
+              </span>
+              {ev.examPlan.wasted > 0 && (
+                <span className="font-bold tabular-nums text-rose">
+                  {t("patientPlanWasted", { n: ev.examPlan.wasted })}
+                </span>
+              )}
+            </div>
+          )}
           <div className="max-h-[320px] space-y-2 overflow-y-auto px-4 py-3">
-            {session.messages.map((m, i) => (
-              <div key={i} className={cls("flex", m.role === "student" ? "justify-end" : "justify-start")}>
+            {session.messages.map((m, i) =>
+              m.role === "test" ? (
                 <p
-                  className={cls(
-                    "max-w-[80%] whitespace-pre-wrap rounded-card px-3 py-1.5 text-note leading-relaxed",
-                    m.role === "student"
-                      ? "rounded-br-control bg-brand-soft text-ink"
-                      : "rounded-bl-control bg-surface-raised text-ink-strong"
-                  )}
+                  key={i}
+                  className="whitespace-pre-wrap rounded-card border border-line bg-blue-soft px-3 py-1.5 text-note leading-relaxed text-ink-strong"
                 >
                   {m.text}
                 </p>
-              </div>
-            ))}
+              ) : (
+                <div key={i} className={cls("flex", m.role === "student" ? "justify-end" : "justify-start")}>
+                  <p
+                    className={cls(
+                      "max-w-[80%] whitespace-pre-wrap rounded-card px-3 py-1.5 text-note leading-relaxed",
+                      m.role === "student"
+                        ? "rounded-br-control bg-brand-soft text-ink"
+                        : "rounded-bl-control bg-surface-raised text-ink-strong"
+                    )}
+                  >
+                    {m.text}
+                  </p>
+                </div>
+              )
+            )}
           </div>
         </div>
       )}

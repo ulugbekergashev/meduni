@@ -5,6 +5,7 @@ import {
   Activity,
   Check,
   CheckCircle2,
+  CircleDot,
   FlaskConical,
   HeartPulse,
   Loader2,
@@ -16,6 +17,7 @@ import {
   ThumbsUp,
   TriangleAlert,
   User,
+  XCircle,
 } from "lucide-react";
 import { Button, Icon, Modal, ProgressRing, Spinner, cls } from "@meduni/ui";
 import { apiErrorMessage } from "../../../lib/api";
@@ -30,6 +32,7 @@ import {
   useStartPatient,
   useMeasureVitals,
   type DDxItem,
+  type ExamPlan,
   type PatientEval,
   type PatientMsg,
   type PatientVitals,
@@ -93,6 +96,90 @@ function ScorePill({ label, value }: { label: string; value: number }) {
   );
 }
 
+/** Tekshiruv rejasining tahlili: nima shart edi, nima ortiqcha, nima qoldi.
+ *  Asosiy o'quv xabari — "hammasini buyurish" yechim emas, u pul turadi. */
+function ExamPlanView({ plan }: { plan: ExamPlan }) {
+  const { t } = useTranslation(undefined, { keyPrefix: "patient" });
+  const unit = t("costUnit");
+  const VERDICT = {
+    required: { icon: CheckCircle2, tone: "text-emerald", label: t("verdictRequired") },
+    optional: { icon: CircleDot, tone: "text-ink-faint", label: t("verdictOptional") },
+    unnecessary: { icon: XCircle, tone: "text-rose", label: t("verdictUnnecessary") },
+  } as const;
+
+  return (
+    <div className="rounded-card border border-line p-3.5">
+      <div className="mb-2.5 flex items-center gap-2">
+        <Icon icon={FlaskConical} size={14} className="shrink-0 text-ink-faint" />
+        <p className="min-w-0 flex-1 text-micro font-extrabold uppercase tracking-wider text-ink-faint">
+          {t("planTitle")}
+        </p>
+      </div>
+
+      {/* Xarajat xulosasi — sarflandi / shundan ortiqcha */}
+      <div className="mb-3 grid grid-cols-2 gap-2">
+        <div className="rounded-control bg-surface-raised px-3 py-2">
+          <p className="text-micro text-ink-dim">{t("planSpent")}</p>
+          <p className="text-section font-extrabold tabular-nums text-ink">
+            {plan.spent} <span className="text-note font-bold text-ink-dim">{unit}</span>
+          </p>
+        </div>
+        <div className={cls("rounded-control px-3 py-2", plan.wasted > 0 ? "bg-rose-soft" : "bg-emerald-soft")}>
+          <p className={cls("text-micro", plan.wasted > 0 ? "text-rose" : "text-emerald")}>{t("planWasted")}</p>
+          <p
+            className={cls(
+              "text-section font-extrabold tabular-nums",
+              plan.wasted > 0 ? "text-rose" : "text-emerald"
+            )}
+          >
+            {plan.wasted} <span className="text-note font-bold opacity-80">{unit}</span>
+          </p>
+        </div>
+      </div>
+
+      {plan.items.length === 0 ? (
+        <p className="text-note italic text-ink-dim">{t("planNoOrders")}</p>
+      ) : (
+        <div className="space-y-1.5">
+          {plan.items.map((it, i) => {
+            const v = VERDICT[it.verdict];
+            return (
+              <div key={i} className="flex gap-2">
+                <Icon icon={v.icon} size={14} className={cls("mt-0.5 shrink-0", v.tone)} />
+                <div className="min-w-0 flex-1">
+                  <p className="flex items-baseline gap-2 text-note">
+                    <span className="min-w-0 truncate font-bold text-ink-strong">{it.test}</span>
+                    {/* Hukm yorlig'i — faqat rangga tayanmaslik uchun (ikonka+rang+matn) */}
+                    <span className={cls("shrink-0 text-micro font-bold", v.tone)}>{v.label}</span>
+                    <span className={cls("ml-auto shrink-0 text-micro font-bold tabular-nums", v.tone)}>
+                      {it.cost} {unit}
+                    </span>
+                  </p>
+                  {it.note && <p className="text-micro leading-relaxed text-ink-dim">{it.note}</p>}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {plan.missed.length > 0 && (
+        <div className="mt-3 rounded-control border-l-2 border-amber bg-amber-soft px-3 py-2">
+          <p className="mb-1 text-micro font-extrabold uppercase tracking-wider text-amber">{t("planMissed")}</p>
+          <ul className="space-y-1">
+            {plan.missed.map((m, i) => (
+              <li key={i} className="text-note leading-relaxed text-ink-strong">
+                <span className="font-bold">{m.test}</span>
+                {m.why && <span className="text-ink-soft"> — {m.why}</span>}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /** Baholash natijasi. */
 function EvalView({ ev, onReset }: { ev: PatientEval; onReset: () => void }) {
   const { t } = useTranslation(undefined, { keyPrefix: "patient" });
@@ -112,13 +199,16 @@ function EvalView({ ev, onReset }: { ev: PatientEval; onReset: () => void }) {
         </span>
       </div>
 
-      <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+      <div className={cls("grid grid-cols-3 gap-2", ev.examPlan ? "sm:grid-cols-6" : "sm:grid-cols-5")}>
         <ScorePill label={t("anamnesis")} value={ev.anamnesisScore} />
         <ScorePill label={t("examination")} value={ev.examinationScore} />
+        {ev.examPlan && <ScorePill label={t("rationality")} value={ev.examPlan.rationalityScore} />}
         <ScorePill label={t("treatment")} value={ev.treatmentScore} />
         <ScorePill label={t("safety")} value={ev.safetyScore} />
         <ScorePill label={t("communication")} value={ev.communicationScore} />
       </div>
+
+      {ev.examPlan && <ExamPlanView plan={ev.examPlan} />}
 
       <div className="rounded-control border-l-2 border-brand bg-brand-soft px-3.5 py-2.5">
         <p className="mb-0.5 text-micro font-extrabold uppercase tracking-wider text-brand-tint">{t("correctDx")}</p>
@@ -155,13 +245,20 @@ function EvalView({ ev, onReset }: { ev: PatientEval; onReset: () => void }) {
   );
 }
 
-/** Buyurilgan tekshiruv natijasi — chatда alohida (monospace) karta. */
-function TestResult({ m }: { m: PatientMsg }) {
+/** Buyurilgan tekshiruv natijasi — chatда alohida (monospace) karta.
+ *  Narx shu yerda ham ko'rinadi: qaror va uning qiymati yonma-yon tursin. */
+function TestResult({ m, costUnit }: { m: PatientMsg; costUnit: string }) {
   const [name, ...rest] = m.text.split("\n");
   return (
     <div className="rounded-card rounded-bl-control border border-line bg-blue-soft px-3 py-2">
       <p className="mb-0.5 flex items-center gap-1.5 text-micro font-extrabold uppercase tracking-wider text-blue">
-        <Icon icon={FlaskConical} size={11} /> {name}
+        <Icon icon={FlaskConical} size={11} />
+        <span className="min-w-0 flex-1 truncate">{name}</span>
+        {!!m.cost && (
+          <span className="shrink-0 font-bold tabular-nums text-blue">
+            {m.cost} {costUnit}
+          </span>
+        )}
       </p>
       <p className="whitespace-pre-wrap font-mono text-note leading-relaxed text-ink-strong">{rest.join("\n")}</p>
     </div>
@@ -275,9 +372,12 @@ export function PatientTab({ topicId }: { topicId: number }) {
     "",
   ];
 
-  const labTests = t("labTests", { returnObjects: true }) as string[];
-  const instrTests = t("instrTests", { returnObjects: true }) as string[];
   const suggests = t("suggests", { returnObjects: true }) as string[];
+  // Katalog va narx — serverdan (yagona manba; erkin buyurtma narxi ham o'sha
+  // yerda hisoblanadi). Byudjet QAT'IY qulf emas — ogohlantirish.
+  const catalog = data?.catalog ?? [];
+  const spent = data?.spent ?? 0;
+  const overBudget = spent > (data?.budgetSoft ?? Infinity);
 
   const refreshDdx = () => ddxMut.mutate(undefined, { onSuccess: (r) => setDdx(r.ddx) });
 
@@ -407,7 +507,13 @@ export function PatientTab({ topicId }: { topicId: number }) {
             </div>
           ) : (
             <AnimatePresence initial={false}>
-              {chat.map((m) => (m.role === "test" ? <TestResult key={m.id} m={m} /> : <Bubble key={m.id} m={m} animate={!reduce} />))}
+              {chat.map((m) =>
+                m.role === "test" ? (
+                  <TestResult key={m.id} m={m} costUnit={t("costUnit")} />
+                ) : (
+                  <Bubble key={m.id} m={m} animate={!reduce} />
+                )
+              )}
               {pending && (
                 <div key="pending" className="space-y-2">
                   <Bubble key="p-mine" m={{ id: -1, role: "student", text: pending, createdAt: "" }} animate={!reduce} />
@@ -598,27 +704,48 @@ export function PatientTab({ topicId }: { topicId: number }) {
           )}
         </Section>
 
-        {/* Tekshiruv buyurish — guruhlangan katalog + erkin buyurtma */}
-        <Section icon={FlaskConical} title={t("ordersTitle")}>
+        {/* Tekshiruv buyurish — narxi bilan katalog + erkin buyurtma.
+            Real hayotda har tahlil bemorning puliga tushadi: talaba "hammasini
+            bosib chiqmasin", kerakligini tanlasin (yakunda reja baholanadi). */}
+        <Section
+          icon={FlaskConical}
+          title={t("ordersTitle")}
+          action={
+            <span
+              className={cls(
+                "rounded-pill px-2 py-0.5 text-micro font-extrabold tabular-nums",
+                overBudget ? "bg-amber-soft text-amber" : "bg-surface-raised text-ink-soft"
+              )}
+              title={t("spentTitle")}
+            >
+              {spent} {t("costUnit")}
+            </span>
+          }
+        >
+          <p className="mb-2 text-micro leading-relaxed text-ink-dim">
+            {overBudget ? t("budgetWarn") : t("costHint")}
+          </p>
           {[
-            { label: t("orderLab"), items: labTests },
-            { label: t("orderInstr"), items: instrTests },
+            { label: t("orderLab"), items: catalog.filter((c) => c.group === "lab") },
+            { label: t("orderInstr"), items: catalog.filter((c) => c.group === "instr") },
           ].map((group) => (
             <div key={group.label} className="mb-2 last:mb-0">
               <p className="mb-1 text-micro font-bold text-ink-dim">{group.label}</p>
-              <div className="grid grid-cols-2 gap-1.5">
-                {group.items.map((name) => {
-                  const done = orderedTests.has(name);
-                  const running = order.isPending && (order.variables as string) === name;
+              <div className="space-y-1">
+                {group.items.map((item) => {
+                  const done = orderedTests.has(item.name);
+                  const running = order.isPending && (order.variables as string) === item.name;
                   return (
                     <button
-                      key={name}
-                      onClick={() => orderTest(name)}
+                      key={item.name}
+                      onClick={() => orderTest(item.name)}
                       disabled={done || order.isPending || !data?.started}
-                      title={name}
+                      title={`${item.name} — ${item.cost} ${t("costUnit")}`}
                       className={cls(
-                        "flex items-center gap-1.5 rounded-control border px-2 py-1.5 text-left text-micro font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
-                        done ? "border-line bg-emerald-soft text-emerald" : "border-line text-ink-soft hover:border-brand hover:text-brand disabled:opacity-50"
+                        "flex w-full items-center gap-1.5 rounded-control border px-2 py-1.5 text-left text-micro font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
+                        done
+                          ? "border-line bg-emerald-soft text-emerald"
+                          : "border-line text-ink-soft hover:border-brand hover:text-brand disabled:opacity-50"
                       )}
                     >
                       <Icon
@@ -626,7 +753,10 @@ export function PatientTab({ topicId }: { topicId: number }) {
                         size={12}
                         className={cls("shrink-0", running && "animate-spin")}
                       />
-                      <span className="truncate">{name}</span>
+                      <span className="min-w-0 flex-1 truncate">{item.name}</span>
+                      <span className={cls("shrink-0 tabular-nums", done ? "text-emerald" : "text-ink-faint")}>
+                        {item.cost}
+                      </span>
                     </button>
                   );
                 })}

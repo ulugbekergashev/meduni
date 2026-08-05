@@ -519,6 +519,18 @@ export function useSendTutorMessage(topicId: number) {
 
 // ---- Virtual bemor roleplay (Modul 26) ----
 
+export type ExamVerdict = "required" | "optional" | "unnecessary";
+
+/** Tekshiruv rejasi tahlili: nima shart edi, nima ortiqcha, nima qolib ketdi. */
+export interface ExamPlan {
+  rationalityScore: number;
+  /** Ming so'm. */
+  spent: number;
+  wasted: number;
+  items: { test: string; verdict: ExamVerdict; note: string; cost: number }[];
+  missed: { test: string; why: string }[];
+}
+
 export interface PatientEval {
   diagnosis: string;
   correct: boolean;
@@ -530,6 +542,8 @@ export interface PatientEval {
   overallScore: number;
   strengths: string;
   improvements: string;
+  /** Eski baholarda yo'q. */
+  examPlan?: ExamPlan;
 }
 
 export interface PatientMsg {
@@ -538,7 +552,16 @@ export interface PatientMsg {
   role: "student" | "patient" | "eval" | "test";
   text: string;
   eval?: PatientEval;
+  /** Faqat "test" xabarida — narxi (ming so'm; vitallar bepul → 0). */
+  cost?: number;
   createdAt: string;
+}
+
+export interface TestCatalogItem {
+  name: string;
+  group: "lab" | "instr";
+  /** Ming so'm. */
+  cost: number;
 }
 
 export interface DDxItem {
@@ -562,6 +585,11 @@ export interface PatientData {
   started: boolean;
   /** Faqat talaba o'lchagach to'ladi. */
   vitals: PatientVitals | null;
+  /** Tekshiruv katalogi — narxi bilan (talaba tilida). */
+  catalog: TestCatalogItem[];
+  /** Shu qabulда sarflangan (ming so'm) va "oqilona" chegara. */
+  spent: number;
+  budgetSoft: number;
   messages: PatientMsg[];
 }
 
@@ -653,7 +681,9 @@ export function useOrderTest(topicId: number) {
       }),
     onSuccess: (res) => {
       qc.setQueryData<PatientData>(["me-patient", topicId], (old) =>
-        old ? { ...old, messages: [...old.messages, res.message] } : old
+        old
+          ? { ...old, messages: [...old.messages, res.message], spent: old.spent + (res.message.cost ?? 0) }
+          : old
       );
     },
   });

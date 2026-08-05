@@ -295,7 +295,10 @@ export function evalSystemPrompt(lang: "uz" | "ru", c: CaseJson): string {
     "Baholash mezoni (har biri 0–100):",
     "1. Tashxis to'g'rimi (correct) — talabaning taxminи haqiqiy tashxisga mos keladimi.",
     "2. anamnesisScore — muhim savollarni berdimi (shikoyat tafsiloti, boshlanish, kuchayish, tarix).",
-    "3. examinationScore — obyektiv tekshiruv/analiz/instrumental TO'G'RI buyurdimi (kerakli testlar).",
+    "3. examinationScore — TEKSHIRUV REJASI: kerakli tekshiruvlarni buyurdimi VA",
+    "   ORTIQCHASINI buyurmadimi. Real hayotda har tahlil bemorning puliga tushadi —",
+    "   \"hammasini buyurish\" klinik XATO. Ball IKKI tomondan tushadi: shart bo'lgan",
+    "   tekshiruv o'tkazib yuborilsa HAM, keraksizi buyurilsa HAM.",
     "4. treatmentScore — davolash/keyingi qadam rejasi asosli va to'g'rimi (bergan bo'lsa).",
     "5. safetyScore — xavfli holatni ('qizil bayroq') payqadimi, xavfsiz yondashdimi.",
     "6. communicationScore — savollar mantiqiy, aniq va hurmatли bo'lдими.",
@@ -303,6 +306,22 @@ export function evalSystemPrompt(lang: "uz" | "ru", c: CaseJson): string {
     "strengths — talaba nimani yaxshi qildi (1–2 jumla).",
     "improvements — nimani o'tkazib yubordi / yaxshилаши kerak (1–2 jumla).",
     "diagnosis — TO'G'RI tashxis (qisqa).",
+    "",
+    "examPlan — TEKSHIRUV REJASINING TAHLILI (eng muhim yangi qism):",
+    "  items — talaba BUYURGAN har bir tekshiruv uchun bitta yozuv. `test` — nomini",
+    "    AYNAN buyurilganidek yoz (o'zgartirmasdan, tarjima qilmasdan).",
+    "    verdict — faqat shu uchtadan biri:",
+    "      \"required\"    — shu tashxis/holat uchun SHART edi (asosiy diagnostik qadam);",
+    "      \"optional\"    — o'rinli, foydali, lekin shart emas edi;",
+    "      \"unnecessary\" — bu holatda KERAK EMAS edi (ortiqcha xarajat va vaqt).",
+    "    note — 1 qisqa jumla: nega shunday baholanди.",
+    "  missed — buyurilmagan, lekin SHU holatda SHART bo'lgan tekshiruvlar",
+    "    ({test, why}). Hammasi buyurilgan bo'lsa — bo'sh massiv.",
+    "  rationalityScore (0–100) — reja qanchalik OQILONA: kerakli tekshiruvlar",
+    "    qamralgan va ortiqchasi yo'q bo'lsa yuqori; \"hamma tugmani bosish\" past;",
+    "    ayni kerakli 2-3 tani aniq tanlagan bo'lsa — eng yuqori.",
+    "  ⚠️ Tekshiruv umuman buyurilmagan bo'lsa: items bo'sh, missed to'ldiriladi,",
+    "  rationalityScore past.",
     `Barcha matn — ${langLabel[lang]} tilida. Javobni FAQAT JSON schema bo'yicha ber.`,
     "",
     "=== KLINIK KEYS (haqiqiy ma'lumot + to'g'ri tashxis shu yerда) ===",
@@ -324,11 +343,38 @@ export function evalSystemPrompt(lang: "uz" | "ru", c: CaseJson): string {
     .join("\n");
 }
 
-export function evalUserContent(history: { role: string; text: string }[], diagnosis: string): string {
+export function evalUserContent(
+  history: { role: string; text: string }[],
+  diagnosis: string,
+  /** Buyurilgan tekshiruvlar narxi bilan — reja oqilonaligini baholash uchun. */
+  orders: { name: string; cost: number }[] = []
+): string {
   const lines: string[] = ["SUHBAT (shifokor ↔ bemor):"];
   for (const m of history) lines.push(`${m.role === "student" ? "SHIFOKOR" : "BEMOR"}: ${m.text}`);
+
+  lines.push("", "BUYURILGAN TEKSHIRUVLAR (narx — ming soʻm, bemor toʻlaydi):");
+  if (orders.length) {
+    for (const o of orders) lines.push(`- ${o.name} — ${o.cost}`);
+    lines.push(`JAMI XARAJAT: ${orders.reduce((s, o) => s + o.cost, 0)} ming soʻm`);
+  } else {
+    lines.push("(hech qanday tekshiruv buyurilmagan)");
+  }
+
   lines.push("", "TALABANING YAKUNIY TASHXISI:", diagnosis || "(tashxis kiritilmadi)");
   return lines.join("\n");
+}
+
+export type ExamVerdict = "required" | "optional" | "unnecessary";
+
+/** Tekshiruv rejasining tahlili — nima shart edi, nima ortiqcha, nima qoldi. */
+export interface ExamPlan {
+  rationalityScore: number;
+  /** Jami sarflangan (ming so'm) — SERVER hisoblaydi (AI emas). */
+  spent: number;
+  /** Keraksiz tekshiruvlarga ketgan pul (ming so'm) — SERVER hisoblaydi. */
+  wasted: number;
+  items: { test: string; verdict: ExamVerdict; note: string; cost: number }[];
+  missed: { test: string; why: string }[];
 }
 
 export interface PatientEval {
@@ -342,6 +388,8 @@ export interface PatientEval {
   overallScore: number;
   strengths: string;
   improvements: string;
+  /** Eski (2026-08-06 gacha) baholarda yo'q — UI ixtiyoriy sifatida chizadi. */
+  examPlan?: ExamPlan;
 }
 
 export const evalResponseSchema = {
@@ -357,6 +405,36 @@ export const evalResponseSchema = {
     overallScore: { type: Type.INTEGER },
     strengths: { type: Type.STRING },
     improvements: { type: Type.STRING },
+    examPlan: {
+      type: Type.OBJECT,
+      properties: {
+        rationalityScore: { type: Type.INTEGER },
+        items: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              test: { type: Type.STRING },
+              // ⚠️ `enum` ATAYLAB qo'yilmagan: sxemaning har qo'shimcha maydoni
+              // 400 INVALID_ARGUMENT xavfi (thinkingBudget sabog'i, §3) — ruxsat
+              // etilgan qiymatlar promptда yozilgan, server esa normalizatsiya qiladi.
+              verdict: { type: Type.STRING },
+              note: { type: Type.STRING },
+            },
+            required: ["test", "verdict", "note"],
+          },
+        },
+        missed: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: { test: { type: Type.STRING }, why: { type: Type.STRING } },
+            required: ["test", "why"],
+          },
+        },
+      },
+      required: ["rationalityScore", "items", "missed"],
+    },
   },
   required: [
     "diagnosis",
@@ -369,5 +447,6 @@ export const evalResponseSchema = {
     "overallScore",
     "strengths",
     "improvements",
+    "examPlan",
   ],
 };
