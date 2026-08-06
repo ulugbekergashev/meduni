@@ -205,7 +205,15 @@ export function testResultSystemPrompt(lang: "uz" | "ru"): string {
     "Referens me'yorlar bilan (masalan: \"Troponin I: 5.2 ng/mL (me'yor <0.04)\").",
     "Natija 2–4 qator, klinik ko'rsatkichlar bilan. Yashirin tashxisni SO'Z bilan aytma —",
     "faqat obyektiv topilmalarни ber (talaba o'zi xulosa qilsin).",
-    `Til — ${langLabel[lang]}. Javobni FAQAT JSON schema bo'yicha ber ({\"result\": \"...\"}).`,
+    "",
+    "Bundan tashqari SHU tekshiruv shu bemorda O'RINLI edimi — baholaysan:",
+    "  indicated=true  — bemorning shikoyati/holatiga bog'liq, tashxis yo'lida ma'no beradi;",
+    "  indicated=false — ORTIQCHA: bu bemorda ko'rsatma yo'q, hech narsani o'zgartirmaydi",
+    "                    (masalan shikoyati yurakka oid bo'lsa — bosh miya tomografiyasi).",
+    "  reason — 1 qisqa jumla (nega o'rinli / nega ortiqcha).",
+    "⚠️ SHUBHALI bo'lsa indicated=true ber — talabani nohaq jazolama. false faqat",
+    "   tekshiruv aniq keraksiz bo'lganда.",
+    `Til — ${langLabel[lang]}. Javobni FAQAT JSON schema bo'yicha ber.`,
   ].join("\n");
 }
 
@@ -222,8 +230,13 @@ export function testResultUserContent(c: CaseJson, testType: string): string {
 
 export const testResultResponseSchema = {
   type: Type.OBJECT,
-  properties: { result: { type: Type.STRING } },
-  required: ["result"],
+  properties: {
+    result: { type: Type.STRING },
+    /** Shu bemorda ko'rsatma bormi (false = ortiqcha → ball tushadi). */
+    indicated: { type: Type.BOOLEAN },
+    reason: { type: Type.STRING },
+  },
+  required: ["result", "indicated", "reason"],
 };
 
 // ---------- Differensial tashxis (DDx) — MAVJUD dalillar asosida (jonli) ----------
@@ -295,10 +308,10 @@ export function evalSystemPrompt(lang: "uz" | "ru", c: CaseJson): string {
     "Baholash mezoni (har biri 0–100):",
     "1. Tashxis to'g'rimi (correct) — talabaning taxminи haqiqiy tashxisga mos keladimi.",
     "2. anamnesisScore — muhim savollarni berdimi (shikoyat tafsiloti, boshlanish, kuchayish, tarix).",
-    "3. examinationScore — TEKSHIRUV REJASI: kerakli tekshiruvlarni buyurdimi VA",
-    "   ORTIQCHASINI buyurmadimi. Real hayotda har tahlil bemorning puliga tushadi —",
-    "   \"hammasini buyurish\" klinik XATO. Ball IKKI tomondan tushadi: shart bo'lgan",
-    "   tekshiruv o'tkazib yuborilsa HAM, keraksizi buyurilsa HAM.",
+    "3. examinationScore — KERAKLI tekshiruvlarni qanchalik qamradi (QAMROV bahosi).",
+    "   ⚠️ Ortiqcha tekshiruv uchun JAZONI bu ballga QO'SHMA — uni server o'zi",
+    "   ayiradi (har ortiqcha tekshiruv uchun qat'iy ball). Sen faqat kerakligini",
+    "   buyurdimi — shuni baho.",
     "4. treatmentScore — davolash/keyingi qadam rejasi asosli va to'g'rimi (bergan bo'lsa).",
     "5. safetyScore — xavfli holatni ('qizil bayroq') payqadimi, xavfsiz yondashdimi.",
     "6. communicationScore — savollar mantiqiy, aniq va hurmatли bo'lдими.",
@@ -366,6 +379,23 @@ export function evalUserContent(
 
 export type ExamVerdict = "required" | "optional" | "unnecessary";
 
+/** Tekshiruv buyurilgan paytdagi hukm — `PatientMessage.metaJson`da saqlanadi.
+ *  Jonli ball SHU yozuvdan hisoblanadi (AI qayta so'ralmaydi → baho barqaror). */
+// ⚠️ `interface` EMAS, `type`: Prisma `Json` maydoni index-signature talab qiladi
+// va TS interfeys uchun uni avtomatik chiqarmaydi (type alias uchun chiqaradi).
+export type TestMeta = {
+  indicated: boolean;
+  reason: string;
+  cost: number;
+};
+
+/** AI qaytaradigan XOM reja — server hisoblaydigan maydonlar (narx, jazo) yo'q. */
+export interface ExamPlanRaw {
+  rationalityScore?: number;
+  items?: { test?: string; verdict?: string; note?: string }[];
+  missed?: { test?: string; why?: string }[];
+}
+
 /** Tekshiruv rejasining tahlili — nima shart edi, nima ortiqcha, nima qoldi. */
 export interface ExamPlan {
   rationalityScore: number;
@@ -373,6 +403,9 @@ export interface ExamPlan {
   spent: number;
   /** Keraksiz tekshiruvlarga ketgan pul (ming so'm) — SERVER hisoblaydi. */
   wasted: number;
+  /** Ortiqcha tekshiruvlar uchun ayirilgan ball (qat'iy qoida, AI emas). */
+  penalty: number;
+  unneededCount: number;
   items: { test: string; verdict: ExamVerdict; note: string; cost: number }[];
   missed: { test: string; why: string }[];
 }

@@ -115,7 +115,6 @@
     "costUnit": "тыс. сум",
     "costHint": "Каждое обследование оплачивает пациент — назначайте только необходимое. В конце план оценивается.",
     "budgetWarn": "Расходы превышены. Лишние обследования снизят оценку.",
-    "spentTitle": "Потрачено на этом приёме",
     "rationality": "План",
     "planTitle": "План обследования",
     "planSpent": "Потрачено",
@@ -124,7 +123,13 @@
     "planMissed": "Не назначено, но было необходимо",
     "verdictRequired": "Необходимо",
     "verdictOptional": "Уместно",
-    "verdictUnnecessary": "Лишнее"
+    "verdictUnnecessary": "Лишнее",
+    "examScoreTitle": "Балл за обследование — лишние назначения его снижают",
+    "spentLine": "Потрачено: {{n}} {{unit}}",
+    "wasteLine": "· лишних: {{n}} (−{{p}} балла)",
+    "wasteBadge": "Лишнее обследование — минус {{n}} балла",
+    "planPenalty": "Лишние обследования ({{n}})",
+    "planPenaltyUnit": "балла"
   },
   "tasks": {
     "myTasks": "Мои задачи",
@@ -1549,7 +1554,8 @@
     "patientPlan": "План обследования:",
     "patientPlanScore": "рациональность {{n}}",
     "patientPlanSpent": "потрачено {{n}} тыс. сум",
-    "patientPlanWasted": "лишнее {{n}} тыс. сум"
+    "patientPlanWasted": "лишнее {{n}} тыс. сум",
+    "patientPlanPenalty": "лишних {{n}} → −{{p}} балла"
   },
   "attendance": {
     "tabSessions": "Занятия",

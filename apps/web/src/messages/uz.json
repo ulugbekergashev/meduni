@@ -115,7 +115,6 @@
     "costUnit": "ming soʻm",
     "costHint": "Har tekshiruv bemorning puliga tushadi — faqat kerakligini buyuring. Yakunda reja baholanadi.",
     "budgetWarn": "Xarajat oshib ketdi. Ortiqcha tekshiruv baholashда ball tushiradi.",
-    "spentTitle": "Shu qabulda sarflandi",
     "rationality": "Reja",
     "planTitle": "Tekshiruv rejasi",
     "planSpent": "Sarflandi",
@@ -124,7 +123,13 @@
     "planMissed": "Buyurilmagan, lekin shart edi",
     "verdictRequired": "Shart edi",
     "verdictOptional": "Oʻrinli",
-    "verdictUnnecessary": "Keraksiz"
+    "verdictUnnecessary": "Keraksiz",
+    "examScoreTitle": "Tekshiruv balli — ortiqcha tekshiruv uni tushiradi",
+    "spentLine": "Sarflandi: {{n}} {{unit}}",
+    "wasteLine": "· {{n}} ta ortiqcha (−{{p}} ball)",
+    "wasteBadge": "Ortiqcha tekshiruv — {{n}} ball tushdi",
+    "planPenalty": "Ortiqcha tekshiruv ({{n}} ta)",
+    "planPenaltyUnit": "ball"
   },
   "tasks": {
     "myTasks": "Mening vazifalarim",
@@ -1549,7 +1554,8 @@
     "patientPlan": "Tekshiruv rejasi:",
     "patientPlanScore": "oqilonalik {{n}}",
     "patientPlanSpent": "sarflandi {{n}} ming soʻm",
-    "patientPlanWasted": "ortiqcha {{n}} ming soʻm"
+    "patientPlanWasted": "ortiqcha {{n}} ming soʻm",
+    "patientPlanPenalty": "{{n}} ta ortiqcha → −{{p}} ball"
   },
   "attendance": {
     "tabSessions": "Mashgʻulotlar",

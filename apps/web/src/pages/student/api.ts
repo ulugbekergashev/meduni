@@ -527,6 +527,9 @@ export interface ExamPlan {
   /** Ming so'm. */
   spent: number;
   wasted: number;
+  /** Ortiqcha tekshiruvlar uchun ayirilgan ball (qat'iy qoida). */
+  penalty: number;
+  unneededCount: number;
   items: { test: string; verdict: ExamVerdict; note: string; cost: number }[];
   missed: { test: string; why: string }[];
 }
@@ -554,6 +557,9 @@ export interface PatientMsg {
   eval?: PatientEval;
   /** Faqat "test" xabarida — narxi (ming so'm; vitallar bepul → 0). */
   cost?: number;
+  /** false = shu bemorda ORTIQCHA edi (ball tushdi). Eski yozuvlarda yo'q. */
+  indicated?: boolean;
+  reason?: string;
   createdAt: string;
 }
 
@@ -590,6 +596,10 @@ export interface PatientData {
   /** Shu qabulда sarflangan (ming so'm) va "oqilona" chegara. */
   spent: number;
   budgetSoft: number;
+  /** Jonli tekshiruv balli (100 dan boshlanadi, har ortiqcha tekshiruv tushiradi). */
+  examScore: number;
+  unneededCount: number;
+  penaltyPerTest: number;
   messages: PatientMsg[];
 }
 
@@ -682,7 +692,17 @@ export function useOrderTest(topicId: number) {
     onSuccess: (res) => {
       qc.setQueryData<PatientData>(["me-patient", topicId], (old) =>
         old
-          ? { ...old, messages: [...old.messages, res.message], spent: old.spent + (res.message.cost ?? 0) }
+          ? {
+              ...old,
+              messages: [...old.messages, res.message],
+              spent: old.spent + (res.message.cost ?? 0),
+              // Ortiqcha bo'lsa ball DARROV tushadi (qayta so'rovsiz).
+              unneededCount: old.unneededCount + (res.message.indicated === false ? 1 : 0),
+              examScore:
+                res.message.indicated === false
+                  ? Math.max(0, old.examScore - old.penaltyPerTest)
+                  : old.examScore,
+            }
           : old
       );
     },

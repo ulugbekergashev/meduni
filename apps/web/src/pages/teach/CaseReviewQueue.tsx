@@ -152,6 +152,11 @@ function PatientSessionCard({ session }: { session: PatientSessionLog }) {
                   {t("patientPlanWasted", { n: ev.examPlan.wasted })}
                 </span>
               )}
+              {ev.examPlan.penalty > 0 && (
+                <span className="font-bold tabular-nums text-rose">
+                  {t("patientPlanPenalty", { n: ev.examPlan.unneededCount, p: ev.examPlan.penalty })}
+                </span>
+              )}
             </div>
           )}
           <div className="max-h-[320px] space-y-2 overflow-y-auto px-4 py-3">

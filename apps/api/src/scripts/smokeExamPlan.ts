@@ -40,12 +40,10 @@ const orders = [
 ];
 const plan = buildExamPlan(orders, {
   rationalityScore: 45,
-  spent: 999_999, // AI xato hisoblasa ham — server o'zi hisoblaydi
-  wasted: 0,
   items: [
-    { test: "EKG", verdict: "required", note: "Ishemiya belgisi", cost: 0 },
-    { test: "  troponin ", verdict: "required", note: "Nekroz markeri", cost: 0 },
-    { test: "MRT", verdict: "unnecessary", note: "Bu holatda ko'rsatma yo'q", cost: 0 },
+    { test: "EKG", verdict: "required", note: "Ishemiya belgisi" },
+    { test: "  troponin ", verdict: "required", note: "Nekroz markeri" },
+    { test: "MRT", verdict: "unnecessary", note: "Bu holatda ko'rsatma yo'q" },
   ],
   missed: [{ test: "Umumiy qon tahlili", why: "Yallig'lanishni istisno qilish" }],
 });
@@ -63,20 +61,58 @@ check("hukmsiz qator 'optional' bo'ladi", noAi.items.every((i) => i.verdict === 
 check("hukmsiz holatda ortiqcha = 0", noAi.wasted === 0);
 check("AI ballsiz → 0", noAi.rationalityScore === 0);
 
-const empty = buildExamPlan([], { rationalityScore: 10, spent: 0, wasted: 0, items: [], missed: [] });
+const empty = buildExamPlan([], { rationalityScore: 10, items: [], missed: [] });
 check("tekshiruvsiz reja: spent 0", empty.spent === 0 && empty.items.length === 0);
 
 const weird = buildExamPlan(orders, {
   rationalityScore: 350,
-  spent: 0,
-  wasted: 0,
   // AI noto'g'ri qiymat / begona test qaytarsa
-  items: [{ test: "Bunday test buyurilmagan", verdict: "REQUIRED!!" as never, note: "", cost: 0 }],
+  items: [{ test: "Bunday test buyurilmagan", verdict: "REQUIRED!!", note: "" }],
   missed: [],
 });
 check("ball 0..100 ga siqiladi", weird.rationalityScore === 100, weird.rationalityScore);
 check("AI qo'shgan begona test ro'yxatga kirmaydi", weird.items.length === 3, weird.items.length);
 check("noma'lum verdict → optional", weird.items.every((i) => i.verdict === "optional"));
+
+console.log("\n— Jazo: buyurish paytidagi hukm USTUVOR —");
+// Buyurtmachi: "kerakmas tekshiruv buyurganda ko'rsatkichlari tushsin".
+// Talaba jarayonда ko'rgan hukm yakunda o'zgarmasligi kerak.
+const live = [
+  { name: "EKG", cost: 30, indicated: true },
+  { name: "MRT", cost: 900, indicated: false },
+  { name: "Bosh miya KT si", cost: 550, indicated: false },
+];
+const p2 = buildExamPlan(live, {
+  rationalityScore: 60,
+  // AI yakunda FIKRINI O'ZGARTIRSA ham saqlangan hukm ustun turadi
+  items: [
+    { test: "EKG", verdict: "unnecessary", note: "" },
+    { test: "MRT", verdict: "required", note: "" },
+    { test: "Bosh miya KT si", verdict: "optional", note: "" },
+  ],
+  missed: [],
+});
+check("buyurishда o'rinli deb topilgan test keraksizga aylanmaydi", p2.items[0].verdict === "optional", p2.items[0].verdict);
+check("buyurishда ortiqcha deb topilgani ortiqcha qoladi (1)", p2.items[1].verdict === "unnecessary");
+check("buyurishда ortiqcha deb topilgani ortiqcha qoladi (2)", p2.items[2].verdict === "unnecessary");
+check("ortiqchalar soni", p2.unneededCount === 2, p2.unneededCount);
+check("jazo = 2 × 15 = 30 ball", p2.penalty === 30, p2.penalty);
+check("bekorga ketgan pul = 900 + 550", p2.wasted === 1450, p2.wasted);
+
+const clean2 = buildExamPlan(
+  [{ name: "EKG", cost: 30, indicated: true }],
+  { rationalityScore: 90, items: [{ test: "EKG", verdict: "required", note: "" }], missed: [] }
+);
+check("ortiqcha yo'q → jazo 0", clean2.penalty === 0 && clean2.unneededCount === 0);
+
+// Izoh ham buyurish paytidagi qarordan — "Keraksiz" ostida "foydali edi" turmasin.
+const noteFix = buildExamPlan(
+  [{ name: "MRT", cost: 900, indicated: false, reason: "Bu holatda ko'rsatma yo'q" }],
+  { rationalityScore: 50, items: [{ test: "MRT", verdict: "required", note: "Juda foydali edi" }], missed: [] }
+);
+check("izoh saqlangan qarordan olinadi", noteFix.items[0].note === "Bu holatda ko'rsatma yo'q", noteFix.items[0].note);
+check("izoh bo'lmasa AI izohiga qaytadi", plan.items[0].note === "Ishemiya belgisi");
+check("eski sessiya (hukm saqlanmagan) → jazo 0", noAi.penalty === 0, noAi.penalty);
 
 console.log("\n— Baholash promptida narx ko'rinadi —");
 const uc = evalUserContent([{ role: "student", text: "Salom" }], "Miokard infarkti", orders);

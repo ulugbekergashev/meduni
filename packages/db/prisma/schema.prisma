@@ -336,9 +336,12 @@ model PatientMessage {
   student   User     @relation(fields: [studentId], references: [id])
   topicId   Int
   topic     Topic    @relation(fields: [topicId], references: [id], onDelete: Cascade)
-  /// "student" | "patient" | "eval"
+  /// "student" | "patient" | "eval" | "test" | "scenario"
   role      String
   text      String
+  /// role="test": {indicated, reason, cost} — tekshiruv BUYURILGAN paytda
+  /// yozib qo'yiladi (jonli ball shundan hisoblanadi, qayta AI so'ramaydi).
+  metaJson  Json?
   createdAt DateTime @default(now())
 
   @@index([studentId, topicId, createdAt])

@@ -576,6 +576,9 @@ export interface PatientSessionLog {
       rationalityScore: number;
       spent: number;
       wasted: number;
+      /** Ortiqcha tekshiruvlar uchun ayirilgan ball. */
+      penalty: number;
+      unneededCount: number;
       items: { test: string; verdict: "required" | "optional" | "unnecessary"; note: string; cost: number }[];
       missed: { test: string; why: string }[];
     };

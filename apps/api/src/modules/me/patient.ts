@@ -27,14 +27,22 @@ import {
   testResultUserContent,
   type DDxItem,
   type ExamPlan,
+  type ExamPlanRaw,
   type ExamVerdict,
   type PatientEval,
+  type TestMeta,
 } from "../../ai/prompts/patient";
 import { caseResponseSchema, caseSchema, type CaseJson, type DigestJson } from "../../ai/types";
 import { assertTopicOpen } from "./service";
 import { BUDGET_SOFT, catalogFor, costOf } from "./testCatalog";
 
 const HISTORY_TAKE = 16;
+
+/** Har ORTIQCHA (ko'rsatmasiz) tekshiruv uchun tekshiruv ballidan ayiriladi.
+ *  Buyurtmachi (2026-08-06): "kerakmas tekshiruv buyurganda ko'rsatkichlari
+ *  tushsin" — jazo AI xohishiga emas, QAT'IY qoidaga bog'liq. */
+const PENALTY_PER_UNNEEDED = 15;
+const EXAM_SCORE_MAX = 100;
 
 /** Hayotiy ko'rsatkichlar o'lchovi — chatда "test" xabari sifatida saqlanadi.
  *  Ikkala til yorlig'i saqlanadi: talaba tilni almashtirsa ham o'lchov topiladi. */
@@ -72,7 +80,19 @@ interface PatientMsgOut {
   eval?: PatientEval;
   /** Faqat "test" xabarida — tekshiruv narxi (ming so'm). */
   cost?: number;
+  /** Faqat "test" xabarida — shu bemorda ko'rsatma bormidi (false = ortiqcha). */
+  indicated?: boolean;
+  /** Ortiqcha bo'lsa — nega (talaba darrov o'rganadi). */
+  reason?: string;
   createdAt: Date;
+}
+
+/** Saqlangan hukm (eski yozuvlarda yo'q → ortiqcha deb hisoblanmaydi). */
+function readMeta(meta: unknown): TestMeta | null {
+  if (!meta || typeof meta !== "object") return null;
+  const m = meta as Record<string, unknown>;
+  if (typeof m.indicated !== "boolean") return null;
+  return { indicated: m.indicated, reason: (m.reason ?? "").toString(), cost: Number(m.cost) || 0 };
 }
 
 /** "test" xabaridan tekshiruv nomi (matnning birinchi qatori). */
@@ -88,9 +108,24 @@ function testCost(text: string): number {
   return costOf(name);
 }
 
-function serialize(m: { id: number; role: string; text: string; createdAt: Date }): PatientMsgOut {
+function serialize(m: {
+  id: number;
+  role: string;
+  text: string;
+  metaJson?: unknown;
+  createdAt: Date;
+}): PatientMsgOut {
   if (m.role === "test") {
-    return { id: m.id, role: "test", text: m.text, cost: testCost(m.text), createdAt: m.createdAt };
+    const meta = readMeta(m.metaJson);
+    return {
+      id: m.id,
+      role: "test",
+      text: m.text,
+      cost: testCost(m.text),
+      indicated: meta?.indicated,
+      reason: meta?.reason,
+      createdAt: m.createdAt,
+    };
   }
   if (m.role === "eval") {
     let parsed: PatientEval | undefined;
@@ -205,8 +240,18 @@ export async function getPatient(studentId: number, topicId: number) {
     /** Shu qabulда sarflangan (ming so'm) va "oqilona" chegara. */
     spent: out.reduce((s, m) => s + (m.cost ?? 0), 0),
     budgetSoft: BUDGET_SOFT,
+    /** JONLI tekshiruv balli: har ortiqcha tekshiruv uni darrov tushiradi. */
+    examScore: examScoreOf(out),
+    unneededCount: out.filter((m) => m.indicated === false).length,
+    penaltyPerTest: PENALTY_PER_UNNEEDED,
     messages: out,
   };
+}
+
+/** Ortiqcha tekshiruvlar soniga qarab tushadigan ball (100 dan boshlanadi). */
+function examScoreOf(msgs: { indicated?: boolean }[]): number {
+  const bad = msgs.filter((m) => m.indicated === false).length;
+  return Math.max(0, EXAM_SCORE_MAX - bad * PENALTY_PER_UNNEEDED);
 }
 
 /** QABULNI BOSHLASH — bemor o'zi shikoyatini aytadi (talaba savol bermasidan).
@@ -358,7 +403,7 @@ export async function orderTest(studentId: number, topicId: number, testTypeRaw:
   const departmentId = await departmentForTopic(topicId);
   if (departmentId) await assertQuota(departmentId);
 
-  const gen = await generateStructured<{ result: string }>({
+  const gen = await generateStructured<{ result: string; indicated: boolean; reason: string }>({
     systemInstruction: testResultSystemPrompt(lang),
     userContent: testResultUserContent(kase, testType),
     responseSchema: testResultResponseSchema,
@@ -369,8 +414,19 @@ export async function orderTest(studentId: number, topicId: number, testTypeRaw:
     preferLite: true,
   });
   const result = (gen?.result ?? "").toString().trim() || "—";
+
+  // Hukm SHU YERDA — bir marta, natija bilan bitta chaqiruvda (qo'shimcha AI
+  // xarajati yo'q) va saqlanadi: jonli ball ham, yakuniy baho ham shundan
+  // o'qiydi → ikkisi hech qachon bir-biriga zid bo'lmaydi.
+  // ⚠️ Model javob bermasa `indicated=true` (shubhada talaba foydasiga).
+  const meta: TestMeta = {
+    indicated: gen?.indicated !== false,
+    reason: (gen?.reason ?? "").toString().trim(),
+    cost: costOf(testType),
+  };
+
   const saved = await prisma.patientMessage.create({
-    data: { studentId, topicId, role: "test", text: `${testType}\n${result}` },
+    data: { studentId, topicId, role: "test", text: `${testType}\n${result}`, metaJson: meta },
   });
   return { message: serialize(saved) };
 }
@@ -427,10 +483,14 @@ function toVerdict(v: unknown): ExamVerdict {
 }
 
 /** Tekshiruv rejasi: RO'YXAT — server haqiqati (talaba nimani buyurgan bo'lsa
- *  o'shasi, narxi katalogdan), HUKM — AI dan. Ya'ni model tekshiruv "unutib
- *  qoldirsa" ham ro'yxat va xarajat to'g'ri qoladi; xarajat AI ga ishonib
- *  hisoblanmaydi. */
-export function buildExamPlan(orders: { name: string; cost: number }[], raw: PatientEval["examPlan"]): ExamPlan {
+ *  o'shasi, narxi katalogdan), HUKM — tekshiruv BUYURILGAN paytda saqlangan
+ *  yozuvdan. Ya'ni talaba jarayonда ko'rgan ball va yakuniy baho AYNAN bir xil
+ *  bo'ladi (yakunda AI fikrini o'zgartirib "ballim nega boshqa?" degan savol
+ *  tug'ilmaydi). Yakuniy AI faqat izoh/kontekst beradi. */
+export function buildExamPlan(
+  orders: { name: string; cost: number; indicated?: boolean; reason?: string }[],
+  raw: ExamPlanRaw | undefined
+): ExamPlan {
   const clamp = (n: unknown) => Math.max(0, Math.min(100, Math.round(Number(n) || 0)));
 
   const judged = new Map<string, { verdict: ExamVerdict; note: string }>();
@@ -443,8 +503,15 @@ export function buildExamPlan(orders: { name: string; cost: number }[], raw: Pat
 
   const items = orders.map((o) => {
     const j = judged.get(normName(o.name));
-    return { test: o.name, verdict: j?.verdict ?? "optional", note: j?.note ?? "", cost: o.cost };
+    let verdict: ExamVerdict = j?.verdict ?? "optional";
+    // Buyurish paytidagi hukm USTUVOR (jonli ball shundan hisoblangan edi).
+    if (o.indicated === false) verdict = "unnecessary";
+    else if (o.indicated === true && verdict === "unnecessary") verdict = "optional";
+    // Izoh ham O'SHA qarordan olinadi — aks holda "Keraksiz" yorlig'i ostida
+    // yakuniy AI ning "foydali edi" izohi turib, ekran o'zini inkor qilardi.
+    return { test: o.name, verdict, note: o.reason || j?.note || "", cost: o.cost };
   });
+  const unneeded = items.filter((i) => i.verdict === "unnecessary");
 
   const missed = (raw?.missed ?? [])
     .map((m) => ({ test: (m?.test ?? "").toString(), why: (m?.why ?? "").toString() }))
@@ -454,7 +521,9 @@ export function buildExamPlan(orders: { name: string; cost: number }[], raw: Pat
   return {
     rationalityScore: clamp(raw?.rationalityScore),
     spent: items.reduce((s, i) => s + i.cost, 0),
-    wasted: items.filter((i) => i.verdict === "unnecessary").reduce((s, i) => s + i.cost, 0),
+    wasted: unneeded.reduce((s, i) => s + i.cost, 0),
+    penalty: unneeded.length * PENALTY_PER_UNNEEDED,
+    unneededCount: unneeded.length,
     items,
     missed,
   };
@@ -487,7 +556,12 @@ export async function finishPatient(studentId: number, topicId: number, diagnosi
   // Bepul o'lchovlar (vitallar) rejaga kirmaydi.
   const orders = convo
     .filter((m) => m.role === "test")
-    .map((m) => ({ name: testName(m.text), cost: testCost(m.text) }))
+    .map((m) => ({
+      name: testName(m.text),
+      cost: testCost(m.text),
+      indicated: readMeta(m.metaJson)?.indicated,
+      reason: readMeta(m.metaJson)?.reason,
+    }))
     .filter((o) => o.cost > 0);
 
   const result = await generateStructured<PatientEval>({
@@ -501,18 +575,27 @@ export async function finishPatient(studentId: number, topicId: number, diagnosi
   });
 
   const clamp = (n: unknown) => Math.max(0, Math.min(100, Math.round(Number(n) || 0)));
+  const examPlan = buildExamPlan(orders, result?.examPlan);
+
+  // ⛔ ORTIQCHA TEKSHIRUV JAZOSI — AI xohishiga emas, QAT'IY qoidaga bog'liq:
+  // AI faqat "kerakligini qamradimi" (qamrov) ni baholaydi, jazoni server ayiradi.
+  // Umumiy ball ham shu ayirmaga mos ravishda tushadi — aks holda "tekshiruv 25,
+  // umumiy 80" degan ziddiyat chiqardi.
+  const examinationScore = Math.max(0, clamp(result?.examinationScore) - examPlan.penalty);
+  const overallDrop = Math.round(examPlan.penalty / 5); // umumiy ballga yumshoqroq ta'sir
+
   const clean: PatientEval = {
     diagnosis: (result?.diagnosis ?? "").toString(),
     correct: !!result?.correct,
     anamnesisScore: clamp(result?.anamnesisScore),
-    examinationScore: clamp(result?.examinationScore),
+    examinationScore,
     treatmentScore: clamp(result?.treatmentScore),
     safetyScore: clamp(result?.safetyScore),
     communicationScore: clamp(result?.communicationScore),
-    overallScore: clamp(result?.overallScore),
+    overallScore: Math.max(0, clamp(result?.overallScore) - overallDrop),
     strengths: (result?.strengths ?? "").toString(),
     improvements: (result?.improvements ?? "").toString(),
-    examPlan: buildExamPlan(orders, result?.examPlan),
+    examPlan,
   };
 
   const saved = await prisma.patientMessage.create({

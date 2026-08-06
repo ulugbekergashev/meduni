@@ -2507,3 +2507,41 @@ hammasi server tomonda tiklanadi); **real Gemini uchi-uchiga**: sirroz bemoriga
 55 ga tushdi; Chrome (Playwright) — katalog narx bilan, hisoblagich, natija bloki
 uz+ru, eski (rejasiz) baho ham buzilmay chiziladi, mobil 390 toshish 0, konsol toza.
 tsc + build ikkala tomonda toza.
+
+### Aniqlashtirish: JAZO — jonli va qat'iy (o'sha kun, buyurtmachi)
+
+Yuqoridagi birinchi urinishda jazo faqat YAKUNDA va AI xohishiga bog'liq edi.
+Buyurtmachi aniqlashtirdi: *"misol kimgadir qon tahlili kerakmas, o'shanday
+bemorga qon tahlili buyurganda ko'rsatkichlari tushsin bo'ldi"* — mexanika
+sodda va DARROV ko'rinadigan bo'lishi kerak.
+
+- **Hukm tekshiruv BUYURILGAN paytda chiqadi.** `testResultResponseSchema`
+  += `indicated` (bool) + `reason` — natija generatsiyasining O'SHA chaqiruvida
+  (qo'shimcha AI xarajati YO'Q). Prisma `PatientMessage.metaJson` (migratsiya
+  `20260806120000_patient_test_meta`, additive) — `{indicated, reason, cost}`.
+- **Jonli ball:** 100 dan boshlanadi, har ortiqcha tekshiruv **−15**
+  (`PENALTY_PER_UNNEEDED`). O'ng panelda katta raqam bo'lib turadi va bosilgan
+  zahoti tushadi; tekshiruv kartasi QIZIL bo'ladi ("Ortiqcha tekshiruv — 15 ball
+  tushdi" + sabab), katalogdagi tugma ham qizil (ilgari yashil "bajarildi"
+  bo'lib ekran o'zini inkor qilardi).
+- **Yakuniy baho — o'sha qarordan.** `examinationScore = AI qamrov bahosi −
+  jazo`; umumiy ball ham `jazo/5` ga tushadi. Prompt endi AI ga aniq aytadi:
+  *"ortiqcha uchun jazoni ballga QO'SHMA — server ayiradi"* (ikki marta
+  jazolanmasin). `buildExamPlan` da **saqlangan hukm USTUVOR**: AI yakunda
+  fikrini o'zgartirsa ham talaba jarayonda ko'rgan natija o'zgarmaydi
+  (izoh ham saqlangan `reason` dan — aks holda "Keraksiz" yorlig'i ostida
+  "foydali edi" izohi turardi).
+- ⚠️ **Shubhada talaba foydasiga:** model javob bermasa/noaniq bo'lsa
+  `indicated=true` (nohaq jazo yo'q). Eski sessiyalarda (hukm saqlanmagan)
+  jazo 0.
+- ⚠️ **`TestMeta` `interface` EMAS, `type`** — Prisma `Json` maydoni index
+  signature talab qiladi, TS uni interfeys uchun chiqarmaydi.
+
+**Tekshirildi:** smoke **40/40**; real Gemini: kardiologiya bemoriga siydik
+tahlili → "ortiqcha" (100→85), sirroz bemoriga bosh miya MRT + siydik →
+100→85→70, yakunda tekshiruv balli 20, jazo −30 — **jonli va yakuniy raqamlar
+bir xil**; Chrome: qizil karta+sabab, katalog tugmasi qizil, jazo kartasi,
+uz+ru, mobil 390 toshish 0, konsol toza.
+⚠️ **`.env` JONLI Supabase bazasiga qaraydi** — shu sabab `prisma migrate dev`
+ISHLATILMADI (u bazani reset qilmoqchi bo'ldi); ustun `prisma db execute` bilan
+qo'lda qo'shildi.
