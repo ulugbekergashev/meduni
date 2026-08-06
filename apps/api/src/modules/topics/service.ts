@@ -2,7 +2,7 @@ import { randomUUID } from "crypto";
 import type { SourceMaterial, Topic } from "../../lib/prisma";
 import { prisma } from "../../lib/prisma";
 import { ApiError, badRequest, notFound } from "../../lib/errors";
-import { deletePath, readText, readFileBuffer, saveBytes, saveMaterialFile, saveParsedText } from "../../lib/storage";
+import { deletePath, fileExists, readText, readFileBuffer, saveBytes, saveMaterialFile, saveParsedText } from "../../lib/storage";
 import { pcmToWav } from "../../lib/wav";
 import { extractText, fileTypeFromName, parseErrorMessages, pdfPageCount, type ParseErrorCode } from "./parse";
 import { generateSpeech, generateStructured } from "../../ai/gemini";
@@ -387,7 +387,8 @@ export async function generateDigestAudio(topicId: number, teacherId: number) {
 
 /** Joriy (tasdiqlangan) konspekt versiyasiga audio mavjudmi. */
 export async function hasDigestAudio(topicId: number, version: number): Promise<boolean> {
-  return !!(await readFileBuffer(digestAudioRel(topicId, version)).catch(() => null));
+  // ⚠️ `readFileBuffer` EMAS: u butun WAV'ni yuklardi (§ storage.ts izohi).
+  return fileExists(digestAudioRel(topicId, version));
 }
 
 function toMaterialOut(m: SourceMaterial) {

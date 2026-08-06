@@ -29,11 +29,19 @@ export interface Facts {
   quizScore: number | null;
   caseSubmitted: boolean;
   caseReviewed: boolean;
+  /** Test urinishlari tugadimi (ishlatilgan >= ruxsat etilgan). Bo'lmasa false.
+   *  ⚠️ Busiz dvigatel "testni 70% ga topshiring" deb yozaverardi — talaba esa
+   *  qayta topshira olmasdi: mavzu abadiy tugamas, keyingisi abadiy qulf edi. */
+  quizExhausted?: boolean;
 }
 
 export interface Reason {
+  /** Qaysi talab — UI shu bo'yicha to'g'ri joyga havola qiladi. */
+  key?: "video" | "quiz" | "case" | "date";
   uz: string;
   ru: string;
+  /** Talaba o'zi bajara olmaydi (o'qituvchi aralashuvi kerak). */
+  blocked?: boolean;
 }
 
 interface Condition {
@@ -60,6 +68,7 @@ export function evaluateRule(
       met,
       ratio: rule.videoWatchedPct > 0 ? Math.min(facts.videoWatchedPct / rule.videoWatchedPct, 1) : met ? 1 : 0,
       reason: {
+        key: "video",
         uz: `Videoni ${rule.videoWatchedPct}% koʻring`,
         ru: `Посмотрите видео на ${rule.videoWatchedPct}%`,
       },
@@ -67,13 +76,23 @@ export function evaluateRule(
   }
   if (facts.hasQuiz) {
     const met = facts.quizScore !== null && facts.quizScore >= rule.quizPassedPct;
+    // Urinishlar tugagan bo'lsa — bajarib bo'lmaydigan ko'rsatma bermaymiz.
+    const exhausted = !met && !!facts.quizExhausted;
     conditions.push({
       met,
       ratio: facts.quizScore === null ? 0 : Math.min(facts.quizScore / rule.quizPassedPct, 1),
-      reason: {
-        uz: `Testni ${rule.quizPassedPct}% ga topshiring`,
-        ru: `Сдайте тест на ${rule.quizPassedPct}%`,
-      },
+      reason: exhausted
+        ? {
+            key: "quiz",
+            blocked: true,
+            uz: `Test imkoniyati tugadi (${facts.quizScore ?? 0}% · kerak ${rule.quizPassedPct}%) — oʻqituvchiga murojaat qiling`,
+            ru: `Попытки теста исчерпаны (${facts.quizScore ?? 0}% · нужно ${rule.quizPassedPct}%) — обратитесь к преподавателю`,
+          }
+        : {
+            key: "quiz",
+            uz: `Testni ${rule.quizPassedPct}% ga topshiring`,
+            ru: `Сдайте тест на ${rule.quizPassedPct}%`,
+          },
     });
   }
   if (facts.hasCase && rule.caseRequired) {
@@ -82,8 +101,8 @@ export function evaluateRule(
       met,
       ratio: met ? 1 : facts.caseSubmitted ? 0.5 : 0,
       reason: !facts.caseSubmitted
-        ? { uz: "Keysni topshiring", ru: "Сдайте кейс" }
-        : { uz: "Keys tekshirilishini kuting", ru: "Дождитесь проверки кейса" },
+        ? { key: "case", uz: "Keysni topshiring", ru: "Сдайте кейс" }
+        : { key: "case", blocked: true, uz: "Keys tekshirilishini kuting", ru: "Дождитесь проверки кейса" },
     });
   }
 

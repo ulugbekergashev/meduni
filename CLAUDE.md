@@ -2545,3 +2545,74 @@ uz+ru, mobil 390 toshish 0, konsol toza.
 ⚠️ **`.env` JONLI Supabase bazasiga qaraydi** — shu sabab `prisma migrate dev`
 ISHLATILMADI (u bazani reset qilmoqchi bo'ldi); ustun `prisma db execute` bilan
 qo'lda qo'shildi.
+
+---
+
+## 21. TIZIM AUDITI: "keyingi darsga o'tmayapti" (2026-08-06, buyurtmachi)
+
+Buyurtmachi: *"tizimda ishlamayotgan qismlari — keyingi darsga o'tish,
+o'zlashtirish moduli va baholash — to'g'irla."* Uchala rol yurib chiqildi
+(HTTP + Chrome). Baholash zanjiri (o'qituvchi keysni baholaydi → talaba ko'radi
+→ mavzu tugaydi) **ishlayotgan ekan**; asl sabab boshqa yerda edi.
+
+### Ildiz sabab: EKRAN va DVIGATEL boshqa-boshqa hisoblardi
+`ResultPanel` dagi "mavzuni tugatish uchun qoldi" ro'yxati `buildStages` dan,
+ya'ni **UI taxminidan** qurilardi. Dvigatel (`computeTopics`) esa boshqa
+mezonlardan hisoblardi. Natijada (o'lchandi, demo talaba):
+- **topic 1:** testning O'Z o'tish balli 60%, talaba 67% olgan → ekran
+  "Testdan muvaffaqiyatli o'tdingiz 🎉" va yashil ✓; ochilish qoidasi esa 70%
+  talab qiladi → mavzu tugamaydi, sabab **hech qayerda yozilmagan**.
+- **topic 7:** test 20%, `maxAttempts=1` → qayta topshirib bo'lmaydi. Ekran
+  testni "bajarilgan" deb ko'rsatardi, "qoldi" ro'yxatida faqat *"Konspektni
+  oxirigacha o'qing"* turardi — talaba uni bajarsa ham mavzu tugamasdi va
+  keyingi mavzu (`diabet`) **abadiy qulf** qolardi. Qulf chipida esa faqat
+  mavzu nomi — sababsiz.
+
+**Yechim — yagona haqiqat manbai:** `TopicOut += unmet[]` (dvigatel hisoblagan
+qolgan talablar), dars payloadida `requirements` va `nextTopic.reason`.
+`Reason += key` ("video|quiz|case|date") — UI shu bo'yicha to'g'ri yuzaga
+havola qiladi — va `blocked` (talaba o'zi hal qila olmaydi). `ResultPanel`
+endi shu ro'yxatni chizadi; `buildStages` ning test bosqichi ham `requirements`
+dan qaror qiladi (yangi `StageState = "failed"` — rose qulf markeri, yashil ✓
+emas).
+
+**Boshi berk ko'cha yopildi:** `Facts += quizExhausted` (yakunlangan urinishlar
+soni ≥ `Quiz.maxAttempts` — `lesson.ts::canStart` bilan AYNAN bir mezon).
+Urinish qolmagan bo'lsa dvigatel bajarib bo'lmaydigan *"testni 70% ga
+topshiring"* o'rniga **"Test imkoniyati tugadi (20% · kerak 70%) — o'qituvchiga
+murojaat qiling"** deydi. Chiqish yo'li mavjud va tekshirildi: o'qituvchi
+Natijalar → talaba → **"Qo'lda ochish"** → mavzu COMPLETED → keyingisi ochiladi.
+(Biznes qoidasi *"test bir marta ishlanadi"* saqlandi — qayta topshirish
+qo'shilmadi.)
+
+### Yo'l-yo'lakay topilgan 3 nosozlik
+1. **Dars sahifasi 11.5 soniya ochilardi** (topic 1). Ikki sabab:
+   - **`relationLoadStrategy: "join"` — 22x SEKIN, tezlashtirmagan.** U
+     "bitta SQL" niyatida qo'yilgandi, lekin bir nechta 1-ko'p bog'lanish birga
+     so'ralganda SQL dekart ko'paytmasi qaytaradi (20 savol × 2 material …),
+     har qatorda digestJson/slidesJson/scriptJson takrorlanadi. O'lchandi:
+     `loadCourse` join **2236ms** vs query **99ms**; dars so'rovi 2601 vs 137.
+     Kichik mavzuda farq yo'q (122 vs 127) — shuning uchun sezilmagan.
+     **Ikkala joydan olib tashlandi.**
+   - **`fileExists` butun faylni yuklardi** (`readBlob` orqali). Dars sahifasi
+     har ochilishida konspekt-audiosi (WAV, MB'lar) faqat "bormi?" degan
+     savolga javob berish uchun to'liq tortilardi: `hasDigestAudio` **6.6s**.
+     Endi `count`/`stat` — baytsiz. ⚠️ Bu prod'da ham har dars ochilishida
+     sodir bo'lardi (fayllar bazada).
+   **Natija: 11.5s → 0.82s.**
+2. **Eskirgan test urinishi ma'nosiz tahlil chizardi.** O'qituvchi testni qayta
+   generatsiya qilsa savollar yangi id oladi, eski urinish javoblari esa eski
+   savollarga qoladi → ekranda **"0/20 · 67%"** va *"20 ta xato javob"* (hammasi).
+   `serializeAttempt += stale` (javoblarning birortasi hozirgi savolga mos
+   kelmasa) → UI saqlangan ballni ko'rsatadi, soxta tahlilni EMAS.
+3. **Takrorlash tabida takroriy React kaliti.** Kross-mavzu sessiyada karta
+   kaliti (`t:0`) har mavzuda takrorlanardi → "two children with the same key".
+   `${topicId}:${key}` ga o'tkazildi (kartaning o'zi allaqachon shunday edi).
+
+**Tekshirildi:** 19/19 brauzer (uchala rol, uz+ru, mobil 390 toshishsiz, konsol
+toza) + HTTP e2e (talablar, qulf sabablari, o'qituvchi qutqaruvi, keys baholash
+zanjiri) + regressiya smoke'lar (examPlan 40/40, storage 12/12); tsc + build
+ikkala tomonda toza.
+⚠️ `.env` JONLI bazaga qaraydi — auditdagi barcha o'lchovlar o'sha bazada.
+Demo talabasining topic 7 dagi "urinishlar tugagan" holati ATAYLAB qoldirildi
+(yangi xabar o'sha yerda ko'rinadi).

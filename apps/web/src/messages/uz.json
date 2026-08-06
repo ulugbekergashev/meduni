@@ -1905,7 +1905,9 @@
     "todo_study": "Konspektni oxirigacha o'qing",
     "todo_case": "Klinik keysni topshiring",
     "todo_quiz": "Test sinovini topshiring",
-    "todo_patient": "Virtual bemor bilan mashq qiling"
+    "todo_patient": "Virtual bemor bilan mashq qiling",
+    "nextLockedFallback": "Avval shu mavzuni tugating.",
+    "quizExhaustedShort": "Urinishlar tugadi — oʻqituvchiga murojaat qiling"
   },
   "search": {
     "placeholder": "Qidirish… (talaba, guruh, kurs)",

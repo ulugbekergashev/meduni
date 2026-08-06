@@ -71,7 +71,11 @@ function SessionPlayer({ cards, onDone }: { cards: ReviewSessionCard[]; onDone: 
         <div className="flex gap-1">
           {cards.map((c, n) => (
             <span
-              key={c.key}
+              // ⚠️ `c.key` faqat MAVZU ichida noyob ("t:0" har mavzuda bor) —
+              // kross-mavzu sessiyada takrorlanardi (React "two children with
+              // the same key"). Kartaning o'zi (pastda) allaqachon to'g'ri
+              // qilgan: topicId bilan birga.
+              key={`${c.topicId}:${c.key}`}
               className={cls(
                 "h-1.5 flex-1 rounded-pill transition-colors",
                 n < i ? "bg-emerald" : n === i ? "bg-brand" : "bg-line-raised"
@@ -194,7 +198,7 @@ export function ReviewTab() {
               </button>
             </div>
           ) : cards.length > 0 ? (
-            <SessionPlayer key={cards.map((c) => c.key).join("|")} cards={cards} onDone={finish} />
+            <SessionPlayer key={cards.map((c) => `${c.topicId}:${c.key}`).join("|")} cards={cards} onDone={finish} />
           ) : (
             <div className="py-6">
               <EmptyState

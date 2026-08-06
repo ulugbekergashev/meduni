@@ -8,6 +8,14 @@ export interface Reason {
   ru: string;
 }
 
+/** Mavzu tugashi uchun bajarilmagan talab (dvigateldan). `key` — UI qaysi
+ *  yuzaga havola qilishini biladi; `blocked` — talaba o'zi hal qila olmaydi
+ *  (test urinishlari tugagan / keys tekshiruvda) → tugma emas, izoh. */
+export interface Requirement extends Reason {
+  key?: "video" | "quiz" | "case" | "date";
+  blocked?: boolean;
+}
+
 export interface TopicElements {
   video: { exists: boolean; watchedPct: number };
   slides: { exists: boolean; viewed: boolean };
@@ -329,10 +337,14 @@ export interface Lesson {
   title: string;
   courseId: number;
   subjectName: string;
-  /** Keyingi mavzu — tugagach to'g'ridan o'tish uchun (oxirgisi bo'lsa null). */
-  nextTopic: { id: number; title: string; state: TopicState } | null;
+  /** Keyingi mavzu — tugagach to'g'ridan o'tish uchun (oxirgisi bo'lsa null).
+   *  LOCKED bo'lsa `reason` nega ochilmaganini aytadi. */
+  nextTopic: { id: number; title: string; state: TopicState; reason: Requirement | null } | null;
   state: TopicState;
   completed: boolean;
+  /** Mavzuni tugatish uchun QOLGAN talablar — backend dvigatelidan (yagona
+   *  haqiqat). UI o'zi taxmin qilmaydi. */
+  requirements: Requirement[];
   thresholds: { video: number; quizPass: number };
   elements: TopicElements;
   /** Chap panel — o'qituvchi manba materiallari. */
@@ -385,6 +397,8 @@ export interface QuizAttemptView {
   scorePct: number | null;
   passed: boolean | null;
   correctCount: number | null;
+  /** Test urinishdan keyin qayta yaratilgan — javoblar tahlili yaroqsiz. */
+  stale?: boolean;
   questions: QuizQ[];
 }
 

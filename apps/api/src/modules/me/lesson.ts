@@ -44,8 +44,8 @@ export async function getTopicLesson(studentId: number, topicId: number) {
       links: { orderBy: [{ orderIndex: "asc" }, { id: "asc" }] },
       digest: true,
     },
-    // Bitta SQL (yuqoridagi izohga qarang) — aks holda 7 ta alohida so'rov.
-    relationLoadStrategy: "join",
+    // ⚠️ `relationLoadStrategy: "join"` OLIB TASHLANDI — o'lchov service.ts
+    // dagi izohda: ko'p savolli mavzuda u 19x SEKIN edi (dekart ko'paytmasi).
   });
   const progressPromise = prisma.progress.findUnique({ where: { studentId_topicId: { studentId, topicId } } });
   const readsPromise = prisma.sectionRead.findMany({ where: { studentId, topicId }, select: { sectionIndex: true } });
@@ -279,10 +279,21 @@ export async function getTopicLesson(studentId: number, topicId: number) {
     courseId: enrolledCourseId,
     subjectName: enrolledCourse.name,
     // Tugagach to'g'ridan keyingisiga o'tish uchun (LOCKED bo'lsa tugma chiqmaydi).
-    nextTopic: nextTopic ? { id: nextTopic.id, title: nextTopic.title, state: nextTopic.state } : null,
+    // Tugagach to'g'ridan keyingisiga o'tish uchun. LOCKED bo'lsa SABABI ham
+    // keladi — ilgari ekranda faqat kulrang qulf chipi turardi va talaba nega
+    // ochilmayotganini bilmasdi.
+    nextTopic: nextTopic
+      ? { id: nextTopic.id, title: nextTopic.title, state: nextTopic.state, reason: nextTopic.reason }
+      : null,
     state: state.state,
     completed: state.state === "COMPLETED",
-    thresholds: { video: videoThreshold, quizPass: quizItem?.quiz?.passThreshold ?? 70 },
+    /** Mavzuni tugatish uchun QOLGAN talablar — dvigateldan (yagona haqiqat). */
+    requirements: state.unmet,
+    thresholds: {
+      video: videoThreshold,
+      /** Testning O'Z o'tish balli (natijadagi "o'tdingiz" chipi shundan). */
+      quizPass: quizItem?.quiz?.passThreshold ?? 70,
+    },
     elements: rule.elements,
     // Chap panel — o'qituvchi materiallari ("PDF · 24 bet · 2.1 MB").
     materials: topic.materials.map((m) => ({
@@ -457,6 +468,14 @@ function serializeAttempt(attempt: AttemptRow, quiz: QuizRow) {
   const total = quiz.questions.length;
   const correctCount = quiz.questions.filter((q) => answers[String(q.id)] === q.correctIndex).length;
 
+  // ⚠️ ESKIRGAN URINISH: o'qituvchi testni QAYTA generatsiya qilsa savollar
+  // butunlay yangi id oladi, eski urinishning javoblari esa o'sha eski
+  // savollarga tegishli bo'lib qoladi. Natijada ekranda "0/20 · 67%" degan
+  // ma'nosiz qator va "20 ta xato javob" ro'yxati chiqardi (o'lchandi:
+  // attempt 1 — javoblar 1,2,3; hozirgi savollar 49..68). Bunday holatda
+  // saqlangan ball haqiqat, tahlil esa YO'Q — UI uni ko'rsatmaydi.
+  const stale = finished && Object.keys(answers).length > 0 && !quiz.questions.some((q) => String(q.id) in answers);
+
   return {
     id: attempt.id,
     quizId: attempt.quizId,
@@ -471,7 +490,9 @@ function serializeAttempt(attempt: AttemptRow, quiz: QuizRow) {
     expiresAt: attempt.expiresAt ? attempt.expiresAt.toISOString() : null,
     scorePct: finished ? attempt.scorePct : null,
     passed: finished ? attempt.passed : null,
-    correctCount: finished ? correctCount : null,
+    correctCount: finished && !stale ? correctCount : null,
+    /** Test urinishdan keyin qayta yaratilgan — javoblar tahlili mavjud emas. */
+    stale,
     questions: quiz.questions.map((q) => ({
       id: q.id,
       text: q.text,

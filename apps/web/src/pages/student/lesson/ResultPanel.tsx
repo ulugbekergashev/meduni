@@ -16,15 +16,21 @@ import {
   X,
 } from "lucide-react";
 import { Icon, ProgressRing, cls } from "@meduni/ui";
-import { useAttempt, useFlashcards, type Lesson } from "../api";
-import { buildStages, finalScore, stageToView, type LessonView, type StageKey } from "./stages";
+import { useLocale } from "../../../lib/useLocale";
+import { useAttempt, useFlashcards, type Lesson, type Requirement } from "../api";
+import { finalScore, type LessonView } from "./stages";
 
-/** "Nima qoldi" qatori ikonkasi — bosqich turiga qarab. */
-const TODO_ICON: Partial<Record<StageKey, typeof ClipboardList>> = {
-  study: BookText,
-  case: Stethoscope,
+/** "Nima qoldi" qatori — dvigatel talabi turiga qarab ikonka va yuza. */
+const REQ_ICON: Record<string, typeof ClipboardList> = {
+  video: BookText,
   quiz: ClipboardList,
-  patient: Stethoscope,
+  case: Stethoscope,
+  date: Lock,
+};
+const REQ_VIEW: Record<string, LessonView> = {
+  video: "video",
+  quiz: "quiz",
+  case: "case",
 };
 
 function Row({
@@ -107,6 +113,9 @@ function useResultIntro(target: number, enabled: boolean) {
 export function ResultPanel({ lesson, onView }: { lesson: Lesson; onView?: (v: LessonView) => void }) {
   const { t } = useTranslation(undefined, { keyPrefix: "lesson" });
   const navigate = useNavigate();
+  const locale = useLocale();
+  /** Dvigatel sabablari uz/ru juftligida keladi (i18n kaliti emas — matn). */
+  const pick = (r: Requirement | null | undefined) => (r ? (locale === "ru" ? r.ru : r.uz) : "");
   const fs = finalScore(lesson);
   const hasScore = fs.value !== null;
 
@@ -120,14 +129,23 @@ export function ResultPanel({ lesson, onView }: { lesson: Lesson; onView?: (v: L
   const passed = quiz?.attempt?.passed ?? null;
 
   // Xato javoblar — qayta o'qish uchun (savol manbasi bilan).
-  const wrong = (attemptQ.data?.questions ?? []).filter(
-    (q) => q.correctIndex !== undefined && q.studentAnswer !== q.correctIndex
-  );
+  // ⚠️ `stale` — test urinishdan keyin qayta yaratilgan: javoblar endi boshqa
+  // savollarga tegishli, ya'ni "xato javoblar" ro'yxati YOLG'ON bo'lardi
+  // (barcha savol xato ko'rinardi). Bunday holatda tahlil ko'rsatilmaydi.
+  const staleAttempt = attemptQ.data?.stale === true;
+  const wrong = staleAttempt
+    ? []
+    : (attemptQ.data?.questions ?? []).filter(
+        (q) => q.correctIndex !== undefined && q.studentAnswer !== q.correctIndex
+      );
 
-  // Bajarilmagan bosqichlar (natija va ixtiyoriy "virtual bemor"dan tashqari).
-  const todo = buildStages(lesson).filter(
-    (st) => st.key !== "result" && st.key !== "patient" && st.state === "open"
-  );
+  // ⚠️ QOLGAN TALABLAR — BACKEND DVIGATELIDAN (2026-08-06). Ilgari bu ro'yxat
+  // `buildStages` dan, ya'ni UI taxminidan qurilardi va dvigatel bilan
+  // ZIDDIYATGA tushardi: testni "o'tgan" (67 ≥ 60 — testning o'z balli) talaba
+  // ekranda "test bajarildi" ni ko'rardi, mavzu esa ochilish qoidasi (70%)
+  // sababli yopiq qolardi — va sabab hech qayerda yozilmasdi. Endi ro'yxat
+  // mavzuni haqiqatan yopib turgan shartlardan iborat.
+  const todo = lesson.requirements ?? [];
 
   const next = lesson.nextTopic;
   const nextOpen = !!next && next.state !== "LOCKED";
@@ -187,7 +205,11 @@ export function ResultPanel({ lesson, onView }: { lesson: Lesson; onView?: (v: L
             icon={ClipboardList}
             tone="bg-blue-soft text-blue"
             label={t("stage_quiz")}
-            value={`${attemptQ.data?.correctCount ?? "—"}/${attemptQ.data?.total ?? quiz.questionCount} · ${quiz.attempt.scorePct}%`}
+            value={
+              attemptQ.data?.correctCount != null
+                ? `${attemptQ.data.correctCount}/${attemptQ.data.total} · ${quiz.attempt.scorePct}%`
+                : `${quiz.attempt.scorePct}%`
+            }
             onClick={onView ? () => onView("quiz") : undefined}
           />
         )}
@@ -226,22 +248,36 @@ export function ResultPanel({ lesson, onView }: { lesson: Lesson; onView?: (v: L
             {t("todoTitle")}
           </p>
           <div className="space-y-1.5">
-            {todo.map((st) => (
-              <button
-                key={st.key}
-                onClick={onView ? () => onView(stageToView(st.key, lesson)) : undefined}
-                className="flex w-full items-center gap-2.5 rounded-control bg-surface px-3 py-2 text-left transition-colors hover:bg-surface-raised focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
-              >
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-control bg-amber-soft text-amber">
-                  <Icon icon={TODO_ICON[st.key] ?? ClipboardList} size={13} />
-                </span>
-                <span className="min-w-0 flex-1 truncate text-note font-bold text-ink">
-                  {t(`todo_${st.key}`)}
-                </span>
-                {st.hint && <span className="shrink-0 text-micro font-bold tabular-nums text-ink-dim">{st.hint}</span>}
-                <Icon icon={ArrowRight} size={13} className="shrink-0 text-ink-dim" />
-              </button>
-            ))}
+            {todo.map((req, i) => {
+              // `blocked` — talaba o'zi hal qila olmaydi (urinishlar tugagan,
+              // keys tekshiruvda): tugma emas, izoh qatori bo'lib turadi.
+              const view = req.key ? REQ_VIEW[req.key] : undefined;
+              const clickable = !req.blocked && !!view && !!onView;
+              const Wrap = clickable ? "button" : "div";
+              return (
+                <Wrap
+                  key={`${req.key ?? "r"}-${i}`}
+                  onClick={clickable ? () => onView!(view!) : undefined}
+                  className={cls(
+                    "flex w-full items-center gap-2.5 rounded-control px-3 py-2 text-left",
+                    clickable
+                      ? "bg-surface transition-colors hover:bg-surface-raised focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                      : "bg-surface"
+                  )}
+                >
+                  <span
+                    className={cls(
+                      "flex h-6 w-6 shrink-0 items-center justify-center rounded-control",
+                      req.blocked ? "bg-rose-soft text-rose" : "bg-amber-soft text-amber"
+                    )}
+                  >
+                    <Icon icon={req.blocked ? Lock : REQ_ICON[req.key ?? "date"] ?? ClipboardList} size={13} />
+                  </span>
+                  <span className="min-w-0 flex-1 text-note font-bold leading-snug text-ink">{pick(req)}</span>
+                  {clickable && <Icon icon={ArrowRight} size={13} className="shrink-0 text-ink-dim" />}
+                </Wrap>
+              );
+            })}
           </div>
         </div>
       )}
@@ -307,25 +343,33 @@ export function ResultPanel({ lesson, onView }: { lesson: Lesson; onView?: (v: L
         >
           {t("backToPath")}
         </button>
-        {next && (
-          <div className="ml-auto">
-            {nextOpen ? (
-              <button
-                onClick={() => navigate(`/app/topics/${next.id}`)}
-                className="inline-flex items-center gap-2 rounded-control bg-brand px-4 py-2 text-note font-extrabold text-white transition-colors hover:bg-brand-deep"
-              >
-                {t("nextTopicBtn")}
-                <Icon icon={ArrowRight} size={14} />
-              </button>
-            ) : (
-              <span className="inline-flex items-center gap-1.5 rounded-control bg-surface-raised px-3 py-2 text-note font-bold text-ink-dim">
-                <Icon icon={Lock} size={13} />
-                {next.title}
-              </span>
-            )}
-          </div>
+        {next && nextOpen && (
+          <button
+            onClick={() => navigate(`/app/topics/${next.id}`)}
+            className="ml-auto inline-flex items-center gap-2 rounded-control bg-brand px-4 py-2 text-note font-extrabold text-white transition-colors hover:bg-brand-deep"
+          >
+            {t("nextTopicBtn")}
+            <Icon icon={ArrowRight} size={14} />
+          </button>
         )}
       </div>
+
+      {/* Keyingi mavzu QULF bo'lsa — nega ochilmagani shu yerda yoziladi.
+          Ilgari faqat kulrang chip va mavzu nomi turardi: talaba "keyingi dars
+          ochilmayapti" deb qolardi va sababini hech qayerdan bilolmasdi. */}
+      {next && !nextOpen && (
+        <div className="flex items-start gap-2.5 rounded-card border border-line bg-surface-raised px-3 py-2.5">
+          <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-control bg-surface text-ink-dim">
+            <Icon icon={Lock} size={13} />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-note font-bold text-ink">{next.title}</p>
+            <p className="text-micro leading-relaxed text-ink-dim">
+              {pick(next.reason) || t("nextLockedFallback")}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Mavzu tugagani */}
       {lesson.completed && (

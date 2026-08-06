@@ -1,4 +1,4 @@
-import { mkdir, readFile, rm, writeFile } from "fs/promises";
+import { mkdir, readFile, rm, stat, writeFile } from "fs/promises";
 import path from "path";
 import { prisma } from "./prisma";
 
@@ -124,13 +124,28 @@ export async function deletePath(relPath: string): Promise<void> {
 }
 
 /** Fayl haqiqatan mavjudmi (UI "bor" deb ko'rsatib, keyin 500 bermasin). */
+/**
+ * "Fayl bormi?" — BAYTLARNI O'QIMASDAN.
+ *
+ * ⚠️ Ilgari bu `readBlob` ni chaqirardi, ya'ni butun faylni yuklab olib keyin
+ * true qaytarardi. Dars sahifasi har ochilishida konspekt-audiosi (WAV,
+ * bir necha MB) shu tariqa to'liq tortib olinardi — o'lchandi: `hasDigestAudio`
+ * **6.6 soniya** (butun sahifa ~8s). Endi faqat mavjudlik so'raladi.
+ */
 export async function fileExists(relPath: string): Promise<boolean> {
-  try {
-    await readBlob(relPath);
-    return true;
-  } catch {
-    return false;
-  }
+  const rel = normalizeRel(relPath);
+  const inDb = async () => (await prisma.fileBlob.count({ where: { path: rel } })) > 0;
+  const onDisk = async () => {
+    try {
+      await stat(abs(rel));
+      return true;
+    } catch {
+      return false;
+    }
+  };
+  // Tartib readBlob bilan bir xil: avval joriy drayver, keyin ikkinchisi
+  // (drayver almashgach eski fayllar ham topilsin).
+  return DRIVER === "db" ? (await inDb()) || (await onDisk()) : (await onDisk()) || (await inDb());
 }
 
 export const storageDriver = DRIVER;

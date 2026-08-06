@@ -6,7 +6,10 @@ import type { Lesson } from "../api";
  *  shartlaridan mustaqil — faqat UI tartibi). */
 
 export type StageKey = "study" | "patient" | "case" | "quiz" | "result";
-export type StageState = "done" | "open" | "pendingReview" | "soon";
+/** "failed" — test topshirilgan, lekin talab bajarilmagan VA urinish qolmagan
+ *  (talaba o'zi hal qila olmaydi). Ilgari bunday holat ham "done" edi —
+ *  20% olgan talaba yashil ✓ ni ko'rardi va mavzu nega yopiqligini bilmasdi. */
+export type StageState = "done" | "open" | "pendingReview" | "soon" | "failed";
 /** O'rganish bloklari (chap rail). "flashcards" — takrorlash (2026-07-23:
  *  fokus rejimidan o'rganishga ko'chirildi — u baholash emas, o'quv quroli).
  *  ⚠️ 2026-07-28: "materials" bloki OLIB TASHLANDI — asl material (PDF) endi
@@ -76,8 +79,14 @@ export function buildStages(lesson: Lesson): StageInfo[] {
 
   if (qz) {
     const finished = qz.attempt?.status === "finished";
+    // ⚠️ Holat DVIGATELDAN: testning o'z o'tish balli (masalan 60%) va mavzu
+    // ochilish qoidasi (70%) har xil bo'lishi mumkin. Ilgari stepper testning
+    // o'z ballidan qaror qilardi va "bajarildi" deb turardi, mavzu esa yopiq
+    // qolardi. Endi qoldiq talab bo'lsa — bajarilmagan.
+    const quizReq = (lesson.requirements ?? []).find((r) => r.key === "quiz");
     let state: StageState;
-    if (completed || (finished && (!qz.canStart || qz.attempt?.passed))) state = "done";
+    if (completed || (finished && !quizReq)) state = "done";
+    else if (finished && quizReq?.blocked) state = "failed";
     else state = "open";
     const hint = finished && qz.attempt?.scorePct != null ? `${qz.attempt.scorePct}%` : undefined;
     stages.push({ key: "quiz", state, hint });

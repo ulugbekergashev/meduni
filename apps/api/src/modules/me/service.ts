@@ -62,6 +62,10 @@ export interface TopicOut {
   state: "LOCKED" | "AVAILABLE" | "IN_PROGRESS" | "COMPLETED";
   pct: number;
   reason: Reason | null;
+  /** Mavzu tugashi uchun QOLGAN talablar — dvigatel hisoblaydi (UI taxmin
+   *  qilmasin: ilgari ekran "test bajarildi" deb turardi, dvigatel esa
+   *  "test 70% emas" deb mavzuni yopib turardi va sabab hech qayerda yo'q edi). */
+  unmet: Reason[];
   elements: ReturnType<typeof buildElements>;
 }
 
@@ -135,6 +139,7 @@ export function computeTopics(course: CourseWithTopics, factsByTopic: Map<number
       state,
       pct,
       reason,
+      unmet,
       elements: buildElements(facts),
     });
 
@@ -208,11 +213,15 @@ export async function studentFactsMap(studentId: number, course: CourseWithTopic
 
   const progressByTopic = new Map(progressRows.map((r) => [r.topicId, r]));
 
-  // Best finished quiz score per topic.
+  // Best finished quiz score per topic + yakunlangan urinishlar SONI.
+  // Son kerak: urinishlar tugagan bo'lsa dvigatel "testni N% ga topshiring"
+  // deb bajarib bo'lmaydigan ko'rsatma bermasligi uchun (boshi berk ko'cha).
   const bestScore = new Map<number, number>();
+  const finishedCount = new Map<number, number>();
   for (const a of attempts) {
     const tid = quizToTopic.get(a.quizId)!;
     bestScore.set(tid, Math.max(bestScore.get(tid) ?? 0, a.scorePct));
+    finishedCount.set(tid, (finishedCount.get(tid) ?? 0) + 1);
   }
 
   // Case submission / review per topic.
@@ -226,6 +235,10 @@ export async function studentFactsMap(studentId: number, course: CourseWithTopic
     const kinds = new Set(topic.contentItems.map((c) => c.kind));
     const prog = progressByTopic.get(topic.id);
     const cs = caseState.get(topic.id);
+    // Urinish chegarasi testning O'ZIDA (Quiz.maxAttempts) — lesson.ts dagi
+    // `canStart` bilan bir xil mezon (aks holda ekran va dvigatel ziddiyatda).
+    const quizMax = topic.contentItems.find((c) => c.quiz)?.quiz?.maxAttempts ?? null;
+    const used = finishedCount.get(topic.id) ?? 0;
     map.set(topic.id, {
       hasVideo: kinds.has("VIDEO"),
       hasSlides: kinds.has("PRESENTATION"),
@@ -237,6 +250,7 @@ export async function studentFactsMap(studentId: number, course: CourseWithTopic
       quizScore: bestScore.has(topic.id) ? bestScore.get(topic.id)! : null,
       caseSubmitted: cs?.submitted ?? false,
       caseReviewed: cs?.reviewed ?? false,
+      quizExhausted: quizMax !== null && used >= quizMax,
     });
   }
 
@@ -287,14 +301,19 @@ export async function enrolledCourseIds(studentId: number): Promise<number[]> {
 }
 
 export async function loadCourse(courseId: number): Promise<CourseWithTopics> {
-  // ⚠️ TEZLIK: `relationLoadStrategy: "join"` — bog'langan ma'lumot BITTA SQL
-  // bilan olinadi. Sukut ("query") rejimida Prisma har bog'lanishga alohida
-  // so'rov yuboradi: kurs+mavzular+kontent+test+savollar+keys+slayd+video =
-  // ~10 ta so'rov, uzoq bazada esa bu 1.5 soniya sof kutish.
+  // ⚠️ `relationLoadStrategy: "join"` ATAYLAB ISHLATILMAYDI (2026-08-06 da
+  // OLIB TASHLANDI). U "bitta SQL — tezroq" degan niyat bilan qo'yilgandi,
+  // lekin bir nechta 1-ko'p bog'lanish birga so'ralganda SQL DEKART
+  // KO'PAYTMASI qaytaradi: 20 savol x 2 material x ... — har qatorda esa
+  // butun digestJson/slidesJson/scriptJson takrorlanadi. O'lchandi (jonli baza):
+  //   loadCourse(1):  join 2236ms  vs  query  99ms   (22x sekin)
+  //   topic 1 dars:   join 2601ms  vs  query 137ms   (19x sekin)
+  // Kichik mavzularda farq yo'q (122ms vs 127ms) — shuning uchun muammo
+  // sezilmay qolgan edi. Sukut ("query") rejimi bir necha kichik so'rov yuboradi;
+  // ular baribir PARALLEL ketadi va ancha arzon.
   const course = await prisma.course.findUnique({
     where: { id: courseId },
     include: courseInclude,
-    relationLoadStrategy: "join",
   });
   if (!course) throw notFound("Kurs");
   // Only topics with at least one PUBLISHED content item are visible to students;

@@ -13,6 +13,12 @@ function Marker({ n, state }: { n: number; state: StageInfo["state"] }) {
         <Icon icon={Check} size={15} strokeWidth={3} />
       </div>
     );
+  if (state === "failed")
+    return (
+      <div className={cls(base, "bg-rose-soft text-rose")}>
+        <Icon icon={Lock} size={13} />
+      </div>
+    );
   if (state === "pendingReview")
     return (
       <div className={cls(base, "bg-amber-soft text-amber")}>
@@ -60,6 +66,9 @@ export function LessonOverview({
       case "quiz": {
         const q = lesson.tabs.quiz;
         if (!q) return null;
+        // Urinishlar tugagan bo'lsa "20 savol · o'tish 70%" degan ma'lumot
+        // endi foydasiz — talaba qayta topshira olmaydi. Haqiqiy holat aytiladi.
+        if (st.state === "failed") return t("quizExhaustedShort");
         // Ball o'ng chetdagi katta raqamda — bu yerda takrorlanmaydi.
         return `${t("questionsN", { n: q.questionCount })} · ${t("passIsN", { n: q.passThreshold })}`;
       }

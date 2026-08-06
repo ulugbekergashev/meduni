@@ -25,6 +25,10 @@ function Marker({ n, state, active }: { n: number; state: StageInfo["state"]; ac
       <span className={cls(base, "bg-emerald text-white")}>
         <Icon icon={Check} size={11} strokeWidth={3.5} />
       </span>
+    ) : state === "failed" ? (
+      <span className={cls(base, "bg-rose-soft text-rose")}>
+        <Icon icon={Lock} size={10} />
+      </span>
     ) : state === "pendingReview" ? (
       <span className={cls(base, "bg-amber-soft text-amber")}>
         <Icon icon={Clock} size={10} />
