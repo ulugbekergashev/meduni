@@ -34,7 +34,8 @@
     "lessons": "Darslarim",
     "more": "Yana",
     "theme": "Tungi rejim",
-    "language": "Til"
+    "language": "Til",
+    "control": "Nazorat"
   },
   "theme": {
     "label": "Mavzu (rang)",
@@ -1674,7 +1675,20 @@
       "AVAILABLE": "Ochiq",
       "LOCKED": "Yopiq"
     },
-    "assignTask": "Vazifa berish"
+    "assignTask": "Vazifa berish",
+    "unlockTitle": "Javobgarlik ostida ruxsat",
+    "unlockHint": "Sabab majburiy — u rahbariyat hisobotiga tushadi va halol oʻzlashtirishdan ajratiladi.",
+    "unlockNote": "Izoh (ixtiyoriy)",
+    "unlockConfirm": "Ruxsat berish",
+    "unlockFailed": "Ruxsat berib boʻlmadi",
+    "cancel": "Bekor qilish",
+    "unlockReason": {
+      "illness": "Kasallik",
+      "offline_exam": "Ogʻzaki topshirdi",
+      "technical": "Texnik nosozlik",
+      "transfer": "Koʻchirildi",
+      "other": "Boshqa"
+    }
   },
   "lesson": {
     "topicDetails": "Mavzu ma'lumotlari",
@@ -1907,7 +1921,13 @@
     "todo_quiz": "Test sinovini topshiring",
     "todo_patient": "Virtual bemor bilan mashq qiling",
     "nextLockedFallback": "Avval shu mavzuni tugating.",
-    "quizExhaustedShort": "Urinishlar tugadi — oʻqituvchiga murojaat qiling"
+    "quizExhaustedShort": "Urinishlar tugadi — oʻqituvchiga murojaat qiling",
+    "attemptsLeftN": "{{n}} / {{total}} urinish qoldi",
+    "cooldownUntil": "Keyingi urinish {{when}} dan keyin ochiladi. Shu vaqtda xatolaringiz ustida ishlang.",
+    "attemptsOver": "Urinishlar tugadi — oʻqituvchiga murojaat qiling",
+    "retakeReady": "Qayta topshirishingiz mumkin — {{n}} / {{total}} urinish qoldi.",
+    "retakeBtn": "Qayta topshirish",
+    "remediationHint": "Shu vaqt ichida xatolaringiz ustida ishlang — bu qayta topshirish sharti."
   },
   "search": {
     "placeholder": "Qidirish… (talaba, guruh, kurs)",
@@ -2247,7 +2267,8 @@
     "profile": "Profil",
     "ai": "AI",
     "audit": "Audit",
-    "settings": "Sozlamalar"
+    "settings": "Sozlamalar",
+    "control": "Nazorat"
   },
   "podcast": {
     "title": "Audio-podkast",
@@ -2262,5 +2283,96 @@
     "keepWorking": "sahifani yopsangiz ham davom etadi",
     "failed": "Podkast yaratilmadi",
     "stale": "Konspekt o'zgargan — podkastni qayta yarating."
+  },
+  "control": {
+    "title": "Nazorat",
+    "subtitle": "Bu yerda oʻrtacha ballar emas, CHETLASHISHLAR koʻrsatiladi: qayerda talablar pasaytirilgan, qayerda talaba oʻqituvchi qarori bilan oʻtkazilgan, qaysi mavzu umuman baholashsiz chop etilgan.",
+    "s": {
+      "manual": "Qoʻlda ochilgan (30 kun)",
+      "manualHint": "Jami: {{n}}",
+      "bare": "Baholashsiz mavzular",
+      "bareHint": "{{n}} ta chop etilgandan",
+      "below": "Talabi past kurslar",
+      "belowHint": "{{n}} ta kursdan",
+      "seqOff": "Ketma-ketlik oʻchirilgan",
+      "seqOffHint": "Kafedra talabiga zid"
+    },
+    "byTeacher": "Oʻqituvchilar kesimida",
+    "th": {
+      "teacher": "Oʻqituvchi",
+      "dept": "Kafedra",
+      "manual": "Qoʻlda",
+      "bare": "Baholashsiz",
+      "below": "Past talab",
+      "level": "Daraja",
+      "pass": "Oʻtish balli",
+      "attempts": "Urinishlar",
+      "strict": "Talablar",
+      "updated": "Oʻzgartirdi"
+    },
+    "bareTitle": "Baholashsiz mavzular ({{n}})",
+    "recentTitle": "Soʻnggi qoʻlda ochishlar",
+    "noUnlocks": "Qoʻlda ochish boʻlmagan.",
+    "reason": {
+      "illness": "Kasallik",
+      "offline_exam": "Ogʻzaki topshirdi",
+      "technical": "Texnik nosozlik",
+      "transfer": "Koʻchirildi",
+      "other": "Boshqa",
+      "none": "Sabab koʻrsatilmagan"
+    },
+    "policyTitle": "Siyosat koridori",
+    "policyHint": "Quyi daraja faqat QATTIQLASHTIRISHI mumkin. Oʻqituvchi koridor ichida ishlaydi.",
+    "level": {
+      "UNIVERSITY": "Universitet",
+      "FACULTY": "Fakultet",
+      "DEPARTMENT": "Kafedra"
+    },
+    "c": {
+      "assessment": "Baholash majburiy",
+      "sequential": "Ketma-ketlik",
+      "remediation": "Xatolar ustida ishlash",
+      "noManual": "Qoʻlda ochish taqiq"
+    },
+    "hoursShort": "s",
+    "editBtn": "Oʻzgartirish",
+    "editTitle": "Koridorni oʻzgartirish",
+    "editHint": "Bu qiymatlar quyi darajalar uchun MINIMUM. Kurs sozlamalari bundan pastga tusha olmaydi.",
+    "addLevel": "Daraja",
+    "addScope": "Boʻlim",
+    "addBtn": "Qoʻshish",
+    "noPolicies": "Siyosat hali belgilanmagan",
+    "saved": "Saqlandi",
+    "save": "Saqlash",
+    "saving": "Saqlanmoqda…",
+    "cancel": "Bekor qilish",
+    "f": {
+      "pass": "Oʻtish balli, %",
+      "video": "Video koʻrish, %",
+      "minAttempts": "Urinish (kamida)",
+      "maxAttempts": "Urinish (koʻpi bilan)",
+      "gap": "Tanaffus, soat",
+      "minutes": "Daqiqa/savol",
+      "assessment": "Har mavzuda baholash boʻlishi shart",
+      "sequential": "Ketma-ketlikni oʻchirib boʻlmaydi",
+      "case": "Klinik keys majburiy",
+      "caseReviewed": "Keys oʻqituvchi tomonidan tekshirilsin",
+      "remediation": "Qayta topshirishdan oldin xatolar ustida ishlash",
+      "manual": "Qoʻlda ochishga ruxsat"
+    },
+    "h": {
+      "pass": "Kurs bundan past qoʻya olmaydi",
+      "video": "Video boʻlsa — shu foizdan kam emas",
+      "minAttempts": "Bilmagan talaba qayta topshira olishi uchun",
+      "maxAttempts": "Cheksiz urinish testni qadrsizlantiradi",
+      "gap": "Urinishlar orasidagi majburiy tanaffus",
+      "minutes": "0 — vaqt chegarasi yoʻq",
+      "assessment": "Aks holda testsiz mavzu oʻz-oʻzidan hisoblanadi",
+      "sequential": "Bitta tugma bilan barcha qulflarni oʻchirishning oldini oladi",
+      "case": "Mavzuda keys boʻlsa — majburiy",
+      "caseReviewed": "Avto-baho yetarli emas",
+      "remediation": "Aks holda qayta topshirish — variantlarni terish",
+      "manual": "Oʻchirilsa — istisno berish umuman mumkin emas"
+    }
   }
 }

@@ -3,6 +3,7 @@ import { ApiError, badRequest, notFound } from "../../lib/errors";
 import { readFileBuffer, readText } from "../../lib/storage";
 import { buildPdf } from "../content/presentation";
 import { digestAudioRel, hasDigestAudio } from "../topics/service";
+import { clampQuiz, FALLBACK_POLICY, resolvePolicy } from "../policy/service";
 import { chaptersFromScript, type PodcastChapter } from "../content/podcast";
 import type { CaseJson, DigestJson, PodcastSegment, ScriptSegment, Slide } from "../../ai/types";
 import {
@@ -182,17 +183,26 @@ export async function getTopicLesson(studentId: number, topicId: number) {
     const q = quizItem.quiz;
     const attempts = await quizAttemptsPromise;
     const inProgress = attempts.find((a) => a.finishedAt === null) ?? null;
-    const finishedCount = attempts.filter((a) => a.finishedAt !== null).length;
+    const finishedList = attempts.filter((a) => a.finishedAt !== null);
+    const finishedCount = finishedList.length;
     const latest = attempts[0] ?? null;
+    // KORIDOR: haqiqiy sozlamalar = o'qituvchi sozlamasi, kafedra minimumlari
+    // bilan siqilgan (urinish soni, tanaffus, vaqt, o'tish balli).
+    const effQuiz = clampQuiz(q, enrolledCourse.policy ?? FALLBACK_POLICY, q.questions.length);
+    const gate = attemptGate(finishedList, effQuiz);
     quizMeta = {
       quizId: q.id,
       questionCount: q.questions.length,
-      passThreshold: q.passThreshold,
-      maxAttempts: q.maxAttempts,
-      canStart: !inProgress && finishedCount < q.maxAttempts,
+      passThreshold: effQuiz.passThreshold,
+      maxAttempts: effQuiz.maxAttempts,
+      canStart: !inProgress && gate.ok,
+      /** Nega boshlab bo'lmaydi: attempts_exhausted | cooldown. */
+      blockedBy: inProgress || gate.ok ? null : gate.reason,
+      nextAttemptAt: gate.nextAt ? gate.nextAt.toISOString() : null,
+      attemptsLeft: Math.max(0, effQuiz.maxAttempts - finishedCount),
       inProgressId: inProgress?.id ?? null,
       /** Vaqt chegarasi (daqiqa); 0 = cheklanmagan. */
-      timeLimitMin: q.timeLimitMin,
+      timeLimitMin: effQuiz.timeLimitMin,
       attempt: latest
         ? {
             id: latest.id,
@@ -430,7 +440,7 @@ export async function setSlidesViewed(studentId: number, topicId: number) {
 async function quizWithTopic(quizId: number) {
   const quiz = await prisma.quiz.findUnique({
     where: { id: quizId },
-    include: { contentItem: true, questions: { orderBy: { orderIndex: "asc" } } },
+    include: { contentItem: true, questions: { where: { retiredAt: null }, orderBy: { orderIndex: "asc" } } },
   });
   if (!quiz) throw notFound("Test");
   if (quiz.contentItem.status !== "PUBLISHED") throw notFound("Test");
@@ -511,6 +521,104 @@ function serializeAttempt(attempt: AttemptRow, quiz: QuizRow) {
   };
 }
 
+/**
+ * YAGONA shart: urinishni boshlash mumkinmi. Dars payloadi ham (UI sababni
+ * ko'rsatishi uchun), start ham (chetlab o'tib bo'lmasligi uchun) shuni o'qiydi.
+ * Uch shart: urinish qoldimi -> tanaffus o'tdimi -> xatolar ustida ishlanganmi.
+ */
+function attemptGate(
+  finished: { finishedAt: Date | null; passed: boolean; scorePct: number }[],
+  eff: { maxAttempts: number; attemptGapHours: number; passThreshold: number }
+): { ok: boolean; reason: "attempts_exhausted" | "cooldown" | null; nextAt: Date | null } {
+  if (finished.length === 0) return { ok: true, reason: null, nextAt: null };
+  // ⚠️ `a.passed` ISHLATILMAYDI: u testning O'Z balliga qarab yozilgan (masalan
+  // 60%), koridor esa 70% talab qilishi mumkin. Shunda talaba "o'tgan" bo'lib
+  // ko'rinardi, mavzu esa yopiq qolardi va QAYTA TOPSHIRA ham olmasdi —
+  // yana o'sha boshi berk ko'cha. Shuning uchun EFFEKTIV bo'sag'a bilan solishtiramiz.
+  const best = finished.reduce((m, a) => Math.max(m, a.scorePct), 0);
+  if (best >= eff.passThreshold) return { ok: false, reason: "attempts_exhausted", nextAt: null };
+  if (finished.length >= eff.maxAttempts) return { ok: false, reason: "attempts_exhausted", nextAt: null };
+  if (eff.attemptGapHours > 0) {
+    const last = finished.reduce((m, a) => Math.max(m, a.finishedAt?.getTime() ?? 0), 0);
+    const nextAt = new Date(last + eff.attemptGapHours * 3_600_000);
+    if (nextAt.getTime() > Date.now()) return { ok: false, reason: "cooldown", nextAt };
+  }
+  return { ok: true, reason: null, nextAt: null };
+}
+
+/** Test qaysi kafedraga tegishli — siyosat koridorini aniqlash uchun. */
+async function departmentOfQuiz(quizId: number): Promise<number | null> {
+  const row = await prisma.quiz.findUnique({
+    where: { id: quizId },
+    select: { contentItem: { select: { topic: { select: { course: { select: { departmentId: true } } } } } } },
+  });
+  return row?.contentItem.topic.course.departmentId ?? null;
+}
+
+/**
+ * Oldingi urinish xatolari ustida ishlanganmi. Dalil — tренажёрда HAR BIR
+ * xato savolga to'g'ri javob (RemediationAnswer). Xato bo'lmasa — ishlash shart emas.
+ */
+async function remediationDone(studentId: number, quizId: number): Promise<boolean> {
+  const last = await prisma.quizAttempt.findFirst({
+    where: { studentId, quizId, finishedAt: { not: null } },
+    orderBy: { finishedAt: "desc" },
+  });
+  if (!last) return true;
+  const questions = await prisma.question.findMany({
+    where: { quizId, retiredAt: null },
+    select: { id: true, correctIndex: true },
+  });
+  const answers = (last.answersJson as Record<string, number>) ?? {};
+  const wrong = questions.filter((q) => answers[String(q.id)] !== q.correctIndex).map((q) => q.id);
+  if (wrong.length === 0) return true;
+  const fixed = await prisma.remediationAnswer.findMany({
+    where: { studentId, attemptId: last.id, questionId: { in: wrong }, correct: true },
+    select: { questionId: true },
+    distinct: ["questionId"],
+  });
+  return fixed.length >= wrong.length;
+}
+
+/** Xatolar ustida ishlash holati (UI "yana N ta qoldi" deb ko'rsatadi). */
+export async function remediationStatus(studentId: number, quizId: number) {
+  const last = await prisma.quizAttempt.findFirst({
+    where: { studentId, quizId, finishedAt: { not: null } },
+    orderBy: { finishedAt: "desc" },
+  });
+  if (!last) return { required: false, total: 0, done: 0, attemptId: null as number | null };
+  const questions = await prisma.question.findMany({
+    where: { quizId, retiredAt: null },
+    select: { id: true, correctIndex: true },
+  });
+  const answers = (last.answersJson as Record<string, number>) ?? {};
+  const wrong = questions.filter((q) => answers[String(q.id)] !== q.correctIndex).map((q) => q.id);
+  const fixed = await prisma.remediationAnswer.findMany({
+    where: { studentId, attemptId: last.id, questionId: { in: wrong }, correct: true },
+    select: { questionId: true },
+    distinct: ["questionId"],
+  });
+  return { required: wrong.length > 0, total: wrong.length, done: fixed.length, attemptId: last.id };
+}
+
+/** Tренажёрдаги javob — xatolar ustida ishlash DALILI sifatida yoziladi. */
+export async function recordRemediation(
+  studentId: number,
+  attemptId: number,
+  questionId: number,
+  selectedIndex: number
+) {
+  const attempt = await prisma.quizAttempt.findUnique({ where: { id: attemptId } });
+  if (!attempt || attempt.studentId !== studentId) throw notFound("Urinish");
+  const q = await prisma.question.findUnique({ where: { id: questionId }, select: { id: true, correctIndex: true, quizId: true } });
+  if (!q || q.quizId !== attempt.quizId) throw notFound("Savol");
+  const correct = q.correctIndex === selectedIndex;
+  await prisma.remediationAnswer.create({
+    data: { studentId, attemptId, questionId, selectedIndex, correct },
+  });
+  return { correct, ...(await remediationStatus(studentId, attempt.quizId)) };
+}
+
 export async function startQuizAttempt(studentId: number, quizId: number) {
   const quiz = await quizWithTopic(quizId);
   await assertTopicOpen(studentId, quiz.contentItem.topicId);
@@ -519,15 +627,42 @@ export async function startQuizAttempt(studentId: number, quizId: number) {
   const inProgress = attempts.find((a) => a.finishedAt === null);
   if (inProgress) return serializeAttempt(inProgress, quiz); // resume, not a new attempt
 
-  const finishedCount = attempts.filter((a) => a.finishedAt !== null).length;
-  if (finishedCount >= quiz.maxAttempts) {
-    throw new ApiError(403, "quiz_max_attempts", "Test allaqachon ishlangan", "Тест уже пройден");
+  const finished = attempts.filter((a) => a.finishedAt !== null);
+  const finishedCount = finished.length;
+
+  // KORIDOR: urinish soni va tanaffusni test emas, kafedra siyosati belgilaydi.
+  // Ilgari bu yerda qat'iy maxAttempts = 1 turardi — test provali BOSHI BERK
+  // KO'CHA edi, yagona chiqish esa "bilmaganni o'tkazib yuborish".
+  const policy = await resolvePolicy(await departmentOfQuiz(quizId));
+  const eff = clampQuiz(quiz, policy, quiz.questions.length);
+  const gate = attemptGate(finished, eff);
+  if (!gate.ok) {
+    if (gate.reason === "cooldown") {
+      const when = gate.nextAt!;
+      throw new ApiError(
+        403,
+        "quiz_cooldown",
+        `Keyingi urinish ${when.toLocaleString("uz-UZ")} dan keyin ochiladi`,
+        `Следующая попытка откроется после ${when.toLocaleString("ru-RU")}`
+      );
+    }
+    throw new ApiError(403, "quiz_max_attempts", "Test urinishlari tugadi", "Попытки теста исчерпаны");
+  }
+
+  // XATOLAR USTIDA ISHLASH MAJBURIY: aks holda "qayta topshirish" o'rganish
+  // emas, variantlarni terib chiqishga aylanadi.
+  if (finishedCount > 0 && policy.requireRemediation && !(await remediationDone(studentId, quizId))) {
+    throw new ApiError(
+      403,
+      "remediation_required",
+      "Qayta topshirishdan oldin xatolaringiz ustida ishlang",
+      "Перед пересдачей разберите свои ошибки в тренажёре"
+    );
   }
 
   // Vaqt chegarasi bo'lsa — tugash momentini SERVER belgilaydi (klient soatiga
   // ishonilmaydi); vaqt tugagach har qanday so'rovda avtomatik yakunlanadi.
-  const expiresAt =
-    quiz.timeLimitMin > 0 ? new Date(Date.now() + quiz.timeLimitMin * 60_000) : null;
+  const expiresAt = eff.timeLimitMin > 0 ? new Date(Date.now() + eff.timeLimitMin * 60_000) : null;
 
   const created = await prisma.quizAttempt.create({
     data: { quizId, studentId, answersJson: {}, attemptNo: finishedCount + 1, expiresAt },
@@ -541,7 +676,13 @@ async function gradeAndFinish(studentId: number, attempt: AttemptRow, quiz: Quiz
   const total = quiz.questions.length;
   const correct = quiz.questions.filter((q) => answers[String(q.id)] === q.correctIndex).length;
   const scorePct = total === 0 ? 0 : Math.round((correct / total) * 100);
-  const passed = scorePct >= quiz.passThreshold;
+  // "O'tdingiz" ham koridor bo'sag'asiga qarab yoziladi — ekran va dvigatel
+  // bir xil raqamdan qaror qilishi shart.
+  const effPass = Math.max(
+    quiz.passThreshold,
+    (await resolvePolicy(await departmentOfQuiz(attempt.quizId))).minQuizPassedPct
+  );
+  const passed = scorePct >= effPass;
 
   const finished = await prisma.quizAttempt.update({
     where: { id: attempt.id },

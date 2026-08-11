@@ -249,6 +249,25 @@ meRouter.put(
   })
 );
 
+// РАЗБОР ОШИБОК — доказательство для допуска к пересдаче.
+meRouter.get(
+  "/quizzes/:id/remediation",
+  wrap(async (req, res) => res.json(await lesson.remediationStatus(req.user!.id, parseId(req.params.id))))
+);
+meRouter.post(
+  "/attempts/:id/remediation",
+  wrap(async (req, res) =>
+    res.json(
+      await lesson.recordRemediation(
+        req.user!.id,
+        parseId(req.params.id),
+        Number(req.body?.questionId),
+        Number(req.body?.selectedIndex)
+      )
+    )
+  )
+);
+
 meRouter.post("/attempts/:id/finish", wrap(async (req, res) => res.json(await lesson.finishQuizAttempt(req.user!.id, parseId(req.params.id)))));
 
 // Savolni belgilash / belgini olib tashlash (1c — "Belgilash").

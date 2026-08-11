@@ -135,6 +135,8 @@ model User {
   auditLogs         AuditLog[]
   progress          Progress[]
   overriddenProgress Progress[]      @relation("ProgressOverrider")
+  editedPolicies     LearningPolicy[] @relation("PolicyEditor")
+  remediationAnswers RemediationAnswer[]
   sectionReads      SectionRead[]
   flashcardReviews  FlashcardReview[]
   tutorMessages     TutorMessage[]
@@ -418,6 +420,10 @@ model Progress {
   overriddenAt     DateTime?
   overriddenById   Int?
   overriddenBy     User?         @relation("ProgressOverrider", fields: [overriddenById], references: [id])
+  /// Мотив ручного допуска (код из закрытого списка) и пояснение.
+  /// Без мотива допуск не выдаётся — иначе «допущен» неотличим от «освоил».
+  overrideReason   String?
+  overrideNote     String?
   updatedAt        DateTime      @updatedAt
 
   @@unique([studentId, topicId])
@@ -467,12 +473,69 @@ model Video {
   @@map("videos")
 }
 
+/// КОРИДОР ПОЛИТИКИ (2026-08-11, требование руководства «жёсткий контроль»).
+/// Минимальные требования задаёт институт, а не преподаватель. Уровни:
+/// UNIVERSITY (scopeId = null) → FACULTY → DEPARTMENT. Ниже по иерархии можно
+/// только УЖЕСТОЧИТЬ: resolveRule берёт максимум из порогов и OR из флагов.
+/// Преподаватель работает внутри коридора; сервер отклоняет выход за него.
+model LearningPolicy {
+  id      Int          @id @default(autoincrement())
+  level   PolicyLevel
+  /// FACULTY → Faculty.id, DEPARTMENT → Department.id, UNIVERSITY → null.
+  scopeId Int?
+
+  /// Проходной балл теста не может быть ниже этого значения.
+  minQuizPassedPct   Int     @default(70)
+  /// Просмотр видео (если видео есть) не ниже.
+  minVideoWatchedPct Int     @default(80)
+  /// Тема обязана иметь хотя бы одно оценивание (тест или кейс), иначе
+  /// не засчитывается автоматически.
+  requireAssessment  Boolean @default(true)
+  /// Последовательное открытие тем нельзя выключить.
+  requireSequential  Boolean @default(true)
+  /// Клинический кейс обязателен, если он есть в теме.
+  requireCase        Boolean @default(true)
+  /// Кейс должен быть проверен преподавателем.
+  requireCaseReviewed Boolean @default(false)
+
+  /// Пересдачи: сколько попыток теста разрешено (не меньше). 1 = без пересдач.
+  minQuizAttempts    Int     @default(3)
+  /// Верхняя граница — чтобы «бесконечные попытки» не обесценили тест.
+  maxQuizAttempts    Int     @default(5)
+  /// Пауза между попытками (часы) — не меньше.
+  minAttemptGapHours Int     @default(24)
+  /// Перед повторной попыткой обязателен разбор своих ошибок.
+  requireRemediation Boolean @default(true)
+  /// Ограничение времени теста (минут на вопрос), 0 = без ограничения.
+  minMinutesPerQuestion Int  @default(1)
+
+  /// Разрешён ли ручной допуск вообще и обязателен ли мотив.
+  allowManualUnlock  Boolean @default(true)
+
+  updatedById Int?
+  updatedBy   User?    @relation("PolicyEditor", fields: [updatedById], references: [id])
+  updatedAt   DateTime @updatedAt
+  createdAt   DateTime @default(now())
+
+  @@unique([level, scopeId])
+  @@map("learning_policies")
+}
+
+enum PolicyLevel {
+  UNIVERSITY
+  FACULTY
+  DEPARTMENT
+}
+
 model Quiz {
   id            Int         @id @default(autoincrement())
   contentItemId Int         @unique
   contentItem   ContentItem @relation(fields: [contentItemId], references: [id])
   passThreshold Int         @default(70)
   maxAttempts   Int         @default(1)
+  /// Пауза между попытками (часы). 0 = без паузы. Реальное значение
+  /// зажимается коридором политики (minAttemptGapHours).
+  attemptGapHours Int       @default(0)
   /// Vaqt chegarasi (daqiqa). 0 = cheklanmagan. Test boshlanganda
   /// QuizAttempt.expiresAt shunga qarab hisoblanadi.
   timeLimitMin  Int         @default(0)
@@ -504,6 +567,25 @@ model QuizAttempt {
   @@map("quiz_attempts")
 }
 
+/// ДОКАЗАТЕЛЬСТВО разбора ошибок. Раньше тренажёр «работа над ошибками» не
+/// оставлял следа (комментарий в practice.ts: «на оценку и прогресс не влияет»),
+/// поэтому нельзя было ни доказать, что студент доучил, ни поставить это
+/// условием пересдачи. Теперь каждый ответ в тренажёре фиксируется.
+model RemediationAnswer {
+  id            Int      @id @default(autoincrement())
+  studentId     Int
+  student       User     @relation(fields: [studentId], references: [id])
+  /// Попытка, ошибки которой разбираются.
+  attemptId     Int
+  questionId    Int
+  selectedIndex Int
+  correct       Boolean
+  createdAt     DateTime @default(now())
+
+  @@index([studentId, attemptId])
+  @@map("remediation_answers")
+}
+
 model Question {
   id             Int        @id @default(autoincrement())
   quizId         Int
@@ -515,6 +597,10 @@ model Question {
   difficulty     Difficulty @default(RECALL)
   sourceFragment String?
   orderIndex     Int
+  /// Вопрос выведен из оборота (правка/перегенерация теста). НЕ удаляется
+  /// физически: иначе ранее сданные попытки теряют связь с вопросами и
+  /// оценку невозможно проверить задним числом.
+  retiredAt      DateTime?
 
   @@map("questions")
 }

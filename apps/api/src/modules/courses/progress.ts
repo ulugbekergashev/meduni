@@ -1,5 +1,6 @@
 import ExcelJS from "exceljs";
 import { prisma } from "../../lib/prisma";
+import { clampQuiz, resolvePolicy } from "../policy/service";
 import { ApiError, notFound } from "../../lib/errors";
 import { computeTopics, loadCourse, studentFactsMap, type CourseWithTopics, type FullFacts, type TopicOut } from "../me/service";
 
@@ -77,10 +78,16 @@ export async function buildMatrix(course: CourseWithTopics) {
     if (!d) return;
     lastActive.set(sid, Math.max(lastActive.get(sid) ?? 0, d.getTime()));
   };
+  // ⚠️ Счётчик попыток нужен здесь ТОЖЕ: движок допуска собирает факты в двух
+  // независимых местах, и они уже расходились — студент видел «попытки
+  // исчерпаны», а преподаватель в матрице «сдайте тест на 70%». Любое новое
+  // условие обязано попадать в оба места одним изменением.
+  const attemptCount = new Map<string, number>();
   for (const a of quizAttempts) {
     const tid = quizToTopic.get(a.quizId)!;
     const k = key(a.studentId, tid);
     bestScore.set(k, Math.max(bestScore.get(k) ?? 0, a.scorePct));
+    attemptCount.set(k, (attemptCount.get(k) ?? 0) + 1);
     bump(a.studentId, a.finishedAt);
   }
   // avg quiz score per student = mean of best score across attempted quizzes
@@ -98,6 +105,14 @@ export async function buildMatrix(course: CourseWithTopics) {
   for (const p of progressRows) bump(p.studentId, p.updatedAt);
 
   const kindsByTopic = new Map(topics.map((t) => [t.id, new Set(t.contentItems.map((c) => c.kind))]));
+  // Koridor bilan siqilgan urinish soni — me/service.ts bilan AYNAN bir xil.
+  const quizMaxByTopic = new Map(
+    topics.map((t) => {
+      const q = t.contentItems.find((c) => c.quiz)?.quiz ?? null;
+      if (!q) return [t.id, null] as const;
+      return [t.id, course.policy ? clampQuiz(q, course.policy, 0).maxAttempts : q.maxAttempts] as const;
+    })
+  );
 
   const rows: StudentRow[] = students.map((s) => {
     const facts = new Map<number, FullFacts>();
@@ -117,6 +132,12 @@ export async function buildMatrix(course: CourseWithTopics) {
         quizScore: bestScore.has(scoreK) ? bestScore.get(scoreK)! : null,
         caseSubmitted: cs?.submitted ?? false,
         caseReviewed: cs?.reviewed ?? false,
+        // Hisobotda "o'zlashtirdi" va "ruxsat berildi" ajratilishi uchun.
+        quizExhausted: (() => {
+          const max = quizMaxByTopic.get(t.id);
+          return max !== null && max !== undefined && (attemptCount.get(scoreK) ?? 0) >= max;
+        })(),
+        requireAssessment: course.policy?.requireAssessment === true,
       });
     }
     const computed = computeTopics(course, facts);
@@ -167,21 +188,81 @@ export async function getCourseProgress(courseId: number, teacherId: number) {
   };
 }
 
-/** Teacher force-opens a topic for one student (overrides the sequential lock). */
-export async function manualUnlock(courseId: number, teacherId: number, studentId: number, topicId: number) {
+/** Ruxsat etilgan sabablar — erkin matn EMAS: hisobotda guruhlash uchun. */
+export const OVERRIDE_REASONS = ["illness", "offline_exam", "technical", "transfer", "other"] as const;
+export type OverrideReason = (typeof OVERRIDE_REASONS)[number];
+
+/**
+ * O'qituvchi mavzuni QO'LDA ochadi — "javobgarlik ostida ruxsat".
+ *
+ * ⛔ 2026-08-11: sabab MAJBURIY. Ilgari bu tugma sababsiz edi va natija
+ * hisobotlarda halol o'zlashtirishdan FARQ QILMASDI — ya'ni aynan nazorat
+ * qilinishi kerak bo'lgan amal ko'rsatkichni buzardi. Endi sabab yopiq
+ * ro'yxatdan, izoh bilan, va rahbariyat hisobotiga alohida tushadi.
+ * Kafedra siyosati qo'lda ochishni umuman taqiqlashi mumkin.
+ */
+export async function manualUnlock(
+  courseId: number,
+  teacherId: number,
+  studentId: number,
+  topicId: number,
+  reason?: string,
+  note?: string
+) {
   const course = await ownCourse(courseId, teacherId);
   const topic = await prisma.topic.findUnique({ where: { id: topicId }, select: { courseId: true } });
   if (!topic || topic.courseId !== course.id) throw notFound("Mavzu");
   const enrolled = await prisma.enrollment.findUnique({ where: { studentId_courseId: { studentId, courseId } } });
   if (!enrolled) throw notFound("Talaba");
 
+  const policy = await resolvePolicy(course.departmentId);
+  if (!policy.allowManualUnlock) {
+    throw new ApiError(
+      403,
+      "manual_unlock_forbidden",
+      "Kafedra siyosati qoʻlda ochishni taqiqlaydi",
+      "Политика кафедры запрещает ручной допуск"
+    );
+  }
+  if (!reason || !(OVERRIDE_REASONS as readonly string[]).includes(reason)) {
+    throw new ApiError(
+      400,
+      "reason_required",
+      "Qoʻlda ochish sababini koʻrsating",
+      "Укажите причину ручного допуска"
+    );
+  }
+
+  const now = new Date();
   await prisma.progress.upsert({
     where: { studentId_topicId: { studentId, topicId } },
-    create: { studentId, topicId, state: "COMPLETED", overriddenAt: new Date(), overriddenById: teacherId, completedAt: new Date() },
-    update: { overriddenAt: new Date(), overriddenById: teacherId, state: "COMPLETED", completedAt: new Date() },
+    create: {
+      studentId,
+      topicId,
+      state: "COMPLETED",
+      overriddenAt: now,
+      overriddenById: teacherId,
+      overrideReason: reason,
+      overrideNote: note?.slice(0, 500) ?? null,
+      completedAt: now,
+    },
+    update: {
+      overriddenAt: now,
+      overriddenById: teacherId,
+      overrideReason: reason,
+      overrideNote: note?.slice(0, 500) ?? null,
+      state: "COMPLETED",
+      completedAt: now,
+    },
   });
   await prisma.auditLog.create({
-    data: { actorId: teacherId, action: "MANUAL_UNLOCK", entity: "Topic", entityId: topicId, detailsJson: { studentId, courseId } },
+    data: {
+      actorId: teacherId,
+      action: "MANUAL_UNLOCK",
+      entity: "Topic",
+      entityId: topicId,
+      detailsJson: { studentId, courseId, reason, note: note?.slice(0, 500) ?? null },
+    },
   });
   return { ok: true };
 }

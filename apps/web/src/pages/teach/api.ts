@@ -390,12 +390,25 @@ export function useCourseProgress(courseId: number) {
   });
 }
 
+/** Ruxsat etilgan sabablar — backend bilan bir xil ro'yxat. */
+export const OVERRIDE_REASONS = ["illness", "offline_exam", "technical", "transfer", "other"] as const;
+export type OverrideReason = (typeof OVERRIDE_REASONS)[number];
+
+/**
+ * Mavzuni qo'lda ochish — "javobgarlik ostida ruxsat".
+ * ⛔ 2026-08-11: SABAB majburiy. Aks holda hisobotda bu halol o'zlashtirishdan
+ * farq qilmasdi va aynan nazorat qilinishi kerak bo'lgan amal ko'rsatkichni buzardi.
+ */
 export function useManualUnlock(courseId: number) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (b: { studentId: number; topicId: number }) =>
+    meta: { silent: true },
+    mutationFn: (b: { studentId: number; topicId: number; reason: OverrideReason; note?: string }) =>
       api(`/api/v1/teach/courses/${courseId}/unlock`, { method: "POST", body: JSON.stringify(b) }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["course-progress", courseId] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["course-progress", courseId] });
+      qc.invalidateQueries({ queryKey: ["admin-control"] });
+    },
   });
 }
 

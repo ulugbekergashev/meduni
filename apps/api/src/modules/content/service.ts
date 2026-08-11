@@ -1,6 +1,7 @@
 import { Prisma, prisma } from "../../lib/prisma";
 import { ApiError, badRequest, notFound } from "../../lib/errors";
 import { fileExists, readText } from "../../lib/storage";
+import { resolvePolicy } from "../policy/service";
 import { generateStructured } from "../../ai/gemini";
 import { assertQuota } from "../../ai/quota";
 import { departmentForTopic } from "../../ai/glossary";
@@ -29,7 +30,7 @@ async function topicForTeacher(topicId: number, teacherId: number) {
 }
 
 const contentInclude = {
-  quiz: { include: { questions: { orderBy: { orderIndex: "asc" } } } },
+  quiz: { include: { questions: { where: { retiredAt: null }, orderBy: { orderIndex: "asc" } } } },
   clinicalCase: true,
   presentation: true,
   video: true,
@@ -194,7 +195,7 @@ export async function generateQuiz(
       create: { contentItemId: content.id },
       update: {},
     });
-    await tx.question.deleteMany({ where: { quizId: quiz.id } });
+    await tx.question.updateMany({ where: { quizId: quiz.id, retiredAt: null }, data: { retiredAt: new Date() } });
     await tx.question.createMany({
       data: questions.map((q, i) => {
         // ⚠️ VARIANTLAR ARALASHTIRILADI (2026-08-03, buyurtmachi: "testlarda
@@ -333,8 +334,18 @@ interface QuizEdit {
   }[];
 }
 
+/** Kontent qaysi kafedraga tegishli — siyosat koridorini aniqlash uchun. */
+async function departmentForContent(contentId: number): Promise<number | null> {
+  const row = await prisma.contentItem.findUnique({
+    where: { id: contentId },
+    select: { topic: { select: { course: { select: { departmentId: true } } } } },
+  });
+  return row?.topic.course.departmentId ?? null;
+}
+
 export async function updateContent(contentId: number, teacherId: number, body: unknown) {
   const item = await contentForTeacher(contentId, teacherId);
+  const policy = await resolvePolicy(await departmentForContent(contentId));
 
   if (item.kind === "QUIZ") {
     const b = body as QuizEdit;
@@ -342,9 +353,37 @@ export async function updateContent(contentId: number, teacherId: number, body: 
     const quiz = item.quiz!;
     await prisma.$transaction(async (tx) => {
       if (typeof b.passThreshold === "number") {
+        // ⛔ KORIDOR: o'tish balli kafedra minimumidan past bo'la olmaydi.
+        if (b.passThreshold < policy.minQuizPassedPct) {
+          throw new ApiError(
+            403,
+            "policy_violation",
+            `Oʻtish balli ${policy.minQuizPassedPct}% dan past boʻlishi mumkin emas`,
+            `Проходной балл не может быть ниже ${policy.minQuizPassedPct}%`
+          );
+        }
+        if (b.passThreshold !== quiz.passThreshold) {
+          await tx.auditLog.create({
+            data: {
+              actorId: teacherId,
+              action: "UPDATE_QUIZ_THRESHOLD",
+              entity: "Quiz",
+              entityId: quiz.id,
+              detailsJson: { before: quiz.passThreshold, after: b.passThreshold } as object,
+            },
+          });
+        }
         await tx.quiz.update({ where: { id: quiz.id }, data: { passThreshold: b.passThreshold } });
       }
-      await tx.question.deleteMany({ where: { quizId: quiz.id } });
+      // ⛔ SNAPSHOT (2026-08-11): savollar FIZIK o'chirilmaydi. Ilgari har
+      // saqlashda deleteMany + createMany bo'lardi va oldin topshirilgan
+      // urinishlar savollar bilan bog'lanishini yo'qotardi — bahoni keyin
+      // tekshirib bo'lmasdi (ekranda "0/20 · 67%" chiqardi). Endi eski savol
+      // retiredAt oladi: talabaga ko'rinmaydi, tarix esa saqlanadi.
+      await tx.question.updateMany({
+        where: { quizId: quiz.id, retiredAt: null },
+        data: { retiredAt: new Date() },
+      });
       await tx.question.createMany({
         data: b.questions.map((q, i) => ({
           quizId: quiz.id,

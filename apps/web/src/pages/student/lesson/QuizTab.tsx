@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, ArrowRight, Check, ClipboardList, Clock, Flag, TriangleAlert, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, ClipboardList, Clock, Flag, RotateCcw, TriangleAlert, X } from "lucide-react";
 import { Icon, Spinner, cls, useToast } from "@meduni/ui";
 import { ConfirmDialog } from "../../../components/ConfirmDialog";
 import {
@@ -60,6 +60,13 @@ function Intro({ data, onStart, starting }: { data: QuizTabData; onStart: () => 
             {t("timeLimitN", { n: data.timeLimitMin })}
           </span>
         )}
+        {/* ⛔ 2026-08-11: qancha urinish qolgani ochiq yoziladi. Ilgari test
+            BIR MARTA edi va provaldan keyin talaba boshi berk ko'chaga tushardi. */}
+        {typeof data.attemptsLeft === "number" && data.maxAttempts > 1 && (
+          <span className="rounded-control bg-surface-raised px-2.5 py-1 text-note font-bold text-ink-soft">
+            {t("attemptsLeftN", { n: data.attemptsLeft, total: data.maxAttempts })}
+          </span>
+        )}
       </div>
 
       <div className="mt-4 flex gap-2.5 rounded-control border-l-2 border-amber bg-amber-soft px-3.5 py-3 text-left">
@@ -67,9 +74,21 @@ function Intro({ data, onStart, starting }: { data: QuizTabData; onStart: () => 
         <p className="text-note leading-relaxed text-ink-strong">{t("quizWarning")}</p>
       </div>
 
+      {/* Nega boshlab bo'lmaydi — aniq sabab, "shunchaki o'chiq tugma" emas. */}
+      {!data.canStart && data.blockedBy === "cooldown" && data.nextAttemptAt && (
+        <div className="mt-3 rounded-control border-l-2 border-blue bg-blue-soft px-3.5 py-2.5 text-left text-note text-ink-strong">
+          {t("cooldownUntil", { when: new Date(data.nextAttemptAt).toLocaleString() })}
+        </div>
+      )}
+      {!data.canStart && data.blockedBy === "attempts_exhausted" && (
+        <div className="mt-3 rounded-control border-l-2 border-rose bg-rose-soft px-3.5 py-2.5 text-left text-note font-bold text-rose">
+          {t("attemptsOver")}
+        </div>
+      )}
+
       <button
         onClick={onStart}
-        disabled={starting}
+        disabled={starting || !data.canStart}
         className="mt-4 flex w-full items-center justify-center gap-2 rounded-control bg-brand px-4 py-2.5 text-body font-extrabold text-white transition-colors hover:bg-brand-deep disabled:opacity-50"
       >
         {starting ? (
@@ -265,7 +284,17 @@ function Running({ attempt, topicId }: { attempt: QuizAttemptView; topicId: numb
   );
 }
 
-function Result({ attempt }: { attempt: QuizAttemptView }) {
+function Result({
+  attempt,
+  data,
+  onStart,
+  starting,
+}: {
+  attempt: QuizAttemptView;
+  data: QuizTabData;
+  onStart: () => void;
+  starting: boolean;
+}) {
   const { t } = useTranslation(undefined, { keyPrefix: "lesson" });
   const passed = attempt.passed;
 
@@ -293,10 +322,44 @@ function Result({ attempt }: { attempt: QuizAttemptView }) {
         </p>
       </div>
 
+      {/* ⛔ 2026-08-11: провал больше НЕ тупик. Здесь показывается реальный
+          путь дальше: сколько попыток осталось, когда откроется следующая и
+          что нужно сделать до неё. Раньше тут стояло «пересдать нельзя». */}
       {!passed && (
-        <div className="flex gap-2.5 rounded-control border-l-2 border-amber bg-amber-soft px-3.5 py-2.5">
-          <Icon icon={TriangleAlert} size={15} className="mt-0.5 shrink-0 text-amber" />
-          <p className="text-note text-ink-strong">{t("cannotRetake")}</p>
+        <div className="space-y-2">
+          {data.canStart ? (
+            <>
+              <div className="flex gap-2.5 rounded-control border-l-2 border-blue bg-blue-soft px-3.5 py-2.5">
+                <Icon icon={TriangleAlert} size={15} className="mt-0.5 shrink-0 text-blue" />
+                <p className="text-note text-ink-strong">
+                  {t("retakeReady", { n: data.attemptsLeft ?? 0, total: data.maxAttempts })}
+                </p>
+              </div>
+              <button
+                onClick={onStart}
+                disabled={starting}
+                className="flex w-full items-center justify-center gap-2 rounded-control bg-brand px-4 py-2.5 text-body font-extrabold text-white transition-colors hover:bg-brand-deep disabled:opacity-50"
+              >
+                {starting ? <Spinner size={16} className="text-white" /> : <Icon icon={RotateCcw} size={15} />}
+                {t("retakeBtn")}
+              </button>
+            </>
+          ) : data.blockedBy === "cooldown" && data.nextAttemptAt ? (
+            <div className="flex gap-2.5 rounded-control border-l-2 border-blue bg-blue-soft px-3.5 py-2.5">
+              <Icon icon={Clock} size={15} className="mt-0.5 shrink-0 text-blue" />
+              <div>
+                <p className="text-note font-bold text-ink-strong">
+                  {t("cooldownUntil", { when: new Date(data.nextAttemptAt).toLocaleString() })}
+                </p>
+                <p className="mt-0.5 text-micro text-ink-soft">{t("remediationHint")}</p>
+              </div>
+            </div>
+          ) : (
+            <div className="flex gap-2.5 rounded-control border-l-2 border-rose bg-rose-soft px-3.5 py-2.5">
+              <Icon icon={TriangleAlert} size={15} className="mt-0.5 shrink-0 text-rose" />
+              <p className="text-note font-bold text-rose">{t("attemptsOver")}</p>
+            </div>
+          )}
         </div>
       )}
 
@@ -377,7 +440,7 @@ export function QuizTab({ topicId, data }: { topicId: number; data: QuizTabData 
   if (!attemptQ.data) return <Intro data={data} onStart={onStart} starting={start.isPending} />;
 
   return attemptQ.data.status === "finished" ? (
-    <Result attempt={attemptQ.data} />
+    <Result attempt={attemptQ.data} data={data} onStart={onStart} starting={start.isPending} />
   ) : (
     <Running attempt={attemptQ.data} topicId={topicId} />
   );

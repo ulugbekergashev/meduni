@@ -7,8 +7,10 @@ import { AsyncSection } from "../../../components/AsyncSection";
 import { QuickTaskModal } from "../../../components/QuickTaskModal";
 import {
   API_URL,
+  OVERRIDE_REASONS,
   useCourseProgress,
   useManualUnlock,
+  type OverrideReason,
   type CellState,
   type CourseProgress,
   type ProgressCell,
@@ -42,6 +44,66 @@ function LastActive({ iso }: { iso: string | null }) {
   return <span className="text-ink-soft">{t("daysAgo", { count: d })}</span>;
 }
 
+function UnlockReasonModal({
+  open,
+  title,
+  reason,
+  note,
+  pending,
+  onReason,
+  onNote,
+  onClose,
+  onSubmit,
+}: {
+  open: boolean;
+  title: string;
+  reason: OverrideReason;
+  note: string;
+  pending: boolean;
+  onReason: (r: OverrideReason) => void;
+  onNote: (v: string) => void;
+  onClose: () => void;
+  onSubmit: () => void;
+}) {
+  const { t } = useTranslation(undefined, { keyPrefix: "progress" });
+  return (
+    <Modal open={open} onClose={() => !pending && onClose()} title={t("unlockTitle")}>
+      <p className="text-note text-ink-soft">{t("unlockHint")}</p>
+      <p className="mt-1 text-note font-bold text-ink">{title}</p>
+      <div className="mt-3 space-y-1.5">
+        {OVERRIDE_REASONS.map((r) => (
+          <button
+            key={r}
+            onClick={() => onReason(r)}
+            className={cls(
+              "flex w-full items-center gap-2 rounded-control border px-3 py-2 text-left text-note transition-colors",
+              reason === r ? "border-brand bg-brand-soft font-bold text-brand-tint" : "border-line text-ink-soft hover:bg-surface-raised"
+            )}
+          >
+            {t(`unlockReason.${r}`)}
+          </button>
+        ))}
+      </div>
+      <textarea
+        value={note}
+        onChange={(e) => onNote(e.target.value)}
+        rows={2}
+        maxLength={500}
+        placeholder={t("unlockNote")}
+        className="mt-3 w-full resize-none rounded-control border border-line bg-surface px-3 py-2 text-note text-ink outline-none focus:border-brand"
+      />
+      <div className="mt-3 flex justify-end gap-2">
+        <Button variant="ghost" size="md" onClick={onClose} disabled={pending}>
+          {t("cancel")}
+        </Button>
+        <Button variant="primary" size="md" onClick={onSubmit} disabled={pending}>
+          {t("unlockConfirm")}
+        </Button>
+      </div>
+    </Modal>
+  );
+}
+
 function cellSummary(c: ProgressCell, t: (k: string) => string): string {
   const e = c.elements;
   const parts: string[] = [];
@@ -58,6 +120,11 @@ function StudentModal({ student, topics, courseId, onClose, onAssign }: { studen
   const navigate = useNavigate();
   const unlock = useManualUnlock(courseId);
   const byTopic = new Map(student.cells.map((c) => [c.topicId, c]));
+  // ⛔ Qo'lda ochish SABABSIZ bo'lmaydi (2026-08-11): sabab yopiq ro'yxatdan
+  // tanlanadi va rahbariyat hisobotiga alohida tushadi.
+  const [unlockFor, setUnlockFor] = useState<{ studentId: number; topicId: number; title: string } | null>(null);
+  const [reason, setReason] = useState<OverrideReason>("illness");
+  const [note, setNote] = useState("");
 
   return (
     <Modal open onClose={onClose} title={student.fullName} className="max-w-xl">
@@ -92,7 +159,7 @@ function StudentModal({ student, topics, courseId, onClose, onAssign }: { studen
               <p className="mt-1 text-micro text-ink-soft">{cellSummary(c, t)}</p>
               {c.state !== "COMPLETED" && (
                 <button
-                  onClick={() => unlock.mutate({ studentId: student.id, topicId: tp.id }, { onSuccess: () => show(t("unlocked")) })}
+                  onClick={() => setUnlockFor({ studentId: student.id, topicId: tp.id, title: tp.title })}
                   disabled={unlock.isPending}
                   className="mt-2 inline-flex items-center gap-1 rounded-control border border-amber/40 bg-amber-soft px-2.5 py-1 text-micro font-semibold text-amber transition-colors hover:bg-amber/10"
                 >
@@ -103,6 +170,31 @@ function StudentModal({ student, topics, courseId, onClose, onAssign }: { studen
           );
         })}
       </div>
+
+      <UnlockReasonModal
+        open={!!unlockFor}
+        title={unlockFor?.title ?? ""}
+        reason={reason}
+        note={note}
+        pending={unlock.isPending}
+        onReason={setReason}
+        onNote={setNote}
+        onClose={() => setUnlockFor(null)}
+        onSubmit={() =>
+          unlockFor &&
+          unlock.mutate(
+            { studentId: unlockFor.studentId, topicId: unlockFor.topicId, reason, note: note.trim() || undefined },
+            {
+              onSuccess: () => {
+                show(t("unlocked"));
+                setUnlockFor(null);
+                setNote("");
+              },
+              onError: () => show(t("unlockFailed"), "warn"),
+            }
+          )
+        }
+      />
     </Modal>
   );
 }

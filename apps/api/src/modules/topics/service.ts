@@ -333,11 +333,22 @@ export async function updateDigest(topicId: number, teacherId: number, input: un
   return { digestJson: digest.digestJson as unknown as DigestJson, version: digest.version, approvedByTeacher: false };
 }
 
+/** Konspektni tasdiqlash — birinchi tibbiy xavfsizlik qulfi. Ilgari bu amal
+ *  ANONIM edi: kim va qachon tasdiqlaganini keyin aniqlab bo'lmasdi. */
 export async function approveDigest(topicId: number, teacherId: number) {
   await topicForTeacher(topicId, teacherId);
   const existing = await prisma.topicDigest.findUnique({ where: { topicId } });
   if (!existing) throw notFound("Konspekt");
   const digest = await prisma.topicDigest.update({ where: { topicId }, data: { approvedByTeacher: true } });
+  await prisma.auditLog.create({
+    data: {
+      actorId: teacherId,
+      action: "APPROVE_DIGEST",
+      entity: "Topic",
+      entityId: topicId,
+      detailsJson: { version: digest.version } as object,
+    },
+  });
   return {
     digestJson: digest.digestJson as unknown as DigestJson,
     version: digest.version,

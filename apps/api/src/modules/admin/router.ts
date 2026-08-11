@@ -26,10 +26,18 @@ const qnum = (v: unknown) => (v ? Number(v) : undefined);
 const qstr = (v: unknown) => (typeof v === "string" && v ? v : undefined);
 
 // ---------- Admin: AI monitoring / quotas / audit / stats (all admin tiers, scoped) ----------
+import * as control from "../policy/control";
+
 export const adminRouter = Router();
 adminRouter.use(requireRoles(...ADMIN_ROLES));
 
 adminRouter.get("/stats", wrap(async (req, res) => res.json(await adminStats(await adminScope(req)))));
+
+// ЖЁСТКИЙ КОНТРОЛЬ (2026-08-11): отклонения от коридора политики + редактирование
+// самого коридора. Область видимости — как во всём админ-контуре.
+adminRouter.get("/control", wrap(async (req, res) => res.json(await control.getControlReport(req))));
+adminRouter.get("/policies", wrap(async (req, res) => res.json(await control.listPolicies(req))));
+adminRouter.put("/policies", wrap(async (req, res) => res.json(await control.upsertPolicy(req, req.body ?? {}))));
 
 adminRouter.get("/search", wrap(async (req, res) => {
   const scope = await adminScope(req);

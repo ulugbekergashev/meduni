@@ -3,6 +3,7 @@ import { prisma } from "../../lib/prisma";
 import { ApiError, notFound } from "../../lib/errors";
 import { DEFAULT_RULE, evaluateRule, lockedReason, type Facts, type Reason, type UnlockRule } from "./rules";
 import { computeStreak } from "./profile";
+import { clampQuiz, clampRule, resolvePolicy, type ResolvedPolicy } from "../policy/service";
 
 // A topic is visible to students only once it has at least one PUBLISHED content
 // item. Un-published topics don't appear on the path at all.
@@ -27,6 +28,10 @@ type TopicWithContent = CourseRow["topics"][number];
 export type CourseWithTopics = CourseRow & {
   topics: TopicWithContent[];
   scheduleDates?: Map<number, string> | null;
+  /** Коридор политики кафедры — loadCourse подтягивает, computeTopics читает
+   *  синхронно. Без него правило курса применялось «как есть», и преподаватель
+   *  мог опустить пороги куда угодно. */
+  policy?: ResolvedPolicy | null;
 };
 
 function dmyDate(iso: string): string {
@@ -43,6 +48,9 @@ export interface FullFacts extends Facts {
 
 function resolveRule(topic: TopicWithContent, course: CourseWithTopics): UnlockRule {
   const raw = (topic.unlockRuleJson ?? course.defaultUnlockRuleJson) as Partial<UnlockRule> | null;
+  // ⛔ КОРИДОР: правило курса зажимается минимумами кафедры/факультета/вуза.
+  // Преподаватель может ужесточить, но не ослабить.
+  if (course.policy) return clampRule(raw, course.policy);
   return { ...DEFAULT_RULE, ...(raw ?? {}) };
 }
 
@@ -79,7 +87,8 @@ export function computeTopics(course: CourseWithTopics, factsByTopic: Map<number
   // ikkalasi o'chiq bo'lsa mavzular erkin ochiq.
   const scheduleDates = course.scheduleDates ?? null;
   const requireSchedule = scheduleDates != null;
-  const requireSequential = course.sequentialUnlock;
+  // Коридор может запрещать выключение последовательности целиком.
+  const requireSequential = course.sequentialUnlock || course.policy?.requireSequential === true;
   const today = new Date().toISOString().slice(0, 10);
 
   const out: TopicOut[] = [];
@@ -235,9 +244,15 @@ export async function studentFactsMap(studentId: number, course: CourseWithTopic
     const kinds = new Set(topic.contentItems.map((c) => c.kind));
     const prog = progressByTopic.get(topic.id);
     const cs = caseState.get(topic.id);
-    // Urinish chegarasi testning O'ZIDA (Quiz.maxAttempts) — lesson.ts dagi
-    // `canStart` bilan bir xil mezon (aks holda ekran va dvigatel ziddiyatda).
-    const quizMax = topic.contentItems.find((c) => c.quiz)?.quiz?.maxAttempts ?? null;
+    // Urinish chegarasi — test sozlamasi, KORIDOR bilan siqilgan (lesson.ts
+    // dagi `canStart` bilan bir xil mezon; aks holda ekran "попыток исчерпаны"
+    // deb turadi, holbuki siyosat 3 urinish beradi).
+    const rawQuiz = topic.contentItems.find((c) => c.quiz)?.quiz ?? null;
+    const quizMax = rawQuiz
+      ? course.policy
+        ? clampQuiz(rawQuiz, course.policy, 0).maxAttempts
+        : rawQuiz.maxAttempts
+      : null;
     const used = finishedCount.get(topic.id) ?? 0;
     map.set(topic.id, {
       hasVideo: kinds.has("VIDEO"),
@@ -251,6 +266,7 @@ export async function studentFactsMap(studentId: number, course: CourseWithTopic
       caseSubmitted: cs?.submitted ?? false,
       caseReviewed: cs?.reviewed ?? false,
       quizExhausted: quizMax !== null && used >= quizMax,
+      requireAssessment: course.policy?.requireAssessment === true,
     });
   }
 
@@ -321,8 +337,14 @@ export async function loadCourse(courseId: number): Promise<CourseWithTopics> {
   const topics = course.topics.filter((t) => t.contentItems.length > 0);
   // Sana-rejimida ochilish sanalarini (jadvaldan) biriktiramiz — computeTopics
   // uni sinxron o'qiydi, shunda barcha chaqiruv joyi mos ishlaydi.
-  const scheduleDates = course.scheduleUnlock ? await loadScheduleDates(courseId) : null;
-  return { ...course, topics, scheduleDates };
+  // Коридор политики кафедры едет вместе с курсом — так все 10+ мест, которые
+  // зовут computeTopics (путь студента, матрица преподавателя, задачи, урок,
+  // экспорт), автоматически считают по одним и тем же правилам.
+  const [scheduleDates, policy] = await Promise.all([
+    course.scheduleUnlock ? loadScheduleDates(courseId) : Promise.resolve(null),
+    resolvePolicy(course.departmentId),
+  ]);
+  return { ...course, topics, scheduleDates, policy };
 }
 
 /** GET /me/courses — enrolled courses with a progress summary each. */

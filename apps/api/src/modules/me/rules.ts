@@ -29,6 +29,10 @@ export interface Facts {
   quizScore: number | null;
   caseSubmitted: boolean;
   caseReviewed: boolean;
+  /** Тема обязана иметь хотя бы одно оценивание (тест или кейс) — требование
+   *  коридора политики. Без этого тема без теста засчитывалась АВТОМАТИЧЕСКИ:
+   *  достаточно было не создавать тест, чтобы обойти любые требования. */
+  requireAssessment?: boolean;
   /** Test urinishlari tugadimi (ishlatilgan >= ruxsat etilgan). Bo'lmasa false.
    *  ⚠️ Busiz dvigatel "testni 70% ga topshiring" deb yozaverardi — talaba esa
    *  qayta topshira olmasdi: mavzu abadiy tugamas, keyingisi abadiy qulf edi. */
@@ -110,6 +114,29 @@ export function evaluateRule(
 
   const metCount = conditions.filter((c) => c.met).length;
   const total = conditions.length;
+
+  // ⛔ ЖЁСТКИЙ КОНТРОЛЬ (2026-08-11): тема без единого оценивания больше НЕ
+  // засчитывается сама собой. Раньше total === 0 давало completed = true —
+  // то есть тема, где опубликованы только конспект и слайды, закрывалась
+  // мгновенно, без единого действия студента, и открывала следующую.
+  // Это был самый дешёвый обход всей системы: не создавай тест.
+  const noAssessment = !facts.hasQuiz && !facts.hasCase;
+  if (facts.requireAssessment && noAssessment) {
+    return {
+      completed: false,
+      pct: 0,
+      dateOk: !rule.notBeforeDate || new Date().toISOString().slice(0, 10) >= rule.notBeforeDate,
+      unmet: [
+        {
+          key: "quiz",
+          blocked: true,
+          uz: "Mavzuda baholash yoʻq — oʻqituvchi test yoki keys qoʻshishi kerak",
+          ru: "В теме нет оценивания — преподаватель должен добавить тест или кейс",
+        },
+      ],
+    };
+  }
+
   const contentComplete =
     total === 0 ? true : rule.logic === "OR" ? metCount > 0 : metCount === total;
   const completed = contentComplete && dateOk;

@@ -244,3 +244,77 @@ export function useDeleteTask() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["created-tasks"] }),
   });
 }
+
+// ---------- ЖЁСТКИЙ КОНТРОЛЬ: коридор политики + отчёт об отклонениях ----------
+
+export interface PolicyRow {
+  id: number;
+  level: "UNIVERSITY" | "FACULTY" | "DEPARTMENT";
+  scopeId: number | null;
+  scopeName: string | null;
+  minQuizPassedPct: number;
+  minVideoWatchedPct: number;
+  requireAssessment: boolean;
+  requireSequential: boolean;
+  requireCase: boolean;
+  requireCaseReviewed: boolean;
+  minQuizAttempts: number;
+  maxQuizAttempts: number;
+  minAttemptGapHours: number;
+  requireRemediation: boolean;
+  minMinutesPerQuestion: number;
+  allowManualUnlock: boolean;
+  updatedBy: string | null;
+  updatedAt: string;
+}
+
+export interface PoliciesResponse {
+  canEditUniversity: boolean;
+  faculties: { id: number; name: string }[];
+  departments: { id: number; name: string; facultyId: number }[];
+  policies: PolicyRow[];
+}
+
+export interface ControlReport {
+  policy: Omit<PolicyRow, "id" | "level" | "scopeId" | "scopeName" | "updatedBy" | "updatedAt"> & {
+    sources: { level: string; scopeId: number | null }[];
+  };
+  totals: {
+    courses: number;
+    topicsPublished: number;
+    topicsWithoutAssessment: number;
+    manualUnlocks: number;
+    manualUnlocksLast30d: number;
+    coursesBelowPolicy: number;
+    coursesSequentialOff: number;
+  };
+  byTeacher: {
+    teacherId: number;
+    teacherName: string;
+    departmentName: string;
+    manualUnlocks: number;
+    topicsWithoutAssessment: number;
+    coursesBelowPolicy: number;
+  }[];
+  topicsWithoutAssessment: { topicId: number; title: string; courseId: number; courseName: string; teacherName: string }[];
+  recentUnlocks: { at: string; teacherName: string; studentName: string; topicTitle: string; reason: string | null; note: string | null }[];
+}
+
+export function useControlReport() {
+  return useQuery({ queryKey: ["admin-control"], queryFn: () => api<ControlReport>("/api/v1/admin/control") });
+}
+
+export function usePolicies() {
+  return useQuery({ queryKey: ["admin-policies"], queryFn: () => api<PoliciesResponse>("/api/v1/admin/policies") });
+}
+
+export function useSavePolicy() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: Record<string, unknown>) => api("/api/v1/admin/policies", { method: "PUT", body: JSON.stringify(body) }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-policies"] });
+      qc.invalidateQueries({ queryKey: ["admin-control"] });
+    },
+  });
+}

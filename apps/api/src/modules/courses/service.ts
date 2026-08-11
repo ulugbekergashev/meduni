@@ -1,5 +1,7 @@
 import type { Prisma } from "../../lib/prisma";
 import { prisma } from "../../lib/prisma";
+import { assertRuleWithinPolicy, assertSequentialAllowed, resolvePolicy } from "../policy/service";
+import type { UnlockRule } from "../me/rules";
 import { ApiError, badRequest, forbidden, notFound } from "../../lib/errors";
 import { buildMatrix } from "./progress";
 import { loadCourse } from "../me/service";
@@ -697,6 +699,16 @@ export async function updateCourseSettings(
   if (c.teacherId !== teacherId) {
     throw new ApiError(403, "forbidden", "Bu sizning kursingiz emas", "Это не ваш курс");
   }
+
+  // ⛔ KORIDOR (2026-08-11). Ilgari o'qituvchi shu yerdan o'tish ballini 0 ga
+  // tushirishi, ketma-ketlikni butunlay o'chirishi va keys talabini olib
+  // tashlashi mumkin edi — hech kimning roziligisiz va JURNALGA YOZUVSIZ.
+  // Endi: kafedra minimumidan pastga tushirish — 403, har o'zgarish esa
+  // "было → стало" ko'rinishida auditga tushadi.
+  const policy = await resolvePolicy(c.departmentId);
+  assertRuleWithinPolicy(body.defaultUnlockRuleJson as Partial<UnlockRule> | null, policy);
+  assertSequentialAllowed(body.sequentialUnlock, policy);
+
   const data: Prisma.CourseUpdateInput = {};
   if (body.defaultUnlockRuleJson !== undefined) {
     data.defaultUnlockRuleJson = (body.defaultUnlockRuleJson ?? null) as object;
@@ -704,5 +716,26 @@ export async function updateCourseSettings(
   if (typeof body.scheduleUnlock === "boolean") data.scheduleUnlock = body.scheduleUnlock;
   if (typeof body.sequentialUnlock === "boolean") data.sequentialUnlock = body.sequentialUnlock;
   await prisma.course.update({ where: { id: courseId }, data });
+
+  await prisma.auditLog.create({
+    data: {
+      actorId: teacherId,
+      action: "UPDATE_COURSE_RULES",
+      entity: "Course",
+      entityId: courseId,
+      detailsJson: {
+        before: {
+          rule: c.defaultUnlockRuleJson ?? null,
+          sequentialUnlock: c.sequentialUnlock,
+          scheduleUnlock: c.scheduleUnlock,
+        },
+        after: {
+          rule: (data.defaultUnlockRuleJson ?? c.defaultUnlockRuleJson) ?? null,
+          sequentialUnlock: data.sequentialUnlock ?? c.sequentialUnlock,
+          scheduleUnlock: data.scheduleUnlock ?? c.scheduleUnlock,
+        },
+      } as object,
+    },
+  });
   return { ok: true };
 }

@@ -15,6 +15,7 @@ import { CoursesPage } from "./pages/admin/courses/CoursesPage";
 import { CourseDetail } from "./pages/admin/courses/CourseDetail";
 import { AiMonitoringPage } from "./pages/admin/ai/AiMonitoringPage";
 import { AuditPage } from "./pages/admin/audit/AuditPage";
+import { ControlPage } from "./pages/admin/control/ControlPage";
 import { AdminTasksPage } from "./pages/admin/tasks/AdminTasksPage";
 import { TeachShell } from "./pages/teach/TeachShell";
 import { TeachDashboard } from "./pages/teach/TeachDashboard";
@@ -72,6 +73,7 @@ export function App() {
         <Route path="courses/:id" element={<CourseDetail />} />
         <Route path="tasks" element={<AdminTasksPage />} />
         <Route path="ai" element={<AiMonitoringPage />} />
+        <Route path="control" element={<ControlPage />} />
         <Route path="audit" element={<AuditPage />} />
         <Route path="settings" element={<AccountSettings />} />
       </Route>

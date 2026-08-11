@@ -213,6 +213,10 @@ export interface QuizTabData {
   passThreshold: number;
   maxAttempts: number;
   canStart: boolean;
+  /** Nega boshlab bo'lmaydi: urinishlar tugadi yoki tanaffus. */
+  blockedBy?: "attempts_exhausted" | "cooldown" | null;
+  nextAttemptAt?: string | null;
+  attemptsLeft?: number;
   inProgressId: number | null;
   /** Vaqt chegarasi (daqiqa); 0 = cheklanmagan. */
   timeLimitMin: number;

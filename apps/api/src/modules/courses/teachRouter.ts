@@ -272,7 +272,16 @@ teachCoursesRouter.post(
     const studentId = Number(req.body?.studentId);
     const topicId = Number(req.body?.topicId);
     if (!Number.isInteger(studentId) || !Number.isInteger(topicId)) throw notFound();
-    res.json(await progress.manualUnlock(parseId(req.params.id), req.user!.id, studentId, topicId));
+    res.json(
+      await progress.manualUnlock(
+        parseId(req.params.id),
+        req.user!.id,
+        studentId,
+        topicId,
+        typeof req.body?.reason === "string" ? req.body.reason : undefined,
+        typeof req.body?.note === "string" ? req.body.note : undefined
+      )
+    );
   })
 );
 
