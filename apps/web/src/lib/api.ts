@@ -67,6 +67,25 @@ export async function authedFetch(url: string, init?: RequestInit): Promise<Resp
   return ok ? send() : res;
 }
 
+/**
+ * Barqaror qurilma identifikatori (localStorage). Test urinishi shu qurilmaga
+ * bog'lanadi — do'st o'z telefonidan davom ettira olmaydi. Bu "biometriya"
+ * emas, lekin eng oddiy stsenariyni yopadi.
+ */
+function deviceId(): string {
+  const KEY = "meduni.device";
+  try {
+    let v = localStorage.getItem(KEY);
+    if (!v) {
+      v = (crypto.randomUUID?.() ?? String(Math.random()).slice(2)) as string;
+      localStorage.setItem(KEY, v);
+    }
+    return v;
+  } catch {
+    return "no-storage";
+  }
+}
+
 export async function api<T>(path: string, init?: RequestInit): Promise<T> {
   let res: Response;
   try {
@@ -74,6 +93,7 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
       ...init,
       headers: {
         "Content-Type": "application/json",
+        "X-Device-Id": deviceId(),
         ...init?.headers,
       },
     });

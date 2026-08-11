@@ -4,6 +4,16 @@ import { readFileBuffer, readText } from "../../lib/storage";
 import { buildPdf } from "../content/presentation";
 import { digestAudioRel, hasDigestAudio } from "../topics/service";
 import { clampQuiz, FALLBACK_POLICY, resolvePolicy } from "../policy/service";
+import {
+  assertPresence,
+  assertSameDevice,
+  buildOrder,
+  integrityFlags,
+  readIntegrity,
+  readOrder,
+  toOriginalIndex,
+  toShownIndex,
+} from "./integrity";
 import { chaptersFromScript, type PodcastChapter } from "../content/podcast";
 import type { CaseJson, DigestJson, PodcastSegment, ScriptSegment, Slide } from "../../ai/types";
 import {
@@ -457,6 +467,9 @@ interface AttemptRow {
   attemptNo: number;
   expiresAt: Date | null;
   finishedAt: Date | null;
+  orderJson?: unknown;
+  deviceHash?: string | null;
+  integrityJson?: unknown;
 }
 interface QuizRow {
   passThreshold: number;
@@ -478,6 +491,17 @@ function serializeAttempt(attempt: AttemptRow, quiz: QuizRow) {
   const total = quiz.questions.length;
   const correctCount = quiz.questions.filter((q) => answers[String(q.id)] === q.correctIndex).length;
 
+  // SNIMOK: har urinishning O'Z tartibi. Yonidagi talaba boshqa ekran ko'radi,
+  // qayta topshirishda tartib yana boshqacha bo'ladi.
+  const order = readOrder(attempt.orderJson);
+  const byId = new Map(quiz.questions.map((q) => [q.id, q]));
+  const ordered = order ? order.q.map((id) => byId.get(id)).filter(Boolean) : quiz.questions;
+  const shownOptions = (q: { id: number; optionsJson: unknown }) => {
+    const opts = questionOptions(q.optionsJson);
+    const perm = order?.opt[String(q.id)];
+    return perm ? perm.map((i) => opts[i] ?? "") : opts;
+  };
+
   // ⚠️ ESKIRGAN URINISH: o'qituvchi testni QAYTA generatsiya qilsa savollar
   // butunlay yangi id oladi, eski urinishning javoblari esa o'sha eski
   // savollarga tegishli bo'lib qoladi. Natijada ekranda "0/20 · 67%" degan
@@ -493,7 +517,9 @@ function serializeAttempt(attempt: AttemptRow, quiz: QuizRow) {
     attemptNo: attempt.attemptNo,
     passThreshold: quiz.passThreshold,
     total,
-    answers,
+    answers: Object.fromEntries(
+      Object.entries(answers).map(([qid, v]) => [qid, toShownIndex(order, Number(qid), v) ?? v])
+    ),
     /** Belgilangan savollar (keyin qaytish uchun). */
     flagged: ((attempt.flaggedJson as number[]) ?? []).filter((n) => Number.isInteger(n)),
     /** Vaqt tugash momenti (ISO) yoki null — cheklanmagan. Timer shundan hisoblanadi. */
@@ -503,20 +529,21 @@ function serializeAttempt(attempt: AttemptRow, quiz: QuizRow) {
     correctCount: finished && !stale ? correctCount : null,
     /** Test urinishdan keyin qayta yaratilgan — javoblar tahlili mavjud emas. */
     stale,
-    questions: quiz.questions.map((q) => ({
+    questions: (ordered as typeof quiz.questions).map((q) => ({
       id: q.id,
       text: q.text,
-      options: questionOptions(q.optionsJson),
+      options: shownOptions(q),
       difficulty: q.difficulty,
       // Correct answer + explanations are hidden until the attempt is finished.
+      // Indekslar EKRAN tartibida beriladi — javoblar esa bazada ASL indeksda.
       ...(finished
         ? {
-            correctIndex: q.correctIndex,
+            correctIndex: toShownIndex(order, q.id, q.correctIndex) ?? q.correctIndex,
             explanations: (q.explanationJson as string[]) ?? [],
-            studentAnswer: answers[String(q.id)] ?? null,
+            studentAnswer: toShownIndex(order, q.id, answers[String(q.id)] ?? null),
             sourceFragment: q.sourceFragment,
           }
-        : {}),
+        : { studentAnswerShown: toShownIndex(order, q.id, answers[String(q.id)] ?? null) }),
     })),
   };
 }
@@ -619,13 +646,17 @@ export async function recordRemediation(
   return { correct, ...(await remediationStatus(studentId, attempt.quizId)) };
 }
 
-export async function startQuizAttempt(studentId: number, quizId: number) {
+export async function startQuizAttempt(studentId: number, quizId: number, device?: string) {
   const quiz = await quizWithTopic(quizId);
   await assertTopicOpen(studentId, quiz.contentItem.topicId);
 
   const attempts = await prisma.quizAttempt.findMany({ where: { studentId, quizId }, orderBy: { attemptNo: "desc" } });
   const inProgress = attempts.find((a) => a.finishedAt === null);
-  if (inProgress) return serializeAttempt(inProgress, quiz); // resume, not a new attempt
+  if (inProgress) {
+    // Boshlangan urinishni BOSHQA qurilmada davom ettirib bo'lmaydi.
+    if (device) assertSameDevice(inProgress.deviceHash, device);
+    return serializeAttempt(inProgress, quiz); // resume, not a new attempt
+  }
 
   const finished = attempts.filter((a) => a.finishedAt !== null);
   const finishedCount = finished.length;
@@ -635,6 +666,14 @@ export async function startQuizAttempt(studentId: number, quizId: number) {
   // KO'CHA edi, yagona chiqish esa "bilmaganni o'tkazib yuborish".
   const policy = await resolvePolicy(await departmentOfQuiz(quizId));
   const eff = clampQuiz(quiz, policy, quiz.questions.length);
+
+  // OCHIQ REJIM: yakuniy imtihonlar faqat auditoriyada. Bu — "o'zi topshirdimi"
+  // degan savolga yagona haqiqiy javob (qolgani faqat narxini oshiradi).
+  if (quiz.requiresPresence || policy.requirePresence) {
+    const courseId = await enrolledCourseIdForTopic(studentId, quiz.contentItem.topicId);
+    if (courseId === null) throw forbiddenNotEnrolled();
+    await assertPresence(studentId, courseId);
+  }
   const gate = attemptGate(finished, eff);
   if (!gate.ok) {
     if (gate.reason === "cooldown") {
@@ -665,7 +704,15 @@ export async function startQuizAttempt(studentId: number, quizId: number) {
   const expiresAt = eff.timeLimitMin > 0 ? new Date(Date.now() + eff.timeLimitMin * 60_000) : null;
 
   const created = await prisma.quizAttempt.create({
-    data: { quizId, studentId, answersJson: {}, attemptNo: finishedCount + 1, expiresAt },
+    data: {
+      quizId,
+      studentId,
+      answersJson: {},
+      attemptNo: finishedCount + 1,
+      expiresAt,
+      orderJson: { ...buildOrder(quiz.questions) },
+      deviceHash: device ?? null,
+    },
   });
   return serializeAttempt(created, quiz);
 }

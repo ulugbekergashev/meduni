@@ -264,6 +264,8 @@ export interface PolicyRow {
   requireRemediation: boolean;
   minMinutesPerQuestion: number;
   allowManualUnlock: boolean;
+  /** Очный режим: тест только в аудитории, после отметки присутствия. */
+  requirePresence: boolean;
   updatedBy: string | null;
   updatedAt: string;
 }
@@ -297,6 +299,8 @@ export interface ControlReport {
     coursesBelowPolicy: number;
   }[];
   topicsWithoutAssessment: { topicId: number; title: string; courseId: number; courseName: string; teacherName: string }[];
+  /** Попытки с сигналами честности — подсказка преподавателю, не обвинение. */
+  integrityAlerts: { attemptId: number; studentName: string; topicTitle: string; scorePct: number; at: string; flags: string[] }[];
   recentUnlocks: { at: string; teacherName: string; studentName: string; topicTitle: string; reason: string | null; note: string | null }[];
 }
 

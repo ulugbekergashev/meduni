@@ -2358,7 +2358,8 @@
       "case": "Klinik keys majburiy",
       "caseReviewed": "Keys oʻqituvchi tomonidan tekshirilsin",
       "remediation": "Qayta topshirishdan oldin xatolar ustida ishlash",
-      "manual": "Qoʻlda ochishga ruxsat"
+      "manual": "Qoʻlda ochishga ruxsat",
+      "presence": "Faqat auditoriyada (ochiq rejim)"
     },
     "h": {
       "pass": "Kurs bundan past qoʻya olmaydi",
@@ -2372,7 +2373,16 @@
       "case": "Mavzuda keys boʻlsa — majburiy",
       "caseReviewed": "Avto-baho yetarli emas",
       "remediation": "Aks holda qayta topshirish — variantlarni terish",
-      "manual": "Oʻchirilsa — istisno berish umuman mumkin emas"
+      "manual": "Oʻchirilsa — istisno berish umuman mumkin emas",
+      "presence": "Test faqat yoʻqlamada belgilangan kuni ochiladi — “oʻzi topshirdimi” savoliga yagona haqiqiy javob"
+    },
+    "integrityTitle": "Halollik signallari",
+    "integrityHint": "Bu — oʻqituvchi uchun ESLATMA, avtomatik ayblov emas. Har holat suhbat talab qiladi.",
+    "flag": {
+      "tab_switching": "Vkladkadan chiqqan",
+      "paste": "Buferdan qoʻygan",
+      "too_fast": "Juda tez javob",
+      "multiple_ips": "Turli IP"
     }
   }
 }

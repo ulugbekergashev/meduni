@@ -30,6 +30,8 @@ export interface ResolvedPolicy {
   requireRemediation: boolean;
   minMinutesPerQuestion: number;
   allowManualUnlock: boolean;
+  /** ОЧНЫЙ РЕЖИМ для всех тестов кафедры (отдельный тест включает сам). */
+  requirePresence: boolean;
   /** Откуда пришло ужесточение — для экрана «кто что установил». */
   sources: { level: "UNIVERSITY" | "FACULTY" | "DEPARTMENT"; scopeId: number | null }[];
 }
@@ -48,6 +50,7 @@ export const FALLBACK_POLICY: ResolvedPolicy = {
   requireRemediation: true,
   minMinutesPerQuestion: 1,
   allowManualUnlock: true,
+  requirePresence: false,
   sources: [],
 };
 
@@ -66,6 +69,7 @@ type PolicyRow = {
   requireRemediation: boolean;
   minMinutesPerQuestion: number;
   allowManualUnlock: boolean;
+  requirePresence: boolean;
 };
 
 /** Слияние: следующий уровень может только ужесточить. */
@@ -85,6 +89,8 @@ function tighten(base: ResolvedPolicy, row: PolicyRow): ResolvedPolicy {
     minMinutesPerQuestion: Math.max(base.minMinutesPerQuestion, row.minMinutesPerQuestion),
     // Запретить ручной допуск — ужесточение, поэтому И.
     allowManualUnlock: base.allowManualUnlock && row.allowManualUnlock,
+    // Требовать присутствие — ужесточение.
+    requirePresence: base.requirePresence || row.requirePresence,
     sources: [...base.sources, { level: row.level, scopeId: row.scopeId }],
   };
 }
@@ -126,7 +132,8 @@ export async function resolvePolicy(departmentId: number | null): Promise<Resolv
   let out: ResolvedPolicy = rows.length
     ? { ...FALLBACK_POLICY, minQuizAttempts: 1, maxQuizAttempts: 99, minQuizPassedPct: 0, minVideoWatchedPct: 0,
         requireAssessment: false, requireSequential: false, requireCase: false, requireCaseReviewed: false,
-        minAttemptGapHours: 0, requireRemediation: false, minMinutesPerQuestion: 0, allowManualUnlock: true, sources: [] }
+        minAttemptGapHours: 0, requireRemediation: false, minMinutesPerQuestion: 0, allowManualUnlock: true,
+        requirePresence: false, sources: [] }
     : FALLBACK_POLICY;
   for (const r of rows) out = tighten(out, r);
   // Диапазон попыток мог схлопнуться при противоречивых настройках уровней.

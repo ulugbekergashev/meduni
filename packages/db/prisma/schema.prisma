@@ -511,6 +511,9 @@ model LearningPolicy {
 
   /// Разрешён ли ручной допуск вообще и обязателен ли мотив.
   allowManualUnlock  Boolean @default(true)
+  /// ОЧНЫЙ РЕЖИМ: кафедра может потребовать присутствия для ВСЕХ тестов.
+  /// Отдельный тест включает очность сам (Quiz.requiresPresence).
+  requirePresence    Boolean @default(false)
 
   updatedById Int?
   updatedBy   User?    @relation("PolicyEditor", fields: [updatedById], references: [id])
@@ -536,6 +539,10 @@ model Quiz {
   /// Пауза между попытками (часы). 0 = без паузы. Реальное значение
   /// зажимается коридором политики (minAttemptGapHours).
   attemptGapHours Int       @default(0)
+  /// ОЧНЫЙ РЕЖИМ: попытку можно начать только в день занятия и только если
+  /// преподаватель отметил студента присутствующим. Для итоговых испытаний —
+  /// единственное, что реально отвечает на «сдал сам или друг».
+  requiresPresence Boolean  @default(false)
   /// Vaqt chegarasi (daqiqa). 0 = cheklanmagan. Test boshlanganda
   /// QuizAttempt.expiresAt shunga qarab hisoblanadi.
   timeLimitMin  Int         @default(0)
@@ -563,6 +570,16 @@ model QuizAttempt {
   /// urinishni avtomatik yakunlaydi — klient soatiga ishonilmaydi.
   expiresAt   DateTime?
   finishedAt  DateTime?
+  /// СНИМОК ВАРИАНТА: порядок вопросов и перестановка вариантов ответа,
+  /// свои для КАЖДОЙ попытки. Сосед видит другой экран, на пересдаче — другой
+  /// порядок. Ответы хранятся в ИСХОДНЫХ индексах, перевод делает сервер.
+  orderJson   Json?
+  /// Устройство, начавшее попытку. Продолжить с другого нельзя — это закрывает
+  /// самый простой сценарий «друг сдаёт за меня со своего телефона».
+  deviceHash  String?
+  /// Сигналы честности: уход со вкладки, вставка из буфера, аномальная скорость.
+  /// ⚠️ Это ПОДСКАЗКА преподавателю, а не автоматическое обвинение.
+  integrityJson Json?
 
   @@map("quiz_attempts")
 }

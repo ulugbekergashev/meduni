@@ -46,6 +46,7 @@ export function ControlPage() {
       requireCaseReviewed: row.requireCaseReviewed,
       requireRemediation: row.requireRemediation,
       allowManualUnlock: row.allowManualUnlock,
+      requirePresence: row.requirePresence,
     });
   };
 
@@ -85,6 +86,7 @@ export function ControlPage() {
     { key: "requireCaseReviewed", label: t("f.caseReviewed"), hint: t("h.caseReviewed") },
     { key: "requireRemediation", label: t("f.remediation"), hint: t("h.remediation") },
     { key: "allowManualUnlock", label: t("f.manual"), hint: t("h.manual") },
+    { key: "requirePresence", label: t("f.presence"), hint: t("h.presence") },
   ];
 
   return (
@@ -174,6 +176,26 @@ export function ControlPage() {
                       </Link>
                       <span className="text-ink-dim">{x.courseName}</span>
                       <span className="ml-auto text-micro text-ink-faint">{x.teacherName}</span>
+                    </div>
+                  ))}
+                </div>
+              </Disclosure>
+            )}
+
+            {d.integrityAlerts.length > 0 && (
+              <Disclosure label={t("integrityTitle")} count={d.integrityAlerts.length} storageKey="meduni.control.integrity">
+                <p className="pb-2 text-micro leading-relaxed text-ink-dim">{t("integrityHint")}</p>
+                <div className="divide-y divide-line">
+                  {d.integrityAlerts.map((a) => (
+                    <div key={a.attemptId} className="flex flex-wrap items-baseline gap-x-2 py-2 text-note">
+                      <span className="font-bold text-ink">{a.studentName}</span>
+                      <span className="text-ink-dim">{a.topicTitle}</span>
+                      <span className="tabular-nums text-ink-soft">{a.scorePct}%</span>
+                      <span className="ml-auto flex flex-wrap gap-1">
+                        {a.flags.map((f) => (
+                          <Chip key={f} label={t(`flag.${f}`)} tone="rose" />
+                        ))}
+                      </span>
                     </div>
                   ))}
                 </div>

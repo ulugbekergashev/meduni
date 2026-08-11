@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { ArrowLeft, ArrowRight, Check, ClipboardList, Clock, Flag, RotateCcw, TriangleAlert, X } from "lucide-react";
 import { Icon, Spinner, cls, useToast } from "@meduni/ui";
 import { ConfirmDialog } from "../../../components/ConfirmDialog";
+import { api } from "../../../lib/api";
 import {
   useAttempt,
   useFinishAttempt,
@@ -117,6 +118,27 @@ function Running({ attempt, topicId }: { attempt: QuizAttemptView; topicId: numb
   const [answers, setAnswers] = useState<Record<string, number>>(attempt.answers);
   const [confirm, setConfirm] = useState(false);
   const [expired, setExpired] = useState(false);
+
+  // ⛔ HALOLLIK SIGNALLARI (2026-08-11). Vkladkadan chiqish va buferdan qo'yish
+  // qayd etiladi — bu O'QITUVCHIGA PODSKAZKA, avtomatik ayblov EMAS.
+  // Talabaga hech narsa bloklanmaydi: nazorat qo'rqitish emas, dalil to'plash.
+  useEffect(() => {
+    if (expired) return;
+    const send = (event: "blur" | "paste") => {
+      void api(`/api/v1/me/attempts/${attempt.id}/integrity`, {
+        method: "POST",
+        body: JSON.stringify({ event }),
+      }).catch(() => undefined);
+    };
+    const onBlur = () => document.hidden && send("blur");
+    const onPaste = () => send("paste");
+    document.addEventListener("visibilitychange", onBlur);
+    document.addEventListener("paste", onPaste);
+    return () => {
+      document.removeEventListener("visibilitychange", onBlur);
+      document.removeEventListener("paste", onPaste);
+    };
+  }, [attempt.id, expired]);
 
   const q = attempt.questions[qi];
   const total = attempt.questions.length;

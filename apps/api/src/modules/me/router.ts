@@ -4,6 +4,7 @@ import { badRequest, notFound } from "../../lib/errors";
 import { requireRoles } from "../../middleware/rbac";
 import * as svc from "./service";
 import * as lesson from "./lesson";
+import { deviceHash, recordIntegrity } from "./integrity";
 import * as profile from "./profile";
 import * as chat from "./chat";
 import * as flashcards from "./flashcards";
@@ -238,7 +239,22 @@ meRouter.post(
 
 // ---------- Quiz attempts ----------
 
-meRouter.post("/quizzes/:id/attempts", wrap(async (req, res) => res.json(await lesson.startQuizAttempt(req.user!.id, parseId(req.params.id)))));
+// Urinish QURILMAGA bog'lanadi (do'st boshqa telefonda davom ettira olmasin).
+meRouter.post(
+  "/quizzes/:id/attempts",
+  wrap(async (req, res) => res.json(await lesson.startQuizAttempt(req.user!.id, parseId(req.params.id), deviceHash(req))))
+);
+
+// Halollik signallari: vkladkadan chiqish, buferdan qo'yish, g'ayritabiiy tezlik.
+// ⚠️ Bu o'qituvchiga PODSKAZKA, avtomatik ayblov EMAS.
+meRouter.post(
+  "/attempts/:id/integrity",
+  wrap(async (req, res) => {
+    const ev = String(req.body?.event ?? "");
+    if (!["blur", "paste", "fast"].includes(ev)) return res.json({ ok: true });
+    res.json(await recordIntegrity(req.user!.id, parseId(req.params.id), ev as "blur" | "paste" | "fast", req.ip ?? null));
+  })
+);
 
 const answersSchema = z.object({ answers: z.record(z.string(), z.number().int().min(0)) });
 meRouter.put(

@@ -6,7 +6,8 @@
 //
 // Область видимости — как во всём админ-контуре: SUPERADMIN видит университет,
 // декан свой факультет, заведующий кафедрой свою кафедру.
-import { prisma } from "../../lib/prisma";
+import { Prisma, prisma } from "../../lib/prisma";
+import { integrityFlags, readIntegrity } from "../me/integrity";
 import { ApiError } from "../../lib/errors";
 import type { Request } from "express";
 import { adminScope, type AdminScope } from "../../middleware/adminScope";
@@ -55,6 +56,15 @@ export interface ControlReport {
     courseId: number;
     courseName: string;
     teacherName: string;
+  }[];
+  /** Попытки с сигналами честности (уход со вкладки, вставка, разные IP). */
+  integrityAlerts: {
+    attemptId: number;
+    studentName: string;
+    topicTitle: string;
+    scorePct: number;
+    at: string;
+    flags: string[];
   }[];
   /** Последние ручные допуски с мотивом. */
   recentUnlocks: {
@@ -159,6 +169,38 @@ export async function getControlReport(req: Request): Promise<ControlReport> {
       })
     : [];
 
+  // Сигналы честности — по завершённым попыткам курсов в зоне видимости.
+  const quizIds = await prisma.quiz.findMany({
+    where: { contentItem: { topicId: { in: topicIds } } },
+    select: { id: true },
+  });
+  const flagged = quizIds.length
+    ? await prisma.quizAttempt.findMany({
+        where: { quizId: { in: quizIds.map((q) => q.id) }, finishedAt: { not: null }, integrityJson: { not: Prisma.DbNull } },
+        select: {
+          id: true,
+          scorePct: true,
+          finishedAt: true,
+          integrityJson: true,
+          student: { select: { fullName: true } },
+          quiz: { select: { contentItem: { select: { topic: { select: { title: true } } } } } },
+        },
+        orderBy: { finishedAt: "desc" },
+        take: 100,
+      })
+    : [];
+  const integrityAlerts = flagged
+    .map((a) => ({
+      attemptId: a.id,
+      studentName: a.student.fullName,
+      topicTitle: a.quiz.contentItem.topic.title,
+      scorePct: a.scorePct,
+      at: a.finishedAt!.toISOString(),
+      flags: integrityFlags(readIntegrity(a.integrityJson)),
+    }))
+    .filter((x) => x.flags.length > 0)
+    .slice(0, 25);
+
   const cutoff = Date.now() - 30 * 86_400_000;
   let manualUnlocksLast30d = 0;
   for (const o of overrides) {
@@ -182,6 +224,7 @@ export async function getControlReport(req: Request): Promise<ControlReport> {
       .filter((t) => t.manualUnlocks > 0 || t.topicsWithoutAssessment > 0 || t.coursesBelowPolicy > 0)
       .sort((a, b) => b.manualUnlocks - a.manualUnlocks || b.topicsWithoutAssessment - a.topicsWithoutAssessment),
     topicsWithoutAssessment: bare,
+    integrityAlerts,
     recentUnlocks: overrides.slice(0, 25).map((o) => ({
       at: o.overriddenAt!.toISOString(),
       teacherName: o.overriddenBy?.fullName ?? "—",
@@ -210,6 +253,7 @@ const BOOL_FIELDS = [
   "requireCaseReviewed",
   "requireRemediation",
   "allowManualUnlock",
+  "requirePresence",
 ] as const;
 
 /** Кто вправе править какой уровень: вуз — только ректорат, факультет — декан. */
@@ -254,6 +298,7 @@ export async function listPolicies(req: Request) {
       requireRemediation: r.requireRemediation,
       minMinutesPerQuestion: r.minMinutesPerQuestion,
       allowManualUnlock: r.allowManualUnlock,
+      requirePresence: r.requirePresence,
       updatedBy: r.updatedBy?.fullName ?? null,
       updatedAt: r.updatedAt.toISOString(),
     })),
