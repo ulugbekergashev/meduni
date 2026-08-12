@@ -3,17 +3,14 @@ import { useTranslation } from "react-i18next";
 import { motion, type Variants } from "framer-motion";
 import {
   AlertTriangle,
-  BookOpen,
   CheckCircle2,
   ChevronRight,
   ClipboardCheck,
   FileClock,
-  FileStack,
-  GraduationCap,
   Sparkles,
   Users,
 } from "lucide-react";
-import { Card, Donut, Icon, LegendRow, MiniBars, Spinner, StatCard, cls } from "@meduni/ui";
+import { Card, Donut, Icon, LegendRow, MiniBars, Spinner, cls } from "@meduni/ui";
 import { useMe } from "../../lib/auth";
 import { useLocale } from "../../lib/useLocale";
 import { formatDate } from "../../lib/date";
@@ -95,13 +92,21 @@ export function AdminDashboard() {
 
       {s && (
         <>
-          {/* Core stats */}
-          <motion.div variants={itemVariants} className="mt-4 grid grid-cols-2 gap-4 lg:grid-cols-4">
-            <StatCard icon={Users} value={s.counts.students} label={t("students")} hint={t("studentsHint")} tone="bg-blue-soft text-blue" onClick={() => navigate("/admin/users")} />
-            <StatCard icon={GraduationCap} value={s.counts.teachers} label={t("teachers")} hint={t("teachersHint")} tone="bg-violet-soft text-violet" onClick={() => navigate("/admin/users")} />
-            <StatCard icon={BookOpen} value={s.counts.courses} label={t("courses")} hint={t("coursesHint")} tone="bg-brand-soft text-brand-deep" onClick={() => navigate("/admin/courses")} />
-            <StatCard icon={FileStack} value={s.counts.publishedContent} label={t("publishedContent")} hint={t("publishedIn", { count: s.counts.publishedTopics })} tone="bg-emerald-soft text-emerald" onClick={() => navigate("/admin/courses")} />
-          </motion.div>
+          {/* ⛔ STAT DIETASI: bu to'rt raqam menyuni takrorlardi (kartalar
+              /admin/users va /admin/courses ga olib borardi, filtr emas edi).
+              Endi — bitta matn qatori. Kerak bo'lsa nav orqali o'tiladi. */}
+          <motion.p variants={itemVariants} className="mt-3 flex flex-wrap items-baseline gap-x-4 gap-y-1 text-note text-ink-soft">
+            <span>
+              <b className="tabular-nums text-ink">{s.counts.students}</b> {t("students").toLowerCase()}
+            </span>
+            <span>
+              <b className="tabular-nums text-ink">{s.counts.teachers}</b> {t("teachers").toLowerCase()}
+            </span>
+            <span>
+              <b className="tabular-nums text-ink">{s.counts.courses}</b> {t("courses").toLowerCase()}
+            </span>
+            <span className="text-ink-dim">{t("publishedIn", { count: s.counts.publishedTopics })}</span>
+          </motion.p>
 
           {/* Composition + activity timeline - Bento Box */}
           <motion.div variants={itemVariants} className="mt-4 grid gap-4 lg:grid-cols-5">

@@ -12,18 +12,16 @@ import {
   DoorOpen,
   Flame,
   GraduationCap,
-  Layers,
   Medal,
   PlayCircle,
   Repeat,
   Sparkles,
   Stethoscope,
-  Trophy,
   type LucideIcon,
 } from "lucide-react";
 import { Card, EmptyState, Icon, ProgressRing, BarRow, cls } from "@meduni/ui";
 import { AsyncSection } from "../../components/AsyncSection";
-import { HeroCard, HeroTile, RailCard } from "../../components/HeroStats";
+import { HeroCard, RailCard } from "../../components/HeroStats";
 import { Disclosure } from "../../components/Disclosure";
 import { CheckInCard } from "./CheckInCard";
 import { useLocale } from "../../lib/useLocale";
@@ -239,34 +237,31 @@ export function StudentDashboard() {
                   </div>
                 }
               >
-                <HeroTile
-                  icon={Layers}
-                  value={`${d.courses.reduce((s, c) => s + c.topicsCompleted, 0)}/${d.courses.reduce((s, c) => s + c.topicsTotal, 0)}`}
-                  label={t("summaryTopics")}
-                  tone="bg-emerald-soft text-emerald"
-                  onClick={() => navigate("/app/courses")}
-                />
-                <HeroTile
-                  icon={CalendarCheck2}
-                  value={attPct !== null ? `${attPct}%` : "—"}
-                  label={t("summaryAttendance")}
-                  tone={attPct !== null && attPct < 75 ? "bg-rose-soft text-rose" : "bg-blue-soft text-blue"}
-                  onClick={() => navigate("/app/attendance")}
-                />
-                <HeroTile
-                  icon={BookOpen}
-                  value={String(d.courses.length)}
-                  label={t("summaryCourses")}
-                  tone="bg-brand-soft text-brand-tint"
-                  onClick={() => navigate("/app/courses")}
-                />
-                <HeroTile
-                  icon={Trophy}
-                  value={rank?.rank ? `${rank.rank}/${rank.total}` : "—"}
-                  label={t("summaryRank")}
-                  tone="bg-amber-soft text-amber"
-                  onClick={() => navigate("/app/grades")}
-                />
+                {/* ⛔ STAT DIETASI (§18): to'rt plitka ham menyuni takrorlardi
+                    (kurslar/davomat/baholar allaqachon chap menyuda). Endi bitta
+                    qator — asosiy ko'rsatkich halqada, qolgani matnda. */}
+                <p className="col-span-2 flex flex-wrap items-baseline gap-x-4 gap-y-1 text-note text-ink-soft sm:col-span-4">
+                  <span>
+                    <b className="tabular-nums text-ink">
+                      {d.courses.reduce((s, c) => s + c.topicsCompleted, 0)}/
+                      {d.courses.reduce((s, c) => s + c.topicsTotal, 0)}
+                    </b>{" "}
+                    {t("summaryTopics").toLowerCase()}
+                  </span>
+                  {attPct !== null && (
+                    <span className={attPct < 75 ? "font-bold text-rose" : undefined}>
+                      <b className="tabular-nums">{attPct}%</b> {t("summaryAttendance").toLowerCase()}
+                    </span>
+                  )}
+                  {rank?.rank && (
+                    <span>
+                      <b className="tabular-nums text-ink">
+                        {rank.rank}/{rank.total}
+                      </b>{" "}
+                      {t("summaryRank").toLowerCase()}
+                    </span>
+                  )}
+                </p>
               </HeroCard>
             </motion.div>
 

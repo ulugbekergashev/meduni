@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { AlertTriangle, Download, GraduationCap, LayoutGrid, List, ListPlus, Search, TrendingUp, Unlock, Users } from "lucide-react";
 import { Badge, Button, Card, Icon, Modal, Spinner, StatCard, cls, useToast } from "@meduni/ui";
 import { AsyncSection } from "../../../components/AsyncSection";
+import { MistakesMap } from "./MistakesMap";
 import { QuickTaskModal } from "../../../components/QuickTaskModal";
 import {
   API_URL,
@@ -312,14 +313,14 @@ export function ProgressTab() {
   const q = useCourseProgress(courseId);
   const data = q.data;
 
-  const [view, setView] = useState<"heatmap" | "list">(() => {
+  const [view, setView] = useState<"heatmap" | "list" | "mistakes">(() => {
     try {
       return localStorage.getItem(VIEW_KEY) === "heatmap" ? "heatmap" : "list";
     } catch {
       return "list";
     }
   });
-  const pickView = (v: "heatmap" | "list") => {
+  const pickView = (v: "heatmap" | "list" | "mistakes") => {
     setView(v);
     try {
       localStorage.setItem(VIEW_KEY, v);
@@ -395,6 +396,9 @@ export function ProgressTab() {
                   <button onClick={() => pickView("list")} className={cls("flex items-center gap-1 px-3 py-2 text-note font-medium", view === "list" ? "bg-brand-soft text-brand-deep" : "text-ink-soft hover:bg-bg")}>
                     <Icon icon={List} size={15} /> {t("list")}
                   </button>
+                  <button onClick={() => pickView("mistakes")} className={cls("flex items-center gap-1 px-3 py-2 text-note font-medium", view === "mistakes" ? "bg-brand-soft text-brand-deep" : "text-ink-soft hover:bg-bg")}>
+                    <Icon icon={AlertTriangle} size={15} /> {t("mistakesView")}
+                  </button>
                 </div>
                 <a href={`${API_URL}/api/v1/teach/courses/${courseId}/progress/export?view=${view}`} className="inline-flex items-center gap-1.5 rounded-control border border-line px-3 py-2 text-note font-medium text-ink-soft transition-colors hover:bg-bg">
                   <Icon icon={Download} size={15} /> Excel
@@ -403,7 +407,11 @@ export function ProgressTab() {
 
               {/* View */}
               <div className="mt-4">
-                {students.length === 0 ? (
+                {view === "mistakes" ? (
+                  // Alohida tab emas, SHU bo'limning uchinchi ko'rinishi: ekranda
+                  // baribir bitta analitika moduli turadi (§18 "kabina" saboqi).
+                  <MistakesMap courseId={courseId} />
+                ) : students.length === 0 ? (
                   <Card><p className="py-6 text-center text-note text-ink-soft">{t("noMatch")}</p></Card>
                 ) : view === "heatmap" ? (
                   <Heatmap data={data} students={students} onPick={setPicked} />

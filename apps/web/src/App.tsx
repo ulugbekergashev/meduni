@@ -108,6 +108,7 @@ export function App() {
           {/* Attendance moved to the group profile; old links land on topics. */}
           <Route path="sessions" element={<Navigate to="../topics" replace />} />
           <Route path="progress" element={<ProgressTab />} />
+          {/* Eski havolalar ishlayveradi: bo'limlar 6 tadan 4 taga qisqardi. */}
           <Route path="mistakes" element={<MistakesTab />} />
           {/* Guruh chati olib tashlandi (2026-07-23) — eski link topics'ga. */}
           <Route path="chat" element={<Navigate to="../topics" replace />} />

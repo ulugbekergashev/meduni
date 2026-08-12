@@ -5,6 +5,8 @@ import { CalendarClock, Check, ListChecks, type LucideIcon } from "lucide-react"
 import { Button, Card, Icon, Spinner, cls, useToast } from "@meduni/ui";
 import { useTeachCourseMeta, useUpdateCourseSettings } from "../api";
 import { DEFAULT_RULE, UnlockRuleForm } from "./UnlockRuleForm";
+import { Disclosure } from "../../../components/Disclosure";
+import { SyllabusTab } from "./SyllabusTab";
 import type { UnlockRule } from "../topics/api";
 
 /** Mustaqil shart-toggle (bosilsa yoqiladi/o'chadi; ikkalasi birga bo'lishi mumkin). */
@@ -90,6 +92,13 @@ export function SettingsTab() {
         <Button onClick={onSave} disabled={save.isPending}>{t("save")}</Button>
         <span className="text-micro text-ink-faint">{t("note")}</span>
       </div>
+
+      {/* ⛔ 2026-08-11: "Dastur" alohida bo'lim edi — kurs bo'limlari 6 taga
+          yetgan edi. U kurs boshida bir marta to'ldiriladi, ya'ni sozlamalar
+          bilan bir toifada. Endi shu yerda, yig'ilgan holda. */}
+      <Disclosure label={t("syllabusSection")} storageKey="meduni.teach.syllabus">
+        <SyllabusTab />
+      </Disclosure>
     </div>
   );
 }

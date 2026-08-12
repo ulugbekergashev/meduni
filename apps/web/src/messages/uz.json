@@ -1157,7 +1157,8 @@
     "unlockConditions": "Mavzu ochilish shartlari",
     "unlockConditionsHint": "Ikkalasini ham tanlash mumkin. Birga bo'lsa — HAR IKKALA shart bajarilishi kerak.",
     "bothOn": "Ikkalasi yoniq: mavzu HAM oldingisi tugagach, HAM dars kuni kelgach ochiladi.",
-    "noneOn": "Hech biri tanlanmagan — barcha mavzular erkin ochiq bo'ladi."
+    "noneOn": "Hech biri tanlanmagan — barcha mavzular erkin ochiq bo'ladi.",
+    "syllabusSection": "Kurs dasturi"
   },
   "materials": {
     "dropzone": "Faylni tanlang yoki torting",
@@ -1688,7 +1689,8 @@
       "technical": "Texnik nosozlik",
       "transfer": "Koʻchirildi",
       "other": "Boshqa"
-    }
+    },
+    "mistakesView": "Xatolar"
   },
   "lesson": {
     "topicDetails": "Mavzu ma'lumotlari",
@@ -2383,6 +2385,8 @@
       "paste": "Buferdan qoʻygan",
       "too_fast": "Juda tez javob",
       "multiple_ips": "Turli IP"
-    }
+    },
+    "noDeviations": "Chetlashish yoʻq",
+    "deviations": "{{n}} ta chetlashish"
   }
 }

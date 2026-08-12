@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { AlertTriangle, KeyRound, Layers, ShieldCheck, SlidersHorizontal } from "lucide-react";
-import { Button, Card, Icon, Input, Modal, Select, StatCard, Toggle, cls, useToast } from "@meduni/ui";
+import { ShieldCheck } from "lucide-react";
+import { Button, Card, Icon, Input, Modal, Select, Toggle, cls, useToast } from "@meduni/ui";
 import { AsyncSection } from "../../../components/AsyncSection";
 import { DataTable } from "../../../components/DataTable";
 import { Disclosure } from "../../../components/Disclosure";
@@ -105,36 +105,35 @@ export function ControlPage() {
       >
         {totals && (
           <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
-              <StatCard
-                icon={KeyRound}
-                tone="bg-rose-soft text-rose"
-                label={t("s.manual")}
-                value={totals.manualUnlocksLast30d}
-                hint={t("s.manualHint", { n: totals.manualUnlocks })}
-              />
-              <StatCard
-                icon={Layers}
-                tone="bg-amber-soft text-amber"
-                label={t("s.bare")}
-                value={totals.topicsWithoutAssessment}
-                hint={t("s.bareHint", { n: totals.topicsPublished })}
-              />
-              <StatCard
-                icon={SlidersHorizontal}
-                tone="bg-amber-soft text-amber"
-                label={t("s.below")}
-                value={totals.coursesBelowPolicy}
-                hint={t("s.belowHint", { n: totals.courses })}
-              />
-              <StatCard
-                icon={AlertTriangle}
-                tone="bg-rose-soft text-rose"
-                label={t("s.seqOff")}
-                value={totals.coursesSequentialOff}
-                hint={t("s.seqOffHint")}
-              />
-            </div>
+            {/* ⛔ STAT DIETASI: to'rt karta o'rniga BITTA qator. Rahbariyatga
+                kerak bo'lgan narsa — "chetlashish bormi va qanaqasi", raqamlar
+                galereyasi emas. Nol bo'lsa — tinch yashil qator. */}
+            {(() => {
+              const items = [
+                { n: totals.manualUnlocksLast30d, label: t("s.manual"), tone: "text-rose" },
+                { n: totals.topicsWithoutAssessment, label: t("s.bare"), tone: "text-amber" },
+                { n: totals.coursesBelowPolicy, label: t("s.below"), tone: "text-amber" },
+                { n: totals.coursesSequentialOff, label: t("s.seqOff"), tone: "text-rose" },
+              ].filter((x) => x.n > 0);
+              const clean = items.length === 0;
+              return (
+                <div
+                  className={cls(
+                    "flex flex-wrap items-baseline gap-x-4 gap-y-1 rounded-card border px-4 py-3",
+                    clean ? "border-emerald/30 bg-emerald-soft" : "border-line bg-surface"
+                  )}
+                >
+                  <span className={cls("text-section font-extrabold", clean ? "text-emerald" : "text-ink")}>
+                    {clean ? t("noDeviations") : t("deviations", { n: items.reduce((a, x) => a + x.n, 0) })}
+                  </span>
+                  {items.map((x) => (
+                    <span key={x.label} className="text-note text-ink-soft">
+                      <b className={cls("tabular-nums", x.tone)}>{x.n}</b> {x.label.toLowerCase()}
+                    </span>
+                  ))}
+                </div>
+              );
+            })()}
 
             {d.byTeacher.length > 0 && (
               <Card className="p-0">
