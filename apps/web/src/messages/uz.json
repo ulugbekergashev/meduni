@@ -1929,7 +1929,21 @@
     "attemptsOver": "Urinishlar tugadi — oʻqituvchiga murojaat qiling",
     "retakeReady": "Qayta topshirishingiz mumkin — {{n}} / {{total}} urinish qoldi.",
     "retakeBtn": "Qayta topshirish",
-    "remediationHint": "Shu vaqt ichida xatolaringiz ustida ishlang — bu qayta topshirish sharti."
+    "remediationHint": "Shu vaqt ichida xatolaringiz ustida ishlang — bu qayta topshirish sharti.",
+    "materialsPanelTitle": "Mavzu materiallari",
+    "showAllBlocks": "Barchasi",
+    "block_konspekt": "Konspekt",
+    "block_slides": "Prezentatsiya",
+    "block_video": "Video maʼruza",
+    "block_podcast": "Podkast",
+    "block_flashcards": "Kartochkalar",
+    "block_mindmap": "Fikr xaritasi",
+    "blockMeta_konspekt": "{{v}} boʻlim oʻqildi",
+    "blockMeta_slides": "{{v}} slayd",
+    "blockMeta_video": "{{v}} daqiqa",
+    "blockMeta_podcast": "{{v}}",
+    "blockMeta_flashcards": "{{v}} karta",
+    "blockMeta_mindmap": "{{v}} tarmoq"
   },
   "search": {
     "placeholder": "Qidirish… (talaba, guruh, kurs)",

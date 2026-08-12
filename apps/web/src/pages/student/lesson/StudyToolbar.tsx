@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { BookText, Check, FolderOpen, Headphones, Layers, List, Lock, Network, Sparkles, Video, X } from "lucide-react";
+import { BookText, Check, FolderOpen, Headphones, Layers, LayoutGrid, List, Lock, Network, Sparkles, Video, X } from "lucide-react";
 import { Icon, cls } from "@meduni/ui";
 import { useFlashcards, type Lesson } from "../api";
 import type { ContentView } from "./stages";
@@ -37,6 +37,7 @@ export function StudyToolbar({
   sourcesCount,
   sourcesOpen,
   onToggleSources,
+  onShowAll,
 }: {
   lesson: Lesson;
   blocks: ContentView[];
@@ -50,6 +51,8 @@ export function StudyToolbar({
   sourcesCount: number;
   sourcesOpen: boolean;
   onToggleSources: () => void;
+  /** Yig'ilgan tasmadan PULTGA qaytish (2026-08-12). */
+  onShowAll?: () => void;
 }) {
   const { t } = useTranslation(undefined, { keyPrefix: "lesson" });
   const reduce = useReducedMotion();
@@ -86,6 +89,22 @@ export function StudyToolbar({
 
   return (
     <div className="relative z-20 flex shrink-0 items-center gap-2 border-b border-line bg-surface px-2 py-1.5">
+      {/* PULTGA QAYTISH — bu tasma pultning yig'ilgan holati (2026-08-12). */}
+      {onShowAll && (
+        <button
+          onClick={onShowAll}
+          title={t("showAllBlocks")}
+          aria-label={t("showAllBlocks")}
+          className={cls(
+            "inline-flex shrink-0 items-center gap-1.5 rounded-control border border-line px-2 py-1.5 text-note font-bold text-ink-soft transition-colors hover:border-brand hover:text-brand",
+            FOCUS
+          )}
+        >
+          <Icon icon={LayoutGrid} size={15} />
+          <span className="hidden sm:inline">{t("showAllBlocks")}</span>
+        </button>
+      )}
+
       {/* Kontent turlari — segmented tasma (mobilda gorizontal skroll) */}
       <div className="flex min-w-0 flex-1 gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {blocks.map((v) => {

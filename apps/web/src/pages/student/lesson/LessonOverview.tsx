@@ -1,5 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { motion, useReducedMotion } from "framer-motion";
+import { MaterialsPanel } from "./MaterialsPanel";
+import type { ContentView } from "./stages";
 import { ArrowRight, Check, ChevronRight, Clock, Lock, PlayCircle } from "lucide-react";
 import { Icon, cls } from "@meduni/ui";
 import type { Lesson } from "../api";
@@ -43,11 +45,16 @@ export function LessonOverview({
   stages,
   onStage,
   onResume,
+  studyBlocks = [],
+  onBlock,
 }: {
   lesson: Lesson;
   stages: StageInfo[];
   onStage: (key: StageKey) => void;
   onResume: () => void;
+  /** Mavjud o'quv bloklari — pult shulardan quriladi. */
+  studyBlocks?: ContentView[];
+  onBlock?: (v: ContentView) => void;
 }) {
   const { t } = useTranslation(undefined, { keyPrefix: "lesson" });
   const reduce = useReducedMotion();
@@ -84,8 +91,10 @@ export function LessonOverview({
     }
   }
 
+  // Pult bloklari uchun kengroq ustun (520px da bento siqilib qolardi);
+  // o'qish matni bu ekranda yo'q, shuning uchun kenglik xalaqit qilmaydi.
   return (
-    <div className="mx-auto w-full max-w-[520px] px-4 py-6">
+    <div className="mx-auto w-full max-w-[720px] px-4 py-6">
       {/* Mavzu sarlavhasi + meta */}
       <motion.div
         initial={reduce ? false : { opacity: 0, y: 10 }}
@@ -108,6 +117,15 @@ export function LessonOverview({
           )}
         </div>
       </motion.div>
+
+      {/* PULT: barcha material blok bo'lib turadi (2026-08-12). Prezentatsiya
+          va video endi menyu bandi emas — muqovasi va progressi bor material. */}
+      {studyBlocks.length > 0 && onBlock && (
+        <div className="mt-4">
+          <p className="mb-2 text-micro font-extrabold uppercase tracking-wider text-ink-faint">{t("materialsPanelTitle")}</p>
+          <MaterialsPanel lesson={lesson} blocks={studyBlocks} onPick={(v) => onBlock?.(v)} />
+        </div>
+      )}
 
       {/* Bosqichlar ro'yxati */}
       <motion.ol

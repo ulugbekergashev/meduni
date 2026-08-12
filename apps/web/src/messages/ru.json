@@ -1929,7 +1929,21 @@
     "attemptsOver": "Попытки исчерпаны — обратитесь к преподавателю",
     "retakeReady": "Вы можете пересдать — осталось {{n}} из {{total}} попыток.",
     "retakeBtn": "Пересдать",
-    "remediationHint": "За это время разберите свои ошибки — это условие пересдачи."
+    "remediationHint": "За это время разберите свои ошибки — это условие пересдачи.",
+    "materialsPanelTitle": "Материалы темы",
+    "showAllBlocks": "Все",
+    "block_konspekt": "Конспект",
+    "block_slides": "Презентация",
+    "block_video": "Видео-лекция",
+    "block_podcast": "Подкаст",
+    "block_flashcards": "Карточки",
+    "block_mindmap": "Карта мыслей",
+    "blockMeta_konspekt": "прочитано разделов: {{v}}",
+    "blockMeta_slides": "{{v}} слайдов",
+    "blockMeta_video": "{{v}} минут",
+    "blockMeta_podcast": "{{v}}",
+    "blockMeta_flashcards": "{{v}} карточек",
+    "blockMeta_mindmap": "{{v}} ветвей"
   },
   "search": {
     "placeholder": "Поиск… (студент, группа, курс)",

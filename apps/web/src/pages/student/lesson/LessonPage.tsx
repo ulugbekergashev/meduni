@@ -266,6 +266,11 @@ export function LessonPage() {
                 stages={stages}
                 onStage={onStage}
                 onResume={() => setView(resumeView(lesson))}
+                studyBlocks={studyBlocks}
+                onBlock={(v) => {
+                  setJumpTo(null);
+                  setView(v);
+                }}
               />
             </Panel>
           ) : (
@@ -299,6 +304,8 @@ export function LessonPage() {
           <div className="order-1 flex min-h-0 min-w-0 flex-col overflow-hidden rounded-card border border-line bg-surface">
             {hasStudy && (
               <StudyToolbar
+                // Pultga qaytish — yig'ilgan tasmadan (4-variant xatti-harakati).
+                onShowAll={() => setView("overview")}
                 lesson={lesson}
                 blocks={studyBlocks}
                 active={activeBlock}
