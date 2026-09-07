@@ -375,7 +375,7 @@ export function StudentDetailPage() {
                   value={attPct !== null ? attPct : "—"}
                   unit={attPct !== null ? "%" : undefined}
                   tone={attPct !== null && attPct < 75 ? "bad" : undefined}
-                  sub={t("att.pct")}
+                  sub={t("attHint")}
                 />
                 <StatCard
                   label={t("lockedTopics")}

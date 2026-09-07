@@ -439,7 +439,7 @@
     "resetPwConfirm": "Создать новый пароль для этого пользователя?"
   },
   "studentDetail": {
-    "back": "← Группы",
+    "back": "Группы",
     "progress": "Прогресс",
     "overallShort": "Успеваемость",
     "attendance": "Посещаемость",
@@ -504,7 +504,8 @@
     "topicsCompletedN": "{{done}} из {{total}} тем пройдено",
     "lockedTopics": "Темы под замком",
     "lockedTopicsHint": "требование не выполнено",
-    "noAttentionShort": "нет ожидающих дел"
+    "noAttentionShort": "нет ожидающих дел",
+    "attHint": "доля посещённых занятий"
   },
   "journal": {
     "hint": "Нажмите на ячейку — отметьте посещаемость и оценку.",

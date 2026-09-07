@@ -439,7 +439,7 @@
     "resetPwConfirm": "Bu foydalanuvchi uchun yangi parol yaratasizmi?"
   },
   "studentDetail": {
-    "back": "← Guruhlar",
+    "back": "Guruhlar",
     "progress": "Progress",
     "overallShort": "Oʻzlashtirish",
     "attendance": "Davomat",
@@ -504,7 +504,8 @@
     "topicsCompletedN": "{{total}} mavzudan {{done}} tasi tugallangan",
     "lockedTopics": "Qulfdagi mavzular",
     "lockedTopicsHint": "talab bajarilmagan darslar",
-    "noAttentionShort": "kutayotgan ish yoʻq"
+    "noAttentionShort": "kutayotgan ish yoʻq",
+    "attHint": "kelgan darslar ulushi"
   },
   "journal": {
     "hint": "Katakni bosing — yoʻqlama va baho qoʻying.",
