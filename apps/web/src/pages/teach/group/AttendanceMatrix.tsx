@@ -165,7 +165,7 @@ export function AttendanceMatrix({ group }: { group: TeachGroup }) {
           <div className="fixed inset-0 z-40" onClick={() => setPop(null)} />
           <div
             style={{ position: "fixed", top: pop.top + 6, left: pop.left, transform: "translateX(-50%)" }}
-            className="z-50 flex min-w-[160px] flex-col gap-0.5 rounded-card border border-line bg-surface p-1.5 shadow-card-hover"
+            className="z-50 flex min-w-[160px] flex-col gap-0.5 rounded-card border border-line bg-surface p-1.5 shadow-pop"
           >
             {STATUS_META.map((m) => (
               <button

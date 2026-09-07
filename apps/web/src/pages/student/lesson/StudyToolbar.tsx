@@ -162,7 +162,7 @@ export function StudyToolbar({
                 animate={{ opacity: 1, y: 0 }}
                 exit={reduce ? { opacity: 0 } : { opacity: 0, y: -6 }}
                 transition={{ duration: 0.14 }}
-                className="absolute right-0 top-[calc(100%+6px)] z-30 max-h-[60vh] w-[300px] overflow-y-auto rounded-card border border-line bg-surface p-1.5 shadow-card-hover"
+                className="absolute right-0 top-[calc(100%+6px)] z-30 max-h-[60vh] w-[300px] overflow-y-auto rounded-card border border-line bg-surface p-1.5 shadow-pop"
               >
                 {sections.map((s) => {
                   const cur = visibleSection === s.index;

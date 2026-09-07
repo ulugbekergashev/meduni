@@ -1,79 +1,131 @@
-:root {
-  /* Premium Light Mode Palette (WOW effect redesign). */
-  --bg-rgb: 244 247 251;          /* Much softer, cooler background */
-  --surface-rgb: 255 255 255;
-  --surface-raised-rgb: 250 251 252;
-  --surface-glass: rgba(255, 255, 255, 0.75); /* Translucent for glassmorphism */
-  --ink-rgb: 15 23 42;         /* Deep slate for better contrast */
-  --ink-strong-rgb: 2 6 23;
-  --ink-soft-rgb: 100 116 139;    /* Modern slate soft text */
-  --ink-faint-rgb: 148 163 184;
-  --ink-dim-rgb: 203 213 225;
-  --line-rgb: 226 232 240;
-  --line-raised-rgb: 203 213 225;
+/* ============================================================================
+   MEDUNI — DIZAYN TOKENLARI · «Sokin panel» (2026-09 redizayn)
 
+   Manba: Sariosiyo CRM (`docs/UI_UPGRADE_PLAN.md`, 1.1a — 22 ta ma'noli token)
+   qiymatlari, brend "Kosmik Indigo" mavzusidan. Buyurtmachi tanlovi:
+   referens — YO'NALISH, nusxa emas. Reja: `.claude/plans/redizayn-sokin-panel-2026-09.md`.
+
+   ⚠️ IKKI KO'RINISH (2026-07-29 qoidasi kuchida):
+     `--x-rgb` — KANAL qiymati ("79 70 229"). Tailwind'ning shaffoflik
+       modifikatori (`bg-brand/10`, `border-brand/30`) FAQAT shu formatni tushunadi.
+     `--x`     — o'sha rangning to'liq ko'rinishi: CSS/SVG/inline style uchun
+       (masalan `stroke: var(--line-raised)`).
+   Dark blok faqat `-rgb` larni qayta belgilaydi — `--x` lar avtomatik ergashadi.
+
+   ⚠️ SOYA YO'Q. Karta = 1px chegara. Soya faqat modal/dropdown'da
+   (`--shadow-modal`). `--shadow-card` ataylab `none` — eski `shadow-card`
+   klasslari (32 joy) shu sababli jimgina yo'qoladi, fayllarga tegilmaydi.
+   ========================================================================= */
+
+:root {
+  color-scheme: light;
+
+  /* --- Yuzalar -------------------------------------------------------------
+     fon      — sahifa foni
+     surface  — kartochka
+     surface-2— chap rey va yuqori panel (yorug'da kartochka bilan bir xil)
+     raised   — kartochka ICHIDAGI maydon, input, jadval shapkasi */
+  --bg-rgb: 244 246 245;
+  --surface-rgb: 255 255 255;
+  --surface-2-rgb: 255 255 255;
+  --surface-raised-rgb: 244 246 245;
+  --surface-glass: #ffffff;
+
+  /* --- Matn darajalari -----------------------------------------------------
+     ink       — asosiy matn
+     ink-2     — jadval qiymati, ikkilamchi matn
+     ink-soft  — ustun sarlavhasi, izoh
+     ink-faint — eng past daraja, yordamchi */
+  --ink-rgb: 22 33 29;
+  --ink-strong-rgb: 15 22 19;
+  --ink-2-rgb: 61 75 69;
+  --ink-soft-rgb: 113 130 123;
+  --ink-faint-rgb: 138 151 143;
+  --ink-dim-rgb: 169 181 175;
+
+  /* --- Chegaralar ----------------------------------------------------------
+     line        — asosiy (kartochka)
+     line-raised — kuchli (tugma, input)
+     line-soft   — mayin (jadval qatorlari orasi) */
+  --line-rgb: 227 232 229;
+  --line-raised-rgb: 219 226 222;
+  --line-soft-rgb: 234 239 236;
+
+  /* --- Brend ---------------------------------------------------------------
+     brand       — to'ldirilgan amal foni VA aksent matn
+     brand-hover — to'ldirilgan amalning hover holati
+     brand-soft  — yumshoq chip foni
+     brand-deep  — brand-soft USTIDAGI matn (qorong'uda YORUG'ga aylanadi)
+     brand-tint  — brand-deep bilan bir xil, mavjud 94 ta chaqiruv uchun saqlangan */
   --brand-rgb: 79 70 229;
+  --brand-hover-rgb: 67 56 202;
   --brand-soft-rgb: 238 242 255;
-  --brand-deep-rgb: 55 48 163;
+  --brand-deep-rgb: 67 56 202;
   --brand-tint-rgb: 67 56 202;
 
-  --blue-rgb: 14 165 233;
+  /* --- Semantik ------------------------------------------------------------ */
+  --emerald-rgb: 23 128 61;
+  --emerald-soft-rgb: 220 241 227;
+  --amber-rgb: 168 106 0;
+  --amber-soft-rgb: 253 240 220;
+  --rose-rgb: 180 35 31;
+  --rose-soft-rgb: 252 238 236;
+  --rose-line-rgb: 246 213 210;   /* xato kartochkasining chegarasi */
+  --rose-muted-rgb: 164 90 84;    /* xato foni USTIDAGI izoh matni */
+  --blue-rgb: 3 120 189;
   --blue-soft-rgb: 224 242 254;
-  --violet-rgb: 139 92 246;
-  --violet-soft-rgb: 237 233 254;
-  --amber-rgb: 245 158 11;
-  --amber-soft-rgb: 254 243 199;
-  --rose-rgb: 244 63 94;
-  --rose-soft-rgb: 255 228 230;
-  --emerald-rgb: 16 185 129;
-  --emerald-soft-rgb: 209 250 229;
+  --violet-rgb: 124 58 237;
+  --violet-soft-rgb: 241 235 254;
 
-  /* Light sidebar (2026-07): white surface, soft indigo active chip. */
+  /* --- Rey va yuqori panel -------------------------------------------------- */
   --side-bg-rgb: 255 255 255;
-  --side-bg-deep-rgb: 248 250 252;
-  --side-ink-rgb: 15 23 42;
-  --side-ink-soft-rgb: 100 116 139;
-  --side-line-rgb: 226 232 240;
+  --side-bg-deep-rgb: 244 246 245;
+  --side-ink-rgb: 22 33 29;
+  --side-ink-soft-rgb: 113 130 123;
+  --side-line-rgb: 227 232 229;
   --side-active-bg-rgb: 238 242 255;
   --side-active-ink-rgb: 67 56 202;
-  --side-hover-bg-rgb: 241 245 249;
+  --side-hover-bg-rgb: 244 246 245;
 
-  --radius-card: 20px;    /* Smoother, larger border radius */
-  --radius-control: 12px;
+  /* --- O'lchamlar ----------------------------------------------------------
+     Referens: kartochka 12px, tugma/input 8px. Ilgari 20/12 edi — burchaklar
+     yumaloqligi "o'yinchoq" taassurotini berardi. */
+  --radius-card: 12px;
+  --radius-control: 8px;
   --radius-pill: 9999px;
 
-  /* Yuqoridagi doimiy header balandligi. Sticky elementlar (wizard stepper
-     kabi) shu qiymatdan oladi — ilgari 57px qo'lda yozilgan edi va header
-     64px ga o'zgarganda 7px bo'shliq paydo bo'lgandi. */
-  --header-h: 64px;
-  /* Mobil pastki tab-bar balandligi (safe-area'siz) — kontent tagiga shuncha
-     bo'sh joy qoldiriladi, aks holda oxirgi element menyu ostida qoladi. */
+  /* Yuqori panel balandligi. Sticky elementlar (wizard stepper, dars sahifasi
+     tasmasi) shu qiymatdan oladi — qo'lda yozilgan piksel YO'Q. */
+  --header-h: 54px;
+  /* Chap ikonka reyi kengligi (1-daraja menyu). */
+  --rail-w: 76px;
+  /* Mobil pastki tab-bar balandligi (safe-area'siz). */
   --bottomnav-h: 64px;
 
-  /* Premium, dispersed, soft shadows (apple-like) */
-  --shadow-card: 0 4px 20px -4px rgba(15, 23, 42, 0.05), 0 1px 2px rgba(15, 23, 42, 0.02);
-  --shadow-card-hover: 0 12px 32px -8px rgba(15, 23, 42, 0.1), 0 4px 8px rgba(15, 23, 42, 0.04);
+  /* --- Soyalar --------------------------------------------------------------
+     Kartochkada soya YO'Q (yuqoridagi izohga qarang). Modal va dropdown
+     sahifadan uziladi — faqat o'sha yerda soya bor. */
+  --shadow-card: none;
+  --shadow-card-hover: none;
+  --shadow-modal: 0 24px 48px -16px rgba(15, 22, 19, 0.28), 0 4px 12px rgba(15, 22, 19, 0.08);
+  --shadow-pop: 0 12px 28px -10px rgba(15, 22, 19, 0.22), 0 2px 6px rgba(15, 22, 19, 0.06);
 
-  /* ⚠️ RANG TOKENLARI IKKI KO'RINISHDA (2026-07-29).
-     `--x-rgb` — KANAL qiymati ("79 70 229"). Tailwind'ning shaffoflik
-     modifikatori (`bg-brand/10`, `border-brand/30`) FAQAT shu formatda
-     ishlaydi; ilgari tokenlar to'liq rang bo'lgani uchun ~40 ta bunday
-     klass qurilgan CSS'ga UMUMAN tushmasdi va jimgina hech narsa qilmasdi.
-     `--x` — o'sha rangning to'liq ko'rinishi: CSS, SVG va inline style'da
-     to'g'ridan ishlatiladi (masalan `stroke: var(--line-raised)`).
-     Dark blok faqat `-rgb` larni qayta belgilaydi — `--x` lar avtomatik
-     ergashadi (CSS o'zgaruvchilari dinamik hisoblanadi). */
+  /* --- To'liq rang ko'rinishlari (CSS/SVG/inline uchun) --------------------- */
   --bg: rgb(var(--bg-rgb));
   --surface: rgb(var(--surface-rgb));
+  --surface-2: rgb(var(--surface-2-rgb));
   --surface-raised: rgb(var(--surface-raised-rgb));
   --ink: rgb(var(--ink-rgb));
   --ink-strong: rgb(var(--ink-strong-rgb));
+  --ink-2: rgb(var(--ink-2-rgb));
   --ink-soft: rgb(var(--ink-soft-rgb));
   --ink-faint: rgb(var(--ink-faint-rgb));
   --ink-dim: rgb(var(--ink-dim-rgb));
   --line: rgb(var(--line-rgb));
   --line-raised: rgb(var(--line-raised-rgb));
+  --line-soft: rgb(var(--line-soft-rgb));
   --brand: rgb(var(--brand-rgb));
+  --brand-hover: rgb(var(--brand-hover-rgb));
   --brand-soft: rgb(var(--brand-soft-rgb));
   --brand-deep: rgb(var(--brand-deep-rgb));
   --brand-tint: rgb(var(--brand-tint-rgb));
@@ -85,6 +137,8 @@
   --amber-soft: rgb(var(--amber-soft-rgb));
   --rose: rgb(var(--rose-rgb));
   --rose-soft: rgb(var(--rose-soft-rgb));
+  --rose-line: rgb(var(--rose-line-rgb));
+  --rose-muted: rgb(var(--rose-muted-rgb));
   --emerald: rgb(var(--emerald-rgb));
   --emerald-soft: rgb(var(--emerald-soft-rgb));
   --side-bg: rgb(var(--side-bg-rgb));
@@ -95,55 +149,84 @@
   --side-active-bg: rgb(var(--side-active-bg-rgb));
   --side-active-ink: rgb(var(--side-active-ink-rgb));
   --side-hover-bg: rgb(var(--side-hover-bg-rgb));
-
 }
 
-/* Dark theme — 2026-07-23 yumshatildi: "qora bo'shliq" (#06080d) texno-startap
-   qiyofasi berardi; tibbiyot platformasiga tinchroq slate mos. Talaba tomoni
-   endi default YORUG' — dark faqat foydalanuvchi tanlovi. */
+/* ============================================================================
+   QORONG'U MAVZU — referens qiymatlari (sovuq slate oilasi).
+   Talaba/o'qituvchi tomoni DEFAULT YORUG'; qorong'u — foydalanuvchi tanlovi.
+   ========================================================================= */
 :root[data-theme="dark"] {
   color-scheme: dark;
 
-  /* 2026-07-23 v3: kartalar fondan aniq AJRALSIN (DentaCRM kabi "chiqadi") —
-     bg chuqurroq, surface sezilarli ochroq, borderlar ko'rinarli, ink yorqin. */
-  --bg-rgb: 11 16 24;          /* eng chuqur fon (sahifa) */
-  --surface-rgb: 25 33 47;     /* asosiy panel — fondan aniq ochroq */
-  --surface-raised-rgb: 35 45 63; /* panel ichidagi karta */
-  --surface-glass: #19212f;
-  /* 2026-07-23 v4: ikkilamchi matn juda xira edi ("ko'rinmaydi") — yorqinlashtirildi. */
-  --ink-rgb: 246 248 252;
-  --ink-strong-rgb: 233 238 246;
-  --ink-soft-rgb: 203 210 223;   /* sub-yorliqlar shu — endi aniq o'qiladi */
-  --ink-faint-rgb: 170 178 196;
-  --ink-dim-rgb: 154 163 182;    /* eng xira ham o'qiladigan darajada */
-  --line-rgb: 44 54 72;
-  --line-raised-rgb: 58 68 86;
+  --bg-rgb: 15 18 22;
+  --surface-rgb: 23 28 37;
+  --surface-2-rgb: 19 23 32;
+  --surface-raised-rgb: 24 29 38;
+  --surface-glass: #171c25;
 
+  --ink-rgb: 232 235 239;
+  --ink-strong-rgb: 238 241 245;
+  --ink-2-rgb: 195 202 212;
+  --ink-soft-rgb: 139 147 161;
+  --ink-faint-rgb: 107 116 130;
+  --ink-dim-rgb: 92 100 114;
+
+  --line-rgb: 35 42 53;
+  --line-raised-rgb: 43 50 61;
+  --line-soft-rgb: 30 36 46;
+
+  /* Qorong'uda `brand` (#6366f1) — to'ldirilgan tugma foni (oq matn bilan
+     o'qiladi), `brand-deep` esa YORUG' (#a5b0ff) — chunki u brand-soft
+     chip USTIDAGI matn. Ilgari u ham to'q edi va chip ichida deyarli
+     ko'rinmasdi (kontrast 1.9). */
   --brand-rgb: 99 102 241;
-  --brand-soft-rgb: 28 39 67;
-  --brand-deep-rgb: 79 70 229;
-  --brand-tint-rgb: 165 180 252;
+  --brand-hover-rgb: 124 131 245;
+  --brand-soft-rgb: 30 36 64;
+  --brand-deep-rgb: 165 176 255;
+  --brand-tint-rgb: 165 176 255;
 
-  --blue-rgb: 56 189 248;
+  --emerald-rgb: 61 220 151;
+  --emerald-soft-rgb: 20 48 42;
+  --amber-rgb: 255 181 71;
+  --amber-soft-rgb: 50 40 26;
+  --rose-rgb: 255 93 108;
+  --rose-soft-rgb: 42 26 30;
+  --rose-line-rgb: 74 40 48;
+  --rose-muted-rgb: 255 138 149;
+  --blue-rgb: 72 180 240;
   --blue-soft-rgb: 18 40 58;
-  --violet-rgb: 167 139 250;
+  --violet-rgb: 183 148 255;
   --violet-soft-rgb: 36 27 62;
-  --amber-rgb: 251 191 36;
-  --amber-soft-rgb: 42 34 16;
-  --rose-rgb: 248 113 113;
-  --rose-soft-rgb: 43 22 32;
-  --emerald-rgb: 52 211 153;
-  --emerald-soft-rgb: 15 42 36;
 
-  --side-bg-rgb: 20 27 40;
-  --side-bg-deep-rgb: 11 16 24;
-  --side-ink-rgb: 245 247 252;
-  --side-ink-soft-rgb: 154 163 182;
-  --side-line-rgb: 44 54 72;
-  --side-active-bg-rgb: 42 57 96;
-  --side-active-ink-rgb: 199 210 254;
-  --side-hover-bg-rgb: 29 38 55;
+  --side-bg-rgb: 19 23 32;
+  --side-bg-deep-rgb: 15 18 22;
+  --side-ink-rgb: 232 235 239;
+  --side-ink-soft-rgb: 139 147 161;
+  --side-line-rgb: 35 42 53;
+  --side-active-bg-rgb: 30 36 64;
+  --side-active-ink-rgb: 165 176 255;
+  --side-hover-bg-rgb: 24 29 38;
 
-  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px -12px rgba(0, 0, 0, 0.6);
-  --shadow-card-hover: 0 2px 4px rgba(0, 0, 0, 0.45), 0 16px 36px -12px rgba(0, 0, 0, 0.7);
+  --shadow-card: none;
+  --shadow-card-hover: none;
+  --shadow-modal: 0 24px 48px -16px rgba(0, 0, 0, 0.7), 0 4px 12px rgba(0, 0, 0, 0.5);
+  --shadow-pop: 0 12px 28px -10px rgba(0, 0, 0, 0.6), 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+/* ============================================================================
+   RAQAMLAR
+   `.num`   — jadval ustunlari, telefon, vaqt, sana: mono shrift, raqamlar
+              bir-birining ostiga tushadi. Faqat SOF raqamga qo'yiladi.
+   `.raqam` — katta ko'rsatkichlar: bir xil kenglikdagi raqam, lekin mono EMAS
+              (28px da JetBrains Mono "0,5" ni "0 , 5" qilib yoyib yuboradi).
+   ========================================================================= */
+.num {
+  font-family: "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-variant-numeric: tabular-nums lining-nums;
+  letter-spacing: -0.02em;
+}
+
+.raqam {
+  font-variant-numeric: tabular-nums lining-nums;
+  letter-spacing: -0.02em;
 }

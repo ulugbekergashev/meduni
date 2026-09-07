@@ -1,5 +1,11 @@
-/* Manrope — dizayn shrifti (paketdan, CDN emas: oflayn + CSP uchun). */
-@import "@fontsource-variable/manrope";
+/* Dizayn shriftlari (paketdan, CDN emas: oflayn + CSP uchun).
+   Sora — interfeys va sarlavhalar. Sora'da KIRILL HARFLARI YO'Q, shuning uchun
+   Inter ikkinchi bo'lib turadi: brauzer har harfni alohida tanlaydi, ya'ni
+   ruscha matn to'liq Inter'da chiqadi va hech narsa buzilmaydi.
+   JetBrains Mono — raqam ustunlari (`.num` / `font-data`). */
+@import "@fontsource-variable/sora";
+@import "@fontsource-variable/inter";
+@import "@fontsource-variable/jetbrains-mono";
 @import "@meduni/ui/tokens.css";
 
 @tailwind base;

@@ -51,7 +51,13 @@ export function Modal({ open, onClose, title, children, className, forceCentered
     >
       <div
         className={cls(
-          "max-h-[90dvh] w-full max-w-lg overflow-y-auto rounded-card bg-surface p-7 shadow-card-hover",
+          "max-h-[90dvh] w-full overflow-y-auto rounded-card bg-surface p-7 shadow-modal",
+          // Sukut kenglik FAQAT chaqiruvchi o'zi bermagan bo'lsa. Ilgari `max-w-lg`
+          // qattiq turardi va `className="max-w-3xl"` bilan TO'QNASHARDI — Tailwind
+          // ikkalasini ham chiqaradi, kaskadda esa tor variant yutardi. Natijada
+          // 7 ta modal (yo'qlama, kurs yaratish, talaba formasi...) 512px'da qolib,
+          // yo'qlamada talaba ismiga 20px joy qolardi ("A..").
+          !/(^|\s)max-w-/.test(className ?? "") && "max-w-lg",
           className
         )}
         onClick={(e) => e.stopPropagation()}

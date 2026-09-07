@@ -62,7 +62,7 @@ export function Sheet({ open, onClose, title, children, className, disableDrag =
 
           <motion.div
             className={cls(
-              "relative max-h-[85dvh] w-full overflow-y-auto rounded-t-card border-t border-line bg-surface shadow-card-hover",
+              "relative max-h-[85dvh] w-full overflow-y-auto rounded-t-card border-t border-line bg-surface shadow-pop",
               "pb-[max(1rem,env(safe-area-inset-bottom))]",
               className
             )}
