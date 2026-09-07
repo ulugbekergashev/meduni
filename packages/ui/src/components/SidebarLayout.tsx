@@ -87,7 +87,7 @@ export function SidebarLayout({
       {/* 1-daraja — IKONKA REYI: modul ikonkasi + kichik yorlig'i (72px).
           Har doim ko'rinadi; matnli ikkinchi ustun — `panel`. */}
       <aside className="sticky top-0 z-20 hidden h-screen w-rail shrink-0 flex-col border-r border-side-line bg-side lg:flex">
-        <div className="flex h-[var(--header-h)] shrink-0 items-center justify-center border-b border-side-line text-[18px] font-bold tracking-tight text-side-ink">
+        <div className="flex h-[var(--header-h)] shrink-0 items-center justify-center border-b border-side-line text-section font-bold tracking-tight text-side-ink">
           {typeof brand === "string" ? brand.charAt(0) : brand}
         </div>
 
@@ -116,7 +116,7 @@ export function SidebarLayout({
                 )}
               </span>
               {/* Yorliq — 2 qatorgacha; §4 bo'yicha eng kichik o'lcham micro (13px). */}
-              <span className="line-clamp-2 w-full break-words text-[11px] font-semibold leading-tight">
+              <span className="line-clamp-2 w-full break-words text-[10px] font-medium leading-tight">
                 {item.shortLabel ?? item.label}
               </span>
             </Link>
@@ -127,7 +127,7 @@ export function SidebarLayout({
       {/* 2-daraja — BO'LIM PANELI: faol modulning ichki bo'limlari. */}
       {showPanel && (
         <aside className="sticky top-0 z-20 hidden h-screen w-[248px] shrink-0 flex-col border-r border-side-line bg-side lg:flex">
-          <div className="flex h-[var(--header-h)] shrink-0 items-center border-b border-side-line px-4 text-[15px] font-extrabold tracking-tight text-side-ink">
+          <div className="flex h-[var(--header-h)] shrink-0 items-center border-b border-side-line px-4 text-section font-bold tracking-tight text-side-ink">
             <span className="truncate">{typeof brand === "string" ? brand : null}</span>
           </div>
           <div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-2">{panel}</div>
@@ -139,20 +139,20 @@ export function SidebarLayout({
             shaffoflik modifikatori CSS generatsiya QILMAYDI, ya'ni header
             fonsiz va chegarasiz qolardi (skroll paytida matn ostidan
             ko'rinardi). Solid token ishlatiladi. */}
-        <header className="sticky top-0 z-30 flex h-[var(--header-h)] shrink-0 items-center gap-2 border-b border-line bg-surface px-3 shadow-sm sm:gap-4 sm:px-6 transition-all duration-300">
+        <header className="sticky top-0 z-30 flex h-[var(--header-h)] shrink-0 items-center gap-2 border-b border-line bg-surface-2 px-3 sm:gap-4 sm:px-6">
           {/* Bo'lim panelini yig'ish (ikonka reyi doim qoladi). Panel yo'q
               sahifada tugma ham ko'rsatilmaydi — bosilsa hech nima o'zgarmasdi. */}
           {panel && (
             <button
               onClick={toggle}
               aria-label={collapsed ? "open section panel" : "collapse section panel"}
-              className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-full text-ink-soft transition-all hover:bg-surface-raised hover:text-ink hover:shadow-sm lg:flex"
+              className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-full text-ink-soft transition-all hover:bg-surface-raised hover:text-ink lg:flex"
             >
               <Icon icon={PanelLeft} size={18} />
             </button>
           )}
           {/* Mobilda brend header'da turadi (yon panel ko'rinmaydi). */}
-          <span className="shrink-0 truncate text-[17px] font-extrabold tracking-tight text-ink lg:hidden">
+          <span className="shrink-0 truncate text-section font-bold tracking-tight text-ink lg:hidden">
             {brand}
           </span>
           <div className="min-w-0 flex-1">{headerSlot}</div>

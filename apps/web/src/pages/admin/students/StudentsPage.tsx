@@ -100,18 +100,18 @@ export function StudentsPage() {
 
       {/* Stats */}
       <div className={cls("mt-3 grid grid-cols-2 gap-3", showDonut ? "lg:grid-cols-3" : "lg:grid-cols-4")}>
-        <StatCard icon={GraduationCap} value={s?.total} label={t("stats.total")} hint={t("stats.totalHint")} tone="bg-blue-soft text-blue" />
-        <StatCard icon={UserCheck} value={s?.active} label={t("stats.active")} hint={t("stats.activeHint")} tone="bg-emerald-soft text-emerald" />
+        <StatCard icon={GraduationCap} value={s?.total} label={t("stats.total")} hint={t("stats.totalHint")} />
+        <StatCard icon={UserCheck} value={s?.active} label={t("stats.active")} hint={t("stats.activeHint")} />
         <StatCard
           icon={UserX}
           value={s?.inactive}
           label={t("stats.inactive")}
           hint={t("stats.inactiveHint")}
-          tone="bg-rose-soft text-rose"
+          tone="bad"
           selected={inactiveOnly}
           onClick={() => { setInactiveOnly((v) => !v); setPage(1); }}
         />
-        {!showDonut && <StatCard icon={Users} value={s?.groupsCount} label={t("stats.groups")} hint={t("stats.groupsHint")} tone="bg-violet-soft text-violet" />}
+        {!showDonut && <StatCard icon={Users} value={s?.groupsCount} label={t("stats.groups")} hint={t("stats.groupsHint")} />}
       </div>
 
       {/* Faculty composition (only when there is something to compare) */}

@@ -17,7 +17,7 @@ export function Badge({ tone = "slate", children }: { tone?: BadgeTone; children
   return (
     <span
       className={cls(
-        "inline-flex items-center rounded-pill px-2.5 py-1 text-note font-semibold",
+        "inline-flex items-center rounded-pill px-2 py-0.5 text-micro font-bold",
         toneClass[tone]
       )}
     >

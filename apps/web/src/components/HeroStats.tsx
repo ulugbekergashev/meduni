@@ -1,11 +1,16 @@
 import type { ReactNode } from "react";
-import { Card, Icon, cls } from "@meduni/ui";
 import type { LucideIcon } from "lucide-react";
+import { Card, Icon, StatCard, cls } from "@meduni/ui";
 
-/** Sahifa shapkasi + statistika kartalari qatori (2026-07-23 v3 — buyurtmachi
- *  DentaCRM etalonini ko'rsatdi: har ko'rsatkich ALOHIDA keng karta, tepada
- *  rangli ikonka-chip, katta raqam, havo ko'p). Sarlavha yuqorida, kartalar
- *  ostida to'liq kenglikda. */
+/**
+ * Sahifa shapkasi + ko'rsatkichlar qatori.
+ *
+ * ⚠️ 2026-09 «Sokin panel»: ichki ko'rinish qayta yozildi, API O'ZGARMADI —
+ * shu sababli 6 ta chaqiruvchi sahifa tegilmasdan yangi qiyofaga o'tdi.
+ * Ilgari bu blokda gradient karta, rangli ikonka-chip, `blur-3xl` yog'du,
+ * `-translate-y-1` sakrash va UPPERCASE yorliqlar bor edi — ya'ni ekrandagi
+ * eng baland ovozli joy sahifaning eng ma'nosiz qismi edi.
+ */
 export function HeroCard({
   title,
   subtitle,
@@ -21,105 +26,66 @@ export function HeroCard({
 }) {
   return (
     <div>
-      <div className="mb-3 flex flex-wrap items-start justify-between gap-x-5 gap-y-2.5">
+      <div className="mb-3 flex flex-wrap items-start justify-between gap-x-5 gap-y-2">
         <div className="min-w-0">
-          <h1 className="text-h1 font-bold text-ink">{title}</h1>
-          {subtitle && <p className="mt-1 text-note text-ink-faint">{subtitle}</p>}
+          <h1 className="truncate text-h1 font-bold text-ink">{title}</h1>
+          {subtitle && <p className="mt-1 text-note text-ink-soft">{subtitle}</p>}
         </div>
         {left && <div className="shrink-0">{left}</div>}
       </div>
-      <div className="grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4">{children}</div>
+      <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4">{children}</div>
     </div>
   );
 }
 
-/** Statistika kartasi (DentaCRM uslubi): ikonka-chip → UPPERCASE yorliq → katta
- *  raqam. Bosilsa filtrlaydi yoki modulga o'tadi; `accent` — gradient urg'u karta. */
+/**
+ * Ko'rsatkich kartasi — endi umumiy `StatCard` ustidagi yupqa qatlam.
+ * `icon`/`tone`/`accent` E'TIBORGA OLINMAYDI (§4 ovoz ierarxiyasi):
+ * ko'rsatkich kartochkasida rangli chip ham, gradient ham yo'q.
+ */
 export function HeroTile({
-  icon,
   value,
   label,
-  tone,
   hint,
   onClick,
   selected = false,
-  accent = false,
 }: {
-  icon: LucideIcon;
+  icon?: LucideIcon;
   value: string;
   label: string;
-  tone: string;
+  tone?: string;
   hint?: ReactNode;
   onClick?: () => void;
   selected?: boolean;
-  /** Gradient urg'u karta (masalan asosiy ko'rsatkich). */
   accent?: boolean;
 }) {
-  if (accent) {
-    return (
-      <Card
-        interactive={!!onClick}
-        onClick={onClick}
-        className="group flex flex-col gap-3 border-0 !bg-gradient-to-br from-brand-deep via-brand to-violet !p-5 text-white shadow-card transition-all duration-300 hover:-translate-y-1 hover:shadow-card-hover"
-      >
-        <span className="flex h-10 w-10 items-center justify-center rounded-control bg-white/20 text-white shadow-inner backdrop-blur-md transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
-          <Icon icon={icon} size={20} />
-        </span>
-        <div>
-          <p className="text-note font-extrabold uppercase tracking-wider text-white/80">{label}</p>
-          <p className="mt-1 text-stat font-extrabold leading-none tabular-nums drop-shadow-md">{value}</p>
-          {hint && <p className="mt-1.5 text-note text-white/90">{hint}</p>}
-        </div>
-      </Card>
-    );
-  }
-  return (
-    <Card
-      interactive={!!onClick}
-      onClick={onClick}
-      className={cls(
-        "group relative overflow-hidden flex flex-col gap-3 !p-4 transition-all duration-300 hover:-translate-y-1",
-        selected ? "border-brand ring-2 ring-brand/30 shadow-[0_0_20px_rgba(79,70,229,0.15)]" : "border border-line shadow-card hover:shadow-card-hover"
-      )}
-    >
-      {/* Subtle glow effect behind the icon */}
-      <div className={cls("absolute -top-8 -left-8 h-24 w-24 rounded-full blur-3xl opacity-20 transition-opacity duration-300 group-hover:opacity-40", tone.replace("text-", "bg-"))} />
-      
-      <span className={cls("relative flex h-10 w-10 items-center justify-center rounded-control transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6", tone)}>
-        <Icon icon={icon} size={20} />
-      </span>
-      <div className="relative z-10">
-        <p className={cls("text-micro font-bold uppercase tracking-wider", selected ? "text-brand-tint" : "text-ink-soft")}>
-          {label}
-        </p>
-        <p className={cls("mt-1 text-h1 font-extrabold leading-none tabular-nums tracking-tight", selected ? "text-brand-tint" : "text-ink")}>
-          {value}
-        </p>
-        {hint && <p className="mt-1 text-note font-medium text-ink-faint">{hint}</p>}
-      </div>
-    </Card>
-  );
+  return <StatCard label={label} value={value} hint={hint} onClick={onClick} selected={selected} />;
 }
 
-/** O'ng ustun bloki — sarlavha + ixcham ro'yxat (dashboard rels bilan bir xil). */
+/** O'ng ustun bloki — sarlavha + ixcham ro'yxat. */
 export function RailCard({
   title,
   icon,
   action,
   children,
+  className,
 }: {
   title: string;
   icon: LucideIcon;
   action?: { label: string; onClick: () => void };
   children: ReactNode;
+  className?: string;
 }) {
   return (
-    <Card className="p-0">
-      <div className="flex items-center gap-2 border-b border-line px-4 py-3">
-        <Icon icon={icon} size={15} className="text-ink-faint" />
-        <p className="flex-1 text-note font-bold text-ink-soft">{title}</p>
+    <Card className={cls("!p-0", className)}>
+      <div className="flex items-center gap-2 px-4 pb-3 pt-3.5">
+        <Icon icon={icon} size={15} className="shrink-0 text-ink-faint" />
+        <h3 className="min-w-0 flex-1 truncate text-section font-bold text-ink">{title}</h3>
         {action && (
-          <button onClick={action.onClick} className="text-note font-semibold text-brand-tint hover:underline">
+          <button
+            onClick={action.onClick}
+            className="shrink-0 text-micro font-bold text-brand-deep hover:underline"
+          >
             {action.label}
           </button>
         )}

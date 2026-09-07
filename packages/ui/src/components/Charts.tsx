@@ -51,8 +51,8 @@ export function ProgressRing({
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-[26px] font-bold leading-none tabular-nums text-ink">{Math.round(v)}%</span>
-        {label && <span className="mt-1 max-w-[80%] truncate text-[12.5px] font-medium text-ink-faint">{label}</span>}
+        <span className="raqam text-h1 font-bold leading-none text-ink">{Math.round(v)}%</span>
+        {label && <span className="mt-1 max-w-[80%] truncate text-micro text-ink-faint">{label}</span>}
       </div>
     </div>
   );
@@ -110,10 +110,10 @@ export function Donut({
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         {centerValue !== undefined && (
-          <span className="text-[24px] font-bold leading-none tabular-nums text-ink">{centerValue}</span>
+          <span className="raqam text-h1 font-bold leading-none text-ink">{centerValue}</span>
         )}
         {centerLabel && (
-          <span className="mt-1 max-w-[75%] truncate text-[12.5px] font-medium text-ink-faint">{centerLabel}</span>
+          <span className="mt-1 max-w-[75%] truncate text-micro text-ink-faint">{centerLabel}</span>
         )}
       </div>
     </div>
@@ -139,16 +139,16 @@ export function LegendRow({
     <>
       <span className="h-2.5 w-2.5 shrink-0 rounded-[3px]" style={{ background: toneVar[tone] }} />
       <span className="min-w-0 flex-1 truncate text-ink-soft">{label}</span>
-      {value !== undefined && <span className="shrink-0 font-semibold tabular-nums text-ink">{value}</span>}
+      {value !== undefined && <span className="shrink-0 font-data font-bold tabular-nums text-ink">{value}</span>}
     </>
   );
-  if (!onClick) return <div className="flex items-center gap-2.5 text-[14px]">{inner}</div>;
+  if (!onClick) return <div className="flex items-center gap-2.5 text-note">{inner}</div>;
   return (
     <button
       onClick={onClick}
       aria-pressed={selected}
-      className={`flex w-full items-center gap-2.5 rounded-control px-1.5 py-1 text-left text-[14px] transition-colors ${
-        selected ? "bg-brand-soft ring-1 ring-brand/30" : "hover:bg-bg"
+      className={`flex w-full items-center gap-2.5 rounded-control px-1.5 py-1 text-left text-note transition-colors ${
+        selected ? "bg-brand-soft ring-1 ring-brand" : "hover:bg-surface-raised"
       }`}
     >
       {inner}
@@ -160,8 +160,8 @@ export function LegendRow({
 export function ProgressBar({ value, tone = "brand", className = "" }: { value: number; tone?: ToneKey; className?: string }) {
   const v = Math.max(0, Math.min(100, Number.isFinite(value) ? value : 0));
   return (
-    <div className={`h-2.5 w-full overflow-hidden rounded-pill bg-bg ${className}`}>
-      <div className="h-full rounded-pill transition-all" style={{ width: `${Math.max(v, 2)}%`, background: toneVar[tone] }} />
+    <div className={`h-1.5 w-full overflow-hidden rounded-pill bg-line ${className}`}>
+      {v > 0 && <div className="h-full rounded-pill transition-all" style={{ width: `${v}%`, background: toneVar[tone] }} />}
     </div>
   );
 }
@@ -189,15 +189,15 @@ export function BarRow({
       onClick={onClick}
       className={`flex w-full items-center gap-4 rounded-control px-2 py-2 text-left transition-colors ${
         onClick
-          ? "hover:bg-bg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+          ? "hover:bg-surface-raised focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
           : "cursor-default"
       }`}
     >
-      <span className="w-44 shrink-0 truncate text-note font-medium text-ink">{label}</span>
-      <span className="h-3 flex-1 overflow-hidden rounded-pill bg-bg">
-        <span className="block h-full rounded-pill transition-all" style={{ width: `${Math.max(v, 2)}%`, background: toneVar[tone] }} />
+      <span className="w-44 shrink-0 truncate text-note text-ink">{label}</span>
+      <span className="h-1.5 flex-1 overflow-hidden rounded-pill bg-line">
+        {v > 0 && <span className="block h-full rounded-pill transition-all" style={{ width: `${v}%`, background: toneVar[tone] }} />}
       </span>
-      <span className="w-12 shrink-0 text-right text-note font-bold tabular-nums text-ink">{Math.round(v)}%</span>
+      <span className="w-12 shrink-0 text-right font-data text-micro font-bold tabular-nums text-ink">{Math.round(v)}%</span>
     </Tag>
   );
 }
@@ -229,7 +229,7 @@ export function MiniBars({
             <div key={i} className="group relative flex flex-1 items-end justify-center" style={{ height }}>
               {few && d.value > 0 && (
                 <span
-                  className="pointer-events-none absolute left-1/2 -translate-x-1/2 text-[11.5px] font-bold tabular-nums text-ink-soft"
+                  className="pointer-events-none absolute left-1/2 -translate-x-1/2 font-data text-micro font-bold tabular-nums text-ink-soft"
                   style={{ bottom: h + 4 }}
                 >
                   {format(d.value)}
@@ -252,7 +252,7 @@ export function MiniBars({
       {few && (
         <div className="mt-1.5 flex gap-[3px]">
           {data.map((d, i) => (
-            <span key={i} className="flex-1 truncate text-center text-[11.5px] text-ink-faint" title={d.label}>
+            <span key={i} className="flex-1 truncate text-center text-micro text-ink-faint" title={d.label}>
               {d.label}
             </span>
           ))}
@@ -270,7 +270,7 @@ export function StackedBar({ segments, total: totalProp }: { segments: { value: 
   const sum = segments.reduce((a, s) => a + s.value, 0);
   const total = Math.max(totalProp ?? sum, sum) || 1;
   return (
-    <div className="flex h-3 w-full gap-[2px] overflow-hidden rounded-pill bg-bg">
+    <div className="flex h-2 w-full gap-[2px] overflow-hidden rounded-pill bg-line">
       {segments.map((s, i) =>
         s.value > 0 ? (
           <span

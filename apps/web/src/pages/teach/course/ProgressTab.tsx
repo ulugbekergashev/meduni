@@ -367,10 +367,10 @@ export function ProgressTab() {
                   "O'rtacha %" kartasi olib tashlandi: u filtr emas edi, qiymati
                   esa quyidagi guruh-o'rtacha qatorida allaqachon bor. */}
               <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4">
-                <StatCard compact icon={Users} label={t("statTotal")} value={data.stats.total} tone="bg-blue-soft text-blue" selected={filter === "all"} onClick={() => setFilter("all")} />
-                <StatCard compact icon={TrendingUp} label={t("statActive")} value={data.stats.active} tone="bg-brand-soft text-brand-deep" selected={filter === "active"} onClick={() => setFilter("active")} />
-                <StatCard compact icon={AlertTriangle} label={t("statBehind")} value={data.stats.behind} tone="bg-rose-soft text-rose" selected={filter === "behind"} onClick={() => setFilter("behind")} />
-                <StatCard compact icon={GraduationCap} label={t("statCompleted")} value={data.stats.completed} tone="bg-emerald-soft text-emerald" selected={filter === "completed"} onClick={() => setFilter("completed")} />
+                <StatCard compact icon={Users} label={t("statTotal")} value={data.stats.total} selected={filter === "all"} onClick={() => setFilter("all")} />
+                <StatCard compact icon={TrendingUp} label={t("statActive")} value={data.stats.active} selected={filter === "active"} onClick={() => setFilter("active")} />
+                <StatCard compact icon={AlertTriangle} label={t("statBehind")} value={data.stats.behind} tone="bad" selected={filter === "behind"} onClick={() => setFilter("behind")} />
+                <StatCard compact icon={GraduationCap} label={t("statCompleted")} value={data.stats.completed} tone="good" selected={filter === "completed"} onClick={() => setFilter("completed")} />
               </div>
               <p className="mt-2 text-note text-ink-soft">{t("statAvg")}: <span className="font-bold tabular-nums text-ink">{data.stats.avgProgress}%</span></p>
 
