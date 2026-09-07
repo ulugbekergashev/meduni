@@ -34,7 +34,7 @@ function Marker({ n, state }: { n: number; state: StageInfo["state"] }) {
       </div>
     );
   return (
-    <div className={cls(base, "bg-surface-raised text-note font-extrabold tabular-nums text-ink-soft")}>{n}</div>
+    <div className={cls(base, "bg-surface-raised text-note font-extrabold font-data tabular-nums text-ink-soft")}>{n}</div>
   );
 }
 
@@ -113,7 +113,7 @@ export function LessonOverview({
             </span>
           )}
           {started && (
-            <span className="font-bold tabular-nums text-ink-soft">{t("topicProgress")}: {pct}%</span>
+            <span className="font-bold font-data tabular-nums text-ink-soft">{t("topicProgress")}: {pct}%</span>
           )}
         </div>
       </motion.div>
@@ -158,7 +158,7 @@ export function LessonOverview({
                   {subLine && <p className="truncate text-micro text-ink-dim">{subLine}</p>}
                 </div>
                 {st.key === "quiz" && st.hint && (
-                  <span className="shrink-0 text-body font-extrabold tabular-nums text-ink">{st.hint}</span>
+                  <span className="shrink-0 text-body font-extrabold font-data tabular-nums text-ink">{st.hint}</span>
                 )}
                 {clickable && (
                   <Icon

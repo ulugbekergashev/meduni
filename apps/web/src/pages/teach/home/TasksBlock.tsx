@@ -130,7 +130,7 @@ export function TasksBlock({ expanded, onExpand }: { expanded: boolean; onExpand
                 )}
               >
                 {c.label}
-                <span className="tabular-nums text-micro opacity-70">{q.isLoading ? "—" : c.value ?? 0}</span>
+                <span className="font-data tabular-nums text-micro opacity-70">{q.isLoading ? "—" : c.value ?? 0}</span>
               </button>
             ))}
           </div>
@@ -146,7 +146,7 @@ export function TasksBlock({ expanded, onExpand }: { expanded: boolean; onExpand
                 )}
               >
                 {c.label}
-                {c.count !== undefined && <span className="tabular-nums opacity-70">{c.count}</span>}
+                {c.count !== undefined && <span className="font-data tabular-nums opacity-70">{c.count}</span>}
               </button>
             ))}
           </div>

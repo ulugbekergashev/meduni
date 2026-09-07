@@ -94,14 +94,14 @@ export function MonthCalendar({
                 <div className="mb-1 flex items-center justify-between">
                   <span
                     className={cls(
-                      "inline-flex h-6 min-w-6 items-center justify-center rounded-full px-1 text-note font-bold tabular-nums",
+                      "inline-flex h-6 min-w-6 items-center justify-center rounded-full px-1 text-note font-bold font-data tabular-nums",
                       isToday ? "bg-brand text-white" : inMonth ? "text-ink" : "text-ink-faint"
                     )}
                   >
                     {d.getDate()}
                   </span>
                   {entries.length > 0 && (
-                    <span className="text-micro font-semibold tabular-nums text-ink-faint">{entries.length}</span>
+                    <span className="text-micro font-semibold font-data tabular-nums text-ink-faint">{entries.length}</span>
                   )}
                 </div>
                 <div className="space-y-1">
@@ -120,7 +120,7 @@ export function MonthCalendar({
                       )}
                       title={`${e.time} · ${e.title}`}
                     >
-                      <span className="tabular-nums">{e.time}</span> {e.title}
+                      <span className="font-data tabular-nums">{e.time}</span> {e.title}
                     </span>
                   ))}
                   {extra > 0 && <span className="block px-1 text-micro font-semibold text-ink-faint">+{extra}</span>}

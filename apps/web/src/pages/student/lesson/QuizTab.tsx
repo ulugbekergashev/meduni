@@ -175,14 +175,14 @@ function Running({ attempt, topicId }: { attempt: QuizAttemptView; topicId: numb
         <span className="text-micro font-extrabold text-ink-dim">
           {t("question")} {qi + 1}/{total}
         </span>
-        <span className="text-micro font-bold tabular-nums text-ink-dim">
+        <span className="text-micro font-bold font-data tabular-nums text-ink-dim">
           · {answeredCount}/{total}
         </span>
 
         {attempt.expiresAt && (
           <span
             className={cls(
-              "inline-flex items-center gap-1 rounded-control px-2 py-0.5 text-note font-extrabold tabular-nums",
+              "inline-flex items-center gap-1 rounded-control px-2 py-0.5 text-note font-extrabold font-data tabular-nums",
               lowTime ? "bg-rose-soft text-rose" : "bg-surface-raised text-ink-soft"
             )}
           >
@@ -215,7 +215,7 @@ function Running({ attempt, topicId }: { attempt: QuizAttemptView; topicId: numb
               key={qq.id}
               onClick={() => setQi(i)}
               className={cls(
-                "flex h-6 w-6 items-center justify-center rounded-control text-micro font-extrabold tabular-nums transition-colors",
+                "flex h-6 w-6 items-center justify-center rounded-control text-micro font-extrabold font-data tabular-nums transition-colors",
                 i === qi
                   ? "bg-brand text-white"
                   : isFlagged
@@ -339,7 +339,7 @@ function Result({
           {passed ? t("passedMsg") : t("failedMsg")}
         </p>
         <p className="mt-1 text-note text-ink-dim">
-          <span className="font-bold tabular-nums text-ink">{attempt.correctCount}</span> / {attempt.total}{" "}
+          <span className="font-bold font-data tabular-nums text-ink">{attempt.correctCount}</span> / {attempt.total}{" "}
           {t("correctAnswers")}
         </p>
       </div>
@@ -395,7 +395,7 @@ function Result({
             return (
               <div key={q.id} className="rounded-card border border-line bg-surface-raised p-3.5">
                 <p className="text-note font-bold leading-snug text-ink">
-                  <span className="mr-1.5 tabular-nums text-ink-dim">{i + 1}.</span>
+                  <span className="mr-1.5 font-data tabular-nums text-ink-dim">{i + 1}.</span>
                   {q.text}
                 </p>
                 <div className="mt-2 space-y-1">

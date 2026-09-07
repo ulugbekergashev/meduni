@@ -61,7 +61,7 @@ export function Disclosure({
       >
         {label}
         {count !== undefined && count > 0 && (
-          <span className="rounded-pill bg-bg px-1.5 text-micro tabular-nums text-ink-faint">{count}</span>
+          <span className="rounded-pill bg-bg px-1.5 text-micro font-data tabular-nums text-ink-faint">{count}</span>
         )}
         <Icon icon={ChevronDown} size={14} className={cls("transition-transform", open && "rotate-180")} />
       </button>

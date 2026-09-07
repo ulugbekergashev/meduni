@@ -86,7 +86,7 @@ export function PodcastTab({ topicId, data }: { topicId: number; data: LessonPod
               {current >= 0 ? data.chapters[current].title : t("podcastHint")}
             </p>
           </div>
-          <span className="shrink-0 tabular-nums text-note font-bold text-ink-soft">
+          <span className="shrink-0 font-data tabular-nums text-note font-bold text-ink-soft">
             {fmt(pos)} / {fmt(dur)}
           </span>
         </div>
@@ -132,7 +132,7 @@ export function PodcastTab({ topicId, data }: { topicId: number; data: LessonPod
                 key={r}
                 onClick={() => setRate(r)}
                 className={cls(
-                  "rounded-[6px] px-2 py-1 text-micro font-extrabold tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
+                  "rounded-[6px] px-2 py-1 text-micro font-extrabold font-data tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
                   speed === r ? "bg-brand-soft text-brand-tint" : "text-ink-dim hover:text-ink"
                 )}
               >
@@ -160,7 +160,7 @@ export function PodcastTab({ topicId, data }: { topicId: number; data: LessonPod
                     on ? "bg-violet-soft" : "hover:bg-surface-raised"
                   )}
                 >
-                  <span className={cls("shrink-0 tabular-nums text-micro font-bold", on ? "text-violet" : "text-ink-faint")}>
+                  <span className={cls("shrink-0 font-data tabular-nums text-micro font-bold", on ? "text-violet" : "text-ink-faint")}>
                     {fmt(c.startSec)}
                   </span>
                   <span className={cls("min-w-0 flex-1 truncate text-note", on ? "font-bold text-ink" : "text-ink-soft")}>

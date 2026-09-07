@@ -76,7 +76,7 @@ function StudentRow({ s, onClick, onAssign, tRel }: { s: GroupStudent; onClick: 
   const lowAtt = s.attendancePct !== null && s.attendancePct < 75;
   return (
     <div className="flex w-full items-center gap-3 px-4 py-3 transition-colors hover:bg-bg">
-      <span className={cls("flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-note font-bold tabular-nums", s.rank <= 3 ? "bg-brand-soft text-brand-deep" : "bg-bg text-ink-faint")} title={t("rankHint")}>
+      <span className={cls("flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-note font-bold font-data tabular-nums", s.rank <= 3 ? "bg-brand-soft text-brand-deep" : "bg-bg text-ink-faint")} title={t("rankHint")}>
         {s.rank}
       </span>
       <button onClick={onClick} className="flex min-w-0 flex-1 items-center gap-3 text-left">
@@ -91,16 +91,16 @@ function StudentRow({ s, onClick, onAssign, tRel }: { s: GroupStudent; onClick: 
         <div className="hidden min-w-0 flex-1 sm:block">
           <div className="flex items-center gap-2">
             <ProgressBar value={s.overallPct} className="flex-1" />
-            <span className="w-9 shrink-0 text-right text-note font-semibold tabular-nums text-ink-soft">{s.overallPct}%</span>
+            <span className="w-9 shrink-0 text-right text-note font-semibold font-data tabular-nums text-ink-soft">{s.overallPct}%</span>
           </div>
         </div>
         <div className="hidden w-14 shrink-0 text-right sm:block">
           <span className="text-note text-ink-faint">{t("quiz")}</span>
-          <p className="text-note font-bold tabular-nums text-ink">{s.avgQuizScore === null ? "—" : `${s.avgQuizScore}%`}</p>
+          <p className="text-note font-bold font-data tabular-nums text-ink">{s.avgQuizScore === null ? "—" : `${s.avgQuizScore}%`}</p>
         </div>
         <div className="w-14 shrink-0 text-right">
           <span className="text-note text-ink-faint">{t("att")}</span>
-          <p className={cls("text-note font-bold tabular-nums", lowAtt ? "text-rose" : "text-ink")}>{s.attendancePct === null ? "—" : `${s.attendancePct}%`}</p>
+          <p className={cls("text-note font-bold font-data tabular-nums", lowAtt ? "text-rose" : "text-ink")}>{s.attendancePct === null ? "—" : `${s.attendancePct}%`}</p>
         </div>
       </button>
       <button onClick={onAssign} title={t("assignToStudent")} aria-label={t("assignToStudent")} className="shrink-0 rounded-control p-1.5 text-ink-soft transition-colors hover:bg-brand-soft hover:text-brand-deep">
@@ -163,7 +163,7 @@ function StudentsTab({ group }: { group: TeachGroup }) {
         <div className="inline-flex gap-1 rounded-control border border-line bg-surface p-1">
           {FILTERS.map((f) => (
             <button key={f.key} onClick={() => setFilter(f.key)} className={cls("inline-flex items-center gap-1.5 whitespace-nowrap rounded-[8px] px-3 py-1.5 text-micro font-semibold transition-all", filter === f.key ? f.tone : "text-ink-soft hover:bg-bg")}>
-              {f.label}{f.count !== undefined && <span className="tabular-nums opacity-70">{f.count}</span>}
+              {f.label}{f.count !== undefined && <span className="font-data tabular-nums opacity-70">{f.count}</span>}
             </button>
           ))}
         </div>
@@ -197,12 +197,12 @@ function statusTone(s: DerivedLesson["status"]): string {
 function LessonDetailRow({ l, t, onMark }: { l: DerivedLesson; t: (k: string) => string; onMark: () => void }) {
   return (
     <div className={cls("flex flex-wrap items-center gap-3 border-l-4 px-4 py-2.5", statusTone(l.status))}>
-      <span className="w-12 shrink-0 text-note font-bold tabular-nums text-ink">{l.startTime}</span>
+      <span className="w-12 shrink-0 text-note font-bold font-data tabular-nums text-ink">{l.startTime}</span>
       <div className="min-w-0 flex-1">
         <p className="truncate text-note font-semibold text-ink">{l.courseName}</p>
         {l.room && <p className="flex items-center gap-1 text-micro text-ink-faint"><Icon icon={DoorClosed} size={11} /> {l.room}</p>}
       </div>
-      <span className="shrink-0 text-micro tabular-nums text-ink-faint">{l.markedCount}/{l.rosterSize}</span>
+      <span className="shrink-0 text-micro font-data tabular-nums text-ink-faint">{l.markedCount}/{l.rosterSize}</span>
       <Button size="sm" variant={l.status === "FULL" ? "ghost" : "primary"} icon={<Icon icon={ClipboardCheck} size={15} />} onClick={onMark}>
         {l.status === "UNMARKED" ? t("rollCall") : t("editRollCall")}
       </Button>
@@ -513,14 +513,14 @@ function CourseReportCard({ c, onView }: { c: GroupCourseReport; onView: () => v
           <div>
             <div className="flex items-center justify-between text-note">
               <span className="text-ink-soft">{t("avgProgress")}</span>
-              <span className="font-bold tabular-nums text-ink">{c.avgProgress}%</span>
+              <span className="font-bold font-data tabular-nums text-ink">{c.avgProgress}%</span>
             </div>
             <ProgressBar value={c.avgProgress} tone="brand" className="mt-1" />
           </div>
           <div>
             <div className="flex items-center justify-between text-note">
               <span className="text-ink-soft">{t("reportAvgQuiz")}</span>
-              <span className="font-bold tabular-nums text-ink">{c.avgQuizScore === null ? "—" : `${c.avgQuizScore}%`}</span>
+              <span className="font-bold font-data tabular-nums text-ink">{c.avgQuizScore === null ? "—" : `${c.avgQuizScore}%`}</span>
             </div>
             <ProgressBar value={c.avgQuizScore ?? 0} tone="blue" className="mt-1" />
           </div>

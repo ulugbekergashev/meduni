@@ -108,7 +108,7 @@ export function TaskItemRow({
         <Icon icon={Clock} size={12} /> {t("statusOverdue")}
       </span>
     ) : item.progress ? (
-      <span className="text-micro font-semibold text-ink-faint tabular-nums">
+      <span className="text-micro font-semibold text-ink-faint font-data tabular-nums">
         {item.progress.done}/{item.progress.total}
       </span>
     ) : null;

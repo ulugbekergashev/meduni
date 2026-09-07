@@ -128,7 +128,7 @@ export function ControlPage() {
                   </span>
                   {items.map((x) => (
                     <span key={x.label} className="text-note text-ink-soft">
-                      <b className={cls("tabular-nums", x.tone)}>{x.n}</b> {x.label.toLowerCase()}
+                      <b className={cls("font-data tabular-nums", x.tone)}>{x.n}</b> {x.label.toLowerCase()}
                     </span>
                   ))}
                 </div>
@@ -150,13 +150,13 @@ export function ControlPage() {
                         </Link>
                       </td>
                       <td className="px-4 py-3 text-ink-soft">{r.departmentName}</td>
-                      <td className={cls("px-4 py-3 font-bold tabular-nums", r.manualUnlocks > 0 ? "text-rose" : "text-ink-dim")}>
+                      <td className={cls("px-4 py-3 font-bold font-data tabular-nums", r.manualUnlocks > 0 ? "text-rose" : "text-ink-dim")}>
                         {r.manualUnlocks}
                       </td>
-                      <td className={cls("px-4 py-3 font-bold tabular-nums", r.topicsWithoutAssessment > 0 ? "text-amber" : "text-ink-dim")}>
+                      <td className={cls("px-4 py-3 font-bold font-data tabular-nums", r.topicsWithoutAssessment > 0 ? "text-amber" : "text-ink-dim")}>
                         {r.topicsWithoutAssessment}
                       </td>
-                      <td className={cls("px-4 py-3 font-bold tabular-nums", r.coursesBelowPolicy > 0 ? "text-amber" : "text-ink-dim")}>
+                      <td className={cls("px-4 py-3 font-bold font-data tabular-nums", r.coursesBelowPolicy > 0 ? "text-amber" : "text-ink-dim")}>
                         {r.coursesBelowPolicy}
                       </td>
                     </tr>
@@ -189,7 +189,7 @@ export function ControlPage() {
                     <div key={a.attemptId} className="flex flex-wrap items-baseline gap-x-2 py-2 text-note">
                       <span className="font-bold text-ink">{a.studentName}</span>
                       <span className="text-ink-dim">{a.topicTitle}</span>
-                      <span className="tabular-nums text-ink-soft">{a.scorePct}%</span>
+                      <span className="font-data tabular-nums text-ink-soft">{a.scorePct}%</span>
                       <span className="ml-auto flex flex-wrap gap-1">
                         {a.flags.map((f) => (
                           <Chip key={f} label={t(`flag.${f}`)} tone="rose" />
@@ -255,8 +255,8 @@ export function ControlPage() {
                   {t(`level.${p.level}`)}
                   {p.scopeName && <span className="font-medium text-ink-dim"> · {p.scopeName}</span>}
                 </td>
-                <td className="px-4 py-3 tabular-nums text-ink-soft">{p.minQuizPassedPct}%</td>
-                <td className="px-4 py-3 tabular-nums text-ink-soft">
+                <td className="px-4 py-3 font-data tabular-nums text-ink-soft">{p.minQuizPassedPct}%</td>
+                <td className="px-4 py-3 font-data tabular-nums text-ink-soft">
                   {p.minQuizAttempts}–{p.maxQuizAttempts} · {p.minAttemptGapHours}
                   {t("hoursShort")}
                 </td>

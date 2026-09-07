@@ -170,7 +170,7 @@ function ExamPlanView({ plan }: { plan: ExamPlan }) {
                     <span className="min-w-0 truncate font-bold text-ink-strong">{it.test}</span>
                     {/* Hukm yorlig'i — faqat rangga tayanmaslik uchun (ikonka+rang+matn) */}
                     <span className={cls("shrink-0 text-micro font-bold", v.tone)}>{v.label}</span>
-                    <span className={cls("ml-auto shrink-0 text-micro font-bold tabular-nums", v.tone)}>
+                    <span className={cls("ml-auto shrink-0 text-micro font-bold font-data tabular-nums", v.tone)}>
                       {it.cost} {unit}
                     </span>
                   </p>
@@ -287,7 +287,7 @@ function TestResult({ m, costUnit, penalty }: { m: PatientMsg; costUnit: string;
       >
         <Icon icon={waste ? XCircle : FlaskConical} size={11} />
         <span className="min-w-0 flex-1 truncate">{name}</span>
-        {!!m.cost && <span className="shrink-0 font-bold tabular-nums">{m.cost} {costUnit}</span>}
+        {!!m.cost && <span className="shrink-0 font-bold font-data tabular-nums">{m.cost} {costUnit}</span>}
       </p>
 
       {waste && (
@@ -327,7 +327,7 @@ function VitalChip({ label, value, abnormal }: { label: string; value: string; a
   return (
     <div className={cls("rounded-control px-2 py-1.5", abnormal ? "bg-rose-soft" : "bg-surface-raised")}>
       <p className={cls("text-micro font-bold uppercase tracking-wide", abnormal ? "text-rose" : "text-ink-faint")}>{label}</p>
-      <p className={cls("truncate text-note font-extrabold tabular-nums", abnormal ? "text-rose" : "text-ink-strong")} title={value}>
+      <p className={cls("truncate text-note font-extrabold font-data tabular-nums", abnormal ? "text-rose" : "text-ink-strong")} title={value}>
         {value || "—"}
       </p>
     </div>
@@ -696,7 +696,7 @@ export function PatientTab({ topicId }: { topicId: number }) {
                 >
                   {t(k)}
                 </span>
-                {stepCounts[i] && <span className="shrink-0 text-micro tabular-nums text-ink-faint">{stepCounts[i]}</span>}
+                {stepCounts[i] && <span className="shrink-0 text-micro font-data tabular-nums text-ink-faint">{stepCounts[i]}</span>}
               </div>
             ))}
           </div>
@@ -729,7 +729,7 @@ export function PatientTab({ topicId }: { topicId: number }) {
                     </span>
                     <span
                       className={cls(
-                        "shrink-0 font-bold tabular-nums",
+                        "shrink-0 font-bold font-data tabular-nums",
                         d.probability >= 60 ? "text-rose" : d.probability >= 35 ? "text-amber" : "text-ink-faint"
                       )}
                     >
@@ -770,11 +770,11 @@ export function PatientTab({ topicId }: { topicId: number }) {
             {overBudget ? t("budgetWarn") : t("costHint")}
           </p>
           <p className="mb-2 flex flex-wrap items-center gap-x-2 text-micro">
-            <span className={cls("tabular-nums", overBudget ? "font-bold text-amber" : "text-ink-faint")}>
+            <span className={cls("font-data tabular-nums", overBudget ? "font-bold text-amber" : "text-ink-faint")}>
               {t("spentLine", { n: spent, unit: t("costUnit") })}
             </span>
             {unneeded > 0 && (
-              <span className="font-bold tabular-nums text-rose">
+              <span className="font-bold font-data tabular-nums text-rose">
                 {t("wasteLine", { n: unneeded, p: unneeded * penaltyPerTest })}
               </span>
             )}
@@ -812,7 +812,7 @@ export function PatientTab({ topicId }: { topicId: number }) {
                         className={cls("shrink-0", running && "animate-spin")}
                       />
                       <span className="min-w-0 flex-1 truncate">{item.name}</span>
-                      <span className={cls("shrink-0 tabular-nums", tone)}>{item.cost}</span>
+                      <span className={cls("shrink-0 font-data tabular-nums", tone)}>{item.cost}</span>
                     </button>
                   );
                 })}

@@ -91,7 +91,7 @@ function QuizRow({ q, onOpen }: { q: GradeQuiz; onOpen: () => void }) {
                   <span className="flex-1">
                     <ProgressBar value={h.scorePct} tone={h.passed ? "emerald" : "rose"} />
                   </span>
-                  <span className={cls("w-12 shrink-0 text-right font-bold tabular-nums", scoreTone(h.scorePct))}>
+                  <span className={cls("w-12 shrink-0 text-right font-bold font-data tabular-nums", scoreTone(h.scorePct))}>
                     {h.scorePct}%
                   </span>
                   <span className="w-20 shrink-0 text-right font-medium text-ink-faint">
@@ -365,7 +365,7 @@ function GradesHome() {
                         <p className="truncate text-body font-bold text-ink transition-colors group-hover:text-brand-tint">{r.title}</p>
                         <p className="truncate text-note font-medium text-ink-faint mt-0.5">{r.subject}</p>
                       </div>
-                      <span className="shrink-0 text-body font-bold tabular-nums text-ink">{r.score}</span>
+                      <span className="shrink-0 text-body font-bold font-data tabular-nums text-ink">{r.score}</span>
                     </button>
                   ))}
                 </div>

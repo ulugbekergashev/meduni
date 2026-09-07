@@ -65,7 +65,7 @@ export function SessionsView({ courseId, groupId }: { courseId: number; groupId?
                       <td className="whitespace-nowrap px-3 py-2.5 font-medium text-ink">{fmtDate(s.date, locale)}</td>
                       <td className="px-3 py-2.5 text-ink">{s.title ?? <span className="text-ink-faint">—</span>}</td>
                       <td className="px-3 py-2.5 text-ink-soft">{s.room ?? "—"}</td>
-                      <td className="px-3 py-2.5 tabular-nums text-ink-soft">{s.markedCount}/{s.rosterSize}</td>
+                      <td className="px-3 py-2.5 font-data tabular-nums text-ink-soft">{s.markedCount}/{s.rosterSize}</td>
                       <td className="px-3 py-2.5"><Badge tone={statusTone[s.status]}>{t(`sessionStatus.${s.status}`)}</Badge></td>
                       <td className="px-3 py-2.5">
                         <div className="flex items-center justify-end gap-1">

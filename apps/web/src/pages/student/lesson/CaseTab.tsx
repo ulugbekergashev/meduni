@@ -64,7 +64,7 @@ function PatientCard({ patient }: { patient: CaseTabData["patient"] }) {
               className="inline-flex items-center gap-1 rounded-control bg-surface px-2 py-1 text-micro font-bold text-ink-soft"
             >
               <Icon icon={x.icon} size={11} className="text-ink-dim" />
-              {x.label} <span className="tabular-nums text-ink">{x.value}</span>
+              {x.label} <span className="font-data tabular-nums text-ink">{x.value}</span>
             </span>
           ))}
         </div>
@@ -248,7 +248,7 @@ export function CaseTab({ topicId, data }: { topicId: number; data: CaseTabData 
           {data.questions.map((q, i) => (
             <div key={i} className="rounded-card border border-line p-3.5">
               <p className="mb-2 text-note font-bold leading-snug text-ink">
-                <span className="mr-1.5 tabular-nums text-ink-dim">{i + 1}.</span>
+                <span className="mr-1.5 font-data tabular-nums text-ink-dim">{i + 1}.</span>
                 {q}
               </p>
               {submitted ? (
@@ -286,7 +286,7 @@ export function CaseTab({ topicId, data }: { topicId: number; data: CaseTabData 
             <div className="flex items-center gap-2.5 rounded-control bg-surface-raised px-3.5 py-2.5">
               <Icon icon={Check} size={15} className="shrink-0 text-emerald" strokeWidth={3} />
               <span className="flex-1 text-note font-bold text-ink">{t("caseAutoScore")}</span>
-              <span className="text-body font-extrabold tabular-nums text-ink">{attempt!.autoScore}%</span>
+              <span className="text-body font-extrabold font-data tabular-nums text-ink">{attempt!.autoScore}%</span>
             </div>
           )}
           {attempt!.reviewed ? (

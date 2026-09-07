@@ -205,12 +205,12 @@ export function StudentsPage() {
                   ) : (
                     <div className="flex items-center gap-2">
                       <div className="w-24"><ProgressBar value={u.progressPct} /></div>
-                      <span className="w-9 text-note font-semibold tabular-nums text-ink">{u.progressPct}%</span>
+                      <span className="w-9 text-note font-semibold font-data tabular-nums text-ink">{u.progressPct}%</span>
                     </div>
                   )}
                 </td>
                 <td className="px-4 py-3">
-                  <span className={cls("text-note tabular-nums", attClass(u.attendancePct))}>
+                  <span className={cls("text-note font-data tabular-nums", attClass(u.attendancePct))}>
                     {u.attendancePct === null ? "—" : `${u.attendancePct}%`}
                   </span>
                 </td>
@@ -246,7 +246,7 @@ export function StudentsPage() {
             {totalPages > 1 && (
               <div className="flex items-center gap-3">
                 <Button variant="ghost" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>{t("prev")}</Button>
-                <span className="text-note text-ink-soft tabular-nums">{page} / {totalPages}</span>
+                <span className="text-note text-ink-soft font-data tabular-nums">{page} / {totalPages}</span>
                 <Button variant="ghost" size="sm" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>{t("next")}</Button>
               </div>
             )}

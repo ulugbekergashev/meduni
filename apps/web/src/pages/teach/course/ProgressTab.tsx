@@ -255,7 +255,7 @@ function Heatmap({ data, students, onPick }: { data: CourseProgress; students: P
                     </td>
                   );
                 })}
-                <td className="border-b border-l border-line px-2 py-1.5 text-center font-bold tabular-nums text-ink">{s.overallPct}</td>
+                <td className="border-b border-l border-line px-2 py-1.5 text-center font-bold font-data tabular-nums text-ink">{s.overallPct}</td>
               </tr>
             );
           })}
@@ -372,7 +372,7 @@ export function ProgressTab() {
                 <StatCard compact icon={AlertTriangle} label={t("statBehind")} value={data.stats.behind} tone="bad" selected={filter === "behind"} onClick={() => setFilter("behind")} />
                 <StatCard compact icon={GraduationCap} label={t("statCompleted")} value={data.stats.completed} tone="good" selected={filter === "completed"} onClick={() => setFilter("completed")} />
               </div>
-              <p className="mt-2 text-note text-ink-soft">{t("statAvg")}: <span className="font-bold tabular-nums text-ink">{data.stats.avgProgress}%</span></p>
+              <p className="mt-2 text-note text-ink-soft">{t("statAvg")}: <span className="font-bold font-data tabular-nums text-ink">{data.stats.avgProgress}%</span></p>
 
               {/* Filter bar */}
               <div className="mt-5 flex flex-wrap items-center gap-2">

@@ -242,7 +242,7 @@ export function StudentDashboard() {
                     qator — asosiy ko'rsatkich halqada, qolgani matnda. */}
                 <p className="col-span-2 flex flex-wrap items-baseline gap-x-4 gap-y-1 text-note text-ink-soft sm:col-span-4">
                   <span>
-                    <b className="tabular-nums text-ink">
+                    <b className="font-data tabular-nums text-ink">
                       {d.courses.reduce((s, c) => s + c.topicsCompleted, 0)}/
                       {d.courses.reduce((s, c) => s + c.topicsTotal, 0)}
                     </b>{" "}
@@ -250,12 +250,12 @@ export function StudentDashboard() {
                   </span>
                   {attPct !== null && (
                     <span className={attPct < 75 ? "font-bold text-rose" : undefined}>
-                      <b className="tabular-nums">{attPct}%</b> {t("summaryAttendance").toLowerCase()}
+                      <b className="font-data tabular-nums">{attPct}%</b> {t("summaryAttendance").toLowerCase()}
                     </span>
                   )}
                   {rank?.rank && (
                     <span>
-                      <b className="tabular-nums text-ink">
+                      <b className="font-data tabular-nums text-ink">
                         {rank.rank}/{rank.total}
                       </b>{" "}
                       {t("summaryRank").toLowerCase()}
@@ -331,7 +331,7 @@ export function StudentDashboard() {
                             )}
                           >
                             <div className="w-12 shrink-0 text-center">
-                              <p className="text-body font-bold leading-none tabular-nums text-brand-tint transition-transform group-hover:scale-110">{hhmm(s.date)}</p>
+                              <p className="text-body font-bold leading-none font-data tabular-nums text-brand-tint transition-transform group-hover:scale-110">{hhmm(s.date)}</p>
                             </div>
                             <div className="min-w-0 flex-1 border-l border-line pl-3">
                               <p className="truncate text-body font-semibold text-ink">{s.title ?? s.courseName}</p>
@@ -517,7 +517,7 @@ export function StudentDashboard() {
                               <p className="truncate text-body font-semibold text-ink transition-colors group-hover:text-brand-tint">{tp.topicTitle}</p>
                               <p className="truncate text-note text-ink-faint">{tp.subjectName}</p>
                             </div>
-                            <span className="shrink-0 rounded-pill bg-violet-soft px-2 py-0.5 text-note font-bold tabular-nums text-violet">
+                            <span className="shrink-0 rounded-pill bg-violet-soft px-2 py-0.5 text-note font-bold font-data tabular-nums text-violet">
                               {tp.dueCount}
                             </span>
                           </button>
@@ -572,7 +572,7 @@ export function StudentDashboard() {
                                 <p className="truncate text-note text-ink-faint">{a.topic}</p>
                               </div>
                               {a.score !== null && (
-                                <span className="shrink-0 text-note font-bold tabular-nums text-ink-soft">{a.score}%</span>
+                                <span className="shrink-0 text-note font-bold font-data tabular-nums text-ink-soft">{a.score}%</span>
                               )}
                             </button>
                           );

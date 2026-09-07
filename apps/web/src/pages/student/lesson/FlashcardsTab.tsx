@@ -335,7 +335,7 @@ export function FlashcardsTab({ topicId }: { topicId: number }) {
           <span className="text-note font-extrabold text-ink-dim">
             {t("cardOf", { n: i + 1, total: cards.length })}
           </span>
-          <span className="inline-flex items-center gap-1 text-note font-bold tabular-nums text-emerald">
+          <span className="inline-flex items-center gap-1 text-note font-bold font-data tabular-nums text-emerald">
             <Icon icon={Check} size={14} strokeWidth={3} />
             {t("cardKnownN", { n: knownCount })}
           </span>

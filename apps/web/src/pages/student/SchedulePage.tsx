@@ -273,7 +273,7 @@ export function SchedulePage() {
                     const meta = s.myStatus ? STATUS_CELL[s.myStatus] : null;
                     return (
                       <div key={s.key} className="flex items-center gap-3 px-4 py-2.5">
-                        <span className="w-12 shrink-0 text-body font-bold tabular-nums text-ink">{hhmm(new Date(s.date))}</span>
+                        <span className="w-12 shrink-0 text-body font-bold font-data tabular-nums text-ink">{hhmm(new Date(s.date))}</span>
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-body font-bold text-ink">{s.title ?? s.courseName}</p>
                           <p className="truncate text-note text-ink-soft">{s.courseName}{s.room ? ` · ${s.room}` : ""}</p>
@@ -314,14 +314,14 @@ export function SchedulePage() {
                     <span className={cls("text-note font-bold", d.isToday ? "text-brand-tint" : "text-ink-soft")}>
                       {d.short}
                     </span>
-                    <span className={cls("text-body font-extrabold tabular-nums", d.isToday ? "text-brand-tint" : "text-ink")}>
+                    <span className={cls("text-body font-extrabold font-data tabular-nums", d.isToday ? "text-brand-tint" : "text-ink")}>
                       {d.num}
                     </span>
                   </div>
                   <div className="space-y-2 p-2">
                     {dayRows.map(({ slot, s }) => (
                       <div key={s.key} className="flex items-start gap-2">
-                        <span className="w-12 shrink-0 pt-1 text-note font-bold tabular-nums text-ink-soft">{slot}</span>
+                        <span className="w-12 shrink-0 pt-1 text-note font-bold font-data tabular-nums text-ink-soft">{slot}</span>
                         <div className="min-w-0 flex-1">
                           <LessonCell s={s} />
                         </div>
@@ -363,7 +363,7 @@ export function SchedulePage() {
               {slots.map((slot) => (
                 <div key={slot} className="grid grid-cols-[64px_repeat(7,minmax(0,1fr))] border-b border-line last:border-0">
                   <div className="flex items-start justify-center px-1 py-3">
-                    <span className="text-note font-bold tabular-nums text-ink-soft">{slot}</span>
+                    <span className="text-note font-bold font-data tabular-nums text-ink-soft">{slot}</span>
                   </div>
                   {days.map((d) => {
                     const rows = at(slot, d.key);

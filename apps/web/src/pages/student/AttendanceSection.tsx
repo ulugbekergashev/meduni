@@ -108,7 +108,7 @@ export function AttendanceSection() {
           
           <div className="relative z-10">
             <p className="text-note font-bold text-ink-soft">{t("overallPct")}</p>
-            <p className={cls("mt-1 text-[44px] font-bold leading-none tabular-nums", low ? "text-rose" : "text-brand-tint")}>
+            <p className={cls("mt-1 text-[44px] font-bold leading-none font-data tabular-nums", low ? "text-rose" : "text-brand-tint")}>
               {pct !== null ? `${pct}%` : "—"}
             </p>
             <div className="mt-4">
@@ -222,12 +222,12 @@ export function AttendanceSection() {
                           {c.courseName}
                         </span>
                       </td>
-                      <td className="hidden px-2 py-2.5 text-center tabular-nums text-ink-soft sm:table-cell">{c.marked}</td>
-                      <td className="hidden px-2 py-2.5 text-center font-semibold tabular-nums text-emerald sm:table-cell">{c.present}</td>
-                      <td className="hidden px-2 py-2.5 text-center font-semibold tabular-nums text-amber sm:table-cell">{c.late}</td>
-                      <td className="hidden px-2 py-2.5 text-center font-semibold tabular-nums text-blue sm:table-cell">{c.excused}</td>
-                      <td className="px-2 py-2.5 text-center text-body font-bold tabular-nums text-rose">{c.absent}</td>
-                      <td className={cls("px-4 py-2.5 text-right text-body font-bold tabular-nums", lowRow ? "text-rose" : "text-ink")}>
+                      <td className="hidden px-2 py-2.5 text-center font-data tabular-nums text-ink-soft sm:table-cell">{c.marked}</td>
+                      <td className="hidden px-2 py-2.5 text-center font-semibold font-data tabular-nums text-emerald sm:table-cell">{c.present}</td>
+                      <td className="hidden px-2 py-2.5 text-center font-semibold font-data tabular-nums text-amber sm:table-cell">{c.late}</td>
+                      <td className="hidden px-2 py-2.5 text-center font-semibold font-data tabular-nums text-blue sm:table-cell">{c.excused}</td>
+                      <td className="px-2 py-2.5 text-center text-body font-bold font-data tabular-nums text-rose">{c.absent}</td>
+                      <td className={cls("px-4 py-2.5 text-right text-body font-bold font-data tabular-nums", lowRow ? "text-rose" : "text-ink")}>
                         {c.pct !== null ? `${c.pct}%` : "—"}
                       </td>
                     </tr>
@@ -243,7 +243,7 @@ export function AttendanceSection() {
                                 {missed.map((m) => (
                                   <div key={m.id} className="flex items-center gap-2 text-note">
                                     <Icon icon={X} size={12} className="shrink-0 text-rose" />
-                                    <span className="shrink-0 font-semibold tabular-nums text-ink">
+                                    <span className="shrink-0 font-semibold font-data tabular-nums text-ink">
                                       {formatDate(locale === "ru" ? "ru" : "uz", m.date, "short")} · {hhmm(new Date(m.date))}
                                     </span>
                                     <span className="min-w-0 truncate text-ink-soft">{m.title ?? c.courseName}</span>
@@ -263,7 +263,7 @@ export function AttendanceSection() {
                                   <span className={cls("flex h-5 w-5 shrink-0 items-center justify-center rounded-full", cm.chip)}>
                                     <Icon icon={cm.icon} size={11} />
                                   </span>
-                                  <span className="shrink-0 font-semibold tabular-nums text-ink">
+                                  <span className="shrink-0 font-semibold font-data tabular-nums text-ink">
                                     {formatDate(locale === "ru" ? "ru" : "uz", cs.date, "short")} · {hhmm(new Date(cs.date))}
                                   </span>
                                   <span className="min-w-0 flex-1 truncate text-ink-soft">{cs.title ?? c.courseName}</span>

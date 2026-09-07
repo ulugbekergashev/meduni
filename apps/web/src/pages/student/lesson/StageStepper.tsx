@@ -18,7 +18,7 @@ function activeStageKey(view: LessonView): StageKey | null {
 function Marker({ n, state, active }: { n: number; state: StageInfo["state"]; active: boolean }) {
   const reduce = useReducedMotion();
   const base =
-    "flex h-6 w-6 shrink-0 items-center justify-center rounded-pill text-micro font-extrabold tabular-nums";
+    "flex h-6 w-6 shrink-0 items-center justify-center rounded-pill text-micro font-extrabold font-data tabular-nums";
 
   const inner =
     state === "done" ? (
@@ -65,9 +65,9 @@ function PctCounter({ pct }: { pct: number }) {
     mv.set(pct);
   }, [pct, mv]);
 
-  if (reduce) return <span className="text-note font-bold tabular-nums text-ink">{pct}%</span>;
+  if (reduce) return <span className="text-note font-bold font-data tabular-nums text-ink">{pct}%</span>;
   return (
-    <span className="text-note font-bold tabular-nums text-ink">
+    <span className="text-note font-bold font-data tabular-nums text-ink">
       <motion.span>{rounded}</motion.span>%
     </span>
   );

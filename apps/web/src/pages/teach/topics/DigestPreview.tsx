@@ -21,7 +21,7 @@ function SectionRow({ section, index }: { section: DigestSectionData; index: num
         aria-expanded={open}
         className="flex w-full items-center gap-2.5 py-2.5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
       >
-        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-bg text-micro font-bold tabular-nums text-ink-soft">
+        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-bg text-micro font-bold font-data tabular-nums text-ink-soft">
           {index + 1}
         </span>
         <span className="min-w-0 flex-1 truncate text-body font-semibold text-ink">{section.title}</span>
@@ -30,7 +30,7 @@ function SectionRow({ section, index }: { section: DigestSectionData; index: num
             <Icon icon={Clock} size={12} /> {t("sectionMinutes", { n: section.minutes })}
           </span>
         )}
-        <span className="shrink-0 rounded-pill bg-bg px-2 py-0.5 text-micro font-semibold tabular-nums text-ink-soft">
+        <span className="shrink-0 rounded-pill bg-bg px-2 py-0.5 text-micro font-semibold font-data tabular-nums text-ink-soft">
           {t("sectionBlocks", { n: blocks.length })}
         </span>
         {cp && (

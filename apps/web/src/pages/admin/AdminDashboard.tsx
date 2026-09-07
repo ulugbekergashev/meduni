@@ -97,13 +97,13 @@ export function AdminDashboard() {
               Endi — bitta matn qatori. Kerak bo'lsa nav orqali o'tiladi. */}
           <motion.p variants={itemVariants} className="mt-3 flex flex-wrap items-baseline gap-x-4 gap-y-1 text-note text-ink-soft">
             <span>
-              <b className="tabular-nums text-ink">{s.counts.students}</b> {t("students").toLowerCase()}
+              <b className="font-data tabular-nums text-ink">{s.counts.students}</b> {t("students").toLowerCase()}
             </span>
             <span>
-              <b className="tabular-nums text-ink">{s.counts.teachers}</b> {t("teachers").toLowerCase()}
+              <b className="font-data tabular-nums text-ink">{s.counts.teachers}</b> {t("teachers").toLowerCase()}
             </span>
             <span>
-              <b className="tabular-nums text-ink">{s.counts.courses}</b> {t("courses").toLowerCase()}
+              <b className="font-data tabular-nums text-ink">{s.counts.courses}</b> {t("courses").toLowerCase()}
             </span>
             <span className="text-ink-dim">{t("publishedIn", { count: s.counts.publishedTopics })}</span>
           </motion.p>

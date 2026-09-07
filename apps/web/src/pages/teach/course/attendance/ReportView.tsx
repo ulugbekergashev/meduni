@@ -41,7 +41,7 @@ function Matrix({ report }: { report: AttReport }) {
                   </td>
                 );
               })}
-              <td className="border-b border-l border-line px-2 py-1.5 text-center font-bold tabular-nums text-rose">{st.absent || ""}</td>
+              <td className="border-b border-l border-line px-2 py-1.5 text-center font-bold font-data tabular-nums text-rose">{st.absent || ""}</td>
             </tr>
           ))}
         </tbody>
@@ -72,9 +72,9 @@ function ListView({ report, sort }: { report: AttReport; sort: "pct" | "name" })
               <span className="text-blue">{t("status.EXCUSED")}: <b>{s.excused}</b></span>
             </div>
             <span className="text-note text-ink-soft">
-              {t("avgGrade")}: <b className="tabular-nums text-ink">{s.avgGrade ?? "—"}</b>
+              {t("avgGrade")}: <b className="font-data tabular-nums text-ink">{s.avgGrade ?? "—"}</b>
             </span>
-            <span className={cls("min-w-[52px] text-right text-body font-bold tabular-nums", low ? "text-rose" : "text-ink")}>
+            <span className={cls("min-w-[52px] text-right text-body font-bold font-data tabular-nums", low ? "text-rose" : "text-ink")}>
               {s.attendancePct !== null ? `${s.attendancePct}%` : "—"}
             </span>
           </Card>

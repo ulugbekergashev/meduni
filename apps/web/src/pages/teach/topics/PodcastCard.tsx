@@ -107,7 +107,7 @@ export function PodcastCard({ topicId, approved }: { topicId: number; approved: 
         <ol className={cls("mt-3 space-y-1 border-t border-line pt-2")}>
           {p.chapters.map((c, i) => (
             <li key={i} className="flex items-baseline gap-2 text-micro">
-              <span className="tabular-nums text-ink-faint">{fmt(c.startSec)}</span>
+              <span className="font-data tabular-nums text-ink-faint">{fmt(c.startSec)}</span>
               <span className="min-w-0 flex-1 truncate text-ink-soft">{c.title}</span>
             </li>
           ))}

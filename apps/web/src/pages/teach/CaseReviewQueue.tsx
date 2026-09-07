@@ -44,7 +44,7 @@ function AiSuggestCard({
           <p className="text-note text-ink-faint">{t("aiHint")}</p>
         </div>
         {detail.autoScore !== null && (
-          <span className="shrink-0 rounded-pill bg-surface-raised px-2.5 py-1 text-note font-bold tabular-nums text-ink-soft">
+          <span className="shrink-0 rounded-pill bg-surface-raised px-2.5 py-1 text-note font-bold font-data tabular-nums text-ink-soft">
             {t("autoScoreShort")}: {detail.autoScore}%
           </span>
         )}
@@ -110,7 +110,7 @@ function PatientSessionCard({ session }: { session: PatientSessionLog }) {
         {ev && (
           <span
             className={cls(
-              "shrink-0 rounded-pill px-2.5 py-1 text-note font-extrabold tabular-nums",
+              "shrink-0 rounded-pill px-2.5 py-1 text-note font-extrabold font-data tabular-nums",
               ev.correct ? "bg-emerald-soft text-emerald" : "bg-amber-soft text-amber"
             )}
           >
@@ -144,16 +144,16 @@ function PatientSessionCard({ session }: { session: PatientSessionLog }) {
               <span className="text-ink-soft">
                 {t("patientPlanScore", { n: ev.examPlan.rationalityScore })}
               </span>
-              <span className="text-ink-soft tabular-nums">
+              <span className="text-ink-soft font-data tabular-nums">
                 {t("patientPlanSpent", { n: ev.examPlan.spent })}
               </span>
               {ev.examPlan.wasted > 0 && (
-                <span className="font-bold tabular-nums text-rose">
+                <span className="font-bold font-data tabular-nums text-rose">
                   {t("patientPlanWasted", { n: ev.examPlan.wasted })}
                 </span>
               )}
               {ev.examPlan.penalty > 0 && (
-                <span className="font-bold tabular-nums text-rose">
+                <span className="font-bold font-data tabular-nums text-rose">
                   {t("patientPlanPenalty", { n: ev.examPlan.unneededCount, p: ev.examPlan.penalty })}
                 </span>
               )}

@@ -43,7 +43,7 @@ function PracticeRow({ icon, tone, label, hint, value, sub }: {
         <p className="truncate text-micro text-ink-faint">{hint}</p>
       </div>
       <div className="shrink-0 text-right">
-        <p className="text-body font-bold tabular-nums text-ink">{value}</p>
+        <p className="text-body font-bold font-data tabular-nums text-ink">{value}</p>
         {sub && <p className="text-micro font-semibold text-ink-soft">{sub}</p>}
       </div>
     </div>
@@ -119,7 +119,7 @@ function TopicRow({ tp, courseId, onGrade, onUnlock, onAssign, unlockPending }: 
       </div>
       <div className="mt-2 flex items-center gap-2">
         <ProgressBar value={tp.pct} className="flex-1" tone={tp.state === "COMPLETED" ? "emerald" : "brand"} />
-        <span className="w-9 shrink-0 text-right text-micro font-bold tabular-nums text-ink-soft">{tp.pct}%</span>
+        <span className="w-9 shrink-0 text-right text-micro font-bold font-data tabular-nums text-ink-soft">{tp.pct}%</span>
       </div>
       {tp.state === "LOCKED" && tp.reason && (
         <p className="mt-1.5 flex items-center gap-1.5 text-micro text-ink-faint"><Icon icon={Lock} size={12} /> {tp.reason[locale]}</p>
@@ -167,7 +167,7 @@ function CourseBlock({ course, children, right }: { course: StudentDetailCourse;
         {right ?? (
           <div className="flex w-40 items-center gap-2">
             <ProgressBar value={course.overallPct} className="flex-1" />
-            <span className="w-9 shrink-0 text-right text-note font-bold tabular-nums text-brand-deep">{course.overallPct}%</span>
+            <span className="w-9 shrink-0 text-right text-note font-bold font-data tabular-nums text-brand-deep">{course.overallPct}%</span>
           </div>
         )}
       </div>
@@ -199,7 +199,7 @@ function JournalRow({ s, studentId, courseId }: { s: StudentDetailSession; stude
     <div className="flex flex-wrap items-center gap-2 px-4 py-2.5">
       <div className="w-24 shrink-0">
         <p className="text-note font-semibold text-ink">{formatDate(locale === "ru" ? "ru" : "uz", s.date, "short")}</p>
-        <p className="text-micro tabular-nums text-ink-faint">{s.time}</p>
+        <p className="text-micro font-data tabular-nums text-ink-faint">{s.time}</p>
       </div>
       <p className="min-w-0 flex-1 truncate text-micro text-ink-soft">{s.topicTitle ?? "—"}</p>
       <span className={cls("shrink-0 rounded-pill px-2.5 py-0.5 text-micro font-semibold", attTone[s.status])}>{t(`att.${s.status}`)}</span>
@@ -210,7 +210,7 @@ function JournalRow({ s, studentId, courseId }: { s: StudentDetailSession; stude
           <button onClick={() => { setEditing(false); setVal(s.grade === null ? "" : String(s.grade)); }} className="rounded-control p-1.5 text-ink-faint transition-colors hover:bg-bg" aria-label="cancel"><Icon icon={X} size={15} /></button>
         </div>
       ) : (
-        <button onClick={() => setEditing(true)} className="flex w-16 shrink-0 items-center justify-end gap-1 rounded-control px-2 py-1 text-note font-bold tabular-nums text-ink transition-colors hover:bg-brand-soft hover:text-brand-deep">
+        <button onClick={() => setEditing(true)} className="flex w-16 shrink-0 items-center justify-end gap-1 rounded-control px-2 py-1 text-note font-bold font-data tabular-nums text-ink transition-colors hover:bg-brand-soft hover:text-brand-deep">
           {s.grade === null ? <span className="text-micro font-semibold text-ink-faint">{t("setGrade")}</span> : s.grade}
         </button>
       )}
@@ -231,7 +231,7 @@ function AttendanceSummary({ course }: { course: StudentDetailCourse }) {
     <div className="px-4 py-3">
       <div className="mb-2.5 flex items-center justify-between gap-2">
         <span className="text-micro font-semibold text-ink-soft">{t("attendance")}</span>
-        <span className={cls("text-note font-bold tabular-nums", a.pct !== null && a.pct < 75 ? "text-rose" : "text-emerald")}>{a.pct !== null ? `${a.pct}%` : "—"}</span>
+        <span className={cls("text-note font-bold font-data tabular-nums", a.pct !== null && a.pct < 75 ? "text-rose" : "text-emerald")}>{a.pct !== null ? `${a.pct}%` : "—"}</span>
       </div>
       <div className="h-2.5 overflow-hidden rounded-full">
         <StackedBar segments={[{ value: a.present, tone: "emerald" }, { value: a.late, tone: "amber" }, { value: a.excused, tone: "blue" }, { value: a.absent, tone: "rose" }]} />
@@ -239,12 +239,12 @@ function AttendanceSummary({ course }: { course: StudentDetailCourse }) {
       <div className="mt-2.5 flex flex-wrap gap-x-3 gap-y-1">
         {legend.map((l) => (
           <span key={l.label} className="inline-flex items-center gap-1.5 text-micro font-semibold text-ink-soft">
-            <span className={cls("h-2 w-2 rounded-full", l.tone)} /> {l.label}: <span className="tabular-nums text-ink">{l.value}</span>
+            <span className={cls("h-2 w-2 rounded-full", l.tone)} /> {l.label}: <span className="font-data tabular-nums text-ink">{l.value}</span>
           </span>
         ))}
         {a.avgGrade !== null && (
           <span className="ml-auto inline-flex items-center gap-1.5 text-micro font-semibold text-ink-soft">
-            {t("att.avgGrade")}: <span className="text-note font-bold tabular-nums text-ink">{a.avgGrade}</span>
+            {t("att.avgGrade")}: <span className="text-note font-bold font-data tabular-nums text-ink">{a.avgGrade}</span>
           </span>
         )}
       </div>

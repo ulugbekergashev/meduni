@@ -68,7 +68,7 @@ export function BlockView({ block, terms = [] }: { block: DigestBlock; terms?: T
             className={cls(
               "mt-[0.55em] shrink-0",
               block.ordered
-                ? "mt-0 flex h-[1.5em] w-[1.5em] items-center justify-center rounded-full bg-surface-raised text-[0.72em] font-bold tabular-nums text-ink-soft"
+                ? "mt-0 flex h-[1.5em] w-[1.5em] items-center justify-center rounded-full bg-surface-raised text-[0.72em] font-bold font-data tabular-nums text-ink-soft"
                 : "h-1.5 w-1.5 rounded-full bg-brand"
             )}
           >

@@ -174,7 +174,7 @@ export function MaterialsPanel({
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-body font-extrabold text-ink">{t(`block_${b.key}`)}</span>
                 {b.meta && (
-                  <span className="block text-micro tabular-nums text-ink-faint">
+                  <span className="block text-micro font-data tabular-nums text-ink-faint">
                     {t(`blockMeta_${b.key}`, { v: b.meta })}
                   </span>
                 )}

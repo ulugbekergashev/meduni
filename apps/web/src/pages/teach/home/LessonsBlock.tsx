@@ -61,7 +61,7 @@ function LessonCell({ l, onMark }: { l: DerivedLesson; onMark: () => void }) {
         {l.room && <span className="inline-flex items-center gap-1"><Icon icon={DoorClosed} size={11} /> {l.room}</span>}
       </div>
       <div className="mt-0.5 flex items-center justify-between">
-        <span className={cls("text-micro font-semibold tabular-nums", statusCount(l.status))}>{l.markedCount}/{l.rosterSize}</span>
+        <span className={cls("text-micro font-semibold font-data tabular-nums", statusCount(l.status))}>{l.markedCount}/{l.rosterSize}</span>
         <Icon icon={ClipboardCheck} size={13} className="text-ink-faint opacity-0 transition-opacity group-hover:text-brand-deep group-hover:opacity-100" />
       </div>
     </button>
@@ -300,7 +300,7 @@ export function LessonsBlock({ mode, onMode }: { mode: LessonMode; onMode: (m: L
                 <div className="divide-y divide-line">
                   {selectedLessons.map((l) => (
                     <div key={l.slotId + l.dayKey} className={cls("flex flex-wrap items-center gap-3 border-l-4 bg-surface px-4 py-2.5", statusBorder(l.status))}>
-                      <span className="w-12 shrink-0 text-note font-bold tabular-nums text-ink">{l.startTime}</span>
+                      <span className="w-12 shrink-0 text-note font-bold font-data tabular-nums text-ink">{l.startTime}</span>
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-note font-bold text-ink">{l.courseName}</p>
                         <p className="mt-0.5 flex flex-wrap items-center gap-x-3 text-micro text-ink-soft">
@@ -308,7 +308,7 @@ export function LessonsBlock({ mode, onMode }: { mode: LessonMode; onMode: (m: L
                           {l.room && <span className="inline-flex items-center gap-1"><Icon icon={DoorClosed} size={11} /> {l.room}</span>}
                         </p>
                       </div>
-                      <span className={cls("shrink-0 text-micro font-semibold tabular-nums", statusCount(l.status))}>{l.markedCount}/{l.rosterSize}</span>
+                      <span className={cls("shrink-0 text-micro font-semibold font-data tabular-nums", statusCount(l.status))}>{l.markedCount}/{l.rosterSize}</span>
                       <Button size="sm" variant={l.status === "FULL" ? "ghost" : "primary"} icon={<Icon icon={ClipboardCheck} size={15} />} onClick={() => setRoll(l)}>
                         {l.status === "UNMARKED" ? t("mark") : t("edit")}
                       </Button>
@@ -344,13 +344,13 @@ export function LessonsBlock({ mode, onMode }: { mode: LessonMode; onMode: (m: L
                 <Card key={dk} className="!p-0 overflow-hidden">
                   <div className={cls("flex items-center gap-2 border-b border-line px-3 py-2", isToday ? "bg-brand-soft" : "bg-bg")}>
                     <span className={cls("text-note font-bold", isToday ? "text-brand-deep" : "text-ink-soft")}>{dayShort[di]}</span>
-                    <span className={cls("text-body font-extrabold tabular-nums", isToday ? "text-brand-deep" : "text-ink")}>{d.getDate()}</span>
+                    <span className={cls("text-body font-extrabold font-data tabular-nums", isToday ? "text-brand-deep" : "text-ink")}>{d.getDate()}</span>
                     {isToday && <span className="rounded-pill bg-brand px-2 py-0.5 text-micro font-bold text-white">{t("today")}</span>}
                   </div>
                   <div className="space-y-2 p-2">
                     {dayLessons.map(({ time, l }) => (
                       <div key={l.slotId + l.dayKey} className="flex items-start gap-2">
-                        <span className="w-12 shrink-0 pt-1 text-note font-bold tabular-nums text-ink-soft">{time}</span>
+                        <span className="w-12 shrink-0 pt-1 text-note font-bold font-data tabular-nums text-ink-soft">{time}</span>
                         <div className="min-w-0 flex-1"><LessonCell l={l} onMark={() => setRoll(l)} /></div>
                       </div>
                     ))}
@@ -379,7 +379,7 @@ export function LessonsBlock({ mode, onMode }: { mode: LessonMode; onMode: (m: L
               <div className="grid gap-px bg-line">
                 {times.map((time) => (
                   <div key={time} className="grid gap-px" style={{ gridTemplateColumns: "60px repeat(7, minmax(0, 1fr))" }}>
-                    <div className="flex items-start justify-center bg-surface pt-2 text-micro font-bold tabular-nums text-ink-soft">{time}</div>
+                    <div className="flex items-start justify-center bg-surface pt-2 text-micro font-bold font-data tabular-nums text-ink-soft">{time}</div>
                     {weekDays.map((d, i) => {
                       const list = cellMap.get(`${dayKey(d)}|${time}`) ?? [];
                       const isToday = dayKey(d) === todayKey;

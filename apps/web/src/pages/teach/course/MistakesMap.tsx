@@ -50,7 +50,7 @@ function Distribution({
                 style={{ width: `${pct}%` }}
               />
             </span>
-            <span className="w-14 shrink-0 text-right text-note font-bold tabular-nums text-ink-soft">
+            <span className="w-14 shrink-0 text-right text-note font-bold font-data tabular-nums text-ink-soft">
               {n} ({pct}%)
             </span>
           </div>
@@ -69,7 +69,7 @@ function QuestionRow({ q, attempted }: { q: MistakeQuestion; attempted: number }
   return (
     <div className="border-b border-line px-4 py-3 last:border-b-0">
       <button onClick={() => setOpen((o) => !o)} className="flex w-full items-start gap-3 text-left">
-        <span className={cls("mt-0.5 w-14 shrink-0 text-body font-extrabold tabular-nums", pctTone(q.wrongPct))}>
+        <span className={cls("mt-0.5 w-14 shrink-0 text-body font-extrabold font-data tabular-nums", pctTone(q.wrongPct))}>
           {q.wrongPct}%
         </span>
         <span className="min-w-0 flex-1 text-body font-semibold leading-snug text-ink">{q.text}</span>
@@ -113,7 +113,7 @@ function StepRow({ s, submitted }: { s: MistakeStep; submitted: number }) {
   return (
     <div className="border-b border-line px-4 py-3 last:border-b-0">
       <button onClick={() => setOpen((o) => !o)} className="flex w-full items-start gap-3 text-left">
-        <span className={cls("mt-0.5 w-14 shrink-0 text-body font-extrabold tabular-nums", pctTone(s.wrongPct))}>
+        <span className={cls("mt-0.5 w-14 shrink-0 text-body font-extrabold font-data tabular-nums", pctTone(s.wrongPct))}>
           {s.wrongPct}%
         </span>
         <span className="min-w-0 flex-1">
@@ -166,7 +166,7 @@ function TopicBlock({ tp, onAssign }: { tp: MistakeTopic; onAssign: (prefill: Qu
         <button onClick={() => setOpen((o) => !o)} className="flex min-w-0 flex-1 items-center gap-3 text-left">
           <span
             className={cls(
-              "flex h-10 w-14 shrink-0 items-center justify-center rounded-control text-body font-extrabold tabular-nums",
+              "flex h-10 w-14 shrink-0 items-center justify-center rounded-control text-body font-extrabold font-data tabular-nums",
               tp.severity >= 60
                 ? "bg-rose-soft text-rose"
                 : tp.severity >= 30

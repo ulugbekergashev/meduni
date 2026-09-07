@@ -153,6 +153,22 @@ Bitta commit, butun ilovaga o'z-o'zidan tarqaladi (fayllarga tegilmaydi).
    `getTeacherDashboard`ga 6 haftalik seriya qo'shiladi — F2.1 ichida, kichik).
 4. Referens — yo'nalish; bizdagisi yaxshiroq bo'lsa (menyu, dars sahifasi, stat dietasi) — qoladi.
 
-## 5. Bajarildi
+## 5. Bajarildi (2026-09-08)
 
-(bo'sh — F0 boshlanmagan)
+| Faza | Holat | Izoh |
+|---|---|---|
+| Q1 shrift | ✅ | **Sora** tanlandi (kirill uchun Inter zaxira), raqamlar JetBrains Mono. |
+| Q2 shkala | ✅ | Oraliq: h1 26 · stat 28 · section 16 · body 14 · note 13 · micro 12. |
+| F0 poydevor | ✅ | Tokenlar referensdan, radius 12/8, soya `none`, header 54 / rey 76, og'irlik shkalasi pasaytirildi (141 joyga tegmasdan). Commit `fa797e7`. |
+| F1 komponentlar | ✅ | Bitta `StatCard` (4 xil karta o'rniga), yangi `ListRow`/`Num`/`Segmented`/`Avatar`, `CardHeader`; `HeroStats` ichi qayta yozildi (API o'zgarmadi — 6 sahifa tegilmadi); Charts retune. Commit `74c6007`. |
+| F2 o'qituvchi | ✅ | Bosh sahifa gradient hero → 4 ko'rsatkich; talaba profili referens naqshida; kurs kartochkasi; RankingCard ListRow'da. Commit `8854231`. |
+| F5 mexanik (F2 bilan) | ✅ | 381 arbitrary `text-[Npx]` → token; 99 joydan UPPERCASE; ilova ichidagi gradientlar va `blur-3xl` dog'lar; EmptyState ixchamlashdi. |
+| F3/F4 talaba+admin | ✅ | Tokenlar orqali avtomatik; qo'lda: 152 ta jadval raqami mono shriftga, LeaderboardCard medallari tinchlandi, AI-monitoring/kurs yo'li gradientlari ketdi. |
+| CLAUDE.md §4 | ✅ | Yangi tokenlar, tipografika, StatCard 4 qoidasi, komponentlar ro'yxati. |
+
+### Keyingi (ixtiyoriy, bu redizayndan tashqarida)
+
+- Bosh sahifadagi «o'zlashtirish dinamikasi» grafigi — backendda 6 haftalik
+  seriya yo'q (`getTeacherDashboard`), shuning uchun qo'shilmadi.
+- `Login.tsx` — marketing tomoni, ataylab tegilmadi (gradient o'z o'rnida).
+- Admin AI-monitoring kartasidagi inglizcha izoh — i18n kaliti yetishmaydi.

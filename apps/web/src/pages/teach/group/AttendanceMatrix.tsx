@@ -90,9 +90,9 @@ export function AttendanceMatrix({ group }: { group: TeachGroup }) {
                     <th key={col.key} className={cls("min-w-[46px] border-b border-line px-1 py-1.5", isToday ? "bg-brand-soft" : "bg-bg")} title={col.room ? `${col.time} · ${col.room}` : col.time}>
                       <div className="flex flex-col items-center">
                         <span className={cls("text-micro font-bold", isToday ? "text-brand-deep" : "text-ink-faint")}>{wd}</span>
-                        <span className={cls("text-micro font-semibold tabular-nums", isToday ? "text-brand-deep" : "text-ink-soft")}>{dm}</span>
+                        <span className={cls("text-micro font-semibold font-data tabular-nums", isToday ? "text-brand-deep" : "text-ink-soft")}>{dm}</span>
                         {/* Dars vaqti — bir kunda bir necha dars ustunini farqlaydi */}
-                        <span className={cls("text-micro tabular-nums", isToday ? "text-brand-deep/80" : "text-ink-faint")}>{col.time}</span>
+                        <span className={cls("text-micro font-data tabular-nums", isToday ? "text-brand-deep/80" : "text-ink-faint")}>{col.time}</span>
                       </div>
                     </th>
                   );
@@ -109,7 +109,7 @@ export function AttendanceMatrix({ group }: { group: TeachGroup }) {
                     </td>
                     <td className="border-b border-r border-line px-2 py-2 text-center">
                       {s.pct !== null && (
-                        <span className={cls("text-micro font-bold tabular-nums", s.pct >= 80 ? "text-emerald" : s.pct >= 60 ? "text-amber" : "text-rose")}>{s.pct}%</span>
+                        <span className={cls("text-micro font-bold font-data tabular-nums", s.pct >= 80 ? "text-emerald" : s.pct >= 60 ? "text-amber" : "text-rose")}>{s.pct}%</span>
                       )}
                     </td>
                     {data.columns.map((col) => {

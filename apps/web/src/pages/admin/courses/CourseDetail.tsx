@@ -137,7 +137,7 @@ export function CourseDetail() {
             <Icon icon={ClipboardCheck} size={16} className="text-blue" />
             <h2 className="text-section font-bold text-ink">{t("detail.attendanceTitle")}</h2>
             {c.attendanceSummary.pct !== null && (
-              <span className={cls("rounded-pill px-2.5 py-1 text-note font-bold tabular-nums", c.attendanceSummary.pct < 75 ? "bg-rose-soft text-rose" : "bg-emerald-soft text-emerald")}>
+              <span className={cls("rounded-pill px-2.5 py-1 text-note font-bold font-data tabular-nums", c.attendanceSummary.pct < 75 ? "bg-rose-soft text-rose" : "bg-emerald-soft text-emerald")}>
                 {c.attendanceSummary.pct}%
               </span>
             )}
@@ -185,7 +185,7 @@ export function CourseDetail() {
                     {g.slots.map((s, i) => (
                       <div key={i} className="flex items-center gap-3 rounded-control border border-line bg-surface px-3 py-1.5 text-note">
                         <span className="w-24 shrink-0 font-semibold text-ink">{(locale === "ru" ? WEEKDAYS_RU : WEEKDAYS_UZ)[s.weekday]}</span>
-                        <span className="shrink-0 font-bold tabular-nums text-brand-deep">{s.startTime}</span>
+                        <span className="shrink-0 font-bold font-data tabular-nums text-brand-deep">{s.startTime}</span>
                         {s.room && <span className="inline-flex items-center gap-1 text-ink-faint"><Icon icon={DoorClosed} size={12} /> {s.room}</span>}
                       </div>
                     ))}

@@ -132,9 +132,9 @@ export function UserProfilePage() {
                     <Card className="flex items-center justify-center gap-5 lg:col-span-2">
                       <ProgressRing value={overallPct} size={116} stroke={11} label={t("overall")} />
                       <div className="flex flex-col gap-2 text-note text-ink-soft">
-                        <span><b className="tabular-nums text-ink">{studentCourses.length}</b> {t("courses")}</span>
+                        <span><b className="font-data tabular-nums text-ink">{studentCourses.length}</b> {t("courses")}</span>
                         <span>
-                          <b className="tabular-nums text-ink">{studentCourses.reduce((s, c) => s + c.completed, 0)}/{studentCourses.reduce((s, c) => s + c.total, 0)}</b> {t("topicsDone")}
+                          <b className="font-data tabular-nums text-ink">{studentCourses.reduce((s, c) => s + c.completed, 0)}/{studentCourses.reduce((s, c) => s + c.total, 0)}</b> {t("topicsDone")}
                         </span>
                         {p.lastActiveAt && (
                           <span className="text-micro text-ink-faint">
@@ -186,7 +186,7 @@ export function UserProfilePage() {
                       {p.avgQuizScore !== null && p.avgQuizScore !== undefined && (
                         <p className="mt-3 flex items-center gap-1.5 border-t border-line pt-3 text-note text-ink-soft">
                           <Icon icon={Sparkles} size={14} className="text-blue" />
-                          {t("avgQuiz")}: <b className="tabular-nums text-ink">{p.avgQuizScore}%</b>
+                          {t("avgQuiz")}: <b className="font-data tabular-nums text-ink">{p.avgQuizScore}%</b>
                         </p>
                       )}
                     </Card>
@@ -206,9 +206,9 @@ export function UserProfilePage() {
                             className="flex w-full flex-wrap items-center gap-4 border-b border-line px-5 py-3.5 text-left transition-colors last:border-0 hover:bg-bg"
                           >
                             <span className="min-w-[140px] flex-1 text-body font-semibold text-ink">{c.name}</span>
-                            <span className="text-note tabular-nums text-ink-soft">{c.completed}/{c.total}</span>
+                            <span className="text-note font-data tabular-nums text-ink-soft">{c.completed}/{c.total}</span>
                             <div className="w-32"><ProgressBar value={c.progressPct} /></div>
-                            <span className="w-12 text-right text-note font-bold tabular-nums text-ink">{c.progressPct}%</span>
+                            <span className="w-12 text-right text-note font-bold font-data tabular-nums text-ink">{c.progressPct}%</span>
                           </button>
                         ))}
                       </Card>

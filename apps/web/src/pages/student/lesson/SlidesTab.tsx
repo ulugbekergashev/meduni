@@ -169,7 +169,7 @@ export function SlidesTab({ topicId, data }: { topicId: number; data: SlidesTabD
           {data.slides.map((s, si) => (
             <section key={s.id} className="rounded-card border border-line p-4">
               <div className="mb-2 flex items-start gap-2.5">
-                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-control bg-surface-raised text-micro font-extrabold tabular-nums text-ink-soft">
+                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-control bg-surface-raised text-micro font-extrabold font-data tabular-nums text-ink-soft">
                   {si + 1}
                 </span>
                 <h3 className="text-body font-extrabold leading-snug text-ink">{s.title}</h3>
@@ -235,7 +235,7 @@ export function SlidesTab({ topicId, data }: { topicId: number; data: SlidesTabD
                     >
                       <Icon icon={ChevronLeft} size={16} />
                     </button>
-                    <span className="min-w-[44px] text-center text-note font-extrabold tabular-nums text-ink-soft">
+                    <span className="min-w-[44px] text-center text-note font-extrabold font-data tabular-nums text-ink-soft">
                       {i + 1} / {total}
                     </span>
                     <button
@@ -278,7 +278,7 @@ export function SlidesTab({ topicId, data }: { topicId: number; data: SlidesTabD
                   >
                     <Icon icon={notes ? ChevronDown : ChevronRight} size={13} />
                     {t("slideNotes")}
-                    <span className="tabular-nums text-ink-faint">{slide.bullets.length}</span>
+                    <span className="font-data tabular-nums text-ink-faint">{slide.bullets.length}</span>
                   </button>
                   {notes && (
                     <ul className="max-h-[26vh] space-y-1 overflow-y-auto px-4 pb-2">
@@ -308,7 +308,7 @@ export function SlidesTab({ topicId, data }: { topicId: number; data: SlidesTabD
             >
               <Icon icon={ChevronLeft} size={17} />
             </button>
-            <span className="text-note font-extrabold tabular-nums text-ink-soft">
+            <span className="text-note font-extrabold font-data tabular-nums text-ink-soft">
               {i + 1} / {total}
             </span>
             <button

@@ -158,7 +158,7 @@ export function JournalView({ courseId, groupId }: { courseId: number; groupId?:
                               </td>
                             );
                           })}
-                          <td className="border-b border-l border-line px-2 py-1.5 text-center font-bold tabular-nums text-ink">{st.avgGrade ?? "—"}</td>
+                          <td className="border-b border-l border-line px-2 py-1.5 text-center font-bold font-data tabular-nums text-ink">{st.avgGrade ?? "—"}</td>
                         </tr>
                       ))}
                     </tbody>

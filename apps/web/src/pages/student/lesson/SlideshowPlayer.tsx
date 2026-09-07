@@ -177,7 +177,7 @@ export function SlideshowPlayer({
           >
             <Icon icon={playing ? Pause : Play} size={18} />
           </button>
-          <span className="shrink-0 text-note font-bold tabular-nums text-ink-soft">
+          <span className="shrink-0 text-note font-bold font-data tabular-nums text-ink-soft">
             {fmt(time)} / {fmt(total)}
           </span>
 
@@ -204,7 +204,7 @@ export function SlideshowPlayer({
           <button onClick={() => jump(-1)} aria-label="prev" className={cls("flex h-9 w-9 items-center justify-center rounded-control text-ink-soft hover:bg-surface-raised", FOCUS)}>
             <Icon icon={ChevronLeft} size={17} />
           </button>
-          <span className="shrink-0 text-micro font-bold tabular-nums text-ink-faint">
+          <span className="shrink-0 text-micro font-bold font-data tabular-nums text-ink-faint">
             {(current?.index ?? 0) + 1}/{segments.length}
           </span>
           <button onClick={() => jump(1)} aria-label="next" className={cls("flex h-9 w-9 items-center justify-center rounded-control text-ink-soft hover:bg-surface-raised", FOCUS)}>

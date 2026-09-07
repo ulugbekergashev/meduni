@@ -233,8 +233,8 @@ export function ReviewTab() {
                     <p className="truncate text-note text-ink-faint">{u.subjectName}</p>
                   </div>
                   <div className="shrink-0 text-right">
-                    <p className="text-body font-bold tabular-nums text-ink">{u.count}</p>
-                    <p className="text-micro tabular-nums text-ink-faint">{fmt(u.nextDueAt)}</p>
+                    <p className="text-body font-bold font-data tabular-nums text-ink">{u.count}</p>
+                    <p className="text-micro font-data tabular-nums text-ink-faint">{fmt(u.nextDueAt)}</p>
                   </div>
                   <Icon
                     icon={ArrowRight}

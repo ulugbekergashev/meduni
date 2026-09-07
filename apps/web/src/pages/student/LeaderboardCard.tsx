@@ -9,30 +9,29 @@ function Row({ row }: { row: LeaderboardRow }) {
   return (
     <div
       className={cls(
-        "group flex items-center gap-4 px-5 py-3.5 transition-all duration-300 hover:bg-surface-raised",
-        row.isMe && "bg-brand-soft/50 ring-1 ring-brand-tint/20"
+        "group flex items-center gap-3 border-t border-line-soft px-4 py-2.5 transition-colors first:border-t-0 hover:bg-surface-raised",
+        row.isMe && "bg-brand-soft"
       )}
     >
       <div
         className={cls(
-          "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-note font-black tabular-nums transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6",
-          row.rank === 1 ? "bg-gradient-to-br from-yellow-300 to-yellow-600 text-white shadow-lg ring-4 ring-yellow-500/20" :
-          row.rank === 2 ? "bg-gradient-to-br from-slate-300 to-slate-500 text-white shadow-md ring-4 ring-slate-400/20" :
-          row.rank === 3 ? "bg-gradient-to-br from-orange-400 to-amber-700 text-white shadow-md ring-4 ring-orange-500/20" :
-          "bg-surface-raised text-ink-soft shadow-inner border border-line"
+          "flex h-7 w-7 shrink-0 items-center justify-center rounded-full font-data text-micro font-bold tabular-nums",
+          // Medal ranglari o'rniga tinch chip: ekranda 10 ta yaltiroq doira shovqin
+          // (§4 "tugadi holati yorqin rang emas"). Birinchi uchtasi brend chipida.
+          row.rank <= 3 ? "bg-brand-soft text-brand-deep" : "bg-surface-raised text-ink-faint"
         )}
       >
         {row.rank}
       </div>
-      <p className="min-w-0 flex-1 truncate text-body font-semibold text-ink transition-colors group-hover:text-brand-tint">
+      <p className="min-w-0 flex-1 truncate text-note text-ink">
         {row.fullName}
         {row.isMe && (
-          <span className="ml-2 rounded-pill bg-brand-tint px-2 py-0.5 text-micro font-bold tracking-wide text-white drop-shadow-sm">
+          <span className="ml-2 rounded-pill bg-brand px-2 py-0.5 text-micro font-bold text-white">
             {t("you")}
           </span>
         )}
       </p>
-      <span className="shrink-0 text-note font-semibold tabular-nums text-ink-soft transition-colors group-hover:text-ink">
+      <span className="shrink-0 font-data text-micro tabular-nums text-ink-faint">
         {t("completedN", { count: row.completed })}
       </span>
     </div>

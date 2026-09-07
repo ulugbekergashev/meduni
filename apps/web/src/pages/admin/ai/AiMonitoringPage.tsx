@@ -31,7 +31,7 @@ function RankRow({ label, value, max, display, color = "var(--brand)" }: { label
       <span className="h-2.5 flex-1 overflow-hidden rounded-pill bg-bg">
         <span className="block h-full rounded-pill transition-all" style={{ width: `${pct}%`, background: color }} />
       </span>
-      <span className="w-20 shrink-0 text-right text-note font-bold tabular-nums text-ink">{display}</span>
+      <span className="w-20 shrink-0 text-right text-note font-bold font-data tabular-nums text-ink">{display}</span>
     </div>
   );
 }
@@ -42,7 +42,7 @@ function QuotaBar({ pct }: { pct: number | null }) {
   return (
     <div className="flex items-center gap-2">
       <div className="h-1.5 w-14 overflow-hidden rounded-pill bg-bg"><div className={cls("h-full rounded-pill", tone)} style={{ width: `${Math.min(pct, 100)}%` }} /></div>
-      <span className={cls("w-9 text-micro font-semibold tabular-nums", pct >= 100 ? "text-rose" : pct >= 80 ? "text-amber" : "text-ink-soft")}>{pct}%</span>
+      <span className={cls("w-9 text-micro font-semibold font-data tabular-nums", pct >= 100 ? "text-rose" : pct >= 80 ? "text-amber" : "text-ink-soft")}>{pct}%</span>
     </div>
   );
 }
@@ -198,7 +198,7 @@ export function AiMonitoringPage() {
                     {u.byDept.map((d) => (
                       <tr key={d.departmentId} className="border-b border-line last:border-0 hover:bg-bg">
                         <td className="px-4 py-3 font-medium text-ink">{d.name}</td>
-                        <td className="px-4 py-3 font-semibold tabular-nums text-ink">{money(d.cost)}</td>
+                        <td className="px-4 py-3 font-semibold font-data tabular-nums text-ink">{money(d.cost)}</td>
                         <td className="px-4 py-3"><QuotaBar pct={d.tokenPct} /></td>
                         <td className="px-4 py-3"><QuotaBar pct={d.imagePct} /></td>
                         <td className="px-4 py-3"><QuotaBar pct={d.costPct} /></td>

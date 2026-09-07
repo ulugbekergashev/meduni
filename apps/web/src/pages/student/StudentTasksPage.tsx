@@ -60,7 +60,7 @@ function AutoTaskGroup({ task }: { task: AutoTask }) {
             <Icon icon={meta.icon} size={14} />
           </span>
           <h3 className="min-w-0 flex-1 truncate text-body font-bold text-ink">{t(meta.labelKey)}</h3>
-          <span className="rounded-pill bg-surface-raised px-2.5 py-0.5 text-note font-bold tabular-nums text-ink-soft">
+          <span className="rounded-pill bg-surface-raised px-2.5 py-0.5 text-note font-bold font-data tabular-nums text-ink-soft">
             {task.type === "attendance_low" ? `${task.count}%` : task.count}
           </span>
         </div>
@@ -297,7 +297,7 @@ export function StudentTasksPage() {
                           <p className="text-section font-bold leading-none tabular-nums text-brand-tint">
                             {new Date(s.date).getDate()}
                           </p>
-                          <p className="mt-0.5 text-note tabular-nums text-ink-soft">
+                          <p className="mt-0.5 text-note font-data tabular-nums text-ink-soft">
                             {`${String(new Date(s.date).getHours()).padStart(2, "0")}:${String(new Date(s.date).getMinutes()).padStart(2, "0")}`}
                           </p>
                         </div>
@@ -342,7 +342,7 @@ export function StudentTasksPage() {
                             <div key={h.id} className="flex items-center gap-3 px-4 py-2.5">
                               <Icon icon={CheckCircle2} size={16} className="shrink-0 text-emerald opacity-60" />
                               <p className="min-w-0 flex-1 truncate text-body text-ink-soft line-through">{h.title}</p>
-                              {h.doneAt && <span className="shrink-0 text-note font-medium tabular-nums text-ink-faint">{fmt(h.doneAt)}</span>}
+                              {h.doneAt && <span className="shrink-0 text-note font-medium font-data tabular-nums text-ink-faint">{fmt(h.doneAt)}</span>}
                             </div>
                           ))}
                         </div>

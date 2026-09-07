@@ -190,7 +190,7 @@ export function TeachGroupsPage() {
           >
             <Icon icon={UserX} size={14} />
             {t("sBehind")}
-            <span className="rounded-pill px-1.5 text-micro tabular-nums text-rose">{summary.behind}</span>
+            <span className="rounded-pill px-1.5 text-micro font-data tabular-nums text-rose">{summary.behind}</span>
           </button>
         )}
         <span className="text-note font-semibold text-ink-soft">{tc("totalN", { n: filtered.length })}</span>

@@ -150,7 +150,7 @@ export function StudyToolbar({
           >
             <Icon icon={List} size={15} />
             <span className="hidden sm:inline">{t("sectionsBtn")}</span>
-            <span className="tabular-nums text-micro text-ink-faint">
+            <span className="font-data tabular-nums text-micro text-ink-faint">
               {readCount}/{sections.length}
             </span>
           </button>
@@ -178,7 +178,7 @@ export function StudyToolbar({
                       >
                         <span
                           className={cls(
-                            "mt-[3px] flex h-4 w-4 shrink-0 items-center justify-center rounded-pill text-micro font-extrabold tabular-nums",
+                            "mt-[3px] flex h-4 w-4 shrink-0 items-center justify-center rounded-pill text-micro font-extrabold font-data tabular-nums",
                             cur ? "bg-brand text-white" : s.read ? "text-emerald" : "bg-line text-ink-dim"
                           )}
                         >
@@ -209,7 +209,7 @@ export function StudyToolbar({
         >
           <Icon icon={sourcesOpen ? X : FolderOpen} size={15} />
           <span className="hidden sm:inline">{t("sourcesBtn")}</span>
-          <span className="tabular-nums text-micro text-ink-faint">{sourcesCount}</span>
+          <span className="font-data tabular-nums text-micro text-ink-faint">{sourcesCount}</span>
         </button>
       )}
     </div>

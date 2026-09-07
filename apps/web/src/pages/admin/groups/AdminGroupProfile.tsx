@@ -73,7 +73,7 @@ function StudentRow({ s, onClick }: { s: AdminGroupStudent; onClick: () => void 
   const lowAtt = s.attendancePct !== null && s.attendancePct < 75;
   return (
     <button onClick={onClick} className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-bg">
-      <span className={cls("flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-note font-bold tabular-nums", s.rank <= 3 ? "bg-brand-soft text-brand-deep" : "bg-bg text-ink-faint")}>{s.rank}</span>
+      <span className={cls("flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-note font-bold font-data tabular-nums", s.rank <= 3 ? "bg-brand-soft text-brand-deep" : "bg-bg text-ink-faint")}>{s.rank}</span>
       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-soft text-note font-bold text-brand-deep">{initials}</div>
       <div className="min-w-0 flex-[2]">
         <div className="flex items-center gap-2">
@@ -85,16 +85,16 @@ function StudentRow({ s, onClick }: { s: AdminGroupStudent; onClick: () => void 
       <div className="hidden min-w-0 flex-1 sm:block">
         <div className="flex items-center gap-2">
           <ProgressBar value={s.overallPct} className="flex-1" />
-          <span className="w-9 shrink-0 text-right text-note font-semibold tabular-nums text-ink-soft">{s.overallPct}%</span>
+          <span className="w-9 shrink-0 text-right text-note font-semibold font-data tabular-nums text-ink-soft">{s.overallPct}%</span>
         </div>
       </div>
       <div className="hidden w-14 shrink-0 text-right sm:block">
         <span className="text-note text-ink-faint">{t("quiz")}</span>
-        <p className="text-note font-bold tabular-nums text-ink">{s.avgQuizScore === null ? "—" : `${s.avgQuizScore}%`}</p>
+        <p className="text-note font-bold font-data tabular-nums text-ink">{s.avgQuizScore === null ? "—" : `${s.avgQuizScore}%`}</p>
       </div>
       <div className="w-14 shrink-0 text-right">
         <span className="text-note text-ink-faint">{t("att")}</span>
-        <p className={cls("text-note font-bold tabular-nums", lowAtt ? "text-rose" : "text-ink")}>{s.attendancePct === null ? "—" : `${s.attendancePct}%`}</p>
+        <p className={cls("text-note font-bold font-data tabular-nums", lowAtt ? "text-rose" : "text-ink")}>{s.attendancePct === null ? "—" : `${s.attendancePct}%`}</p>
       </div>
       <Icon icon={Chev} size={16} className="shrink-0 text-ink-faint" />
     </button>
@@ -143,7 +143,7 @@ function Metric({ label, value, pct, tone }: { label: string; value: string; pct
     <div>
       <div className="flex items-center justify-between text-note">
         <span className="text-ink-soft">{label}</span>
-        <span className="font-bold tabular-nums text-ink">{value}</span>
+        <span className="font-bold font-data tabular-nums text-ink">{value}</span>
       </div>
       <ProgressBar value={pct} tone={tone} className="mt-1" />
     </div>
@@ -259,12 +259,12 @@ function statusBorder(s: AdminGroupLesson["status"]): string {
 function LessonRow({ l, t }: { l: AdminGroupLesson; t: (k: string) => string }) {
   return (
     <div className={cls("flex flex-wrap items-center gap-3 border-l-4 px-4 py-2.5", statusBorder(l.status))}>
-      <span className="w-12 shrink-0 text-note font-bold tabular-nums text-ink">{l.startTime}</span>
+      <span className="w-12 shrink-0 text-note font-bold font-data tabular-nums text-ink">{l.startTime}</span>
       <div className="min-w-0 flex-1">
         <p className="truncate text-note font-semibold text-ink">{l.courseName}</p>
         {l.room && <p className="flex items-center gap-1 text-micro text-ink-faint"><Icon icon={DoorClosed} size={11} /> {l.room}</p>}
       </div>
-      <span className="shrink-0 text-micro tabular-nums text-ink-faint">{l.markedCount}/{l.rosterSize} · {t(`status.${l.status}`)}</span>
+      <span className="shrink-0 text-micro font-data tabular-nums text-ink-faint">{l.markedCount}/{l.rosterSize} · {t(`status.${l.status}`)}</span>
     </div>
   );
 }

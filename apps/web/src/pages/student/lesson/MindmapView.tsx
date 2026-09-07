@@ -172,7 +172,7 @@ const SectionNode = memo(({ data }: NodeProps) => {
         <div className="mb-1 flex items-center gap-1.5">
           <span
             className={cls(
-              "flex h-5 w-5 items-center justify-center rounded-pill text-micro font-extrabold tabular-nums",
+              "flex h-5 w-5 items-center justify-center rounded-pill text-micro font-extrabold font-data tabular-nums",
               d.read ? "bg-emerald-soft text-emerald" : cls(c.soft, c.text)
             )}
           >
@@ -191,7 +191,7 @@ const SectionNode = memo(({ data }: NodeProps) => {
           title={String(d.children)}
           className="mt-0.5 flex shrink-0 items-center gap-0.5 rounded-control px-1 py-1 text-ink-faint transition-colors hover:bg-bg hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
         >
-          <span className="text-micro font-bold tabular-nums">{d.children}</span>
+          <span className="text-micro font-bold font-data tabular-nums">{d.children}</span>
           <Icon icon={d.collapsed ? ChevronRight : ChevronDown} size={13} />
         </button>
       )}
@@ -493,7 +493,7 @@ export function MindmapView({
         <span className="rounded-pill bg-surface px-2.5 py-1 text-micro font-bold text-ink-soft shadow-card">
           {t("mindmapOpenSection")}
         </span>
-        <span className="rounded-pill bg-surface px-2.5 py-1 text-micro font-bold text-ink-faint shadow-card tabular-nums">
+        <span className="rounded-pill bg-surface px-2.5 py-1 text-micro font-bold text-ink-faint shadow-card font-data tabular-nums">
           {total}
         </span>
         {/* Yoyish/yig'ish — katta xaritada ko'rinishni boshqarish (Mapify naqshi) */}

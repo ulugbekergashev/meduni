@@ -61,7 +61,7 @@ function Row({
         <Icon icon={icon} size={14} />
       </div>
       <span className="min-w-0 flex-1 truncate text-note font-bold text-ink">{label}</span>
-      <span className="shrink-0 text-note font-extrabold tabular-nums text-ink">{value}</span>
+      <span className="shrink-0 text-note font-extrabold font-data tabular-nums text-ink">{value}</span>
     </Wrapper>
   );
 }

@@ -74,43 +74,79 @@ Agar biror band bajarilmagan bo'lsa — MENGA aytmasдан o'zing tuzat. Faqat q
 
 ## 4. DIZAYN TIZIMI (packages/ui — barcha sahifa shundan foydalanadi)
 
-### Ranglar (tokenlar) — Indigo Pro (2026-07 redizayn, Faza 0)
+### Ranglar (tokenlar) — «Sokin panel» (2026-09 redizayn)
+
+Manba: Sariosiyo CRM (`docs/UI_UPGRADE_PLAN.md`, 22 ta ma'noli token), brend
+indigo. Reja: `.claude/plans/redizayn-sokin-panel-2026-09.md`.
+
 ```
-bg: #F6F7F9 | surface: #FFFFFF | ink: #101828 | ink-soft: #5B6474 | ink-faint: #98A1B2 | line: #E7EAF0
-brand: #4F46E5 | brand-soft: #EEF2FF | brand-deep: #3730A3   (indigo — asosiy)
-blue: #0284C7 / #E0F2FE (sky — test, ma'lumot; indigo'dan uzoq turishi uchun sky tanlangan)
-violet: #7C3AED / #F1EBFE (video — UI aksent, asosiy diagramma to'plamiga kirmaydi)
-amber: #D97706 / #FEF3E2 (ogohlantirish, tekshiruv)
-rose: #E11D48 / #FDE9EE (keys, xato)
-emerald: #059669 / #E6F7F0 (muvaffaqiyat, tugadi)
-Diagramma (kategorial) to'plami — CVD/kontrast validatordan o'tgan:
-brand, emerald, amber, blue, rose (amber↔emerald yonma-yon faqat 2px oraliq/yorliq bilan).
+YORUG':  bg #F4F6F5 | surface #FFFFFF | surface-2 (rey+header) #FFFFFF
+         surface-raised (karta ichi, input) #F4F6F5
+         ink #16211D | ink-2 #3D4B45 | ink-soft #71827B | ink-faint #8A978F
+         line #E3E8E5 | line-raised (tugma/input) #DBE2DE | line-soft (qator) #EAEFEC
+QORONG'U: bg #0F1216 | surface #171C25 | surface-2 #131720 | raised #181D26
+         ink #E8EBEF | ink-2 #C3CAD4 | ink-soft #8B93A1 | ink-faint #6B7482
+         line #232A35 | line-raised #2B323D | line-soft #1E242E
+
+brand #4F46E5 (to'ldirilgan amal + aksent) | brand-hover | brand-soft | brand-deep
+⚠️ QORONG'UDA `brand-deep` YORUG' (#A5B0FF) — u brand-soft chip USTIDAGI matn.
+emerald (yaxshi) · amber (ogoh) · rose (xato) + `-soft`, `rose-line`, `rose-muted`
+blue (test/ma'lumot) · violet (video)
+Diagramma to'plami: brand, emerald, amber, blue, rose.
 ```
 
-### O'lchamlar
-- Karta radius 16px, tugma/input 10px, badge/pill 20px (dumaloq)
-- **Shrift shkalasi — `packages/ui/tailwind.config.ts` tokenlari** (2026-07-23 v3,
-  buyurtmachi 3-marta "kichkina" dedi → KATTA sakrash): `h1` 30 · `stat` 42 ·
-  `section` 20 · `body` 17 · `note` 15 · `micro` 13 · `read` 19/1.8.
-  **`micro` (13px) — MUTLAQ MINIMUM.** `text-[N]` arbitrary qiymatlar TAQIQ —
-  token ishlat (talaba sahifalari + packages/ui komponentlari hammasi token'ga
-  o'tkazilgan). O'qish ustunida sarlavha/marker o'lchamlari **em** da (A−/A+).
-- **Statistika kartalari — DentaCRM uslubi** (`components/HeroStats.tsx`
-  `HeroCard`/`HeroTile`; `packages/ui/StatCard`): ALOHIDA keng karta, ikonka-chip
-  (rounded-control 48px) → UPPERCASE `note` yorliq → `stat` (42px) raqam → hint,
-  `p-6` havo. Siqilgan "strip" TAQIQ. `HeroTile accent` = gradient urg'u karta.
-- **Talaba tomoni DEFAULT YORUG'** (dark headerdagi tugma bilan OPTSIYA). **Dark
-  tokenlar (2026-07-23 v3) boyroq/kontrastroq**: kartalar fondan aniq AJRALADI
-  (bg #0b1018, surface #19212f, raised #232d3f, line #2c3648, ink #f5f7fc) —
-  void-qora (#06080d) yoki flat-grey EMAS.
-- Soyalar tokenli: `--shadow-card` / `--shadow-card-hover` (ink-tinted, dark'da o'z varianti); Tailwind `shadow-card`/`shadow-card-hover`
-- Sana formati: `lib/date.ts::formatDate(locale, date, "long|short|shortYear")` — uz oy nomlari qo'lda ("15-iyul, 2026-yil"; uz-UZ ICU "M07" buzuq), toLocaleDateString'ni oy-nomli formatda ISHLATMA
-- Panel padding 12-16px (`p-3`/`p-4`), kartalar orasi **8-12px** (`gap-2`/`gap-3`) — ZICHLIK QOIDASIga qarang
-- Shrift: **Manrope** (`@fontsource-variable/manrope`) → Inter → system-ui
+### O'lchamlar va tipografika
+
+- **Shrift: Sora** (interfeys) → **Inter** (Sora'da KIRILL YO'Q, ruscha matn
+  Inter'da chiqadi) → system-ui. Raqamlar: **JetBrains Mono** (`font-data`).
+- **Shkala** (`packages/ui/tailwind.config.ts`): `h1` 26 · `stat` 28 ·
+  `section` 16 · `body` 14 · `note` 13 · `micro` 12 · `read` 17/1.8.
+  **`text-[Npx]` arbitrary qiymatlar TAQIQ** — token ishlat.
+- **Og'irlik shkalasi PASAYTIRILGAN**: `semibold`=500, `bold`/`extrabold`=600,
+  `black`=700. Ya'ni `font-extrabold` yozsang ham 600 chiqadi — bu ataylab:
+  ilgari 141 joyda `font-extrabold/black` bor edi va ekranda hamma narsa bir
+  xil baland ovozda "qichqirardi".
+- Radius: karta **12px**, tugma/input **8px**, badge/pill dumaloq.
+- **SOYA YO'Q.** Karta = 1px chegara; hover'da faqat chegara rangi o'zgaradi
+  (`--shadow-card: none`). Soya faqat sahifadan uzilgan yuzada:
+  `shadow-modal` (modal) va `shadow-pop` (dropdown/popover).
+- Header **54px** (`--header-h`), ikonka reyi **76px** (`--rail-w`),
+  bo'lim paneli 248px. Sticky offsetlar shu tokenlardan oladi.
+- **RAQAMLAR**: jadval/ro'yxat/telefon/vaqt/ball — **mono** (`font-data` yoki
+  `.num`); katta ko'rsatkichlar (28px+) — mono EMAS, `.raqam` (mono bu
+  o'lchamda "0,5" ni "0 , 5" qilib yoyadi).
+- Sana formati: `lib/date.ts::formatDate` (uz oy nomlari qo'lda).
+- Panel padding 12-16px (`p-3`/`p-4`), kartalar orasi 8-12px — ZICHLIK QOIDASI.
+
+### ⛔ KO'RSATKICH KARTOCHKASI (StatCard) — buzilmaydigan 4 qoida
+
+`packages/ui/StatCard` — ilovadagi YAGONA nusxa (`StatTile` nomi bilan ham).
+Tuzilishi: yorliq 12 → raqam 28 → izoh 12, yoki chiziq + izoh.
+**Rangli ikonka-chip, gradient va uppercase YO'Q.**
+
+1. Har `bar` bilan birga **`barCaption` MAJBURIY** — izohsiz chiziq nimaning
+   ulushi ekanini aytmaydi, ya'ni hech narsa anglatmaydi.
+2. `tone` **raqamga**, `subTone` **izohga** rang beradi. "Guruhlar 5" sariq
+   bo'lsa go'yo 5 yomon son — aslida muammo izohda (bittasiga ustoz yo'q).
+3. Qiymat **0 bo'lsa chiziq chizilmaydi** — ingichka dumcha go'yo biror ish
+   qilingandek ko'rinadi.
+4. Qatorda **`accent` faqat BITTA** kartochkada (e'tibor talab qiladigan raqam).
+
+STAT DIETASI (§18) kuchida: sahifada eng ko'pi bitta stat qatori, ≤4 karta,
+ota sahifadagi raqam bolada takrorlanmaydi.
 
 ### Umumiy komponentlar (packages/ui da)
-Button (primary/deep/ghost/soft/danger, sm/md/lg, ikonka, hoverда brand→brand-deep, active:scale-98), StatusPill (draft/review/published), Card (p-6, shadow-card, hoverда ko'tariladi), **StatCard (ikonka-chip + katta raqam + label/hint; tone=class string; selected=filtr holati; compact)**, Icon (SVG, stroke 1.7 yoki lucide-react), Input/Textarea (focusда brand chegara+ring), Modal (markazда, Escape+tashqi bosishда yopiladi), Toast (pastда, 2.6s, ok/warn), Spinner, EmptyState (text+hint+action, dashed karta), **Sidebar layout (272px, YORUG' — oq surface, border-r, faol=brand-soft chip + chap indigo indikator; `--side-*` tokenlar, dark'da o'z varianti)**, Charts (ProgressRing def 116/11, **Donut (segmentli, 2px oraliq, markazda qiymat) + LegendRow**, BarRow, MiniBars, StackedBar 2px-gap segmentlar). Kontent max-w 1280px. Tablar: segmented uslub (bordered surface track p-1, faol=brand-soft chip) — TabNav/GroupProfile/LessonPage bir xil.
 
+Button (primary/deep/ghost/soft/danger, sm 30 / md 36 / lg 40, radius 8,
+soyasiz va ko'tarilmaydi), **StatCard**, **ListRow** (36px belgi · sarlavha+izoh ·
+o'ngda qiymat — ro'yxatlarning yagona qatori), **Num** (mono raqam; `display`
+katta ko'rsatkich uchun), **Segmented** (davr filtri va ichki tablar),
+**Avatar** (28/36/56/112, object-top, initsial neytral fonda), Card +
+**CardHeader**, Badge (12px), StatusPill, Icon, Input/Textarea, Select, Modal,
+Sheet, Toast, Spinner, EmptyState (ixcham — py-8), Sidebar layout (2 daraja:
+76px rey + 248px bo'lim paneli), Charts (ProgressRing / Donut + LegendRow /
+BarRow / MiniBars / StackedBar — chiziqlar 1.5px, raqam yorliqlari mono).
+Kontent max-w 1760px. Tablar: `SubNav` (desktopda yon panel, mobilda tasma).
 ### ⛔ ZICHLIK QOIDASI (2026-07-21 — BUZILMAYDI, eng ko'p buzilgan qoida)
 
 Foydalanuvchi talabi: **"katta spacelar qolib ketmasin, faqatgina paddingga ruxsat"**.
