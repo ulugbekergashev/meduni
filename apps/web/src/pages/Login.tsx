@@ -73,7 +73,7 @@ export function Login() {
               <div className="flex h-11 w-11 items-center justify-center rounded-[12px] bg-gradient-to-br from-brand to-blue text-white font-black text-xl shadow-lg shadow-brand/30">
                 M
               </div>
-              <span className="text-[17px] font-black tracking-tight text-white">MedUni</span>
+              <span className="text-section font-black tracking-tight text-white">MedUni</span>
             </div>
             <LocaleSwitcher />
           </motion.div>
@@ -83,13 +83,13 @@ export function Login() {
             <h1 className="text-[32px] font-black text-white tracking-tight mb-2 leading-tight">
               {t("title")}
             </h1>
-            <p className="text-[15px] text-white/50 leading-relaxed">{t("subtitle")}</p>
+            <p className="text-body text-white/50 leading-relaxed">{t("subtitle")}</p>
           </motion.div>
 
           {/* Form */}
           <motion.form variants={item} onSubmit={onSubmit} className="flex flex-col gap-5">
             <div className="space-y-2">
-              <label className="text-[13px] font-bold text-white/60 uppercase tracking-wider pl-0.5">
+              <label className="text-note font-bold text-white/60 pl-0.5">
                 {t("email")}
               </label>
               <div className="relative">
@@ -100,13 +100,13 @@ export function Login() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="h-12 w-full rounded-[12px] border border-white/10 bg-white/5 pl-10 pr-4 text-[15px] text-white placeholder:text-white/25 outline-none transition-all focus:border-brand/60 focus:bg-white/8 focus:ring-2 focus:ring-brand/20 shadow-inner"
+                  className="h-12 w-full rounded-[12px] border border-white/10 bg-white/5 pl-10 pr-4 text-body text-white placeholder:text-white/25 outline-none transition-all focus:border-brand/60 focus:bg-white/8 focus:ring-2 focus:ring-brand/20 shadow-inner"
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <label className="text-[13px] font-bold text-white/60 uppercase tracking-wider pl-0.5">
+              <label className="text-note font-bold text-white/60 pl-0.5">
                 {t("password")}
               </label>
               <div className="relative">
@@ -117,7 +117,7 @@ export function Login() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="h-12 w-full rounded-[12px] border border-white/10 bg-white/5 pl-10 pr-4 text-[15px] text-white placeholder:text-white/25 outline-none transition-all focus:border-brand/60 focus:bg-white/8 focus:ring-2 focus:ring-brand/20 shadow-inner"
+                  className="h-12 w-full rounded-[12px] border border-white/10 bg-white/5 pl-10 pr-4 text-body text-white placeholder:text-white/25 outline-none transition-all focus:border-brand/60 focus:bg-white/8 focus:ring-2 focus:ring-brand/20 shadow-inner"
                 />
               </div>
             </div>
@@ -126,7 +126,7 @@ export function Login() {
               <motion.p
                 initial={{ opacity: 0, y: -6 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="rounded-[10px] border border-rose/30 bg-rose-soft px-4 py-3 text-[14px] font-semibold text-rose"
+                className="rounded-[10px] border border-rose/30 bg-rose-soft px-4 py-3 text-note font-semibold text-rose"
               >
                 {errorText}
               </motion.p>
@@ -135,7 +135,7 @@ export function Login() {
             <button
               type="submit"
               disabled={login.isPending}
-              className="mt-1 flex py-4 w-full items-center justify-center gap-2.5 rounded-[12px] bg-gradient-to-r from-brand to-blue text-[16px] font-black text-white shadow-lg shadow-brand/30 transition-all hover:shadow-xl hover:shadow-brand/40 hover:-translate-y-[1px] active:scale-[0.98] disabled:opacity-60 disabled:pointer-events-none"
+              className="mt-1 flex py-4 w-full items-center justify-center gap-2.5 rounded-[12px] bg-gradient-to-r from-brand to-blue text-body font-black text-white shadow-lg shadow-brand/30 transition-all hover:shadow-xl hover:shadow-brand/40 hover:-translate-y-[1px] active:scale-[0.98] disabled:opacity-60 disabled:pointer-events-none"
             >
               {login.isPending ? (
                 <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
@@ -176,7 +176,7 @@ export function Login() {
           animate="show"
           className="relative z-10 max-w-md px-12"
         >
-          <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-[13px] font-bold text-white/80 shadow-sm">
+          <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-note font-bold text-white/80 shadow-sm">
             <Sparkles size={14} className="text-brand-soft" />
             Academic Excellence Platform
           </div>
@@ -186,14 +186,14 @@ export function Login() {
               Next-Gen Portal
             </span>
           </h2>
-          <p className="text-white/50 text-[16px] leading-relaxed mb-3">
+          <p className="text-white/50 text-body leading-relaxed mb-3">
             Welcome to the unified platform for students, teachers, and faculty administrators. Your entire academic journey, elevated.
           </p>
 
           {/* Feature pills */}
           <div className="flex flex-wrap gap-2">
             {["Grades & Analytics", "Live Schedule", "Course Hub", "AI-Powered"].map((f) => (
-              <span key={f} className="rounded-full border border-white/15 bg-white/8 px-3.5 py-1.5 text-[13px] font-semibold text-white/60">
+              <span key={f} className="rounded-full border border-white/15 bg-white/8 px-3.5 py-1.5 text-note font-semibold text-white/60">
                 {f}
               </span>
             ))}

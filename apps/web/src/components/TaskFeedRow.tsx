@@ -61,7 +61,7 @@ export function TaskFeedRow({
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <p className={cls("text-micro font-bold uppercase tracking-wider", kickerTone[tone] ?? kickerTone.brand)}>{kicker}</p>
+          <p className={cls("text-micro font-bold", kickerTone[tone] ?? kickerTone.brand)}>{kicker}</p>
           {badge}
         </div>
         <p className={cls("truncate text-body font-semibold text-ink", done && "line-through decoration-ink-faint")}>{title}</p>

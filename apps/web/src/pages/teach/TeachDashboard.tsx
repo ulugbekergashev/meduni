@@ -1,11 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import {
-  BookOpen, CalendarDays, ChevronRight, ClipboardCheck, Clock,
-  Trophy, Users2, UserX, type LucideIcon,
-} from "lucide-react";
-import { BarRow, Card, Icon, ProgressBar, ProgressRing, cls } from "@meduni/ui";
+import { BookOpen, CalendarDays, ChevronRight, Trophy, Users2, UserX, type LucideIcon } from "lucide-react";
+import { BarRow, Card, Icon, ListRow, Num, ProgressBar, ProgressRing, StatCard, cls } from "@meduni/ui";
 import { AsyncSection } from "../../components/AsyncSection";
 import { Disclosure } from "../../components/Disclosure";
 import { useLocale } from "../../lib/useLocale";
@@ -23,45 +20,28 @@ function RankingCard({ title, icon, tone, rows, emptyText, onPick }: {
 }) {
   return (
     <Card className="flex flex-col !p-0">
-      <p className={cls("flex items-center gap-2 border-b border-line px-4 py-3 text-note font-bold", tone)}>
-        <Icon icon={icon} size={17} /> {title}
+      <p className={cls("flex items-center gap-2 px-4 pb-3 pt-3.5 text-section font-bold", tone)}>
+        <Icon icon={icon} size={16} /> {title}
       </p>
       {rows.length === 0 ? (
-        <p className="px-4 py-6 text-center text-note text-ink-faint">{emptyText}</p>
+        <p className="border-t border-line-soft px-4 py-6 text-center text-note text-ink-faint">{emptyText}</p>
       ) : (
-        <div className="divide-y divide-line">
-          {rows.map((r, i) => (
-            <button key={r.id} onClick={() => onPick(r.id)} className="flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-bg">
-              <span className={cls("flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-micro font-bold tabular-nums", i < 3 ? "bg-brand-soft text-brand-deep" : "bg-bg text-ink-faint")}>{i + 1}</span>
-              <span className="min-w-0 flex-1 truncate text-note font-semibold text-ink">{r.fullName}</span>
-              <ProgressBar value={r.overallPct} className="hidden w-24 shrink-0 sm:block" tone={r.behind ? "rose" : "emerald"} />
-              <span className="w-10 shrink-0 text-right text-note font-bold tabular-nums text-ink-soft">{r.overallPct}%</span>
-            </button>
-          ))}
-        </div>
+        rows.map((r, i) => (
+          <ListRow
+            key={r.id}
+            onClick={() => onPick(r.id)}
+            lead={<Num className={cls("w-5 text-right text-micro font-bold", i < 3 ? "text-brand-deep" : "text-ink-faint")}>{i + 1}</Num>}
+            title={r.fullName}
+            value={
+              <span className="flex items-center gap-2.5">
+                <ProgressBar value={r.overallPct} className="hidden w-24 shrink-0 sm:block" tone={r.behind ? "rose" : "emerald"} />
+                <Num className={cls("w-9 text-right text-micro font-bold", r.behind ? "text-rose" : "text-ink-soft")}>{r.overallPct}%</Num>
+              </span>
+            }
+          />
+        ))
       )}
     </Card>
-  );
-}
-
-/** Salom bloki ichidagi jonli ko'rsatkich — bosilsa tegishli blokni ochadi. */
-function HeroChip({ icon, value, label, tone, onClick }: {
-  /** `null` — hali yuklanmoqda. ⚠️ Yuklanayotganda 0 chizish YOLG'ON signal
-   *  bo'lardi ("vazifa yo'q" deb tushuniladi) — shuning uchun "—". */
-  icon: LucideIcon; value: number | null; label: string; tone?: "warn"; onClick: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={cls(
-        "flex items-center gap-2 rounded-control px-3 py-2 text-left backdrop-blur transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60",
-        tone === "warn" ? "bg-white/25 hover:bg-white/35" : "bg-white/15 hover:bg-white/25"
-      )}
-    >
-      <Icon icon={icon} size={17} className="shrink-0 text-white/90" />
-      <span className="text-h1 font-extrabold leading-none tabular-nums text-white">{value === null ? "—" : value}</span>
-      <span className="text-micro font-semibold leading-tight text-white/85">{label}</span>
-    </button>
   );
 }
 
@@ -133,24 +113,49 @@ export function TeachDashboard() {
 
   return (
     <div className="space-y-3 pb-8">
-      {/* Salom — endi BEZAK emas: o'ng tomonda bugungi ish hajmi turadi va har
-          raqam bosiladi (§4 "har element o'z ma'nosiga ega"). Ilgari bu blok
-          faqat ism va sanani ko'rsatib, ekranning katta qismini yeb turardi. */}
-      <div className="relative overflow-hidden rounded-card bg-gradient-to-br from-brand-deep via-brand to-violet px-5 py-4 text-white shadow-card sm:px-6">
-        <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
-          <div className="min-w-0">
-            <h1 className="truncate text-h1 font-extrabold leading-tight">{t("hello")}, {me?.full_name?.split(" ")[0]}</h1>
-            <p className="mt-0.5 text-note text-white/85">{today}</p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <HeroChip icon={CalendarDays} value={lessonsToday} label={t("heroLessons")} onClick={goLessons} />
-            {pendingToday > 0 && (
-              <HeroChip icon={ClipboardCheck} value={pendingToday} label={t("heroPending")} tone="warn" onClick={goLessons} />
-            )}
-            <HeroChip icon={ClipboardCheck} value={openTasks} label={t("heroTasks")} onClick={() => goTasks(true)} />
-            {overdue > 0 && <HeroChip icon={Clock} value={overdue} label={t("heroOverdue")} tone="warn" onClick={() => goTasks(true)} />}
-          </div>
-        </div>
+      {/* Salom + bugungi ish hajmi.
+          ⚠️ 2026-09: gradient karta OLIB TASHLANDI. U ekrandagi eng baland
+          ovozli blok edi, lekin eng kam ma'lumot berardi; raqamlar esa oq
+          chiplarda "bezak" bo'lib turardi. Endi ular oddiy ko'rsatkich
+          kartochkalari — har biri bosiladi va tegishli blokka olib boradi. */}
+      <div className="min-w-0">
+        <h1 className="truncate text-h1 font-bold text-ink">{t("hello")}, {me?.full_name?.split(" ")[0]}</h1>
+        <p className="mt-1 text-note text-ink-soft">
+          {today}
+          {openTasks !== null && openTasks > 0 && <> · {t("todayWork", { n: openTasks })}</>}
+        </p>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4">
+        <StatCard
+          label={t("tileLessons")}
+          value={lessonsToday ?? "—"}
+          sub={pendingToday > 0 ? t("tileLessonsPending", { n: pendingToday }) : t("tileLessonsAllMarked")}
+          subTone={pendingToday > 0 ? "warn" : undefined}
+          onClick={goLessons}
+        />
+        <StatCard
+          label={t("tileTasks")}
+          value={openTasks ?? "—"}
+          accent={overdue > 0}
+          sub={overdue > 0 ? t("tileTasksOverdue", { n: overdue }) : t("tileTasksNone")}
+          onClick={() => goTasks(true)}
+        />
+        <StatCard
+          label={t("tileStudents")}
+          value={stats?.students ?? "—"}
+          sub={t("tileCoursesN", { n: courses.length })}
+          onClick={() => navigate("/teach/groups")}
+        />
+        <StatCard
+          label={t("tileTopics")}
+          value={stats?.publishedTopics ?? "—"}
+          unit={stats ? `/ ${stats.totalTopics}` : undefined}
+          bar={stats && stats.totalTopics > 0 ? publishedPct : null}
+          barTone="good"
+          barCaption={stats ? t("tileTopicsCaption", { n: stats.totalTopics, pct: publishedPct }) : ""}
+          onClick={() => navigate("/teach/courses")}
+        />
       </div>
 
       {/* Birinchi kirish — hali hech narsa chop etilmagan bo'lsa */}
@@ -201,7 +206,7 @@ export function TeachDashboard() {
             <div className="grid gap-2.5 lg:grid-cols-2">
               {dash.data && dash.data.courses.length > 0 && (
                 <Card className="!p-0">
-                  <p className="border-b border-line px-4 py-3 text-note font-semibold uppercase tracking-wider text-ink-soft">{t("byCourse")}</p>
+                  <p className="border-b border-line px-4 py-3 text-note font-semibold text-ink-soft">{t("byCourse")}</p>
                   <div className="space-y-1 p-3">
                     {dash.data.courses.map((c) => (
                       <BarRow key={c.id} label={c.subjectName} value={c.avgProgress} onClick={() => navigate(`/teach/courses/${c.id}/progress`)} />
@@ -212,7 +217,7 @@ export function TeachDashboard() {
 
               {dash.data?.upcomingSessions && dash.data.upcomingSessions.length > 0 && (
                 <Card className="!p-0">
-                  <p className="border-b border-line px-4 py-3 text-note font-semibold uppercase tracking-wider text-ink-soft">{t("upcoming")}</p>
+                  <p className="border-b border-line px-4 py-3 text-note font-semibold text-ink-soft">{t("upcoming")}</p>
                   <div className="divide-y divide-line">
                     {dash.data.upcomingSessions.map((s) => (
                       <button key={s.id} onClick={() => navigate(s.groupId ? `/teach/groups/${s.groupId}?tab=sessions` : `/teach/courses/${s.courseId}`)} className="flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-bg">
@@ -238,7 +243,7 @@ export function TeachDashboard() {
 
             {stats.groupList.length > 0 && (
               <Card className="flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 text-micro font-semibold uppercase tracking-wider text-ink-soft"><Icon icon={Users2} size={15} /> {t("myGroups")}:</span>
+                <span className="inline-flex items-center gap-1.5 text-micro font-semibold text-ink-soft"><Icon icon={Users2} size={15} /> {t("myGroups")}:</span>
                 {stats.groupList.map((g) => (
                   <button key={g.id} onClick={() => navigate(`/teach/groups/${g.id}`)} className="rounded-pill bg-bg px-3 py-1 text-micro font-semibold text-ink-soft transition-colors hover:bg-brand-soft hover:text-brand-deep">{g.name}</button>
                 ))}

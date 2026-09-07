@@ -243,7 +243,7 @@ export function ResultPanel({ lesson, onView }: { lesson: Lesson; onView?: (v: L
           hech qayerda ko'rinmasdi. Endi u aynan shu yerda, tugmasi bilan. */}
       {!lesson.completed && todo.length > 0 && (
         <div className="rounded-card border border-amber/40 bg-amber-soft/40 p-3">
-          <p className="mb-2 flex items-center gap-1.5 text-micro font-extrabold uppercase tracking-wider text-amber">
+          <p className="mb-2 flex items-center gap-1.5 text-micro font-extrabold text-amber">
             <Icon icon={TriangleAlert} size={12} />
             {t("todoTitle")}
           </p>
@@ -285,7 +285,7 @@ export function ResultPanel({ lesson, onView }: { lesson: Lesson; onView?: (v: L
       {/* Xato javoblar tahlili */}
       {wrong.length > 0 && (
         <div className="rounded-card border border-line p-3">
-          <p className="mb-2 flex items-center gap-1.5 text-micro font-extrabold uppercase tracking-wider text-ink-dim">
+          <p className="mb-2 flex items-center gap-1.5 text-micro font-extrabold text-ink-dim">
             <Icon icon={X} size={12} className="text-rose" strokeWidth={3} />
             {t("errorAnalysis", { count: wrong.length })}
           </p>

@@ -15,7 +15,7 @@ function Row({ row }: { row: LeaderboardRow }) {
     >
       <div
         className={cls(
-          "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[14px] font-black tabular-nums transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6",
+          "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-note font-black tabular-nums transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6",
           row.rank === 1 ? "bg-gradient-to-br from-yellow-300 to-yellow-600 text-white shadow-lg ring-4 ring-yellow-500/20" :
           row.rank === 2 ? "bg-gradient-to-br from-slate-300 to-slate-500 text-white shadow-md ring-4 ring-slate-400/20" :
           row.rank === 3 ? "bg-gradient-to-br from-orange-400 to-amber-700 text-white shadow-md ring-4 ring-orange-500/20" :
@@ -27,7 +27,7 @@ function Row({ row }: { row: LeaderboardRow }) {
       <p className="min-w-0 flex-1 truncate text-body font-semibold text-ink transition-colors group-hover:text-brand-tint">
         {row.fullName}
         {row.isMe && (
-          <span className="ml-2 rounded-pill bg-brand-tint px-2 py-0.5 text-[11px] font-bold tracking-wide text-white drop-shadow-sm">
+          <span className="ml-2 rounded-pill bg-brand-tint px-2 py-0.5 text-micro font-bold tracking-wide text-white drop-shadow-sm">
             {t("you")}
           </span>
         )}

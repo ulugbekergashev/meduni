@@ -89,7 +89,7 @@ export function PeriodFilter({
 }) {
   const { t } = useTranslation(undefined, { keyPrefix: "period" });
   const selectCls =
-    "rounded-control border border-line bg-surface px-2.5 py-2 text-[14.5px] text-ink outline-none focus:border-brand";
+    "rounded-control border border-line bg-surface px-2.5 py-2 text-note text-ink outline-none focus:border-brand";
   return (
     <>
       <select value={year} onChange={(e) => onYear(e.target.value)} className={selectCls}>

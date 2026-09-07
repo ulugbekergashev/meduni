@@ -132,7 +132,7 @@ function TopicCard({ topic, last }: { topic: StudentTopic; last: boolean }) {
         >
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
-              <p className="text-note font-bold uppercase tracking-wide text-ink-faint">
+              <p className="text-note font-bold text-ink-faint">
                 {t("topic")} {topic.orderIndex}
               </p>
               <h3 className={cls("mt-0.5 text-section font-bold", topic.state === "LOCKED" ? "text-ink-soft" : "text-ink")}>{title}</h3>
@@ -218,25 +218,25 @@ export function CoursePath() {
             return (
             <>
               {/* Course header — davr + progress + davom ettirish */}
-              <div className="rounded-card bg-gradient-to-br from-brand-deep to-brand p-5 text-white shadow-md">
+              <div className="rounded-card border border-line bg-surface p-4">
                 <div className="flex flex-wrap items-center gap-1.5 text-note font-semibold">
-                  <span className="rounded-pill bg-white/15 px-2 py-0.5">{c.academicYear}</span>
-                  <span className="rounded-pill bg-white/15 px-2 py-0.5">{tp2("semester", { n: c.semester })}</span>
-                  {c.groupName && <span className="rounded-pill bg-white/15 px-2 py-0.5">{c.groupName}</span>}
+                  <span className="rounded-pill bg-surface-raised text-ink-soft px-2 py-0.5">{c.academicYear}</span>
+                  <span className="rounded-pill bg-surface-raised text-ink-soft px-2 py-0.5">{tp2("semester", { n: c.semester })}</span>
+                  {c.groupName && <span className="rounded-pill bg-surface-raised text-ink-soft px-2 py-0.5">{c.groupName}</span>}
                 </div>
                 <h1 className="mt-2 text-h1 font-bold leading-tight">{c.subjectName}</h1>
-                <p className="mt-0.5 text-body text-white/85">{c.teacherName}</p>
+                <p className="mt-0.5 text-body text-ink-soft">{c.teacherName}</p>
                 <div className="mt-4">
-                  <div className="h-2 w-full overflow-hidden rounded-pill bg-white/25">
-                    <div className="h-full rounded-pill bg-white transition-all" style={{ width: `${Math.max(c.progressPct, 2)}%` }} />
+                  <div className="h-2 w-full overflow-hidden rounded-pill bg-line">
+                    <div className="h-full rounded-pill bg-brand transition-all" style={{ width: `${Math.max(c.progressPct, 2)}%` }} />
                   </div>
                   <div className="mt-1.5 flex items-center justify-between gap-3">
-                    <p className="text-note text-white/85">
+                    <p className="text-note text-ink-soft">
                       {c.progressPct}% {t("done")} · {c.topicsCompleted}/{c.topicsTotal} {t("topics")}
                     </p>
                     {current && (
                       <Link to={`/app/topics/${current.id}`}>
-                        <button className="flex items-center gap-1.5 rounded-control bg-white px-3 py-1.5 text-body font-bold text-brand-tint transition-all hover:bg-white/90">
+                        <button className="flex items-center gap-1.5 rounded-control bg-brand px-3 py-1.5 text-note font-bold text-white transition-colors hover:bg-brand-hover">
                           <Icon icon={PlayCircle} size={15} />
                           {t("continue")}
                         </button>

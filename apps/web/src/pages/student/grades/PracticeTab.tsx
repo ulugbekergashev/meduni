@@ -56,7 +56,7 @@ function ChoiceItem({
   return (
     <div>
       {title && (
-        <p className="mb-1 text-micro font-extrabold uppercase tracking-wider text-brand-tint">{title}</p>
+        <p className="mb-1 text-micro font-extrabold text-brand-tint">{title}</p>
       )}
       <p className="mb-4 text-section font-bold leading-snug text-ink">{prompt}</p>
       <div className="space-y-2">
@@ -215,7 +215,7 @@ function PracticePlayer({ topicId, onExit }: { topicId: number; onExit: () => vo
           <Icon icon={ArrowLeft} size={15} />
           {t("back")}
         </button>
-        <span className="text-note font-extrabold uppercase tracking-wider text-ink-dim">
+        <span className="text-note font-extrabold text-ink-dim">
           {i + 1} / {items.length}
         </span>
         <span className="min-w-0 flex-1 truncate text-right text-note font-bold text-ink-soft">
@@ -271,7 +271,7 @@ function PracticePlayer({ topicId, onExit }: { topicId: number; onExit: () => vo
           )}
           {item?.kind === "card" && (
             <div className="space-y-3">
-              <p className="text-micro font-extrabold uppercase tracking-wider text-violet">{t("kindCard")}</p>
+              <p className="text-micro font-extrabold text-violet">{t("kindCard")}</p>
               <CardFace
                 card={{ key: `p${i}`, kind: "term", front: item.front, back: item.back, note: item.note, known: null }}
                 flipped={flipped}

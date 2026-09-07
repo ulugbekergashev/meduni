@@ -63,7 +63,7 @@ function AiSuggestCard({
           </div>
           {s.missed.length > 0 && (
             <div className="rounded-control border-l-2 border-amber bg-amber-soft px-3.5 py-2.5">
-              <p className="mb-1 text-micro font-extrabold uppercase tracking-wider text-amber">{t("aiMissed")}</p>
+              <p className="mb-1 text-micro font-extrabold text-amber">{t("aiMissed")}</p>
               <ul className="space-y-0.5">
                 {s.missed.map((m, i) => (
                   <li key={i} className="text-note leading-relaxed text-ink-strong">
@@ -243,7 +243,7 @@ function CaseBlocks({ blocks }: { blocks: CaseReviewDetail["blocks"] }) {
         <div className="space-y-3 border-t border-line px-4 py-3">
           {rows.map((r) => r.text && (
             <div key={r.label}>
-              <p className="mb-0.5 flex items-center gap-1.5 text-micro font-bold uppercase tracking-wide text-ink-faint">
+              <p className="mb-0.5 flex items-center gap-1.5 text-micro font-bold text-ink-faint">
                 <Icon icon={r.icon} size={13} /> {r.label}
               </p>
               <p className="whitespace-pre-line text-note text-ink">{r.text}</p>
@@ -323,11 +323,11 @@ function ReviewPanel({ id, onSavedNext, onClose }: { id: number; onSavedNext: ()
             <p className="text-note font-semibold text-ink">{i + 1}. {q}</p>
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="rounded-control border border-line bg-bg p-3">
-                <p className="mb-1 text-micro font-bold uppercase tracking-wide text-ink-faint">{t("studentAnswer")}</p>
+                <p className="mb-1 text-micro font-bold text-ink-faint">{t("studentAnswer")}</p>
                 <p className="whitespace-pre-line text-note text-ink">{detail.answers[i]}</p>
               </div>
               <div className="rounded-control bg-emerald-soft p-3">
-                <p className="mb-1 text-micro font-bold uppercase tracking-wide text-emerald">{t("reference")}</p>
+                <p className="mb-1 text-micro font-bold text-emerald">{t("reference")}</p>
                 <p className="whitespace-pre-line text-note text-ink">{detail.referenceAnswer[i]}</p>
               </div>
             </div>
@@ -352,7 +352,7 @@ function ReviewPanel({ id, onSavedNext, onClose }: { id: number; onSavedNext: ()
           
           <div className="flex flex-1 flex-col gap-3">
             <div className="flex items-center gap-3">
-              <label className="text-note font-bold text-ink uppercase tracking-wide">{t("score")}</label>
+              <label className="text-note font-bold text-ink">{t("score")}</label>
               <div className="relative">
                 <input
                   type="number"
@@ -389,7 +389,7 @@ function ReviewPanel({ id, onSavedNext, onClose }: { id: number; onSavedNext: ()
           </div>
 
           <div className="flex flex-col gap-2 sm:w-[180px]">
-            <Button onClick={() => save(true)} disabled={review.isPending} className="w-full h-[46px] bg-gradient-to-r from-brand to-brand-deep shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all text-note font-bold">
+            <Button onClick={() => save(true)} disabled={review.isPending} className="w-full hover:-translate-y-0.5 transition-all text-note font-bold">
               <Icon icon={CheckCircle2} size={18} /> {t("saveAndNext")}
             </Button>
             <Button variant="soft" onClick={() => save(false)} disabled={review.isPending} className="w-full h-[40px]">

@@ -47,7 +47,7 @@ export function BlockView({ block, terms = [] }: { block: DigestBlock; terms?: T
           className={cls("mt-0.5 shrink-0", warn ? "text-amber" : "text-brand-tint")}
         />
         <div className="min-w-0">
-          <p className={cls("mb-0.5 text-micro font-extrabold uppercase tracking-wider", warn ? "text-amber" : "text-brand-tint")}>
+          <p className={cls("mb-0.5 text-micro font-extrabold", warn ? "text-amber" : "text-brand-tint")}>
             {warn ? t("calloutWarning") : t("calloutImportant")}
           </p>
           <p className="text-ink-strong">

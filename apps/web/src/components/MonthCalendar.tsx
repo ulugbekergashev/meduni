@@ -65,7 +65,7 @@ export function MonthCalendar({
         {/* Hafta kunlari sarlavhasi */}
         <div className="grid grid-cols-7 border-b border-line">
           {weekdayNames.map((n, i) => (
-            <div key={i} className="px-2 py-2 text-center text-micro font-bold uppercase tracking-wider text-ink-faint">
+            <div key={i} className="px-2 py-2 text-center text-micro font-bold text-ink-faint">
               {n}
             </div>
           ))}

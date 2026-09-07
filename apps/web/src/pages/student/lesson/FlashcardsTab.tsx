@@ -55,7 +55,7 @@ function KindBadge({ kind }: { kind: FlashcardKind }) {
   return (
     <span
       className={cls(
-        "inline-flex items-center gap-1.5 rounded-pill px-3 py-1 text-micro font-extrabold uppercase tracking-wider",
+        "inline-flex items-center gap-1.5 rounded-pill px-3 py-1 text-micro font-extrabold",
         st.chip
       )}
     >
@@ -79,8 +79,8 @@ export function CardFace({ card, flipped, onFlip }: { card: Flashcard; flipped: 
   const reduce = useReducedMotion();
   const st = KIND[card.kind] ?? KIND.term;
   /** Uzun savol kichikroq shriftda — karta ichida sig'sin. */
-  const frontSize = card.front.length > 150 ? "text-[19px]" : card.front.length > 80 ? "text-[22px]" : "text-[27px]";
-  const backSize = card.back.length > 120 ? "text-[19px]" : card.back.length > 60 ? "text-[22px]" : "text-[27px]";
+  const frontSize = card.front.length > 150 ? "text-section" : card.front.length > 80 ? "text-section" : "text-stat";
+  const backSize = card.back.length > 120 ? "text-section" : card.back.length > 60 ? "text-section" : "text-stat";
 
   return (
     <button
@@ -109,7 +109,7 @@ export function CardFace({ card, flipped, onFlip }: { card: Flashcard; flipped: 
         {/* Orqa (javob) */}
         <div className={cls(FACE, "[transform:rotateY(180deg)]")}>
           <span className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-emerald to-blue" aria-hidden />
-          <span className="rounded-pill bg-emerald-soft px-3 py-1 text-micro font-extrabold uppercase tracking-wider text-emerald">
+          <span className="rounded-pill bg-emerald-soft px-3 py-1 text-micro font-extrabold text-emerald">
             {t("cardAnswer")}
           </span>
           <div className="flex min-h-0 w-full flex-1 flex-col items-center justify-center gap-3 overflow-y-auto py-4">
@@ -181,13 +181,13 @@ function Deck({
           <>
             <motion.span
               style={{ opacity: knowOpacity }}
-              className="pointer-events-none absolute left-4 top-4 rounded-control border-2 border-emerald px-3 py-1 text-note font-extrabold uppercase tracking-wider text-emerald"
+              className="pointer-events-none absolute left-4 top-4 rounded-control border-2 border-emerald px-3 py-1 text-note font-extrabold text-emerald"
             >
               ✓
             </motion.span>
             <motion.span
               style={{ opacity: dontOpacity }}
-              className="pointer-events-none absolute right-4 top-4 rounded-control border-2 border-rose px-3 py-1 text-note font-extrabold uppercase tracking-wider text-rose"
+              className="pointer-events-none absolute right-4 top-4 rounded-control border-2 border-rose px-3 py-1 text-note font-extrabold text-rose"
             >
               ✕
             </motion.span>
@@ -332,7 +332,7 @@ export function FlashcardsTab({ topicId }: { topicId: number }) {
       {/* Jarayon + tur filtri */}
       <div className="shrink-0 space-y-2">
         <div className="flex items-center gap-3">
-          <span className="text-note font-extrabold uppercase tracking-wider text-ink-dim">
+          <span className="text-note font-extrabold text-ink-dim">
             {t("cardOf", { n: i + 1, total: cards.length })}
           </span>
           <span className="inline-flex items-center gap-1 text-note font-bold tabular-nums text-emerald">

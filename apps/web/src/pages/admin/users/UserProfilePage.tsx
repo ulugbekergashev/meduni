@@ -25,7 +25,7 @@ import { PasswordModal } from "./PasswordModal";
 
 function ContactRow({ icon, value }: { icon: typeof Mail; value: string }) {
   return (
-    <span className="inline-flex items-center gap-1.5 text-[14px] text-ink-soft">
+    <span className="inline-flex items-center gap-1.5 text-note text-ink-soft">
       <Icon icon={icon} size={14} className="text-ink-faint" /> {value}
     </span>
   );
@@ -38,8 +38,8 @@ function MetricTile({ icon, value, label, tone }: { icon: typeof Users; value: n
         <Icon icon={icon} size={18} />
       </div>
       <div className="min-w-0">
-        <p className="text-[24px] font-bold leading-none tabular-nums text-ink">{value}</p>
-        <p className="mt-1 truncate text-[13px] text-ink-soft">{label}</p>
+        <p className="text-stat font-bold leading-none tabular-nums text-ink">{value}</p>
+        <p className="mt-1 truncate text-note text-ink-soft">{label}</p>
       </div>
     </div>
   );
@@ -83,7 +83,7 @@ export function UserProfilePage() {
 
   return (
     <div className="mx-auto max-w-4xl">
-      <button onClick={() => navigate(-1)} className="mb-3 flex items-center gap-1 text-[14.5px] font-medium text-brand-deep hover:underline">
+      <button onClick={() => navigate(-1)} className="mb-3 flex items-center gap-1 text-note font-medium text-brand-deep hover:underline">
         <Icon icon={ArrowLeft} size={15} /> {t("back")}
       </button>
 
@@ -100,7 +100,7 @@ export function UserProfilePage() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <h1 className="text-[22px] font-bold leading-tight text-ink">{p.fullName}</h1>
+                    <h1 className="text-section font-bold leading-tight text-ink">{p.fullName}</h1>
                     <Badge tone={p.kind === "teacher" ? "violet" : p.kind === "student" ? "blue" : "slate"}>
                       {p.kind === "teacher" && p.position ? p.position : t(`kind.${p.kind}`)}
                     </Badge>
@@ -114,7 +114,7 @@ export function UserProfilePage() {
                   </div>
                 </div>
                 <div className="flex shrink-0 flex-col items-end gap-2">
-                  <label className="flex items-center gap-2 text-[13px] font-medium text-ink-soft">
+                  <label className="flex items-center gap-2 text-note font-medium text-ink-soft">
                     {t("activeLabel")}
                     <Toggle checked={p.isActive} disabled={toggleActive.isPending} aria-label="active" onChange={() => toggleActive.mutate()} />
                   </label>
@@ -131,13 +131,13 @@ export function UserProfilePage() {
                     {/* Overall progress ring */}
                     <Card className="flex items-center justify-center gap-5 lg:col-span-2">
                       <ProgressRing value={overallPct} size={116} stroke={11} label={t("overall")} />
-                      <div className="flex flex-col gap-2 text-[14px] text-ink-soft">
+                      <div className="flex flex-col gap-2 text-note text-ink-soft">
                         <span><b className="tabular-nums text-ink">{studentCourses.length}</b> {t("courses")}</span>
                         <span>
                           <b className="tabular-nums text-ink">{studentCourses.reduce((s, c) => s + c.completed, 0)}/{studentCourses.reduce((s, c) => s + c.total, 0)}</b> {t("topicsDone")}
                         </span>
                         {p.lastActiveAt && (
-                          <span className="text-[12.5px] text-ink-faint">
+                          <span className="text-micro text-ink-faint">
                             {t("lastActive")}: {formatDate(locale === "ru" ? "ru" : "uz", p.lastActiveAt, "short")}
                           </span>
                         )}
@@ -150,7 +150,7 @@ export function UserProfilePage() {
                         <h2 className="text-section font-bold text-ink">{t("attendance")}</h2>
                         <span
                           className={cls(
-                            "text-[20px] font-bold tabular-nums",
+                            "text-section font-bold tabular-nums",
                             p.attendancePct === null || p.attendancePct === undefined
                               ? "text-ink-faint"
                               : p.attendancePct < 75
@@ -181,10 +181,10 @@ export function UserProfilePage() {
                           </div>
                         </>
                       ) : (
-                        <p className="mt-4 text-[14px] text-ink-faint">{t("noAttendance")}</p>
+                        <p className="mt-4 text-note text-ink-faint">{t("noAttendance")}</p>
                       )}
                       {p.avgQuizScore !== null && p.avgQuizScore !== undefined && (
-                        <p className="mt-3 flex items-center gap-1.5 border-t border-line pt-3 text-[13.5px] text-ink-soft">
+                        <p className="mt-3 flex items-center gap-1.5 border-t border-line pt-3 text-note text-ink-soft">
                           <Icon icon={Sparkles} size={14} className="text-blue" />
                           {t("avgQuiz")}: <b className="tabular-nums text-ink">{p.avgQuizScore}%</b>
                         </p>
@@ -196,7 +196,7 @@ export function UserProfilePage() {
                   <section className="mt-5">
                     <h2 className="mb-3 text-section font-bold text-ink">{t("studentCourses")}</h2>
                     {studentCourses.length === 0 ? (
-                      <Card><p className="py-6 text-center text-[14.5px] text-ink-soft">{t("noCourses")}</p></Card>
+                      <Card><p className="py-6 text-center text-note text-ink-soft">{t("noCourses")}</p></Card>
                     ) : (
                       <Card className="!p-0">
                         {studentCourses.map((c) => (
@@ -205,10 +205,10 @@ export function UserProfilePage() {
                             onClick={() => navigate(`/admin/courses/${c.id}`)}
                             className="flex w-full flex-wrap items-center gap-4 border-b border-line px-5 py-3.5 text-left transition-colors last:border-0 hover:bg-bg"
                           >
-                            <span className="min-w-[140px] flex-1 text-[15px] font-semibold text-ink">{c.name}</span>
-                            <span className="text-[13.5px] tabular-nums text-ink-soft">{c.completed}/{c.total}</span>
+                            <span className="min-w-[140px] flex-1 text-body font-semibold text-ink">{c.name}</span>
+                            <span className="text-note tabular-nums text-ink-soft">{c.completed}/{c.total}</span>
                             <div className="w-32"><ProgressBar value={c.progressPct} /></div>
-                            <span className="w-12 text-right text-[14px] font-bold tabular-nums text-ink">{c.progressPct}%</span>
+                            <span className="w-12 text-right text-note font-bold tabular-nums text-ink">{c.progressPct}%</span>
                           </button>
                         ))}
                       </Card>
@@ -228,18 +228,18 @@ export function UserProfilePage() {
                   <section className="mt-5">
                     <h2 className="mb-3 text-section font-bold text-ink">{t("teacherCourses")}</h2>
                     {(p.courses ?? []).length === 0 ? (
-                      <Card><p className="py-6 text-center text-[14.5px] text-ink-soft">{t("noCourses")}</p></Card>
+                      <Card><p className="py-6 text-center text-note text-ink-soft">{t("noCourses")}</p></Card>
                     ) : (
                       <div className="grid gap-3 sm:grid-cols-2">
                         {(p.courses as TeacherProfileCourse[]).map((c) => (
                           <Card key={c.id} interactive onClick={() => navigate(`/admin/courses/${c.id}`)} className="flex flex-col gap-2">
-                            <h3 className="text-[16px] font-bold text-ink">{c.name}</h3>
-                            <div className="flex flex-wrap gap-1.5 text-[13px]">
+                            <h3 className="text-body font-bold text-ink">{c.name}</h3>
+                            <div className="flex flex-wrap gap-1.5 text-note">
                               <span className="rounded-pill bg-brand-soft px-2 py-0.5 font-semibold text-brand-deep">{c.semester}-semestr</span>
                               <span className="rounded-pill bg-bg px-2 py-0.5 text-ink-soft">{c.academicYear}</span>
                               {c.groups.map((g) => <span key={g} className="rounded-pill bg-bg px-2 py-0.5 text-ink-soft">{g}</span>)}
                             </div>
-                            <span className="mt-auto flex items-center gap-1.5 text-[13.5px] text-ink-soft"><Icon icon={GraduationCap} size={14} /> {c.studentCount}</span>
+                            <span className="mt-auto flex items-center gap-1.5 text-note text-ink-soft"><Icon icon={GraduationCap} size={14} /> {c.studentCount}</span>
                           </Card>
                         ))}
                       </div>

@@ -24,7 +24,7 @@ function Block({ icon, title, text }: { icon: typeof User; title: string; text: 
   if (!text) return null;
   return (
     <div className="border-b border-line py-2.5 last:border-b-0">
-      <p className="mb-1 inline-flex items-center gap-1.5 text-micro font-extrabold uppercase tracking-wider text-ink-dim">
+      <p className="mb-1 inline-flex items-center gap-1.5 text-micro font-extrabold text-ink-dim">
         <Icon icon={icon} size={11} />
         {title}
       </p>
@@ -90,7 +90,7 @@ function StepView({
 
   return (
     <div className="rounded-card border border-line bg-surface-raised p-4">
-      <p className="mb-0.5 text-micro font-extrabold uppercase tracking-wider text-brand-tint">
+      <p className="mb-0.5 text-micro font-extrabold text-brand-tint">
         {step.index + 1}. {step.title}
       </p>
       <p className="mb-3 text-body font-bold leading-snug text-ink">{step.prompt}</p>
@@ -225,7 +225,7 @@ export function CaseTab({ topicId, data }: { topicId: number; data: CaseTabData 
       {/* v2 — bosqichma-bosqich qarorlar */}
       {hasSteps && (
         <div className="space-y-2.5">
-          <p className="flex items-center gap-1.5 text-micro font-extrabold uppercase tracking-wider text-ink-dim">
+          <p className="flex items-center gap-1.5 text-micro font-extrabold text-ink-dim">
             <Icon icon={ChevronRight} size={12} />
             {t("caseSteps")} · {Object.keys(picks).length}/{steps.length}
           </p>
@@ -244,7 +244,7 @@ export function CaseTab({ topicId, data }: { topicId: number; data: CaseTabData 
       {/* Erkin savollar — o'qituvchi baholaydi */}
       {data.questions.length > 0 && (
         <div className="space-y-2.5">
-          <p className="text-micro font-extrabold uppercase tracking-wider text-ink-dim">{t("caseWritten")}</p>
+          <p className="text-micro font-extrabold text-ink-dim">{t("caseWritten")}</p>
           {data.questions.map((q, i) => (
             <div key={i} className="rounded-card border border-line p-3.5">
               <p className="mb-2 text-note font-bold leading-snug text-ink">
@@ -258,7 +258,7 @@ export function CaseTab({ topicId, data }: { topicId: number; data: CaseTabData 
                   </p>
                   {attempt!.referenceAnswer[i] && (
                     <div className="mt-2 rounded-control border-l-2 border-emerald bg-emerald-soft px-3 py-2">
-                      <p className="mb-0.5 text-micro font-extrabold uppercase tracking-wider text-emerald">
+                      <p className="mb-0.5 text-micro font-extrabold text-emerald">
                         {t("referenceAnswer")}
                       </p>
                       <p className="whitespace-pre-wrap text-note leading-relaxed text-ink-strong">

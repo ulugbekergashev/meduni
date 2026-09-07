@@ -29,7 +29,7 @@ function Checkpoint({ cp, onAnswered }: { cp: LessonCheckpoint; onAnswered: () =
   };
   return (
     <div className="mt-5 rounded-card border border-line bg-surface-raised/50 p-4">
-      <div className="mb-2 inline-flex items-center gap-1.5 text-micro font-extrabold uppercase tracking-wider text-brand-tint">
+      <div className="mb-2 inline-flex items-center gap-1.5 text-micro font-extrabold text-brand-tint">
         <Icon icon={HelpCircle} size={13} /> {t("checkpointLabel")}
       </div>
       <p className="mb-3 text-[0.95em] font-bold text-ink">{cp.question}</p>
@@ -256,7 +256,7 @@ export function SectionReader({
             >
               <div className="mb-3">
                 <div className="mb-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1">
-                  <span className="text-micro font-extrabold uppercase tracking-wider text-brand-tint">
+                  <span className="text-micro font-extrabold text-brand-tint">
                     {t("sectionOf", { n: section.index + 1, total: sections.length })}
                   </span>
                   <span className="inline-flex items-center gap-1 text-micro font-bold text-ink-soft">

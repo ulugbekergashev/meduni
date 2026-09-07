@@ -44,7 +44,7 @@ function TermsTable({ terms, onChange }: { terms: Term[]; onChange: (next: Term[
 
   return (
     <div className="space-y-1.5">
-      <div className="hidden grid-cols-[1fr_1fr_1fr_24px] gap-1.5 px-1 text-[12px] font-semibold uppercase tracking-wide text-ink-faint sm:grid">
+      <div className="hidden grid-cols-[1fr_1fr_1fr_24px] gap-1.5 px-1 text-micro font-semibold uppercase tracking-wide text-ink-faint sm:grid">
         <span>{t("termRu")}</span>
         <span>{t("termUz")}</span>
         <span>{t("termLat")}</span>
@@ -178,7 +178,7 @@ function Block({ title, count, defaultOpen = false, children }: { title: string;
     <div className="border-b border-line last:border-0">
       <button onClick={() => setOpen((o) => !o)} className="flex w-full items-center gap-2 py-2.5 text-left">
         <span className="text-body font-bold text-ink">{title}</span>
-        <span className="rounded-pill bg-bg px-2 py-0.5 text-[12.5px] font-semibold text-ink-soft">{count}</span>
+        <span className="rounded-pill bg-bg px-2 py-0.5 text-micro font-semibold text-ink-soft">{count}</span>
         <Icon icon={ChevronDown} size={15} className={cls("ml-auto text-ink-faint transition-transform", open && "rotate-180")} />
       </button>
       {open && <div className="pb-3">{children}</div>}
@@ -243,7 +243,7 @@ export function DigestEditor({
         <div className="mb-2 flex items-center gap-2">
           <Icon icon={TriangleAlert} size={15} className="text-amber" />
           <h3 className="text-note font-bold uppercase tracking-wide text-amber">{t("dosages")}</h3>
-          <span className="text-[12.5px] text-ink-soft">— {t("dosagesNote")}</span>
+          <span className="text-micro text-ink-soft">— {t("dosagesNote")}</span>
         </div>
         <EditableList items={draft.dosages} onChange={(v) => onPatch({ dosages: v })} />
       </div>

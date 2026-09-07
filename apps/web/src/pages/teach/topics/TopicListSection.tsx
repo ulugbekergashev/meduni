@@ -22,7 +22,7 @@ function StageChip({ label, state }: { label: string; state: "done" | "pending" 
   return (
     <span
       className={cls(
-        "rounded-pill px-2 py-0.5 text-[12px] font-semibold",
+        "rounded-pill px-2 py-0.5 text-micro font-semibold",
         state === "done" && "bg-emerald-soft text-emerald",
         state === "pending" && "bg-amber-soft text-amber",
         state === "missing" && "border border-line text-ink-faint"
@@ -137,7 +137,7 @@ export function TopicListSection({ scope }: { scope: TopicScope }) {
             <Field label={t("titleOne")}>
               <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t("titlePlaceholder")} />
             </Field>
-            {formError && <p className="mt-1 text-[14px] text-rose">{formError}</p>}
+            {formError && <p className="mt-1 text-note text-rose">{formError}</p>}
           </div>
           <div className="pt-6">
             <Button type="submit" icon={<span className="text-lg leading-none">+</span>} disabled={create.isPending}>
@@ -178,7 +178,7 @@ export function TopicListSection({ scope }: { scope: TopicScope }) {
                   </button>
                 </div>
 
-                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-bg text-[14px] font-bold text-ink-soft">
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-bg text-note font-bold text-ink-soft">
                   {i + 1}
                 </span>
 

@@ -63,7 +63,7 @@ export function Modal({ open, onClose, title, children, className, forceCentered
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-5 flex items-center justify-between">
-          {title && <h2 className="text-[18px] font-bold text-ink">{title}</h2>}
+          {title && <h2 className="text-section font-bold text-ink">{title}</h2>}
           <button
             onClick={onClose}
             className="ml-auto rounded-full p-1 text-ink-soft hover:bg-bg"

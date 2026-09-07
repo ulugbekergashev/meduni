@@ -36,7 +36,7 @@ export function TaskCard({
       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/60">
         <Icon icon={icon} size={18} />
       </div>
-      <span className="text-[24px] font-bold leading-none tabular-nums">{value}</span>
+      <span className="text-stat font-bold leading-none tabular-nums">{value}</span>
       <span className="min-w-0 flex-1 text-body font-semibold">{label}</span>
     </button>
   );

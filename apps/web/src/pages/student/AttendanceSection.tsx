@@ -107,7 +107,7 @@ export function AttendanceSection() {
           <div className="absolute -top-32 -left-32 w-64 h-64 bg-brand-soft rounded-full blur-3xl"></div>
           
           <div className="relative z-10">
-            <p className="text-note font-bold uppercase tracking-wide text-ink-soft">{t("overallPct")}</p>
+            <p className="text-note font-bold text-ink-soft">{t("overallPct")}</p>
             <p className={cls("mt-1 text-[44px] font-bold leading-none tabular-nums", low ? "text-rose" : "text-brand-tint")}>
               {pct !== null ? `${pct}%` : "—"}
             </p>
@@ -152,7 +152,7 @@ export function AttendanceSection() {
           <div className="min-w-0">
             {data && data.byMonth.length > 0 && (
               <>
-                <p className="mb-2 text-note font-bold uppercase tracking-wide text-ink-soft">{t("trend")}</p>
+                <p className="mb-2 text-note font-bold text-ink-soft">{t("trend")}</p>
                 <MiniBars
                   data={data.byMonth.map((m) => ({
                     label: monthLabel(m.month, locale),
@@ -186,11 +186,11 @@ export function AttendanceSection() {
         <Card className="overflow-x-auto p-0">
           <div className="flex items-center gap-2 border-b border-line px-5 py-3.5 bg-surface">
             <Icon icon={BookOpen} size={15} className="text-ink-faint" />
-            <p className="text-note font-bold uppercase tracking-wide text-ink-soft">{t("byCourse")}</p>
+            <p className="text-note font-bold text-ink-soft">{t("byCourse")}</p>
           </div>
           <table className="w-full min-w-0 border-collapse sm:min-w-[560px]">
             <thead>
-              <tr className="bg-surface-raised text-note font-bold uppercase tracking-wide text-ink-faint">
+              <tr className="bg-surface-raised text-note font-bold text-ink-faint">
                 <th className="px-4 py-2 text-left">{t("colSubject")}</th>
                 <th className="hidden px-2 py-2 text-center sm:table-cell">{t("colTotal")}</th>
                 <th className="hidden px-2 py-2 text-center sm:table-cell">{t("present")}</th>
@@ -236,7 +236,7 @@ export function AttendanceSection() {
                         <td colSpan={7} className="px-4 py-3">
                           {missed.length > 0 && (
                             <>
-                              <p className="mb-1.5 text-note font-bold uppercase tracking-wide text-rose">
+                              <p className="mb-1.5 text-note font-bold text-rose">
                                 {t("missedSection")}
                               </p>
                               <div className="mb-3 space-y-1">
@@ -252,7 +252,7 @@ export function AttendanceSection() {
                               </div>
                             </>
                           )}
-                          <p className="mb-1.5 text-note font-bold uppercase tracking-wide text-ink-faint">
+                          <p className="mb-1.5 text-note font-bold text-ink-faint">
                             {t("courseJournal")}
                           </p>
                           <div className="space-y-1">
@@ -292,7 +292,7 @@ export function AttendanceSection() {
         <Card className="p-0">
           <div className="flex items-center gap-2 border-b border-line px-5 py-3.5 bg-surface">
             <Icon icon={CalendarDays} size={15} className="text-ink-faint" />
-            <p className="text-note font-bold uppercase tracking-wide text-ink-soft">{t("upcoming")}</p>
+            <p className="text-note font-bold text-ink-soft">{t("upcoming")}</p>
           </div>
           <div className="divide-y divide-line">
             {schedule.slice(0, 5).map((s) => (
@@ -358,7 +358,7 @@ export function AttendanceSection() {
           <div className="space-y-3">
             {byMonth.map(([month, rows]) => (
               <div key={month}>
-                <p className="mb-2 text-note font-bold uppercase tracking-wide text-ink-faint ml-1">
+                <p className="mb-2 text-note font-bold text-ink-faint ml-1">
                   {monthLabel(month, locale)} · {t("lessonsN", { n: rows.length })}
                 </p>
                 <Card className="divide-y divide-line p-0">

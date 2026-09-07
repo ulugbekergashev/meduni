@@ -91,13 +91,13 @@ export function SidebarLayout({
           {typeof brand === "string" ? brand.charAt(0) : brand}
         </div>
 
-        <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto px-1.5 py-3">
+        <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto px-1 py-3">
           {items.map((item) => (
             <Link
               key={item.href}
               href={item.href}
               className={cls(
-                "group relative flex flex-col items-center gap-1 rounded-control px-1 py-2.5 text-center transition-colors duration-150",
+                "group relative flex flex-col items-center gap-1 rounded-control px-0.5 py-2.5 text-center transition-colors duration-150",
                 item.active ? "bg-side-active text-side-active-ink" : "text-side-soft hover:bg-side-hover hover:text-side-ink"
               )}
             >

@@ -58,11 +58,11 @@ function GroupStats({ group }: { group: TeachGroup }) {
         <span className="text-note font-medium text-ink-soft">{t("avgAttendance")}</span>
       </Card>
       <Card className={cls("flex flex-col justify-center", group.behindCount > 0 && "border-rose/30 bg-rose-soft")}>
-        <span className={cls("text-[28px] font-bold leading-none tabular-nums", group.behindCount > 0 ? "text-rose" : "text-ink")}>{group.behindCount}</span>
+        <span className={cls("text-stat font-bold leading-none tabular-nums", group.behindCount > 0 ? "text-rose" : "text-ink")}>{group.behindCount}</span>
         <span className="mt-1 text-note font-medium text-ink-soft">{t("behindCount")}</span>
       </Card>
       <Card className="flex flex-col justify-center">
-        <span className="text-[28px] font-bold leading-none tabular-nums text-ink">{group.studentCount}</span>
+        <span className="text-stat font-bold leading-none tabular-nums text-ink">{group.studentCount}</span>
         <span className="mt-1 text-note font-medium text-ink-soft">{t("studentsCount")}</span>
       </Card>
     </div>
@@ -76,14 +76,14 @@ function StudentRow({ s, onClick, onAssign, tRel }: { s: GroupStudent; onClick: 
   const lowAtt = s.attendancePct !== null && s.attendancePct < 75;
   return (
     <div className="flex w-full items-center gap-3 px-4 py-3 transition-colors hover:bg-bg">
-      <span className={cls("flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[13px] font-bold tabular-nums", s.rank <= 3 ? "bg-brand-soft text-brand-deep" : "bg-bg text-ink-faint")} title={t("rankHint")}>
+      <span className={cls("flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-note font-bold tabular-nums", s.rank <= 3 ? "bg-brand-soft text-brand-deep" : "bg-bg text-ink-faint")} title={t("rankHint")}>
         {s.rank}
       </span>
       <button onClick={onClick} className="flex min-w-0 flex-1 items-center gap-3 text-left">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-soft text-[13px] font-bold text-brand-deep">{initials}</div>
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-soft text-note font-bold text-brand-deep">{initials}</div>
         <div className="min-w-0 flex-[2]">
           <div className="flex items-center gap-2">
-            <p className="truncate text-[15px] font-medium text-ink">{s.fullName}</p>
+            <p className="truncate text-body font-medium text-ink">{s.fullName}</p>
             {s.behind && <Badge tone="rose">{t("behind")}</Badge>}
           </div>
           <p className="mt-0.5 truncate text-note text-ink-faint">{tRel(s.lastActiveAt)}</p>
@@ -91,16 +91,16 @@ function StudentRow({ s, onClick, onAssign, tRel }: { s: GroupStudent; onClick: 
         <div className="hidden min-w-0 flex-1 sm:block">
           <div className="flex items-center gap-2">
             <ProgressBar value={s.overallPct} className="flex-1" />
-            <span className="w-9 shrink-0 text-right text-[13px] font-semibold tabular-nums text-ink-soft">{s.overallPct}%</span>
+            <span className="w-9 shrink-0 text-right text-note font-semibold tabular-nums text-ink-soft">{s.overallPct}%</span>
           </div>
         </div>
         <div className="hidden w-14 shrink-0 text-right sm:block">
-          <span className="text-[13px] text-ink-faint">{t("quiz")}</span>
-          <p className="text-[14px] font-bold tabular-nums text-ink">{s.avgQuizScore === null ? "—" : `${s.avgQuizScore}%`}</p>
+          <span className="text-note text-ink-faint">{t("quiz")}</span>
+          <p className="text-note font-bold tabular-nums text-ink">{s.avgQuizScore === null ? "—" : `${s.avgQuizScore}%`}</p>
         </div>
         <div className="w-14 shrink-0 text-right">
-          <span className="text-[13px] text-ink-faint">{t("att")}</span>
-          <p className={cls("text-[14px] font-bold tabular-nums", lowAtt ? "text-rose" : "text-ink")}>{s.attendancePct === null ? "—" : `${s.attendancePct}%`}</p>
+          <span className="text-note text-ink-faint">{t("att")}</span>
+          <p className={cls("text-note font-bold tabular-nums", lowAtt ? "text-rose" : "text-ink")}>{s.attendancePct === null ? "—" : `${s.attendancePct}%`}</p>
         </div>
       </button>
       <button onClick={onAssign} title={t("assignToStudent")} aria-label={t("assignToStudent")} className="shrink-0 rounded-control p-1.5 text-ink-soft transition-colors hover:bg-brand-soft hover:text-brand-deep">
@@ -197,12 +197,12 @@ function statusTone(s: DerivedLesson["status"]): string {
 function LessonDetailRow({ l, t, onMark }: { l: DerivedLesson; t: (k: string) => string; onMark: () => void }) {
   return (
     <div className={cls("flex flex-wrap items-center gap-3 border-l-4 px-4 py-2.5", statusTone(l.status))}>
-      <span className="w-12 shrink-0 text-[14px] font-bold tabular-nums text-ink">{l.startTime}</span>
+      <span className="w-12 shrink-0 text-note font-bold tabular-nums text-ink">{l.startTime}</span>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-[14.5px] font-semibold text-ink">{l.courseName}</p>
-        {l.room && <p className="flex items-center gap-1 text-[12.5px] text-ink-faint"><Icon icon={DoorClosed} size={11} /> {l.room}</p>}
+        <p className="truncate text-note font-semibold text-ink">{l.courseName}</p>
+        {l.room && <p className="flex items-center gap-1 text-micro text-ink-faint"><Icon icon={DoorClosed} size={11} /> {l.room}</p>}
       </div>
-      <span className="shrink-0 text-[12.5px] tabular-nums text-ink-faint">{l.markedCount}/{l.rosterSize}</span>
+      <span className="shrink-0 text-micro tabular-nums text-ink-faint">{l.markedCount}/{l.rosterSize}</span>
       <Button size="sm" variant={l.status === "FULL" ? "ghost" : "primary"} icon={<Icon icon={ClipboardCheck} size={15} />} onClick={onMark}>
         {l.status === "UNMARKED" ? t("rollCall") : t("editRollCall")}
       </Button>
@@ -271,14 +271,14 @@ function TimetableTab({ group }: { group: TeachGroup }) {
         {view === "week" ? (
           <div className="flex items-center gap-1">
             <button onClick={() => setWeekOffset((w) => w - 1)} className="rounded-control p-2 text-ink-soft hover:bg-bg" aria-label="prev"><Icon icon={ChevronLeft} size={18} /></button>
-            <span className="min-w-[150px] text-center text-[14px] font-semibold text-ink">{weekLabel}</span>
+            <span className="min-w-[150px] text-center text-note font-semibold text-ink">{weekLabel}</span>
             <button onClick={() => setWeekOffset((w) => w + 1)} className="rounded-control p-2 text-ink-soft hover:bg-bg" aria-label="next"><Icon icon={ChevronRight} size={18} /></button>
             {weekOffset !== 0 && <Button size="sm" variant="ghost" onClick={() => setWeekOffset(0)}>{t("today")}</Button>}
           </div>
         ) : (
           <div className="flex items-center gap-1">
             <button onClick={() => shiftMonth(-1)} className="rounded-control p-2 text-ink-soft hover:bg-bg" aria-label="prev"><Icon icon={ChevronLeft} size={18} /></button>
-            <span className="min-w-[150px] text-center text-[14px] font-semibold capitalize text-ink">{monthLabel}</span>
+            <span className="min-w-[150px] text-center text-note font-semibold capitalize text-ink">{monthLabel}</span>
             <button onClick={() => shiftMonth(1)} className="rounded-control p-2 text-ink-soft hover:bg-bg" aria-label="next"><Icon icon={ChevronRight} size={18} /></button>
             <Button size="sm" variant="ghost" onClick={() => { setMonthDate(new Date(now.getFullYear(), now.getMonth(), 1)); setSelectedDay(null); }}>{t("today")}</Button>
           </div>
@@ -297,10 +297,10 @@ function TimetableTab({ group }: { group: TeachGroup }) {
             <Card className="!p-0 overflow-hidden">
               <div className="flex items-center gap-2 bg-bg px-4 py-2">
                 <Icon icon={CalendarDays} size={14} className="text-ink-soft" />
-                <span className="text-[13.5px] font-bold text-ink">{formatDate(ru ? "ru" : "uz", new Date(selectedDay), "long")}</span>
+                <span className="text-note font-bold text-ink">{formatDate(ru ? "ru" : "uz", new Date(selectedDay), "long")}</span>
               </div>
               {selectedLessons.length === 0 ? (
-                <p className="px-4 py-5 text-center text-[13.5px] text-ink-faint">{t("noneThisDay")}</p>
+                <p className="px-4 py-5 text-center text-note text-ink-faint">{t("noneThisDay")}</p>
               ) : (
                 <div className="divide-y divide-line">{selectedLessons.map((l) => <LessonDetailRow key={l.slotId + l.dayKey} l={l} t={t} onMark={() => setRoll(l)} />)}</div>
               )}
@@ -324,9 +324,9 @@ function TimetableTab({ group }: { group: TeachGroup }) {
             return (
               <Card key={k} className={cls("!p-0 overflow-hidden", isToday && "ring-2 ring-brand")}>
                 <div className={cls("flex items-center gap-2 px-4 py-2", isToday ? "bg-brand-soft" : "bg-bg")}>
-                  <span className={cls("text-[13.5px] font-bold", isToday ? "text-brand-deep" : "text-ink")}>{dayNames[i]}</span>
-                  <span className="text-[12.5px] text-ink-faint">{formatDate(ru ? "ru" : "uz", d, "short")}</span>
-                  {isToday && <span className="rounded-pill bg-brand px-2 py-0.5 text-[11px] font-bold text-white">{t("today")}</span>}
+                  <span className={cls("text-note font-bold", isToday ? "text-brand-deep" : "text-ink")}>{dayNames[i]}</span>
+                  <span className="text-micro text-ink-faint">{formatDate(ru ? "ru" : "uz", d, "short")}</span>
+                  {isToday && <span className="rounded-pill bg-brand px-2 py-0.5 text-micro font-bold text-white">{t("today")}</span>}
                 </div>
                 <div className="divide-y divide-line">{list.map((l) => <LessonDetailRow key={l.slotId + l.dayKey} l={l} t={t} onMark={() => setRoll(l)} />)}</div>
               </Card>
@@ -427,7 +427,7 @@ function TimetableSetupModal({ group, onClose }: { group: TeachGroup; onClose: (
 
         {step === 1 && (
         <>
-        <p className="text-[13.5px] text-ink-soft">{t("cycleHint")}</p>
+        <p className="text-note text-ink-soft">{t("cycleHint")}</p>
 
         <Field label={t("course")}>
           <Select value={courseId} onChange={(e) => setCourseId(e.target.value)}>
@@ -436,23 +436,23 @@ function TimetableSetupModal({ group, onClose }: { group: TeachGroup; onClose: (
         </Field>
 
         <div>
-          <p className="mb-1.5 text-[13px] font-bold text-ink">{t("cyclePeriod")}</p>
+          <p className="mb-1.5 text-note font-bold text-ink">{t("cyclePeriod")}</p>
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label={t("cycleStart")}><Input type="date" value={cycleStart} onChange={(e) => setCycleStart(e.target.value)} /></Field>
             <Field label={t("cycleEnd")}><Input type="date" value={cycleEnd} onChange={(e) => setCycleEnd(e.target.value)} /></Field>
           </div>
-          {weeks > 0 && <p className="mt-1 text-[13px] font-semibold text-brand-deep">≈ {t("cycleWeeks", { n: weeks })}</p>}
+          {weeks > 0 && <p className="mt-1 text-note font-semibold text-brand-deep">≈ {t("cycleWeeks", { n: weeks })}</p>}
         </div>
         </>
         )}
 
         {step === 2 && (
         <div>
-          <p className="mb-1.5 text-[13px] font-bold text-ink">{t("cycleDays")}</p>
+          <p className="mb-1.5 text-note font-bold text-ink">{t("cycleDays")}</p>
           <div className="space-y-1.5">
             {dayNames.map((dn, i) => (
               <div key={i} className={cls("flex flex-wrap items-center gap-2 rounded-control border px-3 py-2 transition-colors", days[i].on ? "border-brand/40 bg-brand-soft/30" : "border-line")}>
-                <label className="flex w-28 shrink-0 cursor-pointer items-center gap-2 text-[14px] font-semibold text-ink">
+                <label className="flex w-28 shrink-0 cursor-pointer items-center gap-2 text-note font-semibold text-ink">
                   <input type="checkbox" checked={days[i].on} onChange={(e) => setDay(i, { on: e.target.checked })} />
                   {dn}
                 </label>
@@ -462,7 +462,7 @@ function TimetableSetupModal({ group, onClose }: { group: TeachGroup; onClose: (
                     <Input value={days[i].room} onChange={(e) => setDay(i, { room: e.target.value })} placeholder={t("room")} className="w-28" />
                   </>
                 ) : (
-                  <span className="text-[13px] text-ink-faint">{t("cycleDayOff")}</span>
+                  <span className="text-note text-ink-faint">{t("cycleDayOff")}</span>
                 )}
               </div>
             ))}
@@ -470,7 +470,7 @@ function TimetableSetupModal({ group, onClose }: { group: TeachGroup; onClose: (
         </div>
         )}
 
-        {err && <p className="text-[13.5px] text-rose">{err}</p>}
+        {err && <p className="text-note text-rose">{err}</p>}
         <div className="flex justify-end gap-2">
           {step === 1 ? (
             <>
@@ -497,7 +497,7 @@ function CourseReportCard({ c, onView }: { c: GroupCourseReport; onView: () => v
       <div className="flex items-start gap-3">
         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-control bg-brand-soft text-brand-deep"><Icon icon={BookOpen} size={20} /></span>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-[15.5px] font-bold text-ink">{c.name}</p>
+          <p className="truncate text-body font-bold text-ink">{c.name}</p>
           <p className="mt-0.5 text-note text-ink-faint">{t("reportTopicsN", { n: c.topicsTotal })} · {t("reportStudentsN", { n: c.studentCount })}</p>
         </div>
         {c.behindCount > 0 && (
@@ -583,7 +583,7 @@ export function GroupProfile() {
 
   return (
     <div>
-      <button onClick={() => navigate("/teach/groups")} className="mb-3 flex items-center gap-1 text-[14.5px] font-medium text-brand-deep hover:underline">
+      <button onClick={() => navigate("/teach/groups")} className="mb-3 flex items-center gap-1 text-note font-medium text-brand-deep hover:underline">
         <Icon icon={ArrowLeft} size={15} /> {t("back")}
       </button>
 
@@ -599,7 +599,7 @@ export function GroupProfile() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <h1 className="text-h1 font-bold text-ink">{group.name}</h1>
-                  <p className="flex flex-wrap items-center gap-x-2 text-[14px] text-ink-soft">
+                  <p className="flex flex-wrap items-center gap-x-2 text-note text-ink-soft">
                     <span>{t("yearN", { n: group.yearOfStudy })}</span>
                     <span>·</span>
                     <span>{group.facultyName}</span>
@@ -611,7 +611,7 @@ export function GroupProfile() {
                     (to'g'ridan-to'g'ri kursga o'tkazmaydi; hisobot shu yerda). */}
                 <div className="flex flex-wrap gap-1.5">
                   {group.courses.map((c) => (
-                    <button key={c.id} onClick={() => setTab("courses")} title={t("openReport")} className="rounded-pill bg-brand-soft px-2.5 py-1 text-[13.5px] font-semibold text-brand-deep transition-colors hover:bg-brand/10">
+                    <button key={c.id} onClick={() => setTab("courses")} title={t("openReport")} className="rounded-pill bg-brand-soft px-2.5 py-1 text-note font-semibold text-brand-deep transition-colors hover:bg-brand/10">
                       {c.name}
                     </button>
                   ))}

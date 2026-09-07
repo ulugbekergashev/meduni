@@ -311,7 +311,7 @@ export function SchedulePage() {
                       d.isToday ? "bg-brand-soft" : "bg-surface-raised"
                     )}
                   >
-                    <span className={cls("text-note font-bold uppercase tracking-wider", d.isToday ? "text-brand-tint" : "text-ink-soft")}>
+                    <span className={cls("text-note font-bold", d.isToday ? "text-brand-tint" : "text-ink-soft")}>
                       {d.short}
                     </span>
                     <span className={cls("text-body font-extrabold tabular-nums", d.isToday ? "text-brand-tint" : "text-ink")}>
@@ -348,10 +348,10 @@ export function SchedulePage() {
                       d.isToday && "bg-brand-soft"
                     )}
                   >
-                    <p className={cls("text-note font-bold uppercase tracking-wider", d.isToday ? "text-brand-tint" : "text-ink-soft")}>
+                    <p className={cls("text-note font-bold", d.isToday ? "text-brand-tint" : "text-ink-soft")}>
                       {d.short}
                     </p>
-                    <p className={cls("mt-0.5 text-[17px] font-bold tabular-nums", d.isToday ? "text-brand-tint" : "text-ink")}>
+                    <p className={cls("mt-0.5 text-section font-bold tabular-nums", d.isToday ? "text-brand-tint" : "text-ink")}>
                       {d.num}
                     </p>
                   </div>

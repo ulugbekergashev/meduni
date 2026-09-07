@@ -78,10 +78,10 @@ export function AttendanceMatrix({ group }: { group: TeachGroup }) {
             <thead>
               <tr>
                 <th className="sticky left-0 z-20 min-w-[160px] border-b border-r border-line bg-bg px-3 py-2 text-left">
-                  <span className="text-micro font-bold uppercase tracking-wider text-ink-faint">{t("student")}</span>
+                  <span className="text-micro font-bold text-ink-faint">{t("student")}</span>
                 </th>
                 <th className="min-w-[52px] border-b border-r border-line bg-bg px-2 py-2 text-center">
-                  <span className="text-micro font-bold uppercase tracking-wider text-ink-faint">%</span>
+                  <span className="text-micro font-bold text-ink-faint">%</span>
                 </th>
                 {data.columns.map((col) => {
                   const { wd, dm } = dayLabel(col.date);
@@ -89,7 +89,7 @@ export function AttendanceMatrix({ group }: { group: TeachGroup }) {
                   return (
                     <th key={col.key} className={cls("min-w-[46px] border-b border-line px-1 py-1.5", isToday ? "bg-brand-soft" : "bg-bg")} title={col.room ? `${col.time} · ${col.room}` : col.time}>
                       <div className="flex flex-col items-center">
-                        <span className={cls("text-micro font-bold uppercase", isToday ? "text-brand-deep" : "text-ink-faint")}>{wd}</span>
+                        <span className={cls("text-micro font-bold", isToday ? "text-brand-deep" : "text-ink-faint")}>{wd}</span>
                         <span className={cls("text-micro font-semibold tabular-nums", isToday ? "text-brand-deep" : "text-ink-soft")}>{dm}</span>
                         {/* Dars vaqti — bir kunda bir necha dars ustunini farqlaydi */}
                         <span className={cls("text-micro tabular-nums", isToday ? "text-brand-deep/80" : "text-ink-faint")}>{col.time}</span>

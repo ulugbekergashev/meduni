@@ -220,7 +220,7 @@ export function LessonPage() {
           {/* Fan nomi tor ekranda o'rin egallamasin — orqaga tugmasi qoladi. */}
           <span className="hidden max-w-[160px] truncate xl:inline">{lesson.subjectName}</span>
         </button>
-        <span className="hidden shrink-0 rounded-pill bg-brand-soft px-2 py-0.5 text-micro font-bold uppercase tracking-wider text-brand-tint sm:inline">
+        <span className="hidden shrink-0 rounded-pill bg-brand-soft px-2 py-0.5 text-micro font-bold text-brand-tint sm:inline">
           {t("topic")} {lesson.orderIndex}
         </span>
         <h1 className="min-w-0 flex-1 truncate text-body font-extrabold tracking-tight text-ink">{lesson.title}</h1>

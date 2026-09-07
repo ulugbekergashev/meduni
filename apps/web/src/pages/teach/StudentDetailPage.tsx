@@ -3,11 +3,11 @@ import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
   AlertTriangle, ArrowLeft, BookOpen, Check, ClipboardList, GraduationCap, ListPlus,
-  Lock, LockOpen, Mail, MessageCircle, Stethoscope, Users, X,
+  Lock, LockOpen, MessageCircle, Stethoscope, Users, X,
 } from "lucide-react";
 import {
-  Badge, Button, Card, Icon, Input, ProgressBar, ProgressRing, Spinner, StackedBar,
-  cls, useToast, type BadgeTone,
+  Avatar, Badge, Button, Card, Icon, Input, Num, ProgressBar, Spinner, StackedBar,
+  StatCard, cls, useToast, type BadgeTone,
 } from "@meduni/ui";
 import { AsyncSection } from "../../components/AsyncSection";
 import { SubNav } from "../../components/SubNav";
@@ -230,7 +230,7 @@ function AttendanceSummary({ course }: { course: StudentDetailCourse }) {
   return (
     <div className="px-4 py-3">
       <div className="mb-2.5 flex items-center justify-between gap-2">
-        <span className="text-micro font-semibold uppercase tracking-wider text-ink-soft">{t("attendance")}</span>
+        <span className="text-micro font-semibold text-ink-soft">{t("attendance")}</span>
         <span className={cls("text-note font-bold tabular-nums", a.pct !== null && a.pct < 75 ? "text-rose" : "text-emerald")}>{a.pct !== null ? `${a.pct}%` : "—"}</span>
       </div>
       <div className="h-2.5 overflow-hidden rounded-full">
@@ -302,7 +302,7 @@ export function StudentDetailPage() {
     return out.sort((a, b) => (a.kind === b.kind ? 0 : a.kind === "grade" ? -1 : 1));
   }, [d]);
 
-  const initials = d ? d.student.fullName.split(" ").filter(Boolean).slice(0, 2).map((s) => s[0]?.toUpperCase()).join("") : "";
+  const lockedCount = d ? d.courses.reduce((a, c) => a + c.topics.filter((tp) => tp.state === "LOCKED").length, 0) : 0;
 
   const TABS: { key: TabKey; icon: typeof BookOpen }[] = [
     { key: "overview", icon: GraduationCap },
@@ -322,42 +322,77 @@ export function StudentDetailPage() {
         <AsyncSection isLoading={false} isError={q.isError} isEmpty={false} emptyText="" onRetry={() => q.refetch()}>
           {d && (
             <div className="space-y-3">
-              {/* ===== Identity + o'zlashtirish ===== */}
-              <Card className="flex flex-wrap items-center gap-4">
-                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-card bg-brand-soft text-h1 font-extrabold text-brand-deep">{initials}</div>
-                <div className="min-w-0 flex-1">
-                  <h1 className="truncate text-h1 font-bold text-ink">{d.student.fullName}</h1>
-                  <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-note text-ink-soft">
-                    <span className="inline-flex items-center gap-1.5"><Icon icon={Mail} size={14} /> {d.student.email}</span>
-                    {d.student.groupName && (
-                      <button onClick={() => d.student.groupId && navigate(`/teach/groups/${d.student.groupId}`)} className="inline-flex items-center gap-1 rounded-pill bg-brand-soft px-2.5 py-0.5 text-micro font-semibold text-brand-deep transition-colors hover:bg-brand/10">
-                        <Icon icon={Users} size={12} /> {d.student.groupName}
-                      </button>
-                    )}
-                    <span className="inline-flex items-center gap-1.5">
-                      <Icon icon={BookOpen} size={14} /> {t("topicsCompleted")}: {completedTotal}/{topicsTotal}
-                    </span>
+              {/* ===== Sarlavha: avatar + shaxs + amallar =====
+                  Referens profil naqshi: kartochka ICHIDA emas, sahifa
+                  sarlavhasi sifatida. Ilgari bu blok bitta kartochkada
+                  turardi va ichida yana halqa, katta foiz va tugma bor edi —
+                  ya'ni sahifaning eng baland ovozli joyi shu yerda edi. */}
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div className="flex min-w-0 items-center gap-5">
+                  <Avatar name={d.student.fullName} size={112} />
+                  <div className="min-w-0">
+                    <h1 className="truncate text-h1 font-bold text-ink">{d.student.fullName}</h1>
+                    <div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-note text-ink-soft">
+                      <Num className="text-micro text-ink-faint">№{d.student.id}</Num>
+                      <span className="h-1 w-1 rounded-full bg-ink-dim" />
+                      {d.student.groupName ? (
+                        <button
+                          onClick={() => d.student.groupId && navigate(`/teach/groups/${d.student.groupId}`)}
+                          className="inline-flex items-center gap-1 text-ink-soft hover:text-brand-deep"
+                        >
+                          <Icon icon={Users} size={13} /> {d.student.groupName}
+                        </button>
+                      ) : null}
+                      <span className="h-1 w-1 rounded-full bg-ink-dim" />
+                      <span className="truncate">{d.student.email}</span>
+                    </div>
                   </div>
                 </div>
-                <div className="flex shrink-0 items-center gap-4">
-                  <div className="flex flex-col items-center">
-                    <ProgressRing value={overall} size={64} stroke={7} tone="brand" />
-                    <span className="mt-1 text-micro font-semibold text-ink-soft">{t("overallShort")}</span>
-                  </div>
-                  <div className="flex flex-col items-center">
-                    <span className={cls("text-stat font-extrabold leading-none tabular-nums", attPct !== null && attPct < 75 ? "text-rose" : "text-blue")}>
-                      {attPct !== null ? `${attPct}%` : "—"}
-                    </span>
-                    <span className="mt-1 text-micro font-semibold text-ink-soft">{t("attendance")}</span>
-                  </div>
-                  <Button icon={<Icon icon={ListPlus} size={17} />} onClick={() => setAssign({ studentId: d.student.id, studentName: d.student.fullName })}>{t("assignTask")}</Button>
-                </div>
-              </Card>
+                <Button
+                  icon={<Icon icon={ListPlus} size={16} />}
+                  onClick={() => setAssign({ studentId: d.student.id, studentName: d.student.fullName })}
+                >
+                  {t("assignTask")}
+                </Button>
+              </div>
 
-              {/* Bo'limlar — xususiy pill-bar o'rniga umumiy SubNav (ilovadagi
-                  YAGONA ikkinchi daraja mexanizmi; desktopda yon panel, mobilda tasma).
-                  Eski 5 kartali strip olib tashlandi: mavzu/amaliyot raqamlari o'z
-                  tabida yorlig'i va konteksti bilan turadi (STAT DIETASI). */}
+              {/* ===== Ko'rsatkichlar =====
+                  To'rttasi ham talabaning O'QUV holati (menyudagi bo'limlar
+                  takrori emas), shuning uchun STAT DIETASI bo'yicha qoladi.
+                  Rang faqat yomon xabarda: davomat 75% dan past, qulfda
+                  qolgan mavzular, baholanmagan keys. */}
+              <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4">
+                <StatCard
+                  label={t("overallShort")}
+                  value={overall}
+                  unit="%"
+                  bar={overall}
+                  barTone={overall < 40 ? "bad" : overall < 70 ? "warn" : "good"}
+                  barCaption={t("topicsCompletedN", { done: completedTotal, total: topicsTotal })}
+                />
+                <StatCard
+                  label={t("attendance")}
+                  value={attPct !== null ? attPct : "—"}
+                  unit={attPct !== null ? "%" : undefined}
+                  tone={attPct !== null && attPct < 75 ? "bad" : undefined}
+                  sub={t("att.pct")}
+                />
+                <StatCard
+                  label={t("lockedTopics")}
+                  value={lockedCount}
+                  tone={lockedCount > 0 ? "bad" : undefined}
+                  sub={t("lockedTopicsHint")}
+                />
+                <StatCard
+                  label={t("attentionShort")}
+                  value={attention.length}
+                  accent={attention.length > 0}
+                  sub={attention.length > 0 ? t("gradeN", { n: attention.length }) : t("noAttentionShort")}
+                />
+              </div>
+
+              {/* Bo'limlar — umumiy SubNav (ilovadagi YAGONA ikkinchi daraja
+                  mexanizmi; desktopda yon panel, mobilda tasma). */}
               <SubNav
                 title={d.student.fullName}
                 activeKey={tab}

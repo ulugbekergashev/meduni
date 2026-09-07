@@ -60,7 +60,7 @@ function SessionPlayer({ cards, onDone }: { cards: ReviewSessionCard[]; onDone: 
       {/* Jarayon + mavzu konteksti */}
       <div className="space-y-2">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-          <span className="text-note font-extrabold uppercase tracking-wider text-ink-dim">
+          <span className="text-note font-extrabold text-ink-dim">
             {tl("cardOf", { n: i + 1, total: cards.length })}
           </span>
           <span className="inline-flex min-w-0 items-center gap-1.5 rounded-pill bg-brand-soft px-2.5 py-0.5 text-note font-bold text-brand-tint">

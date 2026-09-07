@@ -175,12 +175,12 @@ export function DigestSection({ topic }: { topic: TopicDetail }) {
         </Button>
 
         {!approved && (
-          <span className="inline-flex items-center gap-1 text-[12.5px] text-amber">
+          <span className="inline-flex items-center gap-1 text-micro text-amber">
             <Icon icon={TriangleAlert} size={12} /> {t("approveWarning")}
           </span>
         )}
         {dirty && (
-          <span className="text-[12.5px] font-semibold text-amber">{t("unsaved")}</span>
+          <span className="text-micro font-semibold text-amber">{t("unsaved")}</span>
         )}
 
         {/* ⚠️ "Audio yaratish" tugmasi OLIB TASHLANDI (2026-08-02): u 4500 belgi
@@ -188,7 +188,7 @@ export function DigestSection({ topic }: { topic: TopicDetail }) {
             PODKAST kartasi egalladi (~20 daq, mavzuni to'liq ochadi). Ikkita
             audio tugmasi bir ekranda — §4 "bitta fakt, bitta joy" buzilishi. */}
         <div className="ml-auto flex items-center gap-2">
-          <span className="text-[12.5px] text-ink-faint">v{server.version}</span>
+          <span className="text-micro text-ink-faint">v{server.version}</span>
         </div>
       </div>
     </Card>

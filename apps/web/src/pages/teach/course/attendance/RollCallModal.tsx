@@ -61,11 +61,11 @@ export function RollCallModal({
       {rosterQ.isLoading ? (
         <div className="flex min-h-[30vh] items-center justify-center"><Spinner size={24} /></div>
       ) : rosterQ.isError || !rosterQ.data ? (
-        <p className="py-6 text-center text-[14.5px] text-rose">{t("loadError")}</p>
+        <p className="py-6 text-center text-note text-rose">{t("loadError")}</p>
       ) : (
         <>
           <div className="mb-4 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-            <div className="text-[14px] font-semibold text-ink">{heading}</div>
+            <div className="text-note font-semibold text-ink">{heading}</div>
             <Button variant="soft" size="md" onClick={allPresent} className="w-full font-bold sm:w-auto">
               <Icon icon={CheckCheck} size={18} /> {t("allPresent")}
             </Button>
@@ -73,16 +73,16 @@ export function RollCallModal({
 
           <div className="relative mb-4">
             <Icon icon={Search} size={16} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-faint" />
-            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t("searchStudent")} className="w-full rounded-control border-2 border-line bg-surface py-2.5 pl-10 pr-4 text-[15px] outline-none transition-all focus:border-brand focus:ring-4 focus:ring-brand/10" />
+            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t("searchStudent")} className="w-full rounded-control border-2 border-line bg-surface py-2.5 pl-10 pr-4 text-body outline-none transition-all focus:border-brand focus:ring-4 focus:ring-brand/10" />
           </div>
 
           <div className="max-h-[50vh] space-y-2 overflow-y-auto pr-1">
             {filtered.map((st) => (
               <div key={st.id} className="flex flex-col gap-2 rounded-[12px] border border-line bg-surface p-3 transition-all hover:border-brand/30 sm:flex-row sm:items-center sm:gap-3">
-                <span className="min-w-0 flex-1 truncate pl-1 text-[15.5px] font-bold text-ink">
+                <span className="min-w-0 flex-1 truncate pl-1 text-body font-bold text-ink">
                   {st.fullName}
                   {st.selfMarked && (
-                    <span className="ml-2 inline-flex items-center gap-1 rounded-pill bg-blue-soft px-2 py-0.5 align-middle text-[12px] font-semibold text-blue">
+                    <span className="ml-2 inline-flex items-center gap-1 rounded-pill bg-blue-soft px-2 py-0.5 align-middle text-micro font-semibold text-blue">
                       <Icon icon={Smartphone} size={11} />
                       {t("selfMarked")}
                       {st.markedAt ? ` · ${hhmm(st.markedAt)}` : ""}
@@ -98,7 +98,7 @@ export function RollCallModal({
                         key={status}
                         onClick={() => setOne(st.id, status)}
                         className={cls(
-                          "flex-1 rounded-[8px] border-2 px-3 py-2.5 text-[14px] font-black transition-all active:scale-95 sm:flex-none sm:px-5 sm:py-2",
+                          "flex-1 rounded-[8px] border-2 px-3 py-2.5 text-note font-black transition-all active:scale-95 sm:flex-none sm:px-5 sm:py-2",
                           on ? `${meta.solid} scale-[1.02] border-transparent shadow-sm` : "border-line bg-surface text-ink-soft hover:bg-bg hover:text-ink"
                         )}
                       >
@@ -112,7 +112,7 @@ export function RollCallModal({
           </div>
 
           <div className="mt-5 flex items-center justify-between gap-2 border-t border-line pt-4">
-            <span className="rounded-pill bg-bg px-3 py-1 text-[14.5px] font-medium text-ink-soft">
+            <span className="rounded-pill bg-bg px-3 py-1 text-note font-medium text-ink-soft">
               {t("markedOf", { marked: markedCount, total: students.length })}
             </span>
             <Button variant="ghost" onClick={onClose} size="md" className="font-bold">{t("close")}</Button>

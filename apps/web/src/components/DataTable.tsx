@@ -43,7 +43,7 @@ export function DataTable({
         )}
       >
         <thead>
-          <tr className="border-b border-line bg-bg/60 text-micro uppercase tracking-[0.06em] text-ink-faint">
+          <tr className="border-b border-line bg-bg/60 text-micro text-ink-faint">
             {headers.map((h) => (
               <th key={h} className="px-4 py-3 font-semibold">
                 {h}

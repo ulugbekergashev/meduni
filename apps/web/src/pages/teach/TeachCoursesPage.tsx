@@ -73,13 +73,13 @@ function NewCourseModal({ onClose }: { onClose: () => void }) {
         <Field label={t("courseNameLabel")}>
           <Input value={name} onChange={(e) => setName(e.target.value)} placeholder={t("courseNamePlaceholder")} autoFocus required />
         </Field>
-        <p className="text-[13.5px] text-ink-soft">
+        <p className="text-note text-ink-soft">
           {t("courseDeptNote")}: <b className="text-ink">{opts.data?.departmentName ?? "…"}</b>
         </p>
 
         <Field label={t("groups")}>
           {groups.length === 0 && !ngOpen ? (
-            <p className="mb-2 text-[13.5px] text-ink-soft">{t("noFacultyGroupsHint")}</p>
+            <p className="mb-2 text-note text-ink-soft">{t("noFacultyGroupsHint")}</p>
           ) : (
             <ChipSelect options={groups.map((g) => ({ id: g.id, label: g.name }))} selected={groupIds} onToggle={(id) => setGroupIds((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]))} />
           )}
@@ -96,18 +96,18 @@ function NewCourseModal({ onClose }: { onClose: () => void }) {
               <Button type="button" size="sm" variant="ghost" onClick={() => setNgOpen(false)}>{tc("cancel")}</Button>
             </div>
           ) : (
-            <button type="button" onClick={() => setNgOpen(true)} className="mt-2 inline-flex items-center gap-1.5 text-[13.5px] font-semibold text-brand-deep hover:underline">
+            <button type="button" onClick={() => setNgOpen(true)} className="mt-2 inline-flex items-center gap-1.5 text-note font-semibold text-brand-deep hover:underline">
               <Icon icon={Users2} size={14} /> {t("newGroup")}
             </button>
           )}
         </Field>
 
-        <div className="flex items-start gap-2 rounded-control border border-line bg-brand-soft/40 px-3 py-2.5 text-[13px] text-ink-soft">
+        <div className="flex items-start gap-2 rounded-control border border-line bg-brand-soft/40 px-3 py-2.5 text-note text-ink-soft">
           <Icon icon={Info} size={15} className="mt-0.5 shrink-0 text-brand-deep" />
           <span>{t("programNote")}</span>
         </div>
 
-        {err && <p className="text-[14px] text-rose">{err}</p>}
+        {err && <p className="text-note text-rose">{err}</p>}
         <div className="flex justify-end gap-2">
           <Button type="button" variant="ghost" onClick={onClose}>{tc("cancel")}</Button>
           <Button type="submit" disabled={create.isPending || groupIds.length === 0}>{tc("add")}</Button>

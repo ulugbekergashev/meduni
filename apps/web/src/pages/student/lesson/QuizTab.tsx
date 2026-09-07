@@ -172,7 +172,7 @@ function Running({ attempt, topicId }: { attempt: QuizAttemptView; topicId: numb
     <div className="space-y-3">
       {/* Yuqori bar: savol raqami · timer · belgilash */}
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-micro font-extrabold uppercase tracking-wider text-ink-dim">
+        <span className="text-micro font-extrabold text-ink-dim">
           {t("question")} {qi + 1}/{total}
         </span>
         <span className="text-micro font-bold tabular-nums text-ink-dim">
@@ -387,7 +387,7 @@ function Result({
 
       {/* Javoblar tahlili */}
       <div>
-        <h3 className="mb-2 text-micro font-extrabold uppercase tracking-wider text-ink-dim">{t("analysis")}</h3>
+        <h3 className="mb-2 text-micro font-extrabold text-ink-dim">{t("analysis")}</h3>
         <div className="space-y-2.5">
           {attempt.questions.map((q, i) => {
             const studentIdx = q.studentAnswer;

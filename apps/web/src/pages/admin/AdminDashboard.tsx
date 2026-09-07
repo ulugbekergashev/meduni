@@ -58,8 +58,8 @@ function AttentionCard({
         <Icon icon={icon} size={18} />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-[22px] font-bold leading-none tabular-nums text-ink">{value}</p>
-        <p className="mt-1 truncate text-[13.5px] text-ink-soft">{label}</p>
+        <p className="text-section font-bold leading-none tabular-nums text-ink">{value}</p>
+        <p className="mt-1 truncate text-note text-ink-soft">{label}</p>
       </div>
       {onClick && <Icon icon={ChevronRight} size={16} className="shrink-0 text-ink-faint" />}
     </Card>
@@ -87,7 +87,7 @@ export function AdminDashboard() {
     <motion.div variants={containerVariants} initial="hidden" animate="show">
       <motion.div variants={itemVariants}>
         <h1 className="text-h1 font-bold tracking-tight text-ink">{t("hello")}, {me?.full_name?.split(" ")[0]}</h1>
-        <p className="mt-1 text-[15px] text-ink-faint">{today}</p>
+        <p className="mt-1 text-body text-ink-faint">{today}</p>
       </motion.div>
 
       {s && (
@@ -135,7 +135,7 @@ export function AdminDashboard() {
             <Card className="lg:col-span-3 flex flex-col">
               <div className="flex items-baseline justify-between gap-2">
                 <h2 className="text-section font-bold tracking-tight text-ink">{t("timeline14")}</h2>
-                <span className="text-[13px] font-medium text-ink-faint bg-bg px-2 py-0.5 rounded-pill">{t("timeline14Hint")}</span>
+                <span className="text-note font-medium text-ink-faint bg-bg px-2 py-0.5 rounded-pill">{t("timeline14Hint")}</span>
               </div>
               <div className="mt-3 flex-1 flex flex-col justify-end">
                 {s.activitySeries.some((d) => d.activeStudents > 0) ? (
@@ -150,11 +150,11 @@ export function AdminDashboard() {
                   />
                 ) : (
                   <div className="flex flex-1 items-center justify-center">
-                    <p className="text-[14px] text-ink-faint">{t("timelineEmpty")}</p>
+                    <p className="text-note text-ink-faint">{t("timelineEmpty")}</p>
                   </div>
                 )}
               </div>
-              <div className="mt-5 flex flex-wrap gap-x-6 gap-y-2 border-t border-line pt-4 text-[14px] text-ink-soft">
+              <div className="mt-5 flex flex-wrap gap-x-6 gap-y-2 border-t border-line pt-4 text-note text-ink-soft">
                 <span className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-blue"></div><b className="text-ink font-bold">{s.activity.activeStudentsLast7Days}</b> {t("activeStudents")}</span>
                 <span className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-brand"></div><b className="text-ink font-bold">{s.activity.contentLast7Days}</b> {t("contentCreated")}</span>
               </div>
@@ -169,7 +169,7 @@ export function AdminDashboard() {
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-soft text-emerald">
                   <Icon icon={CheckCircle2} size={20} />
                 </div>
-                <p className="text-[16px] font-bold text-emerald">{t("allClear")}</p>
+                <p className="text-body font-bold text-emerald">{t("allClear")}</p>
               </Card>
             ) : (
               <div className="grid gap-4 sm:grid-cols-3">
@@ -191,15 +191,15 @@ export function AdminDashboard() {
                   <div>
                     <div className="flex items-center gap-2 text-brand font-bold mb-2">
                       <Icon icon={Sparkles} size={18} />
-                      <p className="text-[14px] uppercase tracking-wide">{t("aiThisMonth")}</p>
+                      <p className="text-note">{t("aiThisMonth")}</p>
                     </div>
-                    <p className="text-[14.5px] text-ink-soft">Review AI token usage and estimated costs across all departments.</p>
+                    <p className="text-note text-ink-soft">Review AI token usage and estimated costs across all departments.</p>
                   </div>
                   
                   <div className="flex flex-wrap items-center gap-x-8 gap-y-4 md:border-l md:border-line md:pl-8">
-                    <div><p className="text-[28px] font-bold tracking-tight text-ink">{s.aiThisMonth.tokens.toLocaleString()}</p><p className="text-[13.5px] font-medium text-ink-faint">{t("tokens")}</p></div>
-                    <div><p className="text-[28px] font-bold tracking-tight text-ink">{s.aiThisMonth.images}</p><p className="text-[13.5px] font-medium text-ink-faint">{t("images")}</p></div>
-                    <div><p className="text-[28px] font-bold tracking-tight text-ink">${s.aiThisMonth.cost.toFixed(2)}</p><p className="text-[13.5px] font-medium text-ink-faint">{t("cost")}</p></div>
+                    <div><p className="text-stat font-bold tracking-tight text-ink">{s.aiThisMonth.tokens.toLocaleString()}</p><p className="text-note font-medium text-ink-faint">{t("tokens")}</p></div>
+                    <div><p className="text-stat font-bold tracking-tight text-ink">{s.aiThisMonth.images}</p><p className="text-note font-medium text-ink-faint">{t("images")}</p></div>
+                    <div><p className="text-stat font-bold tracking-tight text-ink">${s.aiThisMonth.cost.toFixed(2)}</p><p className="text-note font-medium text-ink-faint">{t("cost")}</p></div>
                     <div className="hidden sm:flex h-10 w-10 items-center justify-center rounded-full bg-bg text-ink-soft group-hover:bg-brand-soft group-hover:text-brand transition-colors">
                       <Icon icon={ChevronRight} size={18} />
                     </div>

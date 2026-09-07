@@ -343,7 +343,7 @@ export function LessonsBlock({ mode, onMode }: { mode: LessonMode; onMode: (m: L
               return (
                 <Card key={dk} className="!p-0 overflow-hidden">
                   <div className={cls("flex items-center gap-2 border-b border-line px-3 py-2", isToday ? "bg-brand-soft" : "bg-bg")}>
-                    <span className={cls("text-note font-bold uppercase tracking-wider", isToday ? "text-brand-deep" : "text-ink-soft")}>{dayShort[di]}</span>
+                    <span className={cls("text-note font-bold", isToday ? "text-brand-deep" : "text-ink-soft")}>{dayShort[di]}</span>
                     <span className={cls("text-body font-extrabold tabular-nums", isToday ? "text-brand-deep" : "text-ink")}>{d.getDate()}</span>
                     {isToday && <span className="rounded-pill bg-brand px-2 py-0.5 text-micro font-bold text-white">{t("today")}</span>}
                   </div>

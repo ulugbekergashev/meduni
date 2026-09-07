@@ -261,7 +261,7 @@ function Heatmap({ data, students, onPick }: { data: CourseProgress; students: P
           })}
           {/* group average row */}
           <tr className="bg-bg">
-            <td className="sticky left-0 z-10 border-r border-line bg-bg px-3 py-2 text-micro font-bold uppercase text-ink-faint">{t("groupAvg")}</td>
+            <td className="sticky left-0 z-10 border-r border-line bg-bg px-3 py-2 text-micro font-bold text-ink-faint">{t("groupAvg")}</td>
             {data.topics.map((tp) => (
               <td key={tp.id} className="px-1 py-2 text-center text-micro font-semibold text-ink-soft">{avgByTopic.get(tp.id)}%</td>
             ))}

@@ -209,8 +209,8 @@ function GeneratingPulse({ label }: { label: string }) {
         <Icon icon={Sparkles} size={28} className="relative z-10 text-brand" />
       </div>
       <div className="text-center">
-        <p className="text-[16px] font-bold text-brand-deep">{label}</p>
-        <p className="mt-1.5 text-[13px] font-medium text-ink-soft max-w-[240px] leading-relaxed mx-auto">
+        <p className="text-body font-bold text-brand-deep">{label}</p>
+        <p className="mt-1.5 text-note font-medium text-ink-soft max-w-[240px] leading-relaxed mx-auto">
           Sun'iy intellekt ishlamoqda. Bu bir necha soniya olishi mumkin.
         </p>
       </div>

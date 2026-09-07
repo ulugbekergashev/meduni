@@ -94,7 +94,7 @@ export function MaterialBar({
   return (
     <div className="shrink-0 border-b border-line bg-surface-raised">
       <div className="flex flex-wrap items-center gap-1.5 px-3 py-2">
-        <span className="mr-0.5 text-micro font-extrabold uppercase tracking-wider text-ink-faint">
+        <span className="mr-0.5 text-micro font-extrabold text-ink-faint">
           {t("materialSource")}
         </span>
 

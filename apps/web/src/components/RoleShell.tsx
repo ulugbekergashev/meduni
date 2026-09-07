@@ -187,7 +187,7 @@ function RoleShellInner({
       }
       rightSlot={
         <>
-          <span className="hidden whitespace-nowrap text-[13.5px] font-medium text-ink-faint xl:block">{today}</span>
+          <span className="hidden whitespace-nowrap text-note font-medium text-ink-faint xl:block">{today}</span>
           {/* Til/tema/chiqish mobilda "Yana" panelida — headerda joy tor. */}
           <span className="hidden lg:inline-flex">
             <LocaleSwitcher />
@@ -200,8 +200,8 @@ function RoleShellInner({
             className="flex min-w-0 items-center gap-2.5 rounded-control py-1 pr-0.5 transition-colors hover:bg-bg lg:ml-1 lg:border-l lg:border-line lg:pl-3 lg:pr-1.5"
           >
             <div className="hidden min-w-0 text-right leading-tight lg:block">
-              <p className="max-w-[150px] truncate text-[13.5px] font-semibold text-ink">{me?.full_name}</p>
-              <p className="max-w-[150px] truncate text-[12px] text-ink-faint">{me?.email}</p>
+              <p className="max-w-[150px] truncate text-note font-semibold text-ink">{me?.full_name}</p>
+              <p className="max-w-[150px] truncate text-micro text-ink-faint">{me?.email}</p>
             </div>
             <Avatar name={me?.full_name ?? ""} />
           </Link>

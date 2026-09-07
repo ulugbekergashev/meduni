@@ -49,7 +49,7 @@ export function CourseGroupsTab() {
   return (
     <div>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-        <p className="text-[14px] text-ink-soft">{t("subtitleManage")}</p>
+        <p className="text-note text-ink-soft">{t("subtitleManage")}</p>
         <Button size="sm" icon={<Icon icon={Plus} size={15} />} onClick={() => setAddOpen(true)}>
           {t("attachBtn")}
         </Button>
@@ -80,8 +80,8 @@ export function CourseGroupsTab() {
                 <button onClick={() => navigate(`/teach/groups/${g.groupId}`)} className="flex flex-col gap-3 text-left">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <h3 className="text-[16px] font-bold text-ink">{g.name}</h3>
-                      <p className="truncate text-[13px] text-ink-faint">
+                      <h3 className="text-body font-bold text-ink">{g.name}</h3>
+                      <p className="truncate text-note text-ink-faint">
                         {t("yearN", { n: g.yearOfStudy })} · {g.facultyName}
                       </p>
                     </div>
@@ -90,12 +90,12 @@ export function CourseGroupsTab() {
                     </div>
                   </div>
                   <div className="mt-auto space-y-1.5">
-                    <div className="flex items-center justify-between text-[13.5px] text-ink-soft">
+                    <div className="flex items-center justify-between text-note text-ink-soft">
                       <span className="inline-flex items-center gap-1.5"><Icon icon={GraduationCap} size={14} /> {t("studentsN", { n: g.studentCount })}</span>
                       <span className="font-semibold text-ink">{g.avgProgress}%</span>
                     </div>
                     <div className="h-1.5 w-full overflow-hidden rounded-pill bg-bg">
-                      <div className="h-full rounded-pill bg-gradient-to-r from-brand to-brand-deep transition-all" style={{ width: `${Math.max(g.avgProgress, 2)}%` }} />
+                      <div className="h-full rounded-pill bg-brand transition-all" style={{ width: `${Math.max(g.avgProgress, 2)}%` }} />
                     </div>
                   </div>
                 </button>
@@ -137,11 +137,11 @@ function AttachModal({ courseId, onClose }: { courseId: number; onClose: () => v
 
   return (
     <Modal open onClose={onClose} title={t("attachTitle")}>
-      <p className="mb-3 text-[13.5px] text-ink-soft">{t("attachHint")}</p>
+      <p className="mb-3 text-note text-ink-soft">{t("attachHint")}</p>
       {q.isLoading ? (
         <div className="flex h-32 items-center justify-center"><Spinner size={22} /></div>
       ) : rows.length === 0 ? (
-        <p className="rounded-control border border-dashed border-line py-8 text-center text-[14px] text-ink-faint">
+        <p className="rounded-control border border-dashed border-line py-8 text-center text-note text-ink-faint">
           {t("noAssignable")}
         </p>
       ) : (
@@ -152,8 +152,8 @@ function AttachModal({ courseId, onClose }: { courseId: number; onClose: () => v
                 <Icon icon={Users2} size={16} />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-[14.5px] font-semibold text-ink">{g.name}</p>
-                <p className="text-[12.5px] text-ink-faint">{t("yearN", { n: g.yearOfStudy })} · {t("studentsN", { n: g.studentCount })}</p>
+                <p className="truncate text-note font-semibold text-ink">{g.name}</p>
+                <p className="text-micro text-ink-faint">{t("yearN", { n: g.yearOfStudy })} · {t("studentsN", { n: g.studentCount })}</p>
               </div>
               <Button size="sm" variant="soft" disabled={attach.isPending} onClick={() => onAttach(g.id, g.name)}>
                 {t("attachOne")}

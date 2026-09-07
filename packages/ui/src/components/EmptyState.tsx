@@ -9,17 +9,20 @@ export interface EmptyStateProps {
   action?: ReactNode;
 }
 
+/**
+ * Bo'sh holat (2026-09 «Sokin panel»).
+ *
+ * ⚠️ Balandlik `py-14` + 56px ikonka doirasi edi — bo'sh ro'yxat ekranning
+ * yarmini egallab, "sahifa buzilgan" taassurotini berardi. Referens qoidasi:
+ * sahifa pastida o'lik bo'shliq bo'lmaydi, bo'sh blok kontentga teng bo'ladi.
+ */
 export function EmptyState({ icon, text, hint, action }: EmptyStateProps) {
   return (
-    <div className="flex flex-col items-center gap-3 rounded-card border border-dashed border-line bg-surface px-6 py-14 text-center">
-      {icon && (
-        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-brand-soft text-brand-deep">
-          {icon}
-        </div>
-      )}
+    <div className="flex flex-col items-center gap-2 rounded-card border border-dashed border-line bg-surface px-6 py-8 text-center">
+      {icon && <div className="text-ink-dim">{icon}</div>}
       <div>
-        <p className="max-w-sm text-body font-semibold text-ink">{text}</p>
-        {hint && <p className="mx-auto mt-1 max-w-xs text-note text-ink-soft">{hint}</p>}
+        <p className="max-w-sm text-note text-ink-soft">{text}</p>
+        {hint && <p className="mx-auto mt-1 max-w-xs text-micro text-ink-faint">{hint}</p>}
       </div>
       {action}
     </div>

@@ -229,7 +229,7 @@ function TopicBlock({ tp, onAssign }: { tp: MistakeTopic; onAssign: (prefill: Qu
           >
             {tp.quiz && tp.quiz.questions.filter((q) => q.wrongCount > 0).length > 0 && (
               <div>
-                <p className="bg-surface-raised px-4 py-1.5 text-micro font-extrabold uppercase tracking-wider text-ink-faint">
+                <p className="bg-surface-raised px-4 py-1.5 text-micro font-extrabold text-ink-faint">
                   {t("quizSection")}
                 </p>
                 {tp.quiz.questions
@@ -242,7 +242,7 @@ function TopicBlock({ tp, onAssign }: { tp: MistakeTopic; onAssign: (prefill: Qu
             )}
             {tp.case && tp.case.steps.filter((s) => s.wrongCount > 0).length > 0 && (
               <div>
-                <p className="bg-surface-raised px-4 py-1.5 text-micro font-extrabold uppercase tracking-wider text-ink-faint">
+                <p className="bg-surface-raised px-4 py-1.5 text-micro font-extrabold text-ink-faint">
                   {t("caseSection")}
                 </p>
                 {tp.case.steps

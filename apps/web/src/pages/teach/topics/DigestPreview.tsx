@@ -48,7 +48,7 @@ function SectionRow({ section, index }: { section: DigestSectionData; index: num
           ))}
           {cp && (
             <div className="rounded-control border border-blue/30 bg-blue-soft p-3">
-              <p className="mb-1.5 flex items-center gap-1.5 text-micro font-extrabold uppercase tracking-wider text-blue">
+              <p className="mb-1.5 flex items-center gap-1.5 text-micro font-extrabold text-blue">
                 <Icon icon={CircleHelp} size={13} /> {t("checkpoints")}
               </p>
               <p className="text-body font-semibold text-ink">{cp.question}</p>

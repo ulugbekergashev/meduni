@@ -120,11 +120,11 @@ export function ProfilePage() {
         <div className="mt-5 space-y-4">
           {/* Identity — kim */}
           <Card className="flex flex-wrap items-center gap-5">
-            <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-card bg-brand-soft text-[28px] font-bold text-brand-tint">
+            <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-card bg-brand-soft text-stat font-bold text-brand-tint">
               {initials}
             </div>
             <div className="min-w-0 flex-1">
-              <h2 className="truncate text-[22px] font-bold text-ink">{p.fullName}</h2>
+              <h2 className="truncate text-section font-bold text-ink">{p.fullName}</h2>
               <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-body text-ink-soft">
                 {p.facultyName && <span>{p.facultyName}</span>}
                 {p.groupName && (

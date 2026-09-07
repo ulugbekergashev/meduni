@@ -49,11 +49,11 @@ export function UnlockRuleForm({ value, onChange, hideDate = false }: { value: U
         </Field>
       </div>
 
-      <label className="flex items-center gap-2 text-[14.5px] text-ink">
+      <label className="flex items-center gap-2 text-note text-ink">
         <input type="checkbox" checked={value.caseRequired} onChange={(e) => set({ caseRequired: e.target.checked })} />
         {t("caseRequired")}
       </label>
-      <label className="flex items-center gap-2 text-[14.5px] text-ink">
+      <label className="flex items-center gap-2 text-note text-ink">
         <input
           type="checkbox"
           checked={value.caseReviewedRequired}

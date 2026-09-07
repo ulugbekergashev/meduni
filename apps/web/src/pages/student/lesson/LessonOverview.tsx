@@ -101,7 +101,7 @@ export function LessonOverview({
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
       >
-        <p className="text-micro font-extrabold uppercase tracking-wider text-brand-tint">
+        <p className="text-micro font-extrabold text-brand-tint">
           {t("topic")} {lesson.orderIndex} · {lesson.subjectName}
         </p>
         <h2 className="mt-1 text-h1 font-extrabold text-ink">{lesson.title}</h2>
@@ -122,7 +122,7 @@ export function LessonOverview({
           va video endi menyu bandi emas — muqovasi va progressi bor material. */}
       {studyBlocks.length > 0 && onBlock && (
         <div className="mt-4">
-          <p className="mb-2 text-micro font-extrabold uppercase tracking-wider text-ink-faint">{t("materialsPanelTitle")}</p>
+          <p className="mb-2 text-micro font-extrabold text-ink-faint">{t("materialsPanelTitle")}</p>
           <MaterialsPanel lesson={lesson} blocks={studyBlocks} onPick={(v) => onBlock?.(v)} />
         </div>
       )}

@@ -62,7 +62,7 @@ function CourseRow({ course }: { course: CourseSummary }) {
       </div>
 
       <div className="flex shrink-0 flex-col items-end gap-1.5 sm:flex-row sm:items-center sm:gap-3">
-        <span className={cls("text-[18px] font-bold tabular-nums", done ? "text-emerald" : "text-brand-tint")}>
+        <span className={cls("text-section font-bold tabular-nums", done ? "text-emerald" : "text-brand-tint")}>
           {course.progressPct}%
         </span>
         {course.nextTopicId ? (

@@ -500,7 +500,11 @@
     "practicePatientHint": "Практические сессии",
     "practiceAvg": "ср.",
     "practiceTutor": "AI-тьютор",
-    "practiceTutorHint": "Задано вопросов"
+    "practiceTutorHint": "Задано вопросов",
+    "topicsCompletedN": "{{done}} из {{total}} тем пройдено",
+    "lockedTopics": "Темы под замком",
+    "lockedTopicsHint": "требование не выполнено",
+    "noAttentionShort": "нет ожидающих дел"
   },
   "journal": {
     "hint": "Нажмите на ячейку — отметьте посещаемость и оценку.",
@@ -807,7 +811,18 @@
     "cancel": "Отмена",
     "added": "Добавлено",
     "genericError": "Произошла ошибка",
-    "add": "Добавить"
+    "add": "Добавить",
+    "todayWork": "{{n}} дел ждут вашего внимания",
+    "tileLessons": "Занятия сегодня",
+    "tileLessonsPending": "у {{n}} нет отметки",
+    "tileLessonsAllMarked": "все отмечены",
+    "tileTasks": "Открытые задачи",
+    "tileTasksOverdue": "{{n}} просрочено",
+    "tileTasksNone": "всё выполнено",
+    "tileStudents": "Студенты",
+    "tileCoursesN": "{{n}} курса",
+    "tileTopics": "Темы",
+    "tileTopicsCaption": "из {{n}} тем опубликовано {{pct}}%"
   },
   "topics": {
     "subjectShared": "Темы принадлежат предмету — все курсы (группы) по этому предмету видят одни и те же темы.",

@@ -139,8 +139,8 @@ type TermData = { uz: string; lat: string; ru: string; branch: number; side: Sid
 const RootNode = memo(({ data }: NodeProps) => {
   const d = data as unknown as RootData;
   return (
-    <div className="w-[228px] rounded-card bg-gradient-to-br from-brand-deep to-brand px-4 py-3 text-white shadow-card">
-      <span className="mb-1 inline-flex items-center gap-1.5 text-micro font-extrabold uppercase tracking-wider opacity-80">
+    <div className="w-[228px] rounded-card bg-brand px-4 py-3 text-white">
+      <span className="mb-1 inline-flex items-center gap-1.5 text-micro font-extrabold opacity-80">
         <Icon icon={Network} size={12} /> {d.sections} · {d.nodes}
       </span>
       <p className="text-body font-extrabold leading-tight">{d.title}</p>

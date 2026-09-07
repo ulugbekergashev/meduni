@@ -86,7 +86,7 @@ function AutoTaskGroup({ task }: { task: AutoTask }) {
                   <p className="truncate text-note text-ink-faint">{it.courseName}</p>
                 </div>
                 {it.value !== undefined && it.value !== null && (
-                  <span className="shrink-0 text-[17px] font-bold tabular-nums text-emerald">{it.value}</span>
+                  <span className="shrink-0 text-section font-bold tabular-nums text-emerald">{it.value}</span>
                 )}
                 <Icon
                   icon={ArrowRight}
@@ -261,7 +261,7 @@ export function StudentTasksPage() {
                   <div className="flex h-11 w-11 items-center justify-center rounded-control bg-emerald-soft text-emerald">
                     <Icon icon={Sparkles} size={22} />
                   </div>
-                  <p className="text-[16px] font-bold text-emerald">{t("studentAllDone")}</p>
+                  <p className="text-body font-bold text-emerald">{t("studentAllDone")}</p>
                 </Card>
               </motion.div>
             )}
@@ -294,7 +294,7 @@ export function StudentTasksPage() {
                         className="flex w-full items-center gap-3 px-5 py-3 text-left transition-colors hover:bg-surface-raised"
                       >
                         <div className="w-10 shrink-0 text-center">
-                          <p className="text-[17px] font-bold leading-none tabular-nums text-brand-tint">
+                          <p className="text-section font-bold leading-none tabular-nums text-brand-tint">
                             {new Date(s.date).getDate()}
                           </p>
                           <p className="mt-0.5 text-note tabular-nums text-ink-soft">
@@ -320,7 +320,7 @@ export function StudentTasksPage() {
                   <>
                     <button
                       onClick={() => setHistoryOpen((o) => !o)}
-                      className="flex w-full items-center gap-2 px-5 py-3 text-left text-body font-semibold uppercase tracking-wide text-ink-soft transition-colors hover:bg-surface-raised"
+                      className="flex w-full items-center gap-2 px-5 py-3 text-left text-body font-semibold text-ink-soft transition-colors hover:bg-surface-raised"
                     >
                       <Icon
                         icon={ChevronDown}

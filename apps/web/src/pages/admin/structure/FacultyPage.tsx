@@ -45,10 +45,10 @@ export function FacultyPage() {
   if (!f) {
     return (
       <div>
-        <button onClick={() => navigate("/admin/staff")} className="flex items-center gap-1 text-[14.5px] font-medium text-brand-deep hover:underline">
+        <button onClick={() => navigate("/admin/staff")} className="flex items-center gap-1 text-note font-medium text-brand-deep hover:underline">
           <Icon icon={ArrowLeft} size={15} /> {t("title")}
         </button>
-        <Card className="mt-4"><p className="py-6 text-center text-[14.5px] text-rose">{t("notFound")}</p></Card>
+        <Card className="mt-4"><p className="py-6 text-center text-note text-rose">{t("notFound")}</p></Card>
       </div>
     );
   }
@@ -57,7 +57,7 @@ export function FacultyPage() {
     <div>
       {/* Back to the university hub — only meaningful for the superadmin */}
       {canFaculty && (
-        <button onClick={() => navigate("/admin/staff")} className="flex items-center gap-1 text-[14.5px] font-medium text-brand-deep hover:underline">
+        <button onClick={() => navigate("/admin/staff")} className="flex items-center gap-1 text-note font-medium text-brand-deep hover:underline">
           <Icon icon={ArrowLeft} size={15} /> {t("title")}
         </button>
       )}
@@ -65,7 +65,7 @@ export function FacultyPage() {
       {/* Header */}
       <div className="mt-3 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="flex items-center gap-1.5 text-[12px] font-bold uppercase tracking-[0.08em] text-brand">
+          <p className="flex items-center gap-1.5 text-micro font-bold text-brand">
             <Icon icon={Building2} size={13} /> {t("faculty")}
           </p>
           <h1 className="mt-0.5 text-h1 font-bold text-ink">{f.name}</h1>
@@ -123,8 +123,8 @@ export function FacultyPage() {
                   <Icon icon={Landmark} size={16} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-[15px] font-semibold text-ink">{d.name}</p>
-                  <p className="truncate text-[13px] text-ink-faint">
+                  <p className="truncate text-body font-semibold text-ink">{d.name}</p>
+                  <p className="truncate text-note text-ink-faint">
                     {d.admins[0] ? `${d.admins[0].fullName} · ` : ""}
                     {t("nCourses", { n: d.courses.length })} · {t("nTeachers", { n: d.teacherCount })}
                   </p>
@@ -133,7 +133,7 @@ export function FacultyPage() {
               </button>
             ))}
             {f.departments.length === 0 && (
-              <p className="px-5 py-6 text-center text-[14px] text-ink-faint">{t("noDeptsInFaculty")}</p>
+              <p className="px-5 py-6 text-center text-note text-ink-faint">{t("noDeptsInFaculty")}</p>
             )}
           </div>
         </Card>
@@ -155,8 +155,8 @@ export function FacultyPage() {
               <div key={g.id} className="group flex items-center gap-3 border-b border-line px-5 py-3 last:border-0">
                 <button onClick={() => navigate(`/admin/groups/${g.id}`)} className="flex min-w-0 flex-1 items-center gap-2 text-left" title={t("openGroup")}>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-[15px] font-semibold text-ink">{g.name}</p>
-                    <p className="text-[13px] text-ink-faint">
+                    <p className="truncate text-body font-semibold text-ink">{g.name}</p>
+                    <p className="text-note text-ink-faint">
                       {t("nthYear", { n: g.yearOfStudy })} · {t("nStudents", { n: g.studentCount })}
                     </p>
                   </div>
@@ -183,7 +183,7 @@ export function FacultyPage() {
               </div>
             ))}
             {f.groups.length === 0 && (
-              <p className="px-5 py-6 text-center text-[14px] text-ink-faint">{t("noGroupsInFaculty")}</p>
+              <p className="px-5 py-6 text-center text-note text-ink-faint">{t("noGroupsInFaculty")}</p>
             )}
           </div>
         </Card>

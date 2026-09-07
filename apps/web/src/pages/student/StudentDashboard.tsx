@@ -277,26 +277,24 @@ export function StudentDashboard() {
                 {d.resume && (
                   <motion.div
                     variants={itemVariants}
-                    className="relative overflow-hidden flex flex-wrap items-center gap-5 rounded-card bg-gradient-to-br from-brand-deep via-brand to-violet p-6 text-white shadow-card transition-all duration-300 hover:-translate-y-1 hover:shadow-card-hover"
+                    className="relative overflow-hidden flex flex-wrap items-center gap-5 rounded-card border border-line bg-surface p-4 shadow-card transition-all duration-300 hover:-translate-y-1 hover:shadow-card-hover"
                   >
-                    <div className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-white/10 blur-3xl"></div>
-                    <div className="pointer-events-none absolute -bottom-10 -left-10 h-32 w-32 rounded-full bg-white/5 blur-2xl"></div>
                     <div className="relative min-w-0 flex-1">
-                      <p className="text-note font-extrabold uppercase tracking-widest text-white/70 drop-shadow-sm">{t("continueLabel")}</p>
-                      <h2 className="mt-1 truncate text-[22px] font-bold leading-tight drop-shadow-md">{d.resume.topic}</h2>
-                      <p className="mt-0.5 truncate text-note text-white/90">{d.resume.subjectName}</p>
+                      <p className="text-micro font-bold text-ink-soft">{t("continueLabel")}</p>
+                      <h2 className="mt-1 truncate text-section font-bold leading-tight text-ink">{d.resume.topic}</h2>
+                      <p className="mt-0.5 truncate text-note text-ink-soft">{d.resume.subjectName}</p>
                       <div className="mt-3 flex items-center gap-3">
-                        <span className="h-2 w-full max-w-[240px] overflow-hidden rounded-pill bg-white/20 shadow-inner">
+                        <span className="h-1.5 w-full max-w-[240px] overflow-hidden rounded-pill bg-line">
                           <span
-                            className="block h-full rounded-pill bg-white shadow-[0_0_8px_rgba(255,255,255,0.6)]"
+                            className="block h-full rounded-pill bg-brand"
                             style={{ width: `${Math.max(d.resume.pct, 3)}%` }}
                           />
                         </span>
-                        <span className="text-note font-bold text-white/95">{d.resume.pct}%</span>
+                        <span className="font-data text-micro font-bold tabular-nums text-ink">{d.resume.pct}%</span>
                       </div>
                     </div>
                     <Link to={`/app/topics/${d.resume.topicId}`} className="relative shrink-0">
-                      <button className="flex items-center gap-2 rounded-control bg-white/95 px-5 py-3 text-body font-bold text-brand-tint shadow-sm backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:bg-white hover:shadow-md">
+                      <button className="flex items-center gap-2 rounded-control bg-brand px-5 py-3 text-note font-bold text-white transition-all duration-300 hover:scale-105 hover:bg-white hover:shadow-md">
                         <Icon icon={PlayCircle} size={18} />
                         {t("continue")}
                       </button>
@@ -309,7 +307,7 @@ export function StudentDashboard() {
                   <Card className="overflow-hidden p-0">
                     <div className="flex items-center gap-2 border-b border-line px-4 py-2.5">
                       <Icon icon={CalendarDays} size={15} className="text-ink-faint" />
-                      <p className="flex-1 text-note font-bold uppercase tracking-wide text-ink-soft">
+                      <p className="flex-1 text-note font-bold text-ink-soft">
                         {sched?.mode === "next"
                           ? `${t("nextLessons")} · ${formatDate(locale === "ru" ? "ru" : "uz", sched.date, "short")}`
                           : t("todayLessons")}
@@ -362,7 +360,7 @@ export function StudentDashboard() {
                   <Card className="overflow-hidden p-0">
                     <div className="flex items-center gap-2 border-b border-line px-4 py-2.5">
                       <Icon icon={ClipboardCheck} size={15} className="text-ink-faint" />
-                      <p className="flex-1 text-note font-bold uppercase tracking-wide text-ink-soft">{t("todayTitle")}</p>
+                      <p className="flex-1 text-note font-bold text-ink-soft">{t("todayTitle")}</p>
                       <button
                         onClick={() => navigate("/app/tasks")}
                         className="text-note font-semibold text-brand-tint hover:underline"
@@ -441,7 +439,7 @@ export function StudentDashboard() {
                         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-soft text-blue">
                           <Icon icon={CalendarCheck2} size={16} />
                         </div>
-                        <p className="text-note font-bold uppercase tracking-wide text-ink-soft">{t("semesterAttendance")}</p>
+                        <p className="text-note font-bold text-ink-soft">{t("semesterAttendance")}</p>
                       </div>
                       <div className="mt-3 flex items-end justify-between">
                         <span className={cls("text-stat font-bold tabular-nums", attPct !== null && attPct < 75 ? "text-rose" : "text-ink")}>
@@ -464,7 +462,7 @@ export function StudentDashboard() {
                         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-soft text-brand-tint">
                           <Icon icon={GraduationCap} size={16} />
                         </div>
-                        <p className="text-note font-bold uppercase tracking-wide text-ink-soft">{t("mastery")}</p>
+                        <p className="text-note font-bold text-ink-soft">{t("mastery")}</p>
                       </div>
                       <div className="mt-3 flex items-center gap-4">
                         <ProgressRing value={masteryAvg ?? 0} size={56} stroke={7} />

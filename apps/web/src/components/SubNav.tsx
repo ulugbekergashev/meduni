@@ -115,7 +115,7 @@ export function SubNav({ title, items, activeKey, footer, variant = "panel" }: S
 export function SubNavPanel({ data }: { data: SubNavData }) {
   return (
     <>
-      <p className="px-3 pb-1.5 pt-2 text-micro font-extrabold uppercase tracking-wider text-side-soft">{data.title}</p>
+      <p className="px-3 pb-1.5 pt-2 text-micro font-extrabold text-side-soft">{data.title}</p>
       <nav className="flex flex-col gap-0.5">
         {data.items.map((item) => {
           const on = item.key === data.activeKey;

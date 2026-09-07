@@ -19,9 +19,9 @@ export function PasswordModal({ password, onClose }: { password: string | null; 
 
   return (
     <Modal open={!!password} onClose={onClose} title={t("title")}>
-      <p className="text-[14.5px] text-ink-soft">{t("hint")}</p>
+      <p className="text-note text-ink-soft">{t("hint")}</p>
       <div className="mt-3 flex items-center gap-2">
-        <code className="flex-1 rounded-control bg-bg px-3 py-2.5 font-mono text-[16px] font-bold tracking-wider text-ink">
+        <code className="flex-1 rounded-control bg-bg px-3 py-2.5 font-mono text-body font-bold tracking-wider text-ink">
           {password}
         </code>
         <Button

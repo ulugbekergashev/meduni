@@ -163,7 +163,7 @@ export function VideoTab({
               <div className="flex h-20 w-20 items-center justify-center rounded-full bg-brand text-white shadow-[0_0_40px_rgba(0,184,148,0.5)] transition-all group-hover:bg-brand-deep group-hover:shadow-[0_0_60px_rgba(0,184,148,0.7)]">
                 <svg className="ml-2 h-10 w-10 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
               </div>
-              <span className="rounded-full border border-white/20 bg-black/40 px-5 py-2 text-[15px] font-bold text-white shadow-sm">
+              <span className="rounded-full border border-white/20 bg-black/40 px-5 py-2 text-body font-bold text-white shadow-sm">
                 Davom etish ({formatTime(data.positionSec)})
               </span>
             </button>
@@ -208,7 +208,7 @@ export function VideoTab({
             )}
           </div>
           <div className="h-2 w-full overflow-hidden rounded-pill bg-surface-raised">
-            <div className="h-full rounded-pill bg-gradient-to-r from-violet to-violet-soft transition-all duration-500" style={{ width: `${Math.max(shownPct, 2)}%` }} />
+            <div className="h-full rounded-pill bg-violet transition-all duration-500" style={{ width: `${Math.max(shownPct, 2)}%` }} />
           </div>
         </div>
       </div>

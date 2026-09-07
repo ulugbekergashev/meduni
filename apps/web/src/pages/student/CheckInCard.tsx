@@ -124,9 +124,9 @@ export function CheckInCard() {
         "relative overflow-hidden rounded-card p-5 text-white shadow-card transition-all",
         showDone
           ? doneStatus === "LATE"
-            ? "bg-gradient-to-br from-amber to-amber/80"
-            : "bg-gradient-to-br from-emerald to-emerald/80"
-          : "bg-gradient-to-br from-brand-deep via-brand to-violet"
+            ? "bg-amber"
+            : "bg-emerald"
+          : "bg-brand"
       )}
     >
       <div className="pointer-events-none absolute -right-10 -top-10 h-36 w-36 rounded-full bg-white/10 blur-3xl" />
@@ -142,10 +142,10 @@ export function CheckInCard() {
         <div className="min-w-0 flex-1">
           {showDone ? (
             <>
-              <p className="text-note font-extrabold uppercase tracking-widest text-white/80">
+              <p className="text-note font-extrabold text-white/80">
                 {doneStatus === "LATE" ? t("markedLate") : t("markedPresent")}
               </p>
-              <h3 className="mt-0.5 truncate text-[19px] font-bold leading-tight">{open.courseName}</h3>
+              <h3 className="mt-0.5 truncate text-section font-bold leading-tight">{open.courseName}</h3>
               <p className="mt-0.5 truncate text-note text-white/85">
                 {hhmm(open.date)}
                 {result?.already ? ` · ${t("alreadyNote")}` : ""}
@@ -153,8 +153,8 @@ export function CheckInCard() {
             </>
           ) : (
             <>
-              <p className="text-note font-extrabold uppercase tracking-widest text-white/70">{t("eyebrow")}</p>
-              <h3 className="mt-0.5 truncate text-[19px] font-bold leading-tight">{open.courseName}</h3>
+              <p className="text-note font-extrabold text-white/70">{t("eyebrow")}</p>
+              <h3 className="mt-0.5 truncate text-section font-bold leading-tight">{open.courseName}</h3>
               <p className="mt-0.5 flex items-center gap-2 truncate text-note text-white/85">
                 <span className="inline-flex items-center gap-1">
                   <Icon icon={Clock} size={12} /> {hhmm(open.date)}

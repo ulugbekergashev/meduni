@@ -90,7 +90,7 @@ export function TermChip({ raw, term }: { raw: string; term: Term }) {
             role="tooltip"
             className="absolute left-1/2 top-full z-50 mt-1.5 block w-max max-w-[260px] -translate-x-1/2 whitespace-normal rounded-card border border-line bg-surface-raised px-3 py-2 text-left shadow-card"
           >
-            <span className="mb-1 flex items-center gap-1.5 text-micro font-extrabold uppercase tracking-wider text-brand-tint">
+            <span className="mb-1 flex items-center gap-1.5 text-micro font-extrabold text-brand-tint">
               <Icon icon={Languages} size={11} />
               {t("termTooltip")}
             </span>

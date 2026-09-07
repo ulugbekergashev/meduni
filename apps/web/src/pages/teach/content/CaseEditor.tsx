@@ -8,7 +8,7 @@ import { useUpdateContent, type CaseJson, type CaseStepJson, type ContentFull } 
 function Block({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <h3 className="mb-2 text-[14px] font-bold uppercase tracking-wide text-ink-soft">{title}</h3>
+      <h3 className="mb-2 text-note font-bold text-ink-soft">{title}</h3>
       {children}
     </div>
   );
@@ -66,7 +66,7 @@ export function CaseEditor({ content }: { content: ContentFull }) {
     <div>
       <button
         onClick={() => navigate(`/teach/topics/${content.topicId}`)}
-        className="text-[14.5px] font-medium text-brand-deep hover:underline"
+        className="text-note font-medium text-brand-deep hover:underline"
       >
         {t("back")}
       </button>
@@ -99,7 +99,7 @@ export function CaseEditor({ content }: { content: ContentFull }) {
             <Input value={vitals.spo2 ?? ""} onChange={(e) => patchVitals({ spo2: e.target.value })} placeholder={t("vitalsSpo2")} />
             <Input value={vitals.temp ?? ""} onChange={(e) => patchVitals({ temp: e.target.value })} placeholder={t("vitalsTemp")} />
           </div>
-          <p className="mt-1.5 text-[13px] text-ink-faint">{t("vitalsHint")}</p>
+          <p className="mt-1.5 text-note text-ink-faint">{t("vitalsHint")}</p>
         </Block>
 
         {/* Modul 28 — virtual bemor ssenariysi (talaba roleplay'ida qo'llanadi) */}
@@ -116,13 +116,13 @@ export function CaseEditor({ content }: { content: ContentFull }) {
                 onClick={() =>
                   patch({ patientBehavior: (draft.patientBehavior ? draft.patientBehavior.trim() + " " : "") + tpl })
                 }
-                className="rounded-pill border border-line px-3 py-1 text-[13px] font-medium text-ink-soft transition-colors hover:bg-brand-soft hover:text-brand-tint"
+                className="rounded-pill border border-line px-3 py-1 text-note font-medium text-ink-soft transition-colors hover:bg-brand-soft hover:text-brand-tint"
               >
                 + {tpl}
               </button>
             ))}
           </div>
-          <p className="mt-1.5 text-[13px] text-ink-faint">{t("behaviorHint")}</p>
+          <p className="mt-1.5 text-note text-ink-faint">{t("behaviorHint")}</p>
         </Block>
       </Card>
 
@@ -144,9 +144,9 @@ export function CaseEditor({ content }: { content: ContentFull }) {
 
       {/* v2 — bosqichma-bosqich qarorlar. To'g'ri javob va izohni o'qituvchi tekshiradi. */}
       <div className="mt-5">
-        <h3 className="mb-2 text-[14px] font-bold uppercase tracking-wide text-ink-soft">{t("steps")}</h3>
+        <h3 className="mb-2 text-note font-bold text-ink-soft">{t("steps")}</h3>
         {steps.length === 0 ? (
-          <p className="rounded-control border border-dashed border-line px-3 py-2.5 text-[13px] text-ink-faint">
+          <p className="rounded-control border border-dashed border-line px-3 py-2.5 text-note text-ink-faint">
             {t("stepsEmpty")}
           </p>
         ) : (
@@ -154,7 +154,7 @@ export function CaseEditor({ content }: { content: ContentFull }) {
             {steps.map((s, si) => (
               <Card key={si} className="space-y-3">
                 <div className="flex items-center justify-between gap-3">
-                  <span className="text-[14px] font-bold text-ink-soft">
+                  <span className="text-note font-bold text-ink-soft">
                     {t("step")} {si + 1}
                   </span>
                   <button
@@ -178,7 +178,7 @@ export function CaseEditor({ content }: { content: ContentFull }) {
                         <button
                           onClick={() => markCorrect(si, oi)}
                           title={t("markCorrect")}
-                          className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-control text-[13px] font-bold ${
+                          className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-control text-note font-bold ${
                             o.correct ? "bg-emerald text-white" : "bg-bg text-ink-faint hover:text-ink"
                           }`}
                         >
@@ -207,7 +207,7 @@ export function CaseEditor({ content }: { content: ContentFull }) {
                   ))}
                   <button
                     onClick={() => addOption(si)}
-                    className="inline-flex items-center gap-1 text-[14.5px] font-medium text-brand-deep hover:underline"
+                    className="inline-flex items-center gap-1 text-note font-medium text-brand-deep hover:underline"
                   >
                     <Icon icon={Plus} size={15} /> {t("addOption")}
                   </button>
@@ -218,19 +218,19 @@ export function CaseEditor({ content }: { content: ContentFull }) {
         )}
         <button
           onClick={addStep}
-          className="mt-3 inline-flex items-center gap-1 text-[14.5px] font-medium text-brand-deep hover:underline"
+          className="mt-3 inline-flex items-center gap-1 text-note font-medium text-brand-deep hover:underline"
         >
           <Icon icon={Plus} size={15} /> {t("addStep")}
         </button>
       </div>
 
       {/* Questions + reference answers, paired */}
-      <h3 className="mb-2 mt-5 text-[14px] font-bold uppercase tracking-wide text-ink-soft">{t("questions")}</h3>
+      <h3 className="mb-2 mt-5 text-note font-bold text-ink-soft">{t("questions")}</h3>
       <div className="space-y-3">
         {Array.from({ length: rows }).map((_, i) => (
           <Card key={i} className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-[14px] font-bold text-ink-soft">
+              <span className="text-note font-bold text-ink-soft">
                 {t("question")} {i + 1}
               </span>
               <button
@@ -243,7 +243,7 @@ export function CaseEditor({ content }: { content: ContentFull }) {
             </div>
             <Input value={draft.questions[i] ?? ""} onChange={(e) => setQA(i, "questions", e.target.value)} placeholder={t("question")} />
             <div className="rounded-control bg-emerald-soft p-2">
-              <p className="mb-1 text-[13px] font-semibold text-emerald">{t("referenceAnswer")}</p>
+              <p className="mb-1 text-note font-semibold text-emerald">{t("referenceAnswer")}</p>
               <Textarea
                 value={draft.referenceAnswer[i] ?? ""}
                 onChange={(e) => setQA(i, "referenceAnswer", e.target.value)}
@@ -256,7 +256,7 @@ export function CaseEditor({ content }: { content: ContentFull }) {
 
       <button
         onClick={addRow}
-        className="mt-4 inline-flex items-center gap-1 text-[14.5px] font-medium text-brand-deep hover:underline"
+        className="mt-4 inline-flex items-center gap-1 text-note font-medium text-brand-deep hover:underline"
       >
         <Icon icon={Plus} size={15} /> {t("addQuestion")}
       </button>

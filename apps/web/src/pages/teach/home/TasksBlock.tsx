@@ -135,7 +135,7 @@ export function TasksBlock({ expanded, onExpand }: { expanded: boolean; onExpand
             ))}
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-micro font-semibold uppercase tracking-wider text-ink-faint">{t("sourceLabel")}:</span>
+            <span className="text-micro font-semibold text-ink-faint">{t("sourceLabel")}:</span>
             {sourceChips.map((c) => (
               <button
                 key={c.key}

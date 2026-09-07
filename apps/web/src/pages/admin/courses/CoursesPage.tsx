@@ -119,7 +119,7 @@ export function CoursesPage() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-h1 font-bold text-ink">{t("title")}</h1>
-          <p className="mt-1 text-[14.5px] text-ink-soft">{t("subtitle")}</p>
+          <p className="mt-1 text-note text-ink-soft">{t("subtitle")}</p>
         </div>
         {ready ? (
           <Button
@@ -132,7 +132,7 @@ export function CoursesPage() {
             {t("create")}
           </Button>
         ) : (
-          <div className="space-y-0.5 text-right text-[13.5px]">
+          <div className="space-y-0.5 text-right text-note">
             {departmentOptions.length === 0 && <p className="text-amber">{t("noDepartments")}</p>}
             {teacherOptions.length === 0 && <p className="text-amber">{t("noTeachers")}</p>}
             {groupOptions.length === 0 && <p className="text-amber">{t("noGroups")}</p>}
@@ -196,7 +196,7 @@ export function CoursesPage() {
               onToggle={toggleGroup}
             />
           </Field>
-          {formError && <p className="text-[14px] text-rose">{formError}</p>}
+          {formError && <p className="text-note text-rose">{formError}</p>}
           <div className="flex justify-end gap-2">
             <Button type="button" variant="ghost" onClick={() => setAddOpen(false)}>
               {tc("cancel")}
@@ -216,7 +216,7 @@ export function CoursesPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={t("searchPlaceholder")}
-            className="w-full rounded-control border border-line bg-surface py-2 pl-9 pr-3 text-[14.5px] outline-none focus:border-brand"
+            className="w-full rounded-control border border-line bg-surface py-2 pl-9 pr-3 text-note outline-none focus:border-brand"
           />
         </div>
         <PeriodFilter
@@ -230,7 +230,7 @@ export function CoursesPage() {
         <select
           value={departmentFilter}
           onChange={(e) => setDepartmentFilter(e.target.value)}
-          className="rounded-control border border-line bg-surface px-2.5 py-2 text-[14.5px] text-ink outline-none focus:border-brand"
+          className="rounded-control border border-line bg-surface px-2.5 py-2 text-note text-ink outline-none focus:border-brand"
         >
           <option value="">{t("allDepartments")}</option>
           {departmentOptions.map((d) => (
@@ -284,7 +284,7 @@ export function CoursesPage() {
                   >
                     {c.name}
                   </button>
-                  <p className="text-[12.5px] text-ink-faint">{c.departmentName}</p>
+                  <p className="text-micro text-ink-faint">{c.departmentName}</p>
                 </td>
                 <td className="px-4 py-3 text-ink-soft">{c.teacherName}</td>
                 <td className="px-4 py-3 text-ink-soft">{c.semester}</td>

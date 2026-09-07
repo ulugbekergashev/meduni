@@ -500,7 +500,11 @@
     "practicePatientHint": "Mashq seanslari",
     "practiceAvg": "oʻrt.",
     "practiceTutor": "AI-tutor",
-    "practiceTutorHint": "Berilgan savollar"
+    "practiceTutorHint": "Berilgan savollar",
+    "topicsCompletedN": "{{total}} mavzudan {{done}} tasi tugallangan",
+    "lockedTopics": "Qulfdagi mavzular",
+    "lockedTopicsHint": "talab bajarilmagan darslar",
+    "noAttentionShort": "kutayotgan ish yoʻq"
   },
   "journal": {
     "hint": "Katakni bosing — yoʻqlama va baho qoʻying.",
@@ -807,7 +811,18 @@
     "cancel": "Bekor qilish",
     "added": "Qo'shildi",
     "genericError": "Xatolik yuz berdi",
-    "add": "Qo'shish"
+    "add": "Qo'shish",
+    "todayWork": "{{n}} ta ish eʼtiboringizni kutmoqda",
+    "tileLessons": "Bugungi darslar",
+    "tileLessonsPending": "{{n}} tasida yoʻqlama yoʻq",
+    "tileLessonsAllMarked": "hammasi belgilangan",
+    "tileTasks": "Ochiq vazifalar",
+    "tileTasksOverdue": "{{n}} tasining muddati oʻtgan",
+    "tileTasksNone": "hammasi bajarilgan",
+    "tileStudents": "Talabalar",
+    "tileCoursesN": "{{n}} ta kurs",
+    "tileTopics": "Mavzular",
+    "tileTopicsCaption": "{{n}} mavzudan {{pct}}% chop etilgan"
   },
   "topics": {
     "subjectShared": "Mavzular fanga tegishli — bu fandan ochilgan barcha kurslar (guruhlar) bir xil mavzularni ko‘radi.",

@@ -111,7 +111,7 @@ function ExamPlanView({ plan }: { plan: ExamPlan }) {
     <div className="rounded-card border border-line p-3.5">
       <div className="mb-2.5 flex items-center gap-2">
         <Icon icon={FlaskConical} size={14} className="shrink-0 text-ink-faint" />
-        <p className="min-w-0 flex-1 text-micro font-extrabold uppercase tracking-wider text-ink-faint">
+        <p className="min-w-0 flex-1 text-micro font-extrabold text-ink-faint">
           {t("planTitle")}
         </p>
       </div>
@@ -184,7 +184,7 @@ function ExamPlanView({ plan }: { plan: ExamPlan }) {
 
       {plan.missed.length > 0 && (
         <div className="mt-3 rounded-control border-l-2 border-amber bg-amber-soft px-3 py-2">
-          <p className="mb-1 text-micro font-extrabold uppercase tracking-wider text-amber">{t("planMissed")}</p>
+          <p className="mb-1 text-micro font-extrabold text-amber">{t("planMissed")}</p>
           <ul className="space-y-1">
             {plan.missed.map((m, i) => (
               <li key={i} className="text-note leading-relaxed text-ink-strong">
@@ -230,7 +230,7 @@ function EvalView({ ev, onReset }: { ev: PatientEval; onReset: () => void }) {
       {ev.examPlan && <ExamPlanView plan={ev.examPlan} />}
 
       <div className="rounded-control border-l-2 border-brand bg-brand-soft px-3.5 py-2.5">
-        <p className="mb-0.5 text-micro font-extrabold uppercase tracking-wider text-brand-tint">{t("correctDx")}</p>
+        <p className="mb-0.5 text-micro font-extrabold text-brand-tint">{t("correctDx")}</p>
         <p className="text-note font-bold text-ink-strong">{ev.diagnosis}</p>
       </div>
 
@@ -238,7 +238,7 @@ function EvalView({ ev, onReset }: { ev: PatientEval; onReset: () => void }) {
         <div className="flex gap-2.5 rounded-control border border-line px-3.5 py-2.5">
           <Icon icon={ThumbsUp} size={15} className="mt-0.5 shrink-0 text-emerald" />
           <div>
-            <p className="text-micro font-extrabold uppercase tracking-wider text-emerald">{t("strengths")}</p>
+            <p className="text-micro font-extrabold text-emerald">{t("strengths")}</p>
             <p className="mt-0.5 text-note leading-relaxed text-ink-strong">{ev.strengths}</p>
           </div>
         </div>
@@ -247,7 +247,7 @@ function EvalView({ ev, onReset }: { ev: PatientEval; onReset: () => void }) {
         <div className="flex gap-2.5 rounded-control border border-line px-3.5 py-2.5">
           <Icon icon={Activity} size={15} className="mt-0.5 shrink-0 text-amber" />
           <div>
-            <p className="text-micro font-extrabold uppercase tracking-wider text-amber">{t("improvements")}</p>
+            <p className="text-micro font-extrabold text-amber">{t("improvements")}</p>
             <p className="mt-0.5 text-note leading-relaxed text-ink-strong">{ev.improvements}</p>
           </div>
         </div>
@@ -281,7 +281,7 @@ function TestResult({ m, costUnit, penalty }: { m: PatientMsg; costUnit: string;
     >
       <p
         className={cls(
-          "mb-0.5 flex items-center gap-1.5 text-micro font-extrabold uppercase tracking-wider",
+          "mb-0.5 flex items-center gap-1.5 text-micro font-extrabold",
           waste ? "text-rose" : "text-blue"
         )}
       >
@@ -350,7 +350,7 @@ function Section({
     <div className="rounded-card border border-line p-3">
       <div className="mb-2 flex items-center gap-1.5">
         <Icon icon={icon} size={13} className="text-ink-faint" />
-        <p className="text-micro font-extrabold uppercase tracking-wider text-ink-faint">{title}</p>
+        <p className="text-micro font-extrabold text-ink-faint">{title}</p>
         {action && <span className="ml-auto flex items-center">{action}</span>}
       </div>
       {children}

@@ -63,7 +63,7 @@ function QuizRow({ q, onOpen }: { q: GradeQuiz; onOpen: () => void }) {
             <span className="text-ink-faint">· {t("passThreshold", { n: q.passThreshold })}</span>
           </p>
         </div>
-        <span className={cls("shrink-0 text-[20px] font-bold tabular-nums tracking-tight", scoreTone(q.bestScore))}>{q.bestScore}%</span>
+        <span className={cls("shrink-0 text-section font-bold tabular-nums tracking-tight", scoreTone(q.bestScore))}>{q.bestScore}%</span>
         <div className={cls("flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface text-ink-soft transition-all ml-2 border border-line shadow-sm", open && "bg-brand-soft text-brand border-transparent")}>
           <Icon
             icon={ChevronDown}
@@ -83,7 +83,7 @@ function QuizRow({ q, onOpen }: { q: GradeQuiz; onOpen: () => void }) {
           className="overflow-hidden bg-surface-raised"
         >
           <div className="border-t border-line px-5 py-4">
-            <p className="mb-3 text-note font-bold uppercase tracking-wider text-ink-faint">{t("historyTitle")}</p>
+            <p className="mb-3 text-note font-bold text-ink-faint">{t("historyTitle")}</p>
             <div className="space-y-2.5">
               {q.history.map((h) => (
                 <div key={h.attemptNo} className="flex items-center gap-4 text-body">
@@ -134,7 +134,7 @@ function CaseRow({ c, onOpen }: { c: GradeCase; onOpen: () => void }) {
           </p>
         </button>
         {c.reviewed ? (
-          <span className="shrink-0 text-[20px] font-bold tabular-nums text-emerald tracking-tight">{c.score}</span>
+          <span className="shrink-0 text-section font-bold tabular-nums text-emerald tracking-tight">{c.score}</span>
         ) : (
           <Badge tone="amber">{t("underReview")}</Badge>
         )}
@@ -167,13 +167,13 @@ function CourseBlock({ c, filter }: { c: GradesCourse; filter: Filter }) {
     <motion.section variants={itemVariants} className="mt-3 first:mt-0">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2 px-1">
         <div className="flex items-center gap-3">
-          <h2 className="text-[20px] font-black tracking-tight bg-gradient-to-br from-ink to-ink-soft bg-clip-text text-transparent drop-shadow-sm">{c.subjectName}</h2>
+          <h2 className="text-section font-bold text-ink">{c.subjectName}</h2>
           <span className="rounded-full bg-surface-glass backdrop-blur-md border border-line px-3 py-1 text-note font-bold text-ink-soft shadow-sm">
             {c.academicYear} · {tp("semester", { n: c.semester })}
           </span>
         </div>
         {c.avgQuiz !== null && (
-          <span className="rounded-full bg-surface border border-line px-3 py-1 text-[15px] font-bold text-ink-soft shadow-sm">
+          <span className="rounded-full bg-surface border border-line px-3 py-1 text-body font-bold text-ink-soft shadow-sm">
             {t("avgQuizShort")}: <span className={cls(scoreTone(c.avgQuiz), "ml-1")}>{c.avgQuiz}%</span>
           </span>
         )}
@@ -319,7 +319,7 @@ function GradesHome() {
               key={f}
               onClick={() => setFilter(f)}
               className={cls(
-                "rounded-full px-5 py-2 text-[15px] font-bold transition-all duration-300",
+                "rounded-full px-5 py-2 text-body font-bold transition-all duration-300",
                 filter === f ? "bg-brand text-white shadow-md scale-105" : "text-ink-soft hover:bg-surface-raised hover:text-ink"
               )}
             >
@@ -365,7 +365,7 @@ function GradesHome() {
                         <p className="truncate text-body font-bold text-ink transition-colors group-hover:text-brand-tint">{r.title}</p>
                         <p className="truncate text-note font-medium text-ink-faint mt-0.5">{r.subject}</p>
                       </div>
-                      <span className="shrink-0 text-[16px] font-bold tabular-nums text-ink">{r.score}</span>
+                      <span className="shrink-0 text-body font-bold tabular-nums text-ink">{r.score}</span>
                     </button>
                   ))}
                 </div>

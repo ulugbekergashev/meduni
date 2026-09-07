@@ -102,9 +102,9 @@ export function GlobalSearch({ fetch }: { fetch: (q: string) => Promise<SearchSe
           }}
           onFocus={() => setOpen(true)}
           placeholder={t("placeholder")}
-          className="h-10 w-full bg-transparent text-[14.5px] font-medium text-ink outline-none placeholder:text-ink-faint"
+          className="h-10 w-full bg-transparent text-note font-medium text-ink outline-none placeholder:text-ink-faint"
         />
-        <kbd className="hidden shrink-0 rounded-md border border-line bg-surface px-2 py-0.5 text-[11px] font-bold tracking-wider text-ink-faint shadow-sm sm:block">
+        <kbd className="hidden shrink-0 rounded-md border border-line bg-surface px-2 py-0.5 text-micro font-bold tracking-wider text-ink-faint shadow-sm sm:block">
           Ctrl K
         </kbd>
       </div>
@@ -124,7 +124,7 @@ export function GlobalSearch({ fetch }: { fetch: (q: string) => Promise<SearchSe
               (section) =>
                 section.items.length > 0 && (
                   <div key={section.key} className="mb-1 last:mb-0">
-                    <p className="px-2.5 pb-1 pt-2 text-[11.5px] font-bold uppercase tracking-wide text-ink-faint">
+                    <p className="px-2.5 pb-1 pt-2 text-micro font-bold text-ink-faint">
                       {t(`sections.${section.key}`)}
                     </p>
                     {section.items.map((item) => (
@@ -140,7 +140,7 @@ export function GlobalSearch({ fetch }: { fetch: (q: string) => Promise<SearchSe
                         </span>
                         <span className="min-w-0">
                           <span className="block truncate text-body font-medium text-ink">{item.label}</span>
-                          {item.sub && <span className="block truncate text-[12.5px] text-ink-faint">{item.sub}</span>}
+                          {item.sub && <span className="block truncate text-micro text-ink-faint">{item.sub}</span>}
                         </span>
                       </button>
                     ))}
