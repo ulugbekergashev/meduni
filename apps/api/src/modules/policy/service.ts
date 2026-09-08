@@ -17,6 +17,12 @@ import { prisma } from "../../lib/prisma";
 import { ApiError } from "../../lib/errors";
 import { DEFAULT_RULE, type UnlockRule } from "../me/rules";
 
+export type MakeupScope = "NONE" | "PRACTICE" | "ALL";
+export type ExcuseApprover = "TEACHER" | "DEANERY" | "BOTH";
+/** Строгость: кто МОЖЕТ поставить «уважительную». Только деканат — строже всего. */
+const APPROVER_RANK: Record<ExcuseApprover, number> = { TEACHER: 0, BOTH: 1, DEANERY: 2 };
+const MAKEUP_RANK: Record<MakeupScope, number> = { NONE: 0, PRACTICE: 1, ALL: 2 };
+
 export interface ResolvedPolicy {
   minQuizPassedPct: number;
   minVideoWatchedPct: number;
@@ -32,6 +38,17 @@ export interface ResolvedPolicy {
   allowManualUnlock: boolean;
   /** ОЧНЫЙ РЕЖИМ для всех тестов кафедры (отдельный тест включает сам). */
   requirePresence: boolean;
+  // ---- Коридор ПОСЕЩАЕМОСТИ (F1). Считается в академических часах. ----
+  maxUnexcusedPct: number;
+  warnUnexcusedPct: number;
+  maxMissedHoursPerTerm: number;
+  makeupRequiredFor: MakeupScope;
+  makeupDeadlineDays: number;
+  excuseDocDeadlineDays: number;
+  excuseApprover: ExcuseApprover;
+  lateThresholdMin: number;
+  lateCountsAsAbsentAfterMin: number;
+  cycleMaxMissedDays: number;
   /** Откуда пришло ужесточение — для экрана «кто что установил». */
   sources: { level: "UNIVERSITY" | "FACULTY" | "DEPARTMENT"; scopeId: number | null }[];
 }
@@ -51,6 +68,18 @@ export const FALLBACK_POLICY: ResolvedPolicy = {
   minMinutesPerQuestion: 1,
   allowManualUnlock: true,
   requirePresence: false,
+  // Нормативные значения РУз: №824 — 25 % часов предмета без причины,
+  // №393 — 74 часа за семестр. 15 % — жёлтая зона (было «75 %» в коде).
+  maxUnexcusedPct: 25,
+  warnUnexcusedPct: 15,
+  maxMissedHoursPerTerm: 74,
+  makeupRequiredFor: "PRACTICE",
+  makeupDeadlineDays: 14,
+  excuseDocDeadlineDays: 3,
+  excuseApprover: "DEANERY",
+  lateThresholdMin: 15,
+  lateCountsAsAbsentAfterMin: 45,
+  cycleMaxMissedDays: 2,
   sources: [],
 };
 
@@ -70,6 +99,16 @@ type PolicyRow = {
   minMinutesPerQuestion: number;
   allowManualUnlock: boolean;
   requirePresence: boolean;
+  maxUnexcusedPct: number;
+  warnUnexcusedPct: number;
+  maxMissedHoursPerTerm: number;
+  makeupRequiredFor: MakeupScope;
+  makeupDeadlineDays: number;
+  excuseDocDeadlineDays: number;
+  excuseApprover: ExcuseApprover;
+  lateThresholdMin: number;
+  lateCountsAsAbsentAfterMin: number;
+  cycleMaxMissedDays: number;
 };
 
 /** Слияние: следующий уровень может только ужесточить. */
@@ -91,6 +130,18 @@ function tighten(base: ResolvedPolicy, row: PolicyRow): ResolvedPolicy {
     allowManualUnlock: base.allowManualUnlock && row.allowManualUnlock,
     // Требовать присутствие — ужесточение.
     requirePresence: base.requirePresence || row.requirePresence,
+    // Посещаемость: МЕНЬШЕ допустимого пропуска = строже; порог предупреждения
+    // тоже вниз; сроки справки/отработки — короче; дней цикла — меньше.
+    maxUnexcusedPct: Math.min(base.maxUnexcusedPct, row.maxUnexcusedPct),
+    warnUnexcusedPct: Math.min(base.warnUnexcusedPct, row.warnUnexcusedPct),
+    maxMissedHoursPerTerm: Math.min(base.maxMissedHoursPerTerm, row.maxMissedHoursPerTerm),
+    makeupRequiredFor: MAKEUP_RANK[row.makeupRequiredFor] > MAKEUP_RANK[base.makeupRequiredFor] ? row.makeupRequiredFor : base.makeupRequiredFor,
+    makeupDeadlineDays: Math.min(base.makeupDeadlineDays, row.makeupDeadlineDays),
+    excuseDocDeadlineDays: Math.min(base.excuseDocDeadlineDays, row.excuseDocDeadlineDays),
+    excuseApprover: APPROVER_RANK[row.excuseApprover] > APPROVER_RANK[base.excuseApprover] ? row.excuseApprover : base.excuseApprover,
+    lateThresholdMin: Math.min(base.lateThresholdMin, row.lateThresholdMin),
+    lateCountsAsAbsentAfterMin: Math.min(base.lateCountsAsAbsentAfterMin, row.lateCountsAsAbsentAfterMin),
+    cycleMaxMissedDays: Math.min(base.cycleMaxMissedDays, row.cycleMaxMissedDays),
     sources: [...base.sources, { level: row.level, scopeId: row.scopeId }],
   };
 }
@@ -133,7 +184,13 @@ export async function resolvePolicy(departmentId: number | null): Promise<Resolv
     ? { ...FALLBACK_POLICY, minQuizAttempts: 1, maxQuizAttempts: 99, minQuizPassedPct: 0, minVideoWatchedPct: 0,
         requireAssessment: false, requireSequential: false, requireCase: false, requireCaseReviewed: false,
         minAttemptGapHours: 0, requireRemediation: false, minMinutesPerQuestion: 0, allowManualUnlock: true,
-        requirePresence: false, sources: [] }
+        requirePresence: false,
+        // Мягкая отправная точка: строки уровней потом только ужесточают.
+        maxUnexcusedPct: 100, warnUnexcusedPct: 100, maxMissedHoursPerTerm: 100000,
+        makeupRequiredFor: "NONE", makeupDeadlineDays: 3650, excuseDocDeadlineDays: 3650,
+        excuseApprover: "TEACHER", lateThresholdMin: 1440, lateCountsAsAbsentAfterMin: 1440,
+        cycleMaxMissedDays: 9999,
+        sources: [] }
     : FALLBACK_POLICY;
   for (const r of rows) out = tighten(out, r);
   // Диапазон попыток мог схлопнуться при противоречивых настройках уровней.

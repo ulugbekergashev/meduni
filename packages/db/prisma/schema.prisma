@@ -31,6 +31,71 @@ enum EnrollmentStatus {
   DROPPED
 }
 
+// ---------- Davomat 2.0 · F1: kalendar, soat, tur, sikl ----------
+
+/// Mashg'ulot turi. ⚠️ Tibbiyot uchun MUHIM: ma'ruza va klinik mashg'ulot
+/// propuski bir xil emas (ma'ruza odatda otrabotka qilinmaydi, klinik — shart).
+enum LessonType {
+  LECTURE
+  PRACTICE
+  SEMINAR
+  LAB
+  CLINICAL
+}
+
+/// Dars holati. `CANCELLED` — "dars bo'lmadi": davomat MAXRAJIGA kirmaydi
+/// (talabaning aybi emas). Sariosiyo CRM dagi "Dars bo'lmadi" naqshi.
+enum LessonStatus {
+  HELD
+  CANCELLED
+  MOVED
+}
+
+/// Kurs formati: semestr bo'yicha (1-3 kurs, frontal) yoki SIKL (blok, 4-6 kurs).
+/// ⚠️ Faqat CYCLE formatidagi kursga BOSHQA fakultet guruhi biriktirilishi mumkin
+/// (mehmon sikllari — buyurtmachining asosiy talabi).
+enum CourseFormat {
+  SEMESTER
+  CYCLE
+}
+
+enum CycleStatus {
+  PLANNED
+  ACTIVE
+  FINISHED
+  CANCELLED
+}
+
+/// Sababli propusk sababi (F3 da spravka bilan bog'lanadi).
+enum AbsenceReason {
+  ILLNESS
+  FAMILY
+  OFFICIAL
+  COMPETITION
+  OTHER
+}
+
+/// Kalendar istisnosi — dars generatsiya qilinmaydigan kun.
+enum CalendarExceptionKind {
+  HOLIDAY
+  NON_TEACHING
+  EXAM_WEEK
+}
+
+/// Otrabotka qaysi turlar uchun majburiy.
+enum MakeupScope {
+  NONE
+  PRACTICE
+  ALL
+}
+
+/// "Sababli" ni kim qo'yadi.
+enum ExcuseApprover {
+  TEACHER
+  DEANERY
+  BOTH
+}
+
 enum TopicStatus {
   DRAFT
   PUBLISHED
@@ -149,6 +214,9 @@ model User {
   attendanceMarked  Attendance[]     @relation("AttendanceMarker")
   attendanceRecords Attendance[]     @relation("AttendanceStudent")
   attendanceChanges AttendanceChange[] @relation("AttendanceChanger")
+  attendanceExcused Attendance[]     @relation("AttendanceExcuser")
+  taughtSessions    LessonSession[]  @relation("SessionTeacher")
+  createdCycles     CourseCycle[]    @relation("CycleCreator")
   aiUsage           AiUsage[]
   tasksCreated      Task[]           @relation("TaskCreator")
   tasksAssigned     Task[]           @relation("TaskAssignee")
@@ -192,6 +260,7 @@ model Faculty {
   departments Department[]
   groups      StudentGroup[]
   admins      User[]         @relation("FacultyAdmins")
+  calendarExceptions CalendarException[]
 
   @@unique([name])
   @@map("faculties")
@@ -236,6 +305,8 @@ model StudentGroup {
   createdAt    DateTime      @default(now())
   students     User[]
   courseGroups CourseGroup[]
+  cycles       CourseCycle[]
+  sessions     LessonSession[]
 
   @@unique([facultyId, name])
   @@map("student_groups")
@@ -259,8 +330,15 @@ model Course {
   // Ikkalasi yoniq bo'lsa — HAR IKKALA shart bajarilishi kerak.
   sequentialUnlock      Boolean       @default(true)
   scheduleUnlock        Boolean       @default(false)
+  /// SEMESTER (frontal) yoki CYCLE (blok). CYCLE bo'lsa boshqa fakultet guruhini
+  /// biriktirish mumkin — mehmon sikllari.
+  format                CourseFormat  @default(SEMESTER)
+  /// O'quv rejasidagi auditoriya soati — 25 % limitining MAXRAJI (VM №824).
+  /// null bo'lsa hosil qilingan darslar soatlari yig'indisi ishlatiladi.
+  plannedHours          Int?
   createdAt             DateTime      @default(now())
   courseGroups          CourseGroup[]
+  cycles                CourseCycle[]
   enrollments           Enrollment[]
   sessions              LessonSession[]
   chatMessages          CourseChatMessage[]
@@ -268,6 +346,71 @@ model Course {
   scheduleSlots         ScheduleSlot[]
 
   @@map("courses")
+}
+
+/// SIKL (blok) — birinchi darajali birlik: kurs FALON guruhga FALON sanalar
+/// oralig'ida o'tiladi.
+/// ⚠️ NEGA ALOHIDA JADVAL (2026-09-08): sikl `CourseGroup.cycleStart/End` juftligi
+/// edi, ustiga `@@unique([courseId, groupId])` — ya'ni bir guruh bir kursni
+/// UMRIDA BIR MARTA o'tishi mumkin edi. Takroriy sikl (qayta o'qish, keyingi
+/// yil, ikkinchi blok) faqat oldingisini o'chirib yozilardi — tarix yo'qolardi.
+/// Endi (kurs, guruh) juftligi uchun necha sikl bo'lsa — shuncha qator.
+/// Eski juftlik `CourseGroup` da qoladi (legacy fallback), yangi kod shu jadvalni
+/// o'qiydi.
+model CourseCycle {
+  id        Int          @id @default(autoincrement())
+  courseId  Int
+  course    Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  groupId   Int
+  group     StudentGroup @relation(fields: [groupId], references: [id])
+  startDate DateTime
+  endDate   DateTime
+  /// Sikl imtihoni (odatda oxirgi kun) — F2 "Sikl pasporti" uchun.
+  examDate  DateTime?
+  status    CycleStatus  @default(ACTIVE)
+  /// Mehmon sikli: guruh boshqa fakultetdan keldi (o'z fakulteti dekanati
+  /// read-only ko'radi). Biriktirish paytida hisoblanadi.
+  isGuest   Boolean      @default(false)
+  createdById Int?
+  createdBy User?        @relation("CycleCreator", fields: [createdById], references: [id])
+  createdAt DateTime     @default(now())
+  slots     ScheduleSlot[]
+  sessions  LessonSession[]
+
+  @@index([courseId, groupId, startDate])
+  @@index([groupId, startDate])
+  @@map("course_cycles")
+}
+
+/// O'quv davri — semestr QACHON boshlanib tugashi.
+/// ⚠️ NEGA: `Course.semester`/`academicYear` faqat YORLIQ edi — bazada semestr
+/// sanalari umuman yo'q edi. Shu sabab darslar Navro'z va sessiya haftasida ham
+/// hosil bo'lardi, "joriy semestr" esa `academicYear` ni SATR sifatida saralab
+/// taxmin qilinardi (me/profile.ts).
+model AcademicTerm {
+  id           Int      @id @default(autoincrement())
+  academicYear String
+  semester     Int
+  startDate    DateTime
+  endDate      DateTime
+  createdAt    DateTime @default(now())
+
+  @@unique([academicYear, semester])
+  @@map("academic_terms")
+}
+
+/// Dars bo'lmaydigan kun (bayram, sessiya haftasi). `facultyId = null` — butun vuz.
+model CalendarException {
+  id        Int                   @id @default(autoincrement())
+  date      DateTime
+  kind      CalendarExceptionKind @default(HOLIDAY)
+  facultyId Int?
+  faculty   Faculty?              @relation(fields: [facultyId], references: [id])
+  title     String?
+  createdAt DateTime              @default(now())
+
+  @@index([date])
+  @@map("calendar_exceptions")
 }
 
 /// Haftalik TAKRORIY jadval: kurs har hafta shu kun+vaqtda o'tiladi. O'qituvchi
@@ -282,10 +425,19 @@ model ScheduleSlot {
   groupId   Int?
   weekday   Int // 0=Dushanba .. 6=Yakshanba
   startTime String // "09:00"
+  /// "10:30" — ixtiyoriy; hisob `hours` bo'yicha ketadi, endTime faqat ko'rsatish.
+  endTime   String?
   room      String?
+  /// Mashg'ulot turi va AKADEMIK SOAT — davomat limiti soatlarda hisoblanadi.
+  lessonType LessonType @default(PRACTICE)
+  hours      Int        @default(2)
+  /// Qaysi siklga tegishli (null = semestr jadvali yoki legacy).
+  cycleId   Int?
+  cycle     CourseCycle? @relation(fields: [cycleId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
 
   @@index([courseId])
+  @@index([cycleId])
   @@map("schedule_slots")
 }
 
@@ -357,11 +509,24 @@ model LessonSession {
   course      Course       @relation(fields: [courseId], references: [id])
   // Yo'qlama qaysi GURUH uchun (bir kurs bir necha guruhga o'tilsa ajratiladi).
   groupId     Int?
+  group       StudentGroup? @relation(fields: [groupId], references: [id])
   topicId     Int?
   topic       Topic?       @relation(fields: [topicId], references: [id])
   date        DateTime
   title       String?
   room        String?
+  /// Tur va soat — slotdan ko'chiriladi (slot keyin o'zgarsa, o'tgan dars o'zgarmaydi).
+  lessonType  LessonType   @default(PRACTICE)
+  hours       Int          @default(2)
+  /// HELD | CANCELLED ("dars bo'lmadi" — maxrajdan chiqadi) | MOVED.
+  status      LessonStatus @default(HELD)
+  cancelReason String?
+  /// Kim o'tdi (o'rinbosar bo'lsa kurs o'qituvchisidan farq qiladi).
+  teacherId   Int?
+  teacher     User?        @relation("SessionTeacher", fields: [teacherId], references: [id])
+  slotId      Int?
+  cycleId     Int?
+  cycle       CourseCycle? @relation(fields: [cycleId], references: [id])
   createdById Int
   createdBy   User         @relation("SessionCreator", fields: [createdById], references: [id])
   createdAt   DateTime     @default(now())
@@ -414,6 +579,19 @@ model Attendance {
   // markedById=talabaning o'zi bo'ladi; o'qituvchi qo'lda o'zgartirsa false ga tushadi.
   selfMarked Boolean          @default(false)
   markedAt   DateTime         @updatedAt
+  /// ⚠️ Ilgari faqat `markedAt @updatedAt` bor edi — tuzatilganda BIRINCHI
+  /// belgilash vaqti yo'qolardi.
+  createdAt  DateTime         @default(now())
+  /// Sababli propuskning sababi + hujjati (F3: talaba spravka yuklaydi,
+  /// dekanat tasdiqlaydi). Ilgari "Sababli" — hech qanday izsiz status edi.
+  reason      AbsenceReason?
+  note        String?
+  documentUrl String?
+  excusedById Int?
+  excusedBy   User?           @relation("AttendanceExcuser", fields: [excusedById], references: [id])
+  excusedAt   DateTime?
+  /// Kechikish daqiqasi (siyosatda: N daqiqadan keyin — kelmadi).
+  lateMinutes Int?
   changes    AttendanceChange[]
 
   @@unique([sessionId, studentId])
@@ -547,6 +725,31 @@ model LearningPolicy {
   /// ОЧНЫЙ РЕЖИМ: кафедра может потребовать присутствия для ВСЕХ тестов.
   /// Отдельный тест включает очность сам (Quiz.requiresPresence).
   requirePresence    Boolean @default(false)
+
+  // ---------- Коридор ПОСЕЩАЕМОСТИ (Davomat 2.0 · F1) ----------
+  // Считается в АКАДЕМИЧЕСКИХ ЧАСАХ по предмету, только без уважительной причины
+  // (постановление КМ РУз №824). Как и остальные поля коридора, вниз по уровням
+  // (вуз → факультет → кафедра) можно только УЖЕСТОЧИТЬ.
+  /// Доля часов предмета, пропущенных без причины, после которой студент не
+  /// допускается к итоговому контролю.
+  maxUnexcusedPct       Int     @default(25)
+  /// Порог предупреждения («жёлтая зона») — раньше это была цифра 75 в коде.
+  warnUnexcusedPct      Int     @default(15)
+  /// Пропуски за семестр (все предметы), после которых — отчисление (№393).
+  maxMissedHoursPerTerm Int     @default(74)
+  /// Для каких типов занятий отработка обязательна (лекции обычно не отрабатывают).
+  makeupRequiredFor     MakeupScope    @default(PRACTICE)
+  makeupDeadlineDays    Int            @default(14)
+  /// Срок подачи документа о причине (рабочих дней).
+  excuseDocDeadlineDays Int            @default(3)
+  /// Кто переводит пропуск в «уважительный».
+  excuseApprover        ExcuseApprover @default(DEANERY)
+  /// Опоздание: после скольких минут считается опозданием и после скольких —
+  /// уже пропуском.
+  lateThresholdMin           Int @default(15)
+  lateCountsAsAbsentAfterMin Int @default(45)
+  /// Сколько дней цикла можно пропустить (клеркшипы: 2 дня на 4-6-недельный блок).
+  cycleMaxMissedDays    Int     @default(2)
 
   updatedById Int?
   updatedBy   User?    @relation("PolicyEditor", fields: [updatedById], references: [id])

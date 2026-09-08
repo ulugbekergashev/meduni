@@ -245,7 +245,24 @@ const NUM_FIELDS = [
   "maxQuizAttempts",
   "minAttemptGapHours",
   "minMinutesPerQuestion",
+  // Davomat koridori (F1) — foizlar 0..100 chegarasida.
+  "maxUnexcusedPct",
+  "warnUnexcusedPct",
 ] as const;
+/** Foiz emas — o'z chegarasi bor sonlar (soat, kun, daqiqa). */
+const RANGED_FIELDS: Record<string, number> = {
+  minAttemptGapHours: 720,
+  maxMissedHoursPerTerm: 2000,
+  makeupDeadlineDays: 365,
+  excuseDocDeadlineDays: 60,
+  lateThresholdMin: 240,
+  lateCountsAsAbsentAfterMin: 480,
+  cycleMaxMissedDays: 60,
+};
+const ENUM_FIELDS: Record<string, string[]> = {
+  makeupRequiredFor: ["NONE", "PRACTICE", "ALL"],
+  excuseApprover: ["TEACHER", "DEANERY", "BOTH"],
+};
 const BOOL_FIELDS = [
   "requireAssessment",
   "requireSequential",
@@ -299,6 +316,17 @@ export async function listPolicies(req: Request) {
       minMinutesPerQuestion: r.minMinutesPerQuestion,
       allowManualUnlock: r.allowManualUnlock,
       requirePresence: r.requirePresence,
+      // Davomat koridori (F1)
+      maxUnexcusedPct: r.maxUnexcusedPct,
+      warnUnexcusedPct: r.warnUnexcusedPct,
+      maxMissedHoursPerTerm: r.maxMissedHoursPerTerm,
+      makeupRequiredFor: r.makeupRequiredFor,
+      makeupDeadlineDays: r.makeupDeadlineDays,
+      excuseDocDeadlineDays: r.excuseDocDeadlineDays,
+      excuseApprover: r.excuseApprover,
+      lateThresholdMin: r.lateThresholdMin,
+      lateCountsAsAbsentAfterMin: r.lateCountsAsAbsentAfterMin,
+      cycleMaxMissedDays: r.cycleMaxMissedDays,
       updatedBy: r.updatedBy?.fullName ?? null,
       updatedAt: r.updatedAt.toISOString(),
     })),
@@ -319,21 +347,27 @@ export async function upsertPolicy(req: Request, body: Record<string, unknown>) 
   assertCanEdit(scope, level, scopeId);
 
   const data: Record<string, number | boolean> = {};
+  const dataEnum: Record<string, string> = {};
   for (const f of NUM_FIELDS) {
     const v = body[f];
     if (typeof v === "number" && Number.isFinite(v)) data[f] = Math.max(0, Math.min(100, Math.round(v)));
   }
-  // Часы паузы могут быть больше 100 — отдельный предел.
-  if (typeof body.minAttemptGapHours === "number") {
-    data.minAttemptGapHours = Math.max(0, Math.min(720, Math.round(body.minAttemptGapHours)));
+  // Часы/дни/минуты — не проценты, у каждого свой предел.
+  for (const [f, max] of Object.entries(RANGED_FIELDS)) {
+    const v = body[f];
+    if (typeof v === "number" && Number.isFinite(v)) data[f] = Math.max(0, Math.min(max, Math.round(v)));
   }
   for (const f of BOOL_FIELDS) if (typeof body[f] === "boolean") data[f] = body[f] as boolean;
+  for (const [f, allowed] of Object.entries(ENUM_FIELDS)) {
+    const v = body[f];
+    if (typeof v === "string" && allowed.includes(v)) dataEnum[f] = v;
+  }
 
   // Prisma composite-unique bilan nullable scopeId: qidiruvni qo'lda qilamiz.
   const before = await prisma.learningPolicy.findFirst({ where: { level, scopeId } });
   const row = before
-    ? await prisma.learningPolicy.update({ where: { id: before.id }, data: { ...data, updatedById: userId } })
-    : await prisma.learningPolicy.create({ data: { level, scopeId, ...data, updatedById: userId } });
+    ? await prisma.learningPolicy.update({ where: { id: before.id }, data: { ...data, ...dataEnum, updatedById: userId } as never })
+    : await prisma.learningPolicy.create({ data: { level, scopeId, ...data, ...dataEnum, updatedById: userId } as never });
   invalidatePolicyCache();
 
   await prisma.auditLog.create({
@@ -342,7 +376,7 @@ export async function upsertPolicy(req: Request, body: Record<string, unknown>) 
       action: "UPDATE_LEARNING_POLICY",
       entity: "LearningPolicy",
       entityId: row.id,
-      detailsJson: { level, scopeId, before: before ?? null, after: data } as object,
+      detailsJson: { level, scopeId, before: before ?? null, after: { ...data, ...dataEnum } } as object,
     },
   });
   return { ok: true };

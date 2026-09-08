@@ -27,6 +27,7 @@ const qstr = (v: unknown) => (typeof v === "string" && v ? v : undefined);
 
 // ---------- Admin: AI monitoring / quotas / audit / stats (all admin tiers, scoped) ----------
 import * as control from "../policy/control";
+import * as calendar from "./calendar";
 
 export const adminRouter = Router();
 adminRouter.use(requireRoles(...ADMIN_ROLES));
@@ -38,6 +39,17 @@ adminRouter.get("/stats", wrap(async (req, res) => res.json(await adminStats(awa
 adminRouter.get("/control", wrap(async (req, res) => res.json(await control.getControlReport(req))));
 adminRouter.get("/policies", wrap(async (req, res) => res.json(await control.listPolicies(req))));
 adminRouter.put("/policies", wrap(async (req, res) => res.json(await control.upsertPolicy(req, req.body ?? {}))));
+
+// O'QUV KALENDARI (Davomat 2.0 · F1): semestr sanalari + dars bo'lmaydigan kunlar.
+// Kalendarsiz darslar bayramda ham hosil bo'laveradi va davomat maxraji shishadi.
+adminRouter.get("/terms", wrap(async (_req, res) => res.json(await calendar.listTerms())));
+adminRouter.put("/terms", wrap(async (req, res) => res.json(await calendar.upsertTerm(await adminScope(req), req.body ?? {}))));
+adminRouter.delete("/terms/:id", wrap(async (req, res) => res.json(await calendar.deleteTerm(await adminScope(req), Number(req.params.id)))));
+adminRouter.get("/calendar-exceptions", wrap(async (req, res) =>
+  res.json(await calendar.listExceptions(await adminScope(req), { from: qstr(req.query.from), to: qstr(req.query.to) }))
+));
+adminRouter.post("/calendar-exceptions", wrap(async (req, res) => res.status(201).json(await calendar.createException(await adminScope(req), req.body ?? {}))));
+adminRouter.delete("/calendar-exceptions/:id", wrap(async (req, res) => res.json(await calendar.deleteException(await adminScope(req), Number(req.params.id)))));
 
 adminRouter.get("/search", wrap(async (req, res) => {
   const scope = await adminScope(req);

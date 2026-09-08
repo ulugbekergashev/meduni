@@ -3,7 +3,32 @@ import { prisma } from "../../lib/prisma";
 import { ApiError, badRequest, notFound } from "../../lib/errors";
 import { dateRangeFilter, dayKey, parseDayStart } from "../../lib/time";
 import { getStudentLessons } from "../courses/timetable";
-import { type AttStatus as Status, type AttTally, addMark, attendancePct, emptyTally, markedOf, tallyOf } from "../attendance/facts";
+import { type AttStatus as Status, type AttTally, type AttendanceLimit, addMark, attendanceLimits, attendancePct, emptyTally, markedOf, tallyOf } from "../attendance/facts";
+import { resolvePolicy } from "../policy/service";
+
+/** Kurslar bo'yicha SOATLI limit (koridor kafedra siyosatidan). */
+async function courseLimitsFor(studentId: number, courseIds: number[]): Promise<Map<number, AttendanceLimit>> {
+  const out = new Map<number, AttendanceLimit>();
+  if (courseIds.length === 0) return out;
+  const courses = await prisma.course.findMany({
+    where: { id: { in: courseIds } },
+    select: { id: true, departmentId: true, plannedHours: true },
+  });
+  const me = await prisma.user.findUnique({ where: { id: studentId }, select: { groupId: true } });
+  for (const c of courses) {
+    const policy = await resolvePolicy(c.departmentId);
+    const map = await attendanceLimits({
+      studentIds: [studentId],
+      courseId: c.id,
+      groupId: me?.groupId ?? null,
+      plannedHours: c.plannedHours,
+      corridor: { maxUnexcusedPct: policy.maxUnexcusedPct, warnUnexcusedPct: policy.warnUnexcusedPct },
+    });
+    const row = map.get(studentId);
+    if (row) out.set(c.id, row);
+  }
+  return out;
+}
 
 export async function getMyAttendance(studentId: number, opts: { courseId?: number; from?: string; to?: string }) {
   // ⚠️ Sana oynasi — `lib/time` (ikkala chekka ham mahalliy kun). Ilgari bu yerda
@@ -36,10 +61,21 @@ export async function getMyAttendance(studentId: number, opts: { courseId?: numb
     addMark(monthMap.get(key)!, r.status);
   }
 
+  // ⚠️ F1: KORIDOR — soatlarda. Foiz ma'lumot uchun, limit esa regulyator
+  // (VM №824: fan soatining 25 % i sababsiz → yakuniy nazoratga kiritilmaydi).
+  const limits = await courseLimitsFor(studentId, [...courseMap.keys()]);
+
   return {
     stats: { ...total, pct: attendancePct(total) },
     byCourse: [...courseMap.entries()]
-      .map(([courseId, { name, b }]) => ({ courseId, courseName: name, ...b, marked: markedOf(b), pct: attendancePct(b) }))
+      .map(([courseId, { name, b }]) => ({
+        courseId,
+        courseName: name,
+        ...b,
+        marked: markedOf(b),
+        pct: attendancePct(b),
+        limit: limits.get(courseId) ?? null,
+      }))
       .sort((a, b) => (a.pct ?? 101) - (b.pct ?? 101)), // eng past birinchi — diqqat kerak
     byMonth: [...monthMap.entries()]
       .sort((a, b) => a[0].localeCompare(b[0]))

@@ -3,8 +3,12 @@
 // Yo'qlama (kurs, sana) bo'yicha belgilanadi — LessonSession lazy yaratiladi.
 import { prisma } from "../../lib/prisma";
 import { ApiError, badRequest, notFound } from "../../lib/errors";
+import type { LessonType } from "@prisma/client";
 import { atTime, dayBounds, dayKey, mondayIdx, timeOf } from "../../lib/time";
 import { type AttStatus as Status, ATT_STATUSES as STATUSES, attendancePct, emptyTally, addMark, isAttStatus } from "../attendance/facts";
+import { isNonTeaching, loadExceptions } from "../attendance/calendar";
+
+const LESSON_TYPES: LessonType[] = ["LECTURE", "PRACTICE", "SEMINAR", "LAB", "CLINICAL"];
 
 function forbidden(): ApiError {
   return new ApiError(403, "forbidden", "Bu sizning kursingiz emas", "Это не ваш курс");
@@ -79,20 +83,102 @@ export interface DerivedLesson {
   dayKey: string;
   weekday: number;
   startTime: string;
+  endTime: string | null;
   room: string | null;
+  /** Mashg'ulot turi va akademik soat — davomat limiti shularga tayanadi (F1). */
+  lessonType: LessonType;
+  hours: number;
+  /** Qaysi siklga tegishli (semestr jadvali bo'lsa null). */
+  cycleId: number | null;
   sessionId: number | null; // materializatsiya qilingan bo'lsa
   markedCount: number;
   rosterSize: number;
   status: "UNMARKED" | "PARTIAL" | "FULL";
 }
 
+// ---------- Sikl oynasi va slot tanlash (F1) ----------
+// ⚠️ Sikl endi ALOHIDA jadval (`CourseCycle`): bir (kurs, guruh) juftligi uchun
+// bir NECHTA sikl bo'lishi mumkin (takroriy blok, mehmon guruh, keyingi yil).
+// Eski `CourseGroup.cycleStart/End` — LEGACY fallback (sikl qatori yo'q bo'lsa).
+
+interface CycleWindow {
+  id: number;
+  startKey: string;
+  endKey: string;
+}
+
+type CycleRow = { id: number; groupId: number; startDate: Date; endDate: Date; status: string };
+
+/** Shu (kurs, guruh) uchun BEKOR QILINMAGAN sikl oynalari. */
+function cycleWindowsOf(cycles: CycleRow[], groupId: number | null): CycleWindow[] {
+  if (groupId == null) return [];
+  return cycles
+    .filter((c) => c.groupId === groupId && c.status !== "CANCELLED")
+    .map((c) => ({ id: c.id, startKey: dayKey(c.startDate), endKey: dayKey(c.endDate) }));
+}
+
+/** Legacy oyna — `CourseGroup.cycleStart/End` (sikl qatorlari bo'lmaganda). */
+function legacyWindow(cg?: { cycleStart: Date | null; cycleEnd: Date | null } | null): CycleWindow | null {
+  if (!cg?.cycleStart || !cg?.cycleEnd) return null;
+  return { id: 0, startKey: dayKey(cg.cycleStart), endKey: dayKey(cg.cycleEnd) };
+}
+
+type SlotRow = {
+  id: number;
+  groupId: number | null;
+  weekday: number;
+  startTime: string;
+  endTime: string | null;
+  room: string | null;
+  lessonType: LessonType;
+  hours: number;
+  cycleId: number | null;
+};
+
+/**
+ * Shu kunda shu (kurs, guruh) uchun o'tiladigan slotlar.
+ * Qoida: siklga bog'langan slot FAQAT o'z sikli oynasida; bog'lanmagan slot —
+ * umumiy jadval (legacy oyna bo'lsa, uning ichida).
+ */
+function slotsOnDay(
+  slots: SlotRow[],
+  groupId: number | null,
+  weekday: number,
+  key: string,
+  windows: CycleWindow[],
+  legacy: CycleWindow | null
+): SlotRow[] {
+  const openCycleIds = new Set(windows.filter((w) => key >= w.startKey && key <= w.endKey).map((w) => w.id));
+  const legacyOpen = !legacy || (key >= legacy.startKey && key <= legacy.endKey);
+  return slots.filter((s) => {
+    if (s.weekday !== weekday) return false;
+    if (s.groupId != null && s.groupId !== groupId) return false;
+    if (s.cycleId != null) return openCycleIds.has(s.cycleId);
+    // Sikl qatorlari bor, lekin bu slot ularga bog'lanmagan — umumiy jadval:
+    // legacy oyna qoidasiga bo'ysunadi (yo'q bo'lsa — har doim).
+    return legacyOpen;
+  });
+}
+
+/** Slot bog'langan (yoki o'sha kunda ochiq) sikl — sessiyaga yozish uchun. */
+function cycleIdFor(slot: SlotRow, key: string, windows: CycleWindow[]): number | null {
+  if (slot.cycleId != null) return slot.cycleId;
+  const open = windows.find((w) => key >= w.startKey && key <= w.endKey);
+  return open && open.id > 0 ? open.id : null;
+}
+
 /** O'qituvchining barcha kurslari uchun [from..to] oraliqdagi darslar (slotlardan
  *  hosil qilinadi) + yo'qlama holati. Qidiruv kurs/guruh bo'yicha. */
 export async function getTeacherLessons(teacherId: number, opts: { from: string; to: string; search?: string }): Promise<DerivedLesson[]> {
-  const courses = await prisma.course.findMany({
-    where: { teacherId },
-    include: { scheduleSlots: true, courseGroups: { include: { group: true } } },
-  });
+  const [courses, exceptions] = await Promise.all([
+    prisma.course.findMany({
+      where: { teacherId },
+      include: { scheduleSlots: true, courseGroups: { include: { group: true } }, cycles: true },
+    }),
+    // ⚠️ Bayram/sessiya kunlarida dars hosil qilinmaydi (F1). Kalendar bo'sh
+    // bo'lsa hech narsa filtrlanmaydi — eski xatti-harakat saqlanadi.
+    loadExceptions(opts.from, opts.to),
+  ]);
   const q = opts.search?.trim().toLowerCase();
 
   const fromB = dayBounds(opts.from).gte;
@@ -131,25 +217,27 @@ export async function getTeacherLessons(teacherId: number, opts: { from: string;
   const out: DerivedLesson[] = [];
   for (const c of courses) {
     if (c.scheduleSlots.length === 0) continue;
-    for (let d = new Date(fromB); d < toB; d.setDate(d.getDate() + 1)) {
-      const wd = mondayIdx(d);
-      const dk = dayKey(d);
-      for (const slot of c.scheduleSlots) {
-        if (slot.weekday !== wd) continue;
-        // Slot qaysi guruh(lar)ga: ko'rsatilgan bo'lsa — o'sha; aks holda kursning barcha guruhlari.
-        const targetGroups = slot.groupId != null ? [slot.groupId] : c.courseGroups.map((cg) => cg.groupId);
-        for (const gid of targetGroups) {
-          // Sikl davri: kurs shu guruhga faqat oraliqda o'tiladi — tashqarisida dars yo'q.
-          const cg = c.courseGroups.find((x) => x.groupId === gid);
-          if (cg?.cycleStart && cg?.cycleEnd && (dk < dayKey(cg.cycleStart) || dk > dayKey(cg.cycleEnd))) continue;
-          const gName = groupName(c, gid);
-          if (q && !(c.name.toLowerCase().includes(q) || (gName?.toLowerCase().includes(q) ?? false))) continue;
-          const rosterSize = rosterByCG.get(`${c.id}:${gid}`) ?? 0;
+    // Kurs guruhlari: slot guruhga bog'lanmagan bo'lsa hammasiga tegishli.
+    const groupIds = [...new Set(c.courseGroups.map((cg) => cg.groupId))];
+    for (const gid of groupIds) {
+      const cg = c.courseGroups.find((x) => x.groupId === gid);
+      const facultyId = cg?.group.facultyId ?? null;
+      const gName = groupName(c, gid);
+      if (q && !(c.name.toLowerCase().includes(q) || (gName?.toLowerCase().includes(q) ?? false))) continue;
+      const windows = cycleWindowsOf(c.cycles, gid);
+      const legacy = windows.length === 0 ? legacyWindow(cg) : null;
+      const rosterSize = rosterByCG.get(`${c.id}:${gid}`) ?? 0;
+
+      for (let d = new Date(fromB); d < toB; d.setDate(d.getDate() + 1)) {
+        const wd = mondayIdx(d);
+        const dk = dayKey(d);
+        if (isNonTeaching(exceptions, dk, facultyId)) continue;
+        const daySlots = slotsOnDay(c.scheduleSlots, gid, wd, dk, windows, legacy);
+        for (const slot of daySlots) {
           // Dars = sana+vaqt: avval aniq kalit; kunda bitta slot bo'lsagina legacy kun-kalit.
-          const slotsToday = c.scheduleSlots.filter((s2) => s2.weekday === wd && (s2.groupId == null || s2.groupId === gid)).length;
           const mat =
             sessionByKey.get(`${c.id}:${gid}:${dk}|${slot.startTime}`) ??
-            (slotsToday <= 1 ? sessionByKey.get(`${c.id}:${gid}:${dk}`) : undefined);
+            (daySlots.length <= 1 ? sessionByKey.get(`${c.id}:${gid}:${dk}`) : undefined);
           const marked = mat?.marked ?? 0;
           const status = marked === 0 ? "UNMARKED" : marked >= rosterSize ? "FULL" : "PARTIAL";
           out.push({
@@ -162,7 +250,11 @@ export async function getTeacherLessons(teacherId: number, opts: { from: string;
             dayKey: dk,
             weekday: slot.weekday,
             startTime: slot.startTime,
+            endTime: slot.endTime,
             room: slot.room,
+            lessonType: slot.lessonType,
+            hours: slot.hours,
+            cycleId: cycleIdFor(slot, dk, windows),
             sessionId: mat?.id ?? null,
             markedCount: marked,
             rosterSize,
@@ -190,6 +282,10 @@ export interface StudentLesson {
   groupId: number | null;
   title: string | null;
   isPast: boolean;
+  /** Mashg'ulot turi va akademik soat (F1) — talaba ham ko'radi. */
+  lessonType: LessonType;
+  hours: number;
+  endTime: string | null;
   /** Talabaning shu darsdagi yo'qlama holati (belgilanmagan bo'lsa null). */
   myStatus: Status | null;
 }
@@ -199,13 +295,20 @@ export interface StudentLesson {
  *  bo'yicha, sikl oynasini hisobga oladi, yo'qlama holatini join qiladi.
  *  `getTeacherLessons` strukturasini ko'zgu qiladi, lekin bitta talabaga. */
 export async function getStudentLessons(studentId: number, from: string, to: string): Promise<StudentLesson[]> {
-  const me = await prisma.user.findUnique({ where: { id: studentId }, select: { groupId: true } });
-  const myGroupId = me?.groupId ?? null;
-
-  const enrollments = await prisma.enrollment.findMany({
-    where: { studentId, status: "ACTIVE" },
-    include: { course: { include: { scheduleSlots: true, courseGroups: true } } },
+  const me = await prisma.user.findUnique({
+    where: { id: studentId },
+    select: { groupId: true, group: { select: { facultyId: true } } },
   });
+  const myGroupId = me?.groupId ?? null;
+  const myFacultyId = me?.group?.facultyId ?? null;
+
+  const [enrollments, exceptions] = await Promise.all([
+    prisma.enrollment.findMany({
+      where: { studentId, status: "ACTIVE" },
+      include: { course: { include: { scheduleSlots: true, courseGroups: true, cycles: true } } },
+    }),
+    loadExceptions(from, to),
+  ]);
   const courses = enrollments.map((e) => e.course);
   const courseIds = courses.map((c) => c.id);
 
@@ -241,12 +344,13 @@ export async function getStudentLessons(studentId: number, from: string, to: str
     // Talaba shu kursda faqat O'Z guruhi bilan qatnashadi; slot.groupId==null (legacy)
     // bo'lsa ham talabaning guruhiga tegishli. Sikl oynasi shu (kurs, guruh) bo'yicha.
     const cg = c.courseGroups.find((x) => x.groupId === myGroupId);
+    const windows = cycleWindowsOf(c.cycles, myGroupId);
+    const legacy = windows.length === 0 ? legacyWindow(cg) : null;
     for (let d = new Date(fromB); d < toB; d.setDate(d.getDate() + 1)) {
       const wd = mondayIdx(d);
       const dk = dayKey(d);
-      // Sikl davri: kurs shu guruhga faqat oraliqda o'tiladi.
-      if (cg?.cycleStart && cg?.cycleEnd && (dk < dayKey(cg.cycleStart) || dk > dayKey(cg.cycleEnd))) continue;
-      const daySlots = c.scheduleSlots.filter((s) => s.weekday === wd && (s.groupId == null || s.groupId === myGroupId));
+      if (isNonTeaching(exceptions, dk, myFacultyId)) continue;
+      const daySlots = slotsOnDay(c.scheduleSlots, myGroupId, wd, dk, windows, legacy);
       for (const slot of daySlots) {
         const dt = atTime(dk, slot.startTime);
         const mat =
@@ -262,6 +366,9 @@ export async function getStudentLessons(studentId: number, from: string, to: str
           groupId: myGroupId,
           title: null,
           isPast: dt < now,
+          lessonType: slot.lessonType,
+          hours: slot.hours,
+          endTime: slot.endTime,
           myStatus: mat?.status ?? null,
         });
       }
@@ -276,10 +383,14 @@ export async function getStudentLessons(studentId: number, from: string, to: str
  *  (markedCount/rosterSize) bilan. `getTeacherLessons` naqshini ko'zgu qiladi, lekin
  *  bitta guruhga va o'qituvchi filtri yo'q. */
 export async function getGroupLessons(groupId: number, from: string, to: string): Promise<DerivedLesson[]> {
-  const cgs = await prisma.courseGroup.findMany({
-    where: { groupId },
-    include: { course: { include: { scheduleSlots: true } } },
-  });
+  const [cgs, group, exceptions] = await Promise.all([
+    prisma.courseGroup.findMany({
+      where: { groupId },
+      include: { course: { include: { scheduleSlots: true, cycles: true } } },
+    }),
+    prisma.studentGroup.findUnique({ where: { id: groupId }, select: { name: true, facultyId: true } }),
+    loadExceptions(from, to),
+  ]);
   if (cgs.length === 0) return [];
 
   const fromB = dayBounds(from).gte;
@@ -308,11 +419,13 @@ export async function getGroupLessons(groupId: number, from: string, to: string)
     const c = cg.course;
     if (c.scheduleSlots.length === 0) continue;
     const roster = rosterByCourse.get(c.id) ?? 0;
+    const windows = cycleWindowsOf(c.cycles, groupId);
+    const legacy = windows.length === 0 ? legacyWindow(cg) : null;
     for (let d = new Date(fromB); d < toB; d.setDate(d.getDate() + 1)) {
       const wd = mondayIdx(d);
       const dk = dayKey(d);
-      if (cg.cycleStart && cg.cycleEnd && (dk < dayKey(cg.cycleStart) || dk > dayKey(cg.cycleEnd))) continue;
-      const daySlots = c.scheduleSlots.filter((s) => s.weekday === wd && (s.groupId == null || s.groupId === groupId));
+      if (isNonTeaching(exceptions, dk, group?.facultyId ?? null)) continue;
+      const daySlots = slotsOnDay(c.scheduleSlots, groupId, wd, dk, windows, legacy);
       for (const slot of daySlots) {
         const mat =
           sessionByKey.get(`${c.id}:${dk}|${slot.startTime}`) ??
@@ -323,12 +436,17 @@ export async function getGroupLessons(groupId: number, from: string, to: string)
           courseId: c.id,
           courseName: c.name,
           groupId,
-          groupName: null,
+          // ⚠️ Ilgari qattiq `null` edi — admin jadvalida guruh nomi ko'rinmasdi.
+          groupName: group?.name ?? null,
           slotId: slot.id,
           date: atTime(dk, slot.startTime).toISOString(),
           dayKey: dk,
           weekday: slot.weekday,
           startTime: slot.startTime,
+          endTime: slot.endTime,
+          lessonType: slot.lessonType,
+          hours: slot.hours,
+          cycleId: cycleIdFor(slot, dk, windows),
           room: slot.room,
           sessionId: mat?.id ?? null,
           markedCount: marked,
@@ -369,11 +487,18 @@ export async function setupCycle(
   courseId: number,
   groupId: number,
   teacherId: number,
-  body: { cycleStart: string; cycleEnd: string; days: { weekday: number; startTime: string; room?: string }[] }
+  body: {
+    cycleStart: string;
+    cycleEnd: string;
+    days: { weekday: number; startTime: string; room?: string; lessonType?: LessonType; hours?: number }[];
+  }
 ) {
-  await ownCourse(courseId, teacherId);
-  const cg = await prisma.courseGroup.findFirst({ where: { courseId, groupId } });
+  const course = await ownCourse(courseId, teacherId);
+  const cg = await prisma.courseGroup.findFirst({ where: { courseId, groupId }, include: { group: { select: { facultyId: true } } } });
   if (!cg) throw badRequest("Guruh bu kursga biriktirilmagan", "Группа не привязана к курсу");
+  // Mehmon sikli: guruh kurs kafedrasining fakultetidan emas.
+  const dept = await prisma.department.findUnique({ where: { id: course.departmentId }, select: { facultyId: true } });
+  const guest = cg.group.facultyId !== dept?.facultyId;
   const start = new Date(body.cycleStart);
   const end = new Date(body.cycleEnd);
   if (isNaN(+start) || isNaN(+end)) throw badRequest("Sana notoʻgʻri", "Неверная дата");
@@ -390,7 +515,13 @@ export async function setupCycle(
   if (days.length === 0) throw badRequest("Kamida bitta kun tanlang", "Выберите хотя бы один день");
 
   // Vaqtlarni AVVAL tekshiramiz — validatsiya xatosi bazani o'zgartirmasin.
-  const rows = days.map((d) => ({ courseId, groupId, weekday: d.weekday, startTime: norm(d.startTime), room: d.room?.trim() || null }));
+  const normalized = days.map((d) => ({
+    weekday: d.weekday,
+    startTime: norm(d.startTime),
+    room: d.room?.trim() || null,
+    lessonType: (d.lessonType && LESSON_TYPES.includes(d.lessonType) ? d.lessonType : "PRACTICE") as LessonType,
+    hours: Number.isInteger(d.hours) && d.hours! > 0 && d.hours! <= 12 ? d.hours! : 2,
+  }));
 
   // ⚠️ TRANZAKSIYA (2026-09-08): bu amal guruhning BUTUN jadvalini o'chirib qayta
   // yozadi. Ilgari uch alohida so'rov edi — o'rtada uzilsa guruh jadvalsiz qolardi.
@@ -399,10 +530,26 @@ export async function setupCycle(
     select: { weekday: true, startTime: true, room: true },
     orderBy: [{ weekday: "asc" }, { startTime: "asc" }],
   });
+  // ⚠️ F1: sikl endi ALOHIDA qator (`CourseCycle`) — takroriy sikl mumkin.
+  // `CourseGroup.cycleStart/End` legacy uchun yangilanib turadi (eski o'quvchilar).
+  // Ayni oynadagi sikl bo'lsa — yangilanadi, aks holda YANGI sikl ochiladi.
+  const existingCycle = await prisma.courseCycle.findFirst({
+    where: { courseId, groupId, status: { not: "CANCELLED" }, startDate: start },
+  });
+  const cycle = existingCycle
+    ? await prisma.courseCycle.update({ where: { id: existingCycle.id }, data: { endDate: end } })
+    : await prisma.courseCycle.create({
+        data: { courseId, groupId, startDate: start, endDate: end, isGuest: guest, createdById: teacherId },
+      });
+
+  // ⚠️ FAQAT SHU SIKL slotlari almashtiriladi (+ siklga bog'lanmagan legacy
+  // slotlar, ular bo'lmasa ikki marta dars hosil bo'lardi). Ilgari bu yerda
+  // `deleteMany({ courseId, groupId })` edi — ikkinchi siklni sozlash BIRINCHI
+  // siklning jadvalini ham o'chirib yuborardi (F1 smoke shuni ko'rsatdi).
   await prisma.$transaction([
     prisma.courseGroup.update({ where: { id: cg.id }, data: { cycleStart: start, cycleEnd: end } }),
-    prisma.scheduleSlot.deleteMany({ where: { courseId, groupId } }),
-    prisma.scheduleSlot.createMany({ data: rows }),
+    prisma.scheduleSlot.deleteMany({ where: { courseId, groupId, OR: [{ cycleId: cycle.id }, { cycleId: null }] } }),
+    prisma.scheduleSlot.createMany({ data: normalized.map((r) => ({ ...r, courseId, groupId, cycleId: cycle.id })) }),
   ]);
 
   // ⚠️ AUDIT: jadvalni qayta yozish — izsiz bo'lmasligi kerak (ilgari hech qanday
@@ -420,7 +567,8 @@ export async function setupCycle(
           cycleStart: body.cycleStart,
           cycleEnd: body.cycleEnd,
           before: prev,
-          after: rows.map((r) => ({ weekday: r.weekday, startTime: r.startTime, room: r.room })),
+          cycleId: cycle.id,
+          after: normalized.map((r) => ({ weekday: r.weekday, startTime: r.startTime, room: r.room, lessonType: r.lessonType, hours: r.hours })),
         },
       },
     })
@@ -461,11 +609,36 @@ async function findSession(courseId: number, groupId: number | null, dateKey: st
   return slots <= 1 && daySessions.length === 1 ? daySessions[0] : null;
 }
 
+/** Shu (kurs, guruh, kun, vaqt) uchun haftalik slot — dars turi/soati manbai. */
+async function slotFor(courseId: number, groupId: number | null, dateKey: string, startTime: string) {
+  const wd = mondayIdx(dayBounds(dateKey).gte);
+  return prisma.scheduleSlot.findFirst({
+    where: {
+      courseId,
+      weekday: wd,
+      startTime,
+      ...(groupId == null ? { groupId: null } : { OR: [{ groupId }, { groupId: null }] }),
+    },
+    // Guruhga aniq bog'langan slot ustun.
+    orderBy: { groupId: "desc" },
+  });
+}
+
 export async function ensureSession(courseId: number, groupId: number | null, dateKey: string, startTime: string, teacherId: number): Promise<number> {
   const existing = await findSession(courseId, groupId, dateKey, startTime);
   if (existing) return existing.id;
+  // ⚠️ F1: dars TUR va SOATni slotdan MEROS qilib oladi va o'zida saqlaydi —
+  // keyin jadval o'zgarsa, o'tgan darsning soati o'zgarmaydi (davomat maxraji
+  // tarixiy bo'lib qoladi).
+  const slot = await slotFor(courseId, groupId, dateKey, startTime);
   const created = await prisma.lessonSession.create({
-    data: { courseId, groupId, date: atTime(dateKey, startTime), createdById: teacherId },
+    data: {
+      courseId,
+      groupId,
+      date: atTime(dateKey, startTime),
+      createdById: teacherId,
+      ...(slot ? { lessonType: slot.lessonType, hours: slot.hours, slotId: slot.id, cycleId: slot.cycleId } : {}),
+    },
   });
   return created.id;
 }

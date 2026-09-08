@@ -159,3 +159,132 @@ export async function tallyByCourse(where: Prisma.AttendanceWhereInput): Promise
   }
   return out;
 }
+
+// ---------- AKADEMIK SOAT va KORIDOR (F1) ----------
+//
+// ⚠️ Nizom davomatni DARSDA emas, SOATDA hisoblaydi:
+//   VM №824 — fanga ajratilgan auditoriya soatining 25 % i SABABSIZ qoldirilsa,
+//   talaba shu fandan chetlatilib, yakuniy nazoratga kiritilmaydi;
+//   VM №393 — semestrda 74 soatdan ortiq qoldirilsa, chetlashtirish.
+// Shu sabab "davomat %" (yuqorida) — MA'LUMOT uchun, koridor esa SOATDA.
+//
+// Muhim farq: bu yerda maxraj — REJADAGI soat (`Course.plannedHours`, o'quv
+// rejasidan), belgilangan darslar emas. Reja kiritilmagan bo'lsa — o'tkazilgan
+// (HELD) darslar soatlari yig'indisi (kam baho beradi, lekin yolg'on emas).
+
+export type AttZone = "OK" | "WARN" | "DANGER" | "BLOCKED";
+
+export interface AttendanceLimit {
+  /** Maxraj: rejadagi (yoki o'tkazilgan) auditoriya soati. */
+  plannedHours: number;
+  /** O'tkazilgan (HELD) darslar soati — nazorat uchun. */
+  heldHours: number;
+  presentHours: number;
+  lateHours: number;
+  excusedHours: number;
+  /** SABABSIZ soat — koridorning asosiy raqami. */
+  unexcusedHours: number;
+  /** Limit: plannedHours × maxUnexcusedPct / 100. */
+  limitHours: number;
+  /** Limitgacha qolgan soat (manfiy bo'lmaydi). */
+  remainingHours: number;
+  /** Sababsiz ulush (%). Maxraj 0 bo'lsa null. */
+  unexcusedPct: number | null;
+  zone: AttZone;
+}
+
+export interface AttendanceCorridor {
+  maxUnexcusedPct: number;
+  warnUnexcusedPct: number;
+}
+
+/** Bitta darsning "og'irligi" — DANGER zonasini aniqlash uchun (odatda 2 soat). */
+const LESSON_HOURS = 2;
+
+export function zoneOf(unexcusedHours: number, limitHours: number, unexcusedPct: number | null, corridor: AttendanceCorridor): AttZone {
+  if (unexcusedPct === null) return "OK";
+  if (unexcusedPct >= corridor.maxUnexcusedPct) return "BLOCKED";
+  // Bitta darsdan kam qolgan bo'lsa — "yana bitta dars va limit tugaydi".
+  if (limitHours > 0 && limitHours - unexcusedHours <= LESSON_HOURS) return "DANGER";
+  if (unexcusedPct >= corridor.warnUnexcusedPct) return "WARN";
+  return "OK";
+}
+
+/**
+ * Talabalar × kurs kesimida SOATLI hisob.
+ * ⚠️ CANCELLED ("dars bo'lmadi") darslar maxrajga ham, sanoqqa ham KIRMAYDI —
+ * talabaning aybi emas.
+ */
+export async function attendanceLimits(params: {
+  studentIds: number[];
+  courseId: number;
+  groupId?: number | null;
+  plannedHours?: number | null;
+  corridor: AttendanceCorridor;
+}): Promise<Map<number, AttendanceLimit>> {
+  const { studentIds, courseId, groupId, corridor } = params;
+  const out = new Map<number, AttendanceLimit>();
+  if (studentIds.length === 0) return out;
+
+  const [marks, held] = await Promise.all([
+    prisma.attendance.findMany({
+      where: {
+        studentId: { in: studentIds },
+        session: { courseId, status: "HELD", ...(groupId ? { groupId } : {}) },
+      },
+      select: { studentId: true, status: true, session: { select: { hours: true } } },
+    }),
+    prisma.lessonSession.aggregate({
+      where: { courseId, status: "HELD", ...(groupId ? { groupId } : {}) },
+      _sum: { hours: true },
+    }),
+  ]);
+
+  const heldHours = held._sum.hours ?? 0;
+  const plannedHours = params.plannedHours && params.plannedHours > 0 ? params.plannedHours : heldHours;
+  const limitHours = Math.round((plannedHours * corridor.maxUnexcusedPct) / 100);
+
+  const blank = (): AttendanceLimit => ({
+    plannedHours,
+    heldHours,
+    presentHours: 0,
+    lateHours: 0,
+    excusedHours: 0,
+    unexcusedHours: 0,
+    limitHours,
+    remainingHours: limitHours,
+    unexcusedPct: plannedHours > 0 ? 0 : null,
+    zone: "OK",
+  });
+  for (const id of studentIds) out.set(id, blank());
+
+  for (const m of marks) {
+    const row = out.get(m.studentId);
+    if (!row) continue;
+    const h = m.session.hours;
+    if (m.status === "PRESENT") row.presentHours += h;
+    else if (m.status === "LATE") row.lateHours += h;
+    else if (m.status === "EXCUSED") row.excusedHours += h;
+    else if (m.status === "ABSENT") row.unexcusedHours += h;
+  }
+
+  for (const row of out.values()) {
+    row.unexcusedPct = plannedHours > 0 ? Math.round((row.unexcusedHours / plannedHours) * 100) : null;
+    row.remainingHours = Math.max(0, limitHours - row.unexcusedHours);
+    row.zone = zoneOf(row.unexcusedHours, limitHours, row.unexcusedPct, corridor);
+  }
+  return out;
+}
+
+/** Semestr bo'yicha jami qoldirilgan soat (№393 — 74 soat chegarasi). */
+export async function missedHoursInTerm(studentId: number, from?: Date, to?: Date): Promise<number> {
+  const marks = await prisma.attendance.findMany({
+    where: {
+      studentId,
+      status: { in: ["ABSENT", "EXCUSED"] },
+      session: { status: "HELD", ...(from || to ? { date: { ...(from ? { gte: from } : {}), ...(to ? { lte: to } : {}) } } : {}) },
+    },
+    select: { session: { select: { hours: true } } },
+  });
+  return marks.reduce((s, m) => s + m.session.hours, 0);
+}

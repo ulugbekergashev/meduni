@@ -87,6 +87,9 @@ export async function createCourse(input: {
   semester: number;
   academicYear: string;
   groupIds: number[];
+  /** SIKL kursi boshqa fakultet guruhini qabul qila oladi (mehmon sikli). */
+  format?: "SEMESTER" | "CYCLE";
+  plannedHours?: number | null;
 }) {
   const department = await prisma.department.findUnique({ where: { id: input.departmentId } });
   if (!department) throw notFound("Kafedra");
@@ -109,6 +112,8 @@ export async function createCourse(input: {
       teacherId: input.teacherId,
       semester: input.semester,
       academicYear: input.academicYear.trim(),
+      format: input.format ?? "SEMESTER",
+      ...(input.plannedHours != null ? { plannedHours: input.plannedHours } : {}),
       courseGroups: { create: groupIds.map((groupId) => ({ groupId })) },
     },
   });
@@ -264,7 +269,7 @@ export async function listTeacherCourses(teacherId: number) {
 async function ownCourseWithFaculty(courseId: number, teacherId: number) {
   const c = await prisma.course.findUnique({
     where: { id: courseId },
-    select: { id: true, teacherId: true, department: { select: { facultyId: true } } },
+    select: { id: true, teacherId: true, format: true, department: { select: { facultyId: true } } },
   });
   if (!c) throw notFound("Kurs");
   if (c.teacherId !== teacherId) throw forbidden("Bu sizning kursingiz emas", "Это не ваш курс");
@@ -276,20 +281,39 @@ export async function listAssignableGroups(courseId: number, teacherId: number) 
   const c = await ownCourseWithFaculty(courseId, teacherId);
   const attached = await prisma.courseGroup.findMany({ where: { courseId }, select: { groupId: true } });
   const attachedIds = attached.map((a) => a.groupId);
+  // ⚠️ MEHMON SIKLLARI (F1): SIKL formatidagi kursga BOSHQA fakultet guruhi ham
+  // biriktiriladi — tibbiyot vuzida 4-6 kurslar kafedralarni navbat bilan o'tadi
+  // va boshqa fakultet guruhi kafedraga "mehmonga" keladi. Semestr kursida esa
+  // eski qoida qoladi (o'z fakulteti).
   const groups = await prisma.studentGroup.findMany({
-    where: { facultyId: c.department.facultyId, ...(attachedIds.length ? { id: { notIn: attachedIds } } : {}) },
+    where: {
+      ...(c.format === "CYCLE" ? {} : { facultyId: c.department.facultyId }),
+      ...(attachedIds.length ? { id: { notIn: attachedIds } } : {}),
+    },
     orderBy: { name: "asc" },
-    include: { _count: { select: { students: true } } },
+    include: { _count: { select: { students: true } }, faculty: { select: { name: true } } },
   });
-  return groups.map((g) => ({ id: g.id, name: g.name, yearOfStudy: g.yearOfStudy, studentCount: g._count.students }));
+  return groups.map((g) => ({
+    id: g.id,
+    name: g.name,
+    yearOfStudy: g.yearOfStudy,
+    studentCount: g._count.students,
+    facultyName: g.faculty.name,
+    /** Boshqa fakultetdan — UI "mehmon" deb belgilaydi. */
+    isGuest: g.facultyId !== c.department.facultyId,
+  }));
 }
 
 export async function teacherAttachGroup(courseId: number, teacherId: number, groupId: number) {
   const c = await ownCourseWithFaculty(courseId, teacherId);
   const group = await prisma.studentGroup.findUnique({ where: { id: groupId } });
   if (!group) throw notFound("Guruh");
-  if (group.facultyId !== c.department.facultyId) {
-    throw badRequest("Guruh boshqa fakultetdan", "Группа из другого факультета");
+  // Boshqa fakultet guruhi — faqat SIKL formatidagi kursga (mehmon sikli).
+  if (group.facultyId !== c.department.facultyId && c.format !== "CYCLE") {
+    throw badRequest(
+      "Guruh boshqa fakultetdan — mehmon guruh faqat SIKL kursiga biriktiriladi",
+      "Группа с другого факультета — гостевую группу можно прикрепить только к цикловому курсу"
+    );
   }
   const exists = await prisma.courseGroup.findFirst({ where: { courseId, groupId } });
   if (!exists) await prisma.courseGroup.create({ data: { courseId, groupId } });
@@ -343,17 +367,22 @@ function currentAcademicYear(): string {
 export async function teacherCreateCourse(
   teacherId: number,
   // Semestr endi FORMADA yo'q (buyurtmachi: keraksiz) — modelda qoladi, default 1.
-  input: { name: string; description?: string; groupIds: number[]; semester?: number; academicYear?: string }
+  input: { name: string; description?: string; groupIds: number[]; semester?: number; academicYear?: string; format?: "SEMESTER" | "CYCLE" }
 ) {
   const profile = await prisma.teacherProfile.findUnique({ where: { userId: teacherId } });
   if (!profile) throw badRequest("Sizga kafedra biriktirilmagan", "Вам не назначена кафедра");
   if (!input.name.trim()) throw badRequest("Kurs nomi kerak", "Требуется название курса");
   if (input.groupIds.length === 0) throw badRequest("Kamida bitta guruh tanlang", "Выберите хотя бы одну группу");
-  // Guruhlar o'qituvchi fakultetidan bo'lishi shart (begona fakultetga yozib bo'lmaydi).
+  // Guruhlar o'qituvchi fakultetidan bo'lishi shart — SIKL kursi bundan mustasno
+  // (mehmon guruh boshqa fakultetdan keladi).
   const groups = await prisma.studentGroup.findMany({ where: { id: { in: input.groupIds } }, select: { id: true, facultyId: true } });
   const facultyId = (await prisma.department.findUniqueOrThrow({ where: { id: profile.departmentId }, select: { facultyId: true } })).facultyId;
-  if (groups.length !== input.groupIds.length || groups.some((g) => g.facultyId !== facultyId)) {
-    throw badRequest("Guruh sizning fakultetingizdan emas", "Группа не из вашего факультета");
+  const isCycle = input.format === "CYCLE";
+  if (groups.length !== input.groupIds.length || (!isCycle && groups.some((g) => g.facultyId !== facultyId))) {
+    throw badRequest(
+      "Guruh sizning fakultetingizdan emas (mehmon guruh uchun kurs formatini SIKL qiling)",
+      "Группа не из вашего факультета (для гостевой группы выберите формат курса «цикл»)"
+    );
   }
   const semester = input.semester && input.semester >= 1 && input.semester <= 8 ? input.semester : 1;
   const academicYear = input.academicYear?.trim() || currentAcademicYear();
@@ -365,6 +394,7 @@ export async function teacherCreateCourse(
     semester,
     academicYear,
     groupIds: input.groupIds,
+    format: isCycle ? "CYCLE" : "SEMESTER",
   });
 }
 
