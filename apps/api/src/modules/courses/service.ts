@@ -5,6 +5,7 @@ import type { UnlockRule } from "../me/rules";
 import { ApiError, badRequest, forbidden, notFound } from "../../lib/errors";
 import { buildMatrix } from "./progress";
 import { loadCourse } from "../me/service";
+import { attendancePct, attendanceStats, tallyByStatus, tallyOf } from "../attendance/facts";
 
 const courseInclude = {
   department: true,
@@ -242,16 +243,8 @@ export async function getCourseDetail(id: number) {
   }));
 
   // Davomat xulosasi — kurs bo'yicha (barcha guruhlar).
-  const attRows = await prisma.attendance.groupBy({ by: ["status"], where: { session: { courseId: id } }, _count: true });
-  let present = 0, absent = 0, late = 0, excused = 0;
-  for (const a of attRows) {
-    if (a.status === "PRESENT") present += a._count;
-    else if (a.status === "ABSENT") absent += a._count;
-    else if (a.status === "LATE") late += a._count;
-    else if (a.status === "EXCUSED") excused += a._count;
-  }
-  const marked = present + absent + late + excused;
-  const attendanceSummary = { present, absent, late, excused, marked, pct: marked ? Math.round(((present + late) / marked) * 100) : null };
+  // Sanoq + foiz — umumiy `attendance/facts.ts` (shakl o'zgarmagan).
+  const attendanceSummary = attendanceStats(await tallyByStatus({ session: { courseId: id } }));
 
   return { ...out, students, topicCount, schedule, attendanceSummary };
 }
@@ -578,18 +571,7 @@ export async function listTeacherGroups(teacherId: number) {
 
       let avgAttendance: number | null = null;
       if (gIds.size > 0 && courseIds.length > 0) {
-        const marks = await prisma.attendance.groupBy({
-          by: ["status"],
-          where: { studentId: { in: [...gIds] }, session: { courseId: { in: courseIds } } },
-          _count: true,
-        });
-        let present = 0, late = 0, marked = 0;
-        for (const m of marks) {
-          marked += m._count;
-          if (m.status === "PRESENT") present += m._count;
-          else if (m.status === "LATE") late += m._count;
-        }
-        avgAttendance = marked === 0 ? null : Math.round(((present + late) / marked) * 100);
+        avgAttendance = attendancePct(await tallyByStatus({ studentId: { in: [...gIds] }, session: { courseId: { in: courseIds } } }));
       }
 
       return {

@@ -1,31 +1,14 @@
 import argon2 from "argon2";
-import type { Prisma } from "../../lib/prisma";
 import { prisma } from "../../lib/prisma";
 import { ApiError, badRequest, notFound } from "../../lib/errors";
+import { dateRangeFilter, dayKey, parseDayStart } from "../../lib/time";
 import { getStudentLessons } from "../courses/timetable";
-
-type Status = "PRESENT" | "ABSENT" | "LATE" | "EXCUSED";
-
-function dateRange(from?: string, to?: string): Prisma.DateTimeFilter | undefined {
-  const f: Prisma.DateTimeFilter = {};
-  if (from) f.gte = new Date(from);
-  if (to) {
-    const end = new Date(to);
-    end.setHours(23, 59, 59, 999);
-    f.lte = end;
-  }
-  return from || to ? f : undefined;
-}
-
-/** Attendance % = came (present + late) out of sessions actually marked for the
- *  student. Same formula the teacher's report uses, so the numbers match. */
-function attendancePct(present: number, absent: number, late: number, excused: number): number | null {
-  const marked = present + absent + late + excused;
-  return marked === 0 ? null : Math.round(((present + late) / marked) * 100);
-}
+import { type AttStatus as Status, type AttTally, addMark, attendancePct, emptyTally, markedOf, tallyOf } from "../attendance/facts";
 
 export async function getMyAttendance(studentId: number, opts: { courseId?: number; from?: string; to?: string }) {
-  const range = dateRange(opts.from, opts.to);
+  // ⚠️ Sana oynasi — `lib/time` (ikkala chekka ham mahalliy kun). Ilgari bu yerda
+  // o'z nusxasi bor edi va `from` UTC yarim tunga tushardi.
+  const range = dateRangeFilter(opts.from, opts.to);
   const rows = await prisma.attendance.findMany({
     where: {
       studentId, // only my own records — no cross-student leak possible
@@ -35,57 +18,33 @@ export async function getMyAttendance(studentId: number, opts: { courseId?: numb
     orderBy: { session: { date: "desc" } },
   });
 
-  let present = 0, absent = 0, late = 0, excused = 0;
+  // Umumiy sanoq + kurslar kesimi + oylik trend — bitta o'tishda, umumiy sanoq
+  // primitivlari bilan (formula `attendance/facts.ts` da, bir marta).
+  const total: AttTally = emptyTally();
+  const courseMap = new Map<number, { name: string; b: AttTally }>();
+  const monthMap = new Map<string, AttTally>();
   for (const r of rows) {
-    if (r.status === "PRESENT") present++;
-    else if (r.status === "ABSENT") absent++;
-    else if (r.status === "LATE") late++;
-    else if (r.status === "EXCUSED") excused++;
-  }
+    addMark(total, r.status);
 
-  // Kurslar kesimi va oylik trend — o'sha qatorlardan JS'da yig'iladi.
-  type Bucket = { present: number; absent: number; late: number; excused: number };
-  const empty = (): Bucket => ({ present: 0, absent: 0, late: 0, excused: 0 });
-  const add = (b: Bucket, s: Status) => {
-    if (s === "PRESENT") b.present++;
-    else if (s === "ABSENT") b.absent++;
-    else if (s === "LATE") b.late++;
-    else b.excused++;
-  };
-  const marked = (b: Bucket) => b.present + b.absent + b.late + b.excused;
-
-  const courseMap = new Map<number, { name: string; b: Bucket }>();
-  const monthMap = new Map<string, Bucket>();
-  for (const r of rows) {
     const cid = r.session.courseId;
-    if (!courseMap.has(cid)) courseMap.set(cid, { name: r.session.course.name, b: empty() });
-    add(courseMap.get(cid)!.b, r.status as Status);
+    if (!courseMap.has(cid)) courseMap.set(cid, { name: r.session.course.name, b: emptyTally() });
+    addMark(courseMap.get(cid)!.b, r.status);
 
     const d = r.session.date;
     const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-    if (!monthMap.has(key)) monthMap.set(key, empty());
-    add(monthMap.get(key)!, r.status as Status);
+    if (!monthMap.has(key)) monthMap.set(key, emptyTally());
+    addMark(monthMap.get(key)!, r.status);
   }
 
   return {
-    stats: { present, absent, late, excused, pct: attendancePct(present, absent, late, excused) },
+    stats: { ...total, pct: attendancePct(total) },
     byCourse: [...courseMap.entries()]
-      .map(([courseId, { name, b }]) => ({
-        courseId,
-        courseName: name,
-        ...b,
-        marked: marked(b),
-        pct: attendancePct(b.present, b.absent, b.late, b.excused),
-      }))
+      .map(([courseId, { name, b }]) => ({ courseId, courseName: name, ...b, marked: markedOf(b), pct: attendancePct(b) }))
       .sort((a, b) => (a.pct ?? 101) - (b.pct ?? 101)), // eng past birinchi — diqqat kerak
     byMonth: [...monthMap.entries()]
       .sort((a, b) => a[0].localeCompare(b[0]))
       .slice(-6)
-      .map(([month, b]) => ({
-        month,
-        marked: marked(b),
-        pct: attendancePct(b.present, b.absent, b.late, b.excused) ?? 0,
-      })),
+      .map(([month, b]) => ({ month, marked: markedOf(b), pct: attendancePct(b) ?? 0 })),
     sessions: rows.map((r) => ({
       id: r.session.id,
       date: r.session.date,
@@ -225,8 +184,7 @@ export async function getMyProfile(studentId: number) {
     }),
   ]);
 
-  const counts = { PRESENT: 0, ABSENT: 0, LATE: 0, EXCUSED: 0 } as Record<Status, number>;
-  for (const a of attendance) counts[a.status as Status] = a._count;
+  const tally = tallyOf(attendance.map((a) => ({ status: a.status as string, _count: a._count })));
 
   return {
     // Ma'lumotnoma (shaxsiy + o'quv tegishliligi)
@@ -244,7 +202,7 @@ export async function getMyProfile(studentId: number) {
     // Ko'rsatkichlar — asosiy modullar (bosh sahifa/davomat) uchun
     coursesCount,
     completedTopics,
-    attendancePct: attendancePct(counts.PRESENT, counts.ABSENT, counts.LATE, counts.EXCUSED),
+    attendancePct: attendancePct(tally),
   };
 }
 
@@ -252,18 +210,16 @@ export async function getMyProfile(studentId: number) {
  *  Diapazon berilmasa: bugundan +7 kun (dashboard "Bugun" bloki).
  *  Jadval moduli hafta oralig'ini beradi — o'tgan darslar O'Z yo'qlama
  *  holati bilan qaytadi (keldi/kelmadi/... yoki hali belgilanmagan). */
-/** "YYYY-MM-DD" (mahalliy) — getStudentLessons dayKey formatida. */
-function dayKeyLocal(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-}
-
 /** Talaba jadvali — endi haftalik SLOTLARDAN hosil qilinadi (o'qituvchinikiga
  *  o'xshab). O'qituvchi yo'qlama belgilamagan bo'lsa ham kelgusi darslar ko'rinadi.
- *  Diapazon berilmasa — dashboard uchun 7 kun. */
+ *  Diapazon berilmasa — dashboard uchun 7 kun.
+ *  ⚠️ Sana MAHALLIY o'qiladi (`parseDayStart`): ilgari "YYYY-MM-DD" `new Date()`
+ *  bilan UTC deb o'qilib, keyin mahalliy dayKey'ga aylantirilardi — manfiy UTC
+ *  siljishida kun bir kunga surilardi. */
 export async function getMySchedule(studentId: number, opts: { from?: string; to?: string } = {}) {
-  const fromD = opts.from ? new Date(opts.from) : new Date();
-  const toD = opts.to ? new Date(opts.to) : new Date(fromD.getTime() + 7 * 86_400_000);
-  return getStudentLessons(studentId, dayKeyLocal(fromD), dayKeyLocal(toD));
+  const fromD = opts.from ? parseDayStart(opts.from) : new Date();
+  const toD = opts.to ? parseDayStart(opts.to) : new Date(fromD.getTime() + 7 * 86_400_000);
+  return getStudentLessons(studentId, dayKey(fromD), dayKey(toD));
 }
 
 export type ActivityEvent = {
@@ -337,12 +293,6 @@ export async function getMyActivity(studentId: number): Promise<ActivityEvent[]>
 
   events.sort((a, b) => b.at.getTime() - a.at.getTime());
   return events.slice(0, 15);
-}
-
-/** Local-time day key (toISOString would shift days across the UTC boundary —
- *  same rationale as admin/stats.ts). */
-function dayKey(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
 /** Uzluksiz o'qish kunlari (streak). Har qanday o'quv faolligi — mavzu

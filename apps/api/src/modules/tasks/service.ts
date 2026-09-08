@@ -5,6 +5,7 @@ import type { Role } from "../../lib/prisma";
 import { buildMatrix } from "../courses/progress";
 import { getTeacherLessons } from "../courses/timetable";
 import { computeTopics, enrolledCourseIds, loadCourse, studentFactsMap } from "../me/service";
+import { LOW_ATTENDANCE_PCT, attendancePct, tallyOf } from "../attendance/facts";
 
 // An auto-derived task: computed live from existing data, disappears once resolved.
 // The frontend maps `type` → icon + label; `link` is where the teacher/student acts.
@@ -431,13 +432,9 @@ export async function computeStudentAutoTasks(studentId: number): Promise<AutoTa
     prisma.attendance.groupBy({ by: ["status"], where: { studentId }, _count: true }),
   ]);
 
-  let present = 0, late = 0, marked = 0;
-  for (const m of marks) {
-    marked += m._count;
-    if (m.status === "PRESENT") present += m._count;
-    else if (m.status === "LATE") late += m._count;
-  }
-  const attendancePct = marked === 0 ? 100 : Math.round(((present + late) / marked) * 100);
+  // ⚠️ TUZATILDI (2026-09-08): belgilanmagan holatda ilgari 100 qaytarardi —
+  // ya'ni "hammasi joyida" deb ko'rsatardi. Endi umumiy formula: null.
+  const attPct = attendancePct(tallyOf(marks.map((m) => ({ status: m.status as string, _count: m._count }))));
 
   const graded: AutoTaskItem[] = gradedRows.map((g) => {
     const ci = g.clinicalCase.contentItem;
@@ -458,8 +455,8 @@ export async function computeStudentAutoTasks(studentId: number): Promise<AutoTa
   push("quiz_todo", "blue", quiz);
   push("case_todo", "rose", cases);
   push("case_graded", "emerald", graded);
-  if (marked > 0 && attendancePct < 75) {
-    tasks.push({ type: "attendance_low", count: attendancePct, tone: "amber", link: "/app/attendance", items: [] });
+  if (attPct !== null && attPct < LOW_ATTENDANCE_PCT) {
+    tasks.push({ type: "attendance_low", count: attPct, tone: "amber", link: "/app/attendance", items: [] });
   }
   return tasks;
 }

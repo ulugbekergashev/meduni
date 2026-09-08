@@ -267,9 +267,14 @@ export async function checkin(
     // O'zi allaqachon belgilagan — idempotent.
     return { ok: true, status: existing.status as Status, already: true, courseName: lesson.courseName, distance };
   }
-  await prisma.attendance.create({
+  const created = await prisma.attendance.create({
     data: { sessionId, studentId: userId, status, markedById: userId, selfMarked: true },
   });
+  // O'zgarish jurnali — belgi qayerdan paydo bo'lgani ham izlanadigan bo'lsin
+  // (o'qituvchi keyin ustidan yozsa, zanjir ko'rinadi).
+  await prisma.attendanceChange
+    .create({ data: { attendanceId: created.id, prevStatus: null, newStatus: status, byId: userId, reason: "self_checkin" } })
+    .catch(() => {});
   await prisma.auditLog
     .create({
       data: {

@@ -3,9 +3,8 @@
 // Yo'qlama (kurs, sana) bo'yicha belgilanadi — LessonSession lazy yaratiladi.
 import { prisma } from "../../lib/prisma";
 import { ApiError, badRequest, notFound } from "../../lib/errors";
-
-type Status = "PRESENT" | "ABSENT" | "LATE" | "EXCUSED";
-const STATUSES: Status[] = ["PRESENT", "ABSENT", "LATE", "EXCUSED"];
+import { atTime, dayBounds, dayKey, mondayIdx, timeOf } from "../../lib/time";
+import { type AttStatus as Status, ATT_STATUSES as STATUSES, attendancePct, emptyTally, addMark, isAttStatus } from "../attendance/facts";
 
 function forbidden(): ApiError {
   return new ApiError(403, "forbidden", "Bu sizning kursingiz emas", "Это не ваш курс");
@@ -15,26 +14,6 @@ async function ownCourse(courseId: number, teacherId: number) {
   if (!c) throw notFound("Kurs");
   if (c.teacherId !== teacherId) throw forbidden();
   return c;
-}
-
-/** 0=Dushanba .. 6=Yakshanba (JS getDay: 0=Yakshanba). */
-function mondayIdx(d: Date): number {
-  return (d.getDay() + 6) % 7;
-}
-function dayKey(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-}
-/** "YYYY-MM-DD" + "HH:MM" → mahalliy Date. */
-function atTime(dateKey: string, time: string): Date {
-  const [y, m, d] = dateKey.split("-").map(Number);
-  const [hh, mm] = time.split(":").map(Number);
-  return new Date(y, m - 1, d, hh || 0, mm || 0, 0, 0);
-}
-function dayBounds(dateKey: string): { gte: Date; lt: Date } {
-  const [y, m, d] = dateKey.split("-").map(Number);
-  const gte = new Date(y, m - 1, d, 0, 0, 0, 0);
-  const lt = new Date(y, m - 1, d + 1, 0, 0, 0, 0);
-  return { gte, lt };
 }
 
 // ---------- Slot CRUD (haftalik jadval sozlash) ----------
@@ -61,7 +40,12 @@ export async function addSlot(courseId: number, teacherId: number, body: { weekd
   // Dublikat: bir (guruh, kun, vaqt) bir marta.
   const dup = await prisma.scheduleSlot.findFirst({ where: { courseId, groupId, weekday: body.weekday, startTime: time } });
   if (dup) throw badRequest("Bu guruh uchun shu kun va vaqt allaqachon bor", "Для этой группы этот день и время уже есть");
-  return prisma.scheduleSlot.create({ data: { courseId, groupId, weekday: body.weekday, startTime: time, room: body.room?.trim() || null } });
+  const slot = await prisma.scheduleSlot.create({ data: { courseId, groupId, weekday: body.weekday, startTime: time, room: body.room?.trim() || null } });
+  // Jadval o'zgarishi davomat maxrajiga ta'sir qiladi → izi qolsin.
+  await prisma.auditLog
+    .create({ data: { actorId: teacherId, action: "ADD_SLOT", entity: "ScheduleSlot", entityId: slot.id, detailsJson: { courseId, groupId, weekday: body.weekday, startTime: time } } })
+    .catch(() => {});
+  return slot;
 }
 
 export async function deleteSlot(slotId: number, teacherId: number) {
@@ -69,6 +53,17 @@ export async function deleteSlot(slotId: number, teacherId: number) {
   if (!slot) throw notFound("Jadval");
   if (slot.course.teacherId !== teacherId) throw forbidden();
   await prisma.scheduleSlot.delete({ where: { id: slotId } });
+  await prisma.auditLog
+    .create({
+      data: {
+        actorId: teacherId,
+        action: "DELETE_SLOT",
+        entity: "ScheduleSlot",
+        entityId: slotId,
+        detailsJson: { courseId: slot.courseId, groupId: slot.groupId, weekday: slot.weekday, startTime: slot.startTime },
+      },
+    })
+    .catch(() => {});
   return { ok: true };
 }
 
@@ -394,12 +389,42 @@ export async function setupCycle(
   const days = (body.days ?? []).filter((d) => Number.isInteger(d.weekday) && d.weekday >= 0 && d.weekday <= 6);
   if (days.length === 0) throw badRequest("Kamida bitta kun tanlang", "Выберите хотя бы один день");
 
-  // Sikl davrini o'rnatamiz + shu kurs+guruh slotlarini qayta yaratamiz.
-  await prisma.courseGroup.update({ where: { id: cg.id }, data: { cycleStart: start, cycleEnd: end } });
-  await prisma.scheduleSlot.deleteMany({ where: { courseId, groupId } });
-  for (const d of days) {
-    await prisma.scheduleSlot.create({ data: { courseId, groupId, weekday: d.weekday, startTime: norm(d.startTime), room: d.room?.trim() || null } });
-  }
+  // Vaqtlarni AVVAL tekshiramiz — validatsiya xatosi bazani o'zgartirmasin.
+  const rows = days.map((d) => ({ courseId, groupId, weekday: d.weekday, startTime: norm(d.startTime), room: d.room?.trim() || null }));
+
+  // ⚠️ TRANZAKSIYA (2026-09-08): bu amal guruhning BUTUN jadvalini o'chirib qayta
+  // yozadi. Ilgari uch alohida so'rov edi — o'rtada uzilsa guruh jadvalsiz qolardi.
+  const prev = await prisma.scheduleSlot.findMany({
+    where: { courseId, groupId },
+    select: { weekday: true, startTime: true, room: true },
+    orderBy: [{ weekday: "asc" }, { startTime: "asc" }],
+  });
+  await prisma.$transaction([
+    prisma.courseGroup.update({ where: { id: cg.id }, data: { cycleStart: start, cycleEnd: end } }),
+    prisma.scheduleSlot.deleteMany({ where: { courseId, groupId } }),
+    prisma.scheduleSlot.createMany({ data: rows }),
+  ]);
+
+  // ⚠️ AUDIT: jadvalni qayta yozish — izsiz bo'lmasligi kerak (ilgari hech qanday
+  // yozuv qolmasdi, holbuki bu talabaning davomat maxrajini o'zgartiradi).
+  await prisma.auditLog
+    .create({
+      data: {
+        actorId: teacherId,
+        action: "SETUP_CYCLE",
+        entity: "CourseGroup",
+        entityId: cg.id,
+        detailsJson: {
+          courseId,
+          groupId,
+          cycleStart: body.cycleStart,
+          cycleEnd: body.cycleEnd,
+          before: prev,
+          after: rows.map((r) => ({ weekday: r.weekday, startTime: r.startTime, room: r.room })),
+        },
+      },
+    })
+    .catch(() => {});
   return { ok: true, days: days.length };
 }
 
@@ -408,16 +433,15 @@ export async function setupCycle(
 // 14:00) — shuning uchun sessiya atomi KUN emas, DARS (sana+vaqt). Legacy (vaqtsiz
 // yozilgan) sessiyalar uchun: kunda bitta slot bo'lsa kun-darajali fallback ishlaydi.
 
-/** "HH:MM" (mahalliy) — sessiya sanasidan. */
-function timeOf(d: Date): string {
-  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
-}
-
-/** Shu kurs+guruh o'sha kuni nechta slotda o'tiladi (haftalik jadvaldan). */
+/** Shu kurs+guruh o'sha kuni nechta slotda o'tiladi (haftalik jadvaldan).
+ *  ⚠️ BUG (2026-09-08 da tuzatildi): filtr `OR: [{groupId: null}, {groupId: groupId ?? undefined}]`
+ *  edi — Prisma'da `undefined` shartni BUTUNLAY olib tashlaydi, ya'ni groupId=null
+ *  bo'lganda OR "har qanday guruh"ga aylanib, sonni oshirib yuborardi va legacy
+ *  kun-darajali fallback'ni asossiz o'chirardi. */
 async function slotCountThatDay(courseId: number, groupId: number | null, dateKey: string): Promise<number> {
   const wd = mondayIdx(dayBounds(dateKey).gte);
   return prisma.scheduleSlot.count({
-    where: { courseId, weekday: wd, OR: [{ groupId: null }, { groupId: groupId ?? undefined }] },
+    where: { courseId, weekday: wd, ...(groupId == null ? { groupId: null } : { OR: [{ groupId: null }, { groupId }] }) },
   });
 }
 
@@ -483,20 +507,89 @@ export async function markByDate(
   body: { courseId: number; date: string; startTime?: string; groupId?: number | null; marks: { studentId: number; status: Status; grade?: number | null }[] }
 ) {
   await ownCourse(body.courseId, teacherId);
-  const clean = (body.marks ?? []).filter((m) => STATUSES.includes(m.status) && Number.isInteger(m.studentId));
-  const sessionId = await ensureSession(body.courseId, body.groupId ?? null, body.date, body.startTime || "09:00", teacherId);
+  const groupId = body.groupId ?? null;
+  const clean = (body.marks ?? []).filter((m) => isAttStatus(m.status) && Number.isInteger(m.studentId));
+
+  // ⚠️ BAHO VALIDATSIYASI (2026-09-08): jonli yo'lda umuman yo'q edi — 0-100 dan
+  // tashqaridagi qiymat ham, kasr son ham bazaga tushardi (o'lik `markAttendance`
+  // da tekshiruv bor edi, lekin uni hech kim chaqirmasdi).
   for (const m of clean) {
-    await prisma.attendance.upsert({
-      where: { sessionId_studentId: { sessionId, studentId: m.studentId } },
-      // O'qituvchi qo'lda belgilaganda selfMarked=false (talabaning avto-belgisini bekor qiladi).
-      create: { sessionId, studentId: m.studentId, status: m.status, grade: m.grade ?? null, markedById: teacherId, selfMarked: false },
-      update: { status: m.status, grade: m.grade ?? null, markedById: teacherId, selfMarked: false },
-    });
+    if (m.grade === null || m.grade === undefined) continue;
+    if (!Number.isFinite(m.grade) || m.grade < 0 || m.grade > 100) {
+      throw badRequest("Baho 0-100 oraligʻida boʻlsin", "Балл должен быть 0-100");
+    }
   }
-  await prisma.auditLog.create({
-    data: { actorId: teacherId, action: "MARK_ATTENDANCE", entity: "LessonSession", entityId: sessionId, detailsJson: { count: clean.length, byDate: body.date } },
-  }).catch(() => {});
-  return { ok: true, sessionId, marked: clean.length };
+
+  // ⚠️ RUXSAT (2026-09-08): ilgari faqat kurs EGALIGI tekshirilardi — ya'ni FK ga
+  // mos har qanday studentId ni o'qituvchining istalgan kursiga belgilash mumkin edi
+  // (begona fakultet talabasini ham). Endi faqat shu kursga ACTIVE yozilganlar, va
+  // guruh ko'rsatilgan bo'lsa — o'sha guruhdagilar.
+  const ids = clean.map((m) => m.studentId);
+  const enrolled = ids.length
+    ? await prisma.enrollment.findMany({
+        where: { courseId: body.courseId, status: "ACTIVE", studentId: { in: ids }, ...(groupId ? { student: { groupId } } : {}) },
+        select: { studentId: true },
+      })
+    : [];
+  const allowed = new Set(enrolled.map((e) => e.studentId));
+  const marks = clean.filter((m) => allowed.has(m.studentId));
+  const skipped = clean.length - marks.length;
+
+  const sessionId = await ensureSession(body.courseId, groupId, body.date, body.startTime || "09:00", teacherId);
+
+  // Oldingi holat — o'zgarish jurnali uchun (edi → bo'ldi).
+  const before = marks.length
+    ? await prisma.attendance.findMany({
+        where: { sessionId, studentId: { in: marks.map((m) => m.studentId) } },
+        select: { id: true, studentId: true, status: true },
+      })
+    : [];
+  const prevBy = new Map(before.map((b) => [b.studentId, b]));
+
+  // Bitta yo'qlama — bitta tranzaksiya (yarim belgilangan dars qolmasin).
+  await prisma.$transaction(
+    marks.map((m) =>
+      prisma.attendance.upsert({
+        where: { sessionId_studentId: { sessionId, studentId: m.studentId } },
+        // O'qituvchi qo'lda belgilaganda selfMarked=false (talabaning avto-belgisini bekor qiladi).
+        create: { sessionId, studentId: m.studentId, status: m.status, grade: m.grade ?? null, markedById: teacherId, selfMarked: false },
+        // ⚠️ Baho: undefined — TEGILMAYDI, null — tozalanadi. Ilgari `grade: m.grade ?? null`
+        // edi, ya'ni yo'qlamani qayta belgilash jurnal bahosini JIMGINA o'chirardi.
+        update: { status: m.status, markedById: teacherId, selfMarked: false, ...(m.grade !== undefined ? { grade: m.grade } : {}) },
+      })
+    )
+  );
+
+  // ⚠️ O'ZGARISH JURNALI: retro-tuzatish — universitetdagi klassik suiiste'mol
+  // vektori. Ilgari AuditLog'da faqat `{count}` qolardi, ya'ni kimning belgisi
+  // qachon va nimadan nimaga o'zgargani tiklanmasdi.
+  const after = marks.length
+    ? await prisma.attendance.findMany({ where: { sessionId, studentId: { in: marks.map((m) => m.studentId) } }, select: { id: true, studentId: true } })
+    : [];
+  const idBy = new Map(after.map((a) => [a.studentId, a.id]));
+  const changes = marks
+    .filter((m) => prevBy.get(m.studentId)?.status !== m.status)
+    .map((m) => ({
+      attendanceId: idBy.get(m.studentId)!,
+      prevStatus: prevBy.get(m.studentId)?.status ?? null,
+      newStatus: m.status,
+      byId: teacherId,
+    }))
+    .filter((c) => c.attendanceId != null);
+  if (changes.length) await prisma.attendanceChange.createMany({ data: changes }).catch(() => {});
+
+  await prisma.auditLog
+    .create({
+      data: {
+        actorId: teacherId,
+        action: "MARK_ATTENDANCE",
+        entity: "LessonSession",
+        entityId: sessionId,
+        detailsJson: { count: marks.length, changed: changes.length, skipped, byDate: body.date, startTime: body.startTime ?? null, groupId },
+      },
+    })
+    .catch(() => {});
+  return { ok: true, sessionId, marked: marks.length, skipped };
 }
 
 // ---------- Davomat matritsasi (talaba × DARS) ----------
@@ -581,16 +674,17 @@ export async function getAttendanceMatrix(
 
   const students = enr.map((e) => {
     const cells: Record<string, Status> = {};
-    let present = 0, marked = 0;
+    // Foiz — umumiy formula (`attendance/facts.ts`). Ilgari bu yerda o'z nusxasi
+    // bor edi; frontend matritsasi esa yana boshqa chegaradan (80/60) rang berardi.
+    const tally = emptyTally();
     for (const c of columns) {
       const st = byCol.get(c.key)?.get(e.student.id);
       if (st) {
         cells[c.key] = st;
-        marked++;
-        if (st === "PRESENT" || st === "LATE") present++;
+        addMark(tally, st);
       }
     }
-    return { id: e.student.id, fullName: e.student.fullName, pct: marked ? Math.round((present / marked) * 100) : null, cells };
+    return { id: e.student.id, fullName: e.student.fullName, pct: attendancePct(tally), cells };
   });
 
   return { columns, todayKey: dayKey(new Date()), students };

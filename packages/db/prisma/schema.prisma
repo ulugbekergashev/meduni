@@ -148,6 +148,7 @@ model User {
   createdSessions   LessonSession[]  @relation("SessionCreator")
   attendanceMarked  Attendance[]     @relation("AttendanceMarker")
   attendanceRecords Attendance[]     @relation("AttendanceStudent")
+  attendanceChanges AttendanceChange[] @relation("AttendanceChanger")
   aiUsage           AiUsage[]
   tasksCreated      Task[]           @relation("TaskCreator")
   tasksAssigned     Task[]           @relation("TaskAssignee")
@@ -366,7 +367,37 @@ model LessonSession {
   createdAt   DateTime     @default(now())
   attendance  Attendance[]
 
+  /// Bitta dars = (kurs, guruh, aniq sana+vaqt). Ilgari na unique, na indeks bor
+  /// edi: `ensureSession` bir vaqtda ikki marta chaqirilsa ikkita sessiya yaratardi
+  /// va yo'qlama ikkiga bo'linib ketardi (2026-09-08 auditi).
+  /// ⚠️ Postgres'da NULL lar unique'da o'zaro TENG EMAS — legacy `groupId = null`
+  /// qatorlar bu cheklovga tushmaydi (ular baribir eskirgan yo'l).
+  @@unique([courseId, groupId, date])
+  @@index([courseId, date])
+  @@index([groupId, date])
   @@map("lesson_sessions")
+}
+
+/// Yo'qlama belgisining O'ZGARISH jurnali (edi → bo'ldi).
+/// ⚠️ NEGA: retro-tuzatish — universitetdagi klassik suiiste'mol vektori
+/// (semestr oxirida "nb" larni jimgina "sababli" ga aylantirish). AuditLog'da
+/// faqat `{count}` qolardi, ya'ni kimning belgisi nimadan nimaga o'zgargani
+/// tiklanmasdi. Bu jadval — dekanat nazorati uchun (F5 "chetlanishlar").
+model AttendanceChange {
+  id           Int               @id @default(autoincrement())
+  attendanceId Int
+  attendance   Attendance        @relation(fields: [attendanceId], references: [id], onDelete: Cascade)
+  /// null = belgi birinchi marta qo'yildi.
+  prevStatus   AttendanceStatus?
+  newStatus    AttendanceStatus
+  byId         Int
+  by           User              @relation("AttendanceChanger", fields: [byId], references: [id])
+  reason       String?
+  at           DateTime          @default(now())
+
+  @@index([attendanceId])
+  @@index([at])
+  @@map("attendance_changes")
 }
 
 model Attendance {
@@ -383,8 +414,10 @@ model Attendance {
   // markedById=talabaning o'zi bo'ladi; o'qituvchi qo'lda o'zgartirsa false ga tushadi.
   selfMarked Boolean          @default(false)
   markedAt   DateTime         @updatedAt
+  changes    AttendanceChange[]
 
   @@unique([sessionId, studentId])
+  @@index([studentId])
   @@map("attendance")
 }
 

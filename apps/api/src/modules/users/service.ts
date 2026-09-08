@@ -4,6 +4,7 @@ import { prisma } from "../../lib/prisma";
 import { badRequest, conflict, notFound } from "../../lib/errors";
 import { generatePassword } from "../../lib/password";
 import type { AdminScope } from "../../middleware/adminScope";
+import { attendanceStats, tallyOf } from "../attendance/facts";
 
 const PAGE_SIZE = 20;
 
@@ -358,20 +359,14 @@ export async function getUserProfile(id: number) {
       prisma.quizAttempt.aggregate({ where: { studentId: id, finishedAt: { not: null } }, _avg: { scorePct: true } }),
       prisma.progress.aggregate({ where: { studentId: id }, _max: { updatedAt: true } }),
     ]);
-    let present = 0, absent = 0, late = 0, excused = 0, marked = 0;
-    for (const a of att) {
-      marked += a._count;
-      if (a.status === "PRESENT") present += a._count;
-      else if (a.status === "ABSENT") absent += a._count;
-      else if (a.status === "LATE") late += a._count;
-      else if (a.status === "EXCUSED") excused += a._count;
-    }
+    // Sanoq va foiz — umumiy `attendance/facts.ts`.
+    const attStats = attendanceStats(tallyOf(att.map((a) => ({ status: a.status as string, _count: a._count }))));
 
     return {
       ...base,
       kind: "student" as const,
-      attendancePct: marked === 0 ? null : Math.round(((present + late) / marked) * 100),
-      attendance: { present, absent, late, excused, marked },
+      attendancePct: attStats.pct,
+      attendance: { present: attStats.present, absent: attStats.absent, late: attStats.late, excused: attStats.excused, marked: attStats.marked },
       avgQuizScore: quizAgg._avg.scorePct === null ? null : Math.round(quizAgg._avg.scorePct),
       lastActiveAt: lastProgress._max.updatedAt,
       courses: enrollments.map((e) => {

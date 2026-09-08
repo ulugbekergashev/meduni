@@ -3,6 +3,7 @@ import { prisma } from "../../lib/prisma";
 import { clampQuiz, resolvePolicy } from "../policy/service";
 import { ApiError, notFound } from "../../lib/errors";
 import { computeTopics, loadCourse, studentFactsMap, type CourseWithTopics, type FullFacts, type TopicOut } from "../me/service";
+import { addMark, attendancePct, emptyTally, tallyOf } from "../attendance/facts";
 
 function forbidden(): ApiError {
   return new ApiError(403, "forbidden", "Bu sizning kursingiz emas", "Это не ваш курс");
@@ -331,16 +332,12 @@ export async function getStudentDetail(teacherId: number, studentId: number) {
         : Promise.resolve([]),
     ]);
 
-    let present = 0, absent = 0, late = 0, excused = 0;
+    const attTally = emptyTally();
     const grades: number[] = [];
     for (const a of attendance) {
-      if (a.status === "PRESENT") present++;
-      else if (a.status === "ABSENT") absent++;
-      else if (a.status === "LATE") late++;
-      else if (a.status === "EXCUSED") excused++;
+      addMark(attTally, a.status);
       if (a.grade !== null) grades.push(a.grade);
     }
-    const marked = present + absent + late + excused;
     const caseByTopic = new Map(caseAttempts.map((ca) => [ca.clinicalCase.contentItem.topicId, ca]));
 
     const completedCount = topicOuts.filter((t) => t.state === "COMPLETED").length;
@@ -364,11 +361,8 @@ export async function getStudentDetail(teacherId: number, studentId: number) {
       completedCount,
       overallPct: topicOuts.length === 0 ? 0 : Math.round((completedCount / topicOuts.length) * 100),
       attendance: {
-        present,
-        absent,
-        late,
-        excused,
-        pct: marked === 0 ? null : Math.round(((present + late) / marked) * 100),
+        ...attTally,
+        pct: attendancePct(attTally),
         avgGrade: grades.length === 0 ? null : Math.round(grades.reduce((a, b) => a + b, 0) / grades.length),
       },
       sessions,
@@ -479,14 +473,8 @@ export async function getTeacherDashboard(teacherId: number) {
   const groupMap = new Map<number, string>();
   for (const cg of courseGroups) groupMap.set(cg.groupId, cg.group.name);
 
-  // Overall attendance %: (present + late) / marked across all their sessions.
-  let present = 0, late = 0, marked = 0;
-  for (const m of attMarks) {
-    marked += m._count;
-    if (m.status === "PRESENT") present += m._count;
-    else if (m.status === "LATE") late += m._count;
-  }
-  const avgAttendance = marked === 0 ? null : Math.round(((present + late) / marked) * 100);
+  // Umumiy davomat % — umumiy formula (`attendance/facts.ts`).
+  const avgAttendance = attendancePct(tallyOf(attMarks.map((m) => ({ status: m.status as string, _count: m._count }))));
   const avgProgress = courseCards.length ? Math.round(courseCards.reduce((a, c) => a + c.avgProgress, 0) / courseCards.length) : 0;
 
   return {

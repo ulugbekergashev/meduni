@@ -1,6 +1,7 @@
 import type { Prisma } from "../../lib/prisma";
 import { prisma } from "../../lib/prisma";
 import type { AdminScope } from "../../middleware/adminScope";
+import { type AttTally, addMark, attendancePct, emptyTally } from "../attendance/facts";
 
 const PAGE_SIZE = 20;
 
@@ -82,13 +83,15 @@ export async function listStudents(
   }
   const completedByStudent = new Map(completed.map((c) => [c.studentId, c._count]));
 
-  const attByStudent = new Map<number, { present: number; late: number; marked: number }>();
+  // Sanoq va foiz — umumiy `attendance/facts.ts` (formula bir joyda).
+  const attByStudent = new Map<number, AttTally>();
   for (const a of attendance) {
-    if (!attByStudent.has(a.studentId)) attByStudent.set(a.studentId, { present: 0, late: 0, marked: 0 });
-    const s = attByStudent.get(a.studentId)!;
-    s.marked += a._count;
-    if (a.status === "PRESENT") s.present += a._count;
-    if (a.status === "LATE") s.late += a._count;
+    let t = attByStudent.get(a.studentId);
+    if (!t) {
+      t = emptyTally();
+      attByStudent.set(a.studentId, t);
+    }
+    addMark(t, a.status as string, a._count);
   }
 
   return {
@@ -110,7 +113,7 @@ export async function listStudents(
         facultyName: u.group?.faculty.name ?? null,
         coursesCount: courses.length,
         progressPct: totalTopics > 0 ? Math.round((done / totalTopics) * 100) : null,
-        attendancePct: att && att.marked > 0 ? Math.round(((att.present + att.late) / att.marked) * 100) : null,
+        attendancePct: att ? attendancePct(att) : null,
       };
     }),
     total,

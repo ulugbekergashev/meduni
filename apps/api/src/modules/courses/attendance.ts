@@ -1,9 +1,22 @@
+// Yo'qlama HISOBOTI va eksporti (xlsx).
+//
+// ⚠️ 2026-09-08 (Davomat 2.0, F0): bu fayldan "sessiya-markazli" eski qatlam
+// OLIB TASHLANDI — `listSessions/createSession/updateSession/deleteSession/
+// getRoster/markAttendance/getTeacherSessions/attendanceReport`. Ular 2026-07 da
+// haftalik SLOT modeliga o'tilganda frontenddan uzilgan edi (JournalView/
+// SessionsView/ReportView o'chirilgan), lekin route'lari ochiq qolgan edi.
+// Xavf nazariy emas edi: `POST /courses/:id/sessions` ixtiyoriy vaqtli sessiya
+// yaratardi, uni slot-asosli UI hech qachon ko'rsatmasdi va `findSession` topa
+// olmasdi — ya'ni "yetim" sessiya va ikki marta sanalgan yo'qlama manbai.
+// Yo'qlama belgilash endi FAQAT `timetable.ts::markByDate` orqali (kurs+guruh+
+// sana+vaqt), o'zi ham audit yozadi.
+//
+// Bu yerda qolgani — faqat O'QISH: hisobot va uni xlsx ga aylantirish.
 import ExcelJS from "exceljs";
-import { Prisma, prisma } from "../../lib/prisma";
-import { ApiError, badRequest, notFound } from "../../lib/errors";
-
-type Status = "PRESENT" | "ABSENT" | "LATE" | "EXCUSED";
-const STATUSES: Status[] = ["PRESENT", "ABSENT", "LATE", "EXCUSED"];
+import { prisma } from "../../lib/prisma";
+import { ApiError, notFound } from "../../lib/errors";
+import { dateRangeFilter } from "../../lib/time";
+import { type AttStatus, type AttTally, addMark, attendancePct, emptyTally } from "../attendance/facts";
 
 function forbidden(): ApiError {
   return new ApiError(403, "forbidden", "Bu sizning kursingiz emas", "Это не ваш курс");
@@ -16,13 +29,6 @@ async function ownCourse(courseId: number, teacherId: number) {
   return course;
 }
 
-async function ownSession(sessionId: number, teacherId: number) {
-  const session = await prisma.lessonSession.findUnique({ where: { id: sessionId }, include: { course: true } });
-  if (!session) throw notFound("Dars");
-  if (session.course.teacherId !== teacherId) throw forbidden();
-  return session;
-}
-
 async function activeStudents(courseId: number, groupId?: number) {
   const enr = await prisma.enrollment.findMany({
     where: { courseId, status: "ACTIVE", ...(groupId ? { student: { groupId } } : {}) },
@@ -32,211 +38,10 @@ async function activeStudents(courseId: number, groupId?: number) {
   return enr.map((e) => e.student);
 }
 
-function dateRange(from?: string, to?: string): Prisma.DateTimeFilter | undefined {
-  const f: Prisma.DateTimeFilter = {};
-  if (from) f.gte = new Date(from);
-  if (to) {
-    const end = new Date(to);
-    end.setHours(23, 59, 59, 999);
-    f.lte = end;
-  }
-  return from || to ? f : undefined;
-}
-
-// ---------- Sessions ----------
-
-export async function listSessions(courseId: number, teacherId: number, opts: { from?: string; to?: string; search?: string }) {
-  await ownCourse(courseId, teacherId);
-  const rosterSize = (await activeStudents(courseId)).length;
-  const range = dateRange(opts.from, opts.to);
-
-  const sessions = await prisma.lessonSession.findMany({
-    where: {
-      courseId,
-      ...(range ? { date: range } : {}),
-      ...(opts.search?.trim() ? { title: { contains: opts.search.trim(), mode: "insensitive" } } : {}),
-    },
-    include: { topic: true, _count: { select: { attendance: true } } },
-    orderBy: { date: "desc" },
-  });
-
-  return sessions.map((s) => {
-    const marked = s._count.attendance;
-    const status = marked === 0 ? "UNMARKED" : marked >= rosterSize ? "FULL" : "PARTIAL";
-    return {
-      id: s.id,
-      date: s.date,
-      title: s.title ?? s.topic?.title ?? null,
-      topicId: s.topicId,
-      room: s.room,
-      markedCount: marked,
-      rosterSize,
-      status,
-    };
-  });
-}
-
-/** Darslar hub: o'qituvchining BARCHA kurslaridagi darslar (sana oralig'i +
- *  qidiruv) — tez yo'qlama uchun kurs/guruh/holat bilan. */
-export async function getTeacherSessions(teacherId: number, opts: { from?: string; to?: string; search?: string }) {
-  const range = dateRange(opts.from, opts.to);
-  const q = opts.search?.trim();
-  const sessions = await prisma.lessonSession.findMany({
-    where: {
-      course: { teacherId },
-      ...(range ? { date: range } : {}),
-      ...(q
-        ? {
-            OR: [
-              { title: { contains: q, mode: "insensitive" } },
-              { course: { name: { contains: q, mode: "insensitive" } } },
-              { topic: { title: { contains: q, mode: "insensitive" } } },
-              { course: { courseGroups: { some: { group: { name: { contains: q, mode: "insensitive" } } } } } },
-            ],
-          }
-        : {}),
-    },
-    include: {
-      topic: true,
-      course: { include: { courseGroups: { include: { group: true } } } },
-      _count: { select: { attendance: true } },
-    },
-    orderBy: { date: "asc" },
-  });
-
-  const courseIds = [...new Set(sessions.map((s) => s.courseId))];
-  const rosterByCourse = new Map<number, number>();
-  if (courseIds.length) {
-    const counts = await prisma.enrollment.groupBy({ by: ["courseId"], where: { courseId: { in: courseIds }, status: "ACTIVE" }, _count: true });
-    for (const c of counts) rosterByCourse.set(c.courseId, c._count);
-  }
-
-  return sessions.map((s) => {
-    const marked = s._count.attendance;
-    const rosterSize = rosterByCourse.get(s.courseId) ?? 0;
-    const status = marked === 0 ? "UNMARKED" : marked >= rosterSize ? "FULL" : "PARTIAL";
-    const group = s.course.courseGroups[0]?.group ?? null;
-    return {
-      id: s.id,
-      date: s.date,
-      title: s.title ?? s.topic?.title ?? null,
-      room: s.room,
-      courseId: s.courseId,
-      courseName: s.course.name,
-      topicTitle: s.topic?.title ?? null,
-      groupId: group?.id ?? null,
-      groupName: group?.name ?? null,
-      markedCount: marked,
-      rosterSize,
-      status,
-    };
-  });
-}
-
-export async function createSession(courseId: number, teacherId: number, body: { date?: string; title?: string; topicId?: number | null; room?: string }) {
-  const course = await ownCourse(courseId, teacherId);
-  if (!body.date) throw badRequest("Sana kiriting", "Введите дату");
-  if (body.topicId) {
-    const topic = await prisma.topic.findUnique({ where: { id: body.topicId } });
-    if (!topic || topic.courseId !== course.id) throw notFound("Mavzu");
-  }
-  const s = await prisma.lessonSession.create({
-    data: { courseId, date: new Date(body.date), title: body.title?.trim() || null, topicId: body.topicId || null, room: body.room?.trim() || null, createdById: teacherId },
-  });
-  return { id: s.id };
-}
-
-export async function updateSession(sessionId: number, teacherId: number, body: { date?: string; title?: string; topicId?: number | null; room?: string }) {
-  const session = await ownSession(sessionId, teacherId);
-  if (body.topicId) {
-    const topic = await prisma.topic.findUnique({ where: { id: body.topicId } });
-    if (!topic || topic.courseId !== session.courseId) throw notFound("Mavzu");
-  }
-  await prisma.lessonSession.update({
-    where: { id: sessionId },
-    data: {
-      ...(body.date ? { date: new Date(body.date) } : {}),
-      ...(body.title !== undefined ? { title: body.title?.trim() || null } : {}),
-      ...(body.topicId !== undefined ? { topicId: body.topicId || null } : {}),
-      ...(body.room !== undefined ? { room: body.room?.trim() || null } : {}),
-    },
-  });
-  return { ok: true };
-}
-
-export async function deleteSession(sessionId: number, teacherId: number) {
-  await ownSession(sessionId, teacherId);
-  // Deleting a session removes its attendance too.
-  await prisma.attendance.deleteMany({ where: { sessionId } });
-  await prisma.lessonSession.delete({ where: { id: sessionId } });
-  return { ok: true };
-}
-
-// ---------- Roster + marking ----------
-
-export async function getRoster(sessionId: number, teacherId: number, groupId?: number) {
-  const session = await ownSession(sessionId, teacherId);
-  const [students, marks, group] = await Promise.all([
-    activeStudents(session.courseId, groupId),
-    prisma.attendance.findMany({ where: { sessionId } }),
-    prisma.course.findUnique({ where: { id: session.courseId }, include: { courseGroups: { include: { group: true } } } }),
-  ]);
-  const byStudent = new Map(marks.map((m) => [m.studentId, m]));
-  return {
-    session: {
-      id: session.id,
-      date: session.date,
-      title: session.title,
-      topicId: session.topicId,
-      room: session.room,
-      groupName: group?.courseGroups[0]?.group.name ?? null,
-    },
-    students: students.map((s) => ({
-      id: s.id,
-      fullName: s.fullName,
-      status: byStudent.get(s.id)?.status ?? null,
-      grade: byStudent.get(s.id)?.grade ?? null,
-    })),
-  };
-}
-
-export async function markAttendance(
-  sessionId: number,
-  teacherId: number,
-  marks: { studentId: number; status: Status; grade?: number | null }[]
-) {
-  const session = await ownSession(sessionId, teacherId);
-  if (!Array.isArray(marks)) throw badRequest("Notoʻgʻri maʼlumot", "Неверные данные");
-
-  const enrolledIds = new Set((await activeStudents(session.courseId)).map((s) => s.id));
-  const now = new Date();
-  for (const m of marks) {
-    if (!enrolledIds.has(m.studentId) || !STATUSES.includes(m.status)) continue;
-    // Grade is optional (0-100): undefined -> keep existing, null -> clear, number -> set.
-    let grade: number | null | undefined = undefined;
-    if (m.grade === null) grade = null;
-    else if (m.grade !== undefined) {
-      if (!Number.isFinite(m.grade) || m.grade < 0 || m.grade > 100) {
-        throw badRequest("Baho 0-100 oraligʻida boʻlsin", "Балл должен быть 0-100");
-      }
-      grade = Math.round(m.grade);
-    }
-    await prisma.attendance.upsert({
-      where: { sessionId_studentId: { sessionId, studentId: m.studentId } },
-      create: { sessionId, studentId: m.studentId, status: m.status, grade: grade ?? null, markedById: teacherId },
-      update: { status: m.status, markedById: teacherId, ...(grade !== undefined ? { grade } : {}) },
-    });
-  }
-  await prisma.auditLog.create({
-    data: { actorId: teacherId, action: "MARK_ATTENDANCE", entity: "LessonSession", entityId: sessionId, detailsJson: { count: marks.length, at: now.toISOString() } },
-  });
-  return { ok: true };
-}
-
 // ---------- Report ----------
 
 interface ReportCell {
-  status: Status;
+  status: AttStatus;
   grade: number | null;
 }
 
@@ -254,7 +59,10 @@ interface ReportStudent {
 
 // Access (o'qituvchi egaligi YOKI admin scope) chaqiruvchida tekshiriladi.
 async function buildReport(courseId: number, opts: { from?: string; to?: string; groupId?: number }) {
-  const range = dateRange(opts.from, opts.to);
+  // ⚠️ Sana oynasi endi ikkala chekkada ham MAHALLIY kunga tayanadi (lib/time).
+  // Ilgari `from` UTC yarim tun edi → UTC+5 da birinchi kunning erta darslari
+  // hisobotdan tushib qolardi.
+  const range = dateRangeFilter(opts.from, opts.to);
   const sessions = await prisma.lessonSession.findMany({
     where: { courseId, ...(range ? { date: range } : {}) },
     orderBy: { date: "asc" },
@@ -269,25 +77,19 @@ async function buildReport(courseId: number, opts: { from?: string; to?: string;
   const byStudent = new Map<number, Record<number, ReportCell>>();
   for (const m of marks) {
     if (!byStudent.has(m.studentId)) byStudent.set(m.studentId, {});
-    byStudent.get(m.studentId)![m.sessionId] = { status: m.status as Status, grade: m.grade };
+    byStudent.get(m.studentId)![m.sessionId] = { status: m.status as AttStatus, grade: m.grade };
   }
 
   const rows: ReportStudent[] = students.map((s) => {
     const cells = byStudent.get(s.id) ?? {};
-    let present = 0, absent = 0, late = 0, excused = 0;
+    const tally: AttTally = emptyTally();
     const grades: number[] = [];
     for (const cell of Object.values(cells)) {
-      if (cell.status === "PRESENT") present++;
-      else if (cell.status === "ABSENT") absent++;
-      else if (cell.status === "LATE") late++;
-      else if (cell.status === "EXCUSED") excused++;
+      addMark(tally, cell.status);
       if (cell.grade !== null) grades.push(cell.grade);
     }
-    const marked = present + absent + late + excused;
-    // Attendance % = came (present + late) out of sessions actually marked for them.
-    const attendancePct = marked === 0 ? null : Math.round(((present + late) / marked) * 100);
     const avgGrade = grades.length === 0 ? null : Math.round(grades.reduce((a, b) => a + b, 0) / grades.length);
-    return { id: s.id, fullName: s.fullName, cells, present, absent, late, excused, attendancePct, avgGrade };
+    return { id: s.id, fullName: s.fullName, cells, ...tally, attendancePct: attendancePct(tally), avgGrade };
   });
 
   return {
@@ -296,15 +98,7 @@ async function buildReport(courseId: number, opts: { from?: string; to?: string;
   };
 }
 
-export async function attendanceReport(courseId: number, teacherId: number, opts: { from?: string; to?: string; search?: string; groupId?: number }) {
-  await ownCourse(courseId, teacherId);
-  const report = await buildReport(courseId, opts);
-  let students = report.students;
-  if (opts.search?.trim()) students = students.filter((s) => s.fullName.toLowerCase().includes(opts.search!.trim().toLowerCase()));
-  return { sessions: report.sessions, students };
-}
-
-const shortLabel: Record<Status, string> = { PRESENT: "K", ABSENT: "KM", LATE: "KCH", EXCUSED: "S" };
+const shortLabel: Record<AttStatus, string> = { PRESENT: "K", ABSENT: "KM", LATE: "KCH", EXCUSED: "S" };
 
 type BuiltReport = Awaited<ReturnType<typeof buildReport>>;
 
@@ -346,6 +140,8 @@ export async function exportAttendanceReport(courseId: number, view: "matrix" | 
   return buildAttendanceWorkbook(report, view);
 }
 
+/** O'qituvchi: o'z kursi yo'qlamasini eksport qiladi (F2 "Jurnal" sahifasi shu yerdan
+ *  yuklab olishni beradi — hozircha faqat to'g'ridan-to'g'ri havola bilan ochiladi). */
 export async function exportAttendance(courseId: number, teacherId: number, view: "matrix" | "list", opts: { from?: string; to?: string; groupId?: number }): Promise<Buffer> {
   await ownCourse(courseId, teacherId);
   const report = await buildReport(courseId, opts);

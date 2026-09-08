@@ -20,35 +20,48 @@ import { ApiError } from "../../lib/errors";
 // ---------- 1. Очный режим ----------
 
 /**
- * Отмечен ли студент присутствующим СЕГОДНЯ на занятии этого курса.
+ * Окно, в течение которого отметка присутствия открывает очную попытку (часы).
+ * Смысл: попытка сдаётся НА ТОМ ЖЕ занятии, а не «когда-нибудь в тот же день».
+ */
+const PRESENCE_WINDOW_HOURS = Number(process.env.PRESENCE_WINDOW_HOURS ?? 4);
+/** Небольшой допуск: преподаватель нередко отмечает за пару минут до звонка. */
+const PRESENCE_LEAD_MIN = 30;
+
+/**
+ * Отмечен ли студент присутствующим на ИДУЩЕМ занятии этого курса.
  * Опирается на существующую перекличку — отдельного «прокторинга» не нужно:
  * преподаватель уже подтвердил присутствие своей рукой.
+ *
+ * ⚠️ ИСПРАВЛЕНО (2026-09-08): раньше подходила любая отметка PRESENT/LATE за
+ * СЕГОДНЯ. При двух парах в день это означало: отметился в 09:00 — открыл
+ * проктируемый тест в 14:00 из дома, то есть очный режим не выполнял того
+ * единственного, ради чего существует. Теперь занятие должно было начаться
+ * не более PRESENCE_WINDOW_HOURS назад.
  */
 export async function markedPresentToday(studentId: number, courseId: number): Promise<boolean> {
-  const start = new Date();
-  start.setHours(0, 0, 0, 0);
-  const end = new Date(start);
-  end.setDate(end.getDate() + 1);
+  const now = new Date();
+  const from = new Date(now.getTime() - PRESENCE_WINDOW_HOURS * 3_600_000);
+  const until = new Date(now.getTime() + PRESENCE_LEAD_MIN * 60_000);
 
   const row = await prisma.attendance.findFirst({
     where: {
       studentId,
       status: { in: ["PRESENT", "LATE"] },
-      session: { courseId, date: { gte: start, lt: end } },
+      session: { courseId, date: { gte: from, lte: until } },
     },
     select: { id: true },
   });
   return !!row;
 }
 
-/** Очный тест без отметки присутствия начать нельзя. */
+/** Очный тест без отметки присутствия на ИДУЩЕМ занятии начать нельзя. */
 export async function assertPresence(studentId: number, courseId: number): Promise<void> {
   if (await markedPresentToday(studentId, courseId)) return;
   throw new ApiError(
     403,
     "presence_required",
-    "Bu test faqat auditoriyada topshiriladi — avval oʻqituvchi yoʻqlamada belgilashi kerak",
-    "Этот тест сдаётся только в аудитории — преподаватель должен отметить ваше присутствие"
+    "Bu test faqat auditoriyada, dars vaqtida topshiriladi — avval oʻqituvchi yoʻqlamada belgilashi kerak",
+    "Этот тест сдаётся только в аудитории и во время занятия — преподаватель должен отметить ваше присутствие"
   );
 }
 

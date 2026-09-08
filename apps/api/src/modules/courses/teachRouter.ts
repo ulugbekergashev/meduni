@@ -176,24 +176,16 @@ teachCoursesRouter.post(
   )
 );
 
-// ---------- Attendance (sessions + marking + report) ----------
+// ---------- Attendance (hisobot + eksport) ----------
+// ⚠️ 2026-09-08 (F0): sessiya-markazli route'lar O'CHIRILDI — `GET/POST
+// /courses/:id/sessions`, `GET /courses/:id/attendance-report` (JSON),
+// `GET /sessions`, `GET /sessions/:id/roster`, `POST /sessions/:id/attendance`,
+// `PATCH|DELETE /sessions/:id`. Ular frontenddan 2026-07 da uzilgan, lekin ochiq
+// qolgan edi va ixtiyoriy vaqtli "yetim" sessiya yaratishga imkon berardi
+// (sabab: attendance.ts sarlavhasi). Yo'qlama endi faqat `/attendance-by-date`.
 
 const qs = (v: unknown): string | undefined => (typeof v === "string" && v ? v : undefined);
 
-teachCoursesRouter.get(
-  "/courses/:id/sessions",
-  wrap(async (req, res) =>
-    res.json(await attendance.listSessions(parseId(req.params.id), req.user!.id, { from: qs(req.query.from), to: qs(req.query.to), search: qs(req.query.search) }))
-  )
-);
-
-teachCoursesRouter.post(
-  "/courses/:id/sessions",
-  wrap(async (req, res) => res.json(await attendance.createSession(parseId(req.params.id), req.user!.id, req.body ?? {})))
-);
-
-// Report BEFORE the generic /sessions/:id routes are fine (different prefix); also
-// place .xlsx before the plain report so the literal path matches first.
 const qnum = (v: unknown): number | undefined => {
   const n = Number(v);
   return Number.isInteger(n) && n > 0 ? n : undefined;
@@ -208,21 +200,6 @@ teachCoursesRouter.get(
     res.setHeader("Content-Disposition", `attachment; filename="attendance-${req.params.id}-${view}.xlsx"`);
     res.send(buf);
   })
-);
-
-teachCoursesRouter.get(
-  "/courses/:id/attendance-report",
-  wrap(async (req, res) =>
-    res.json(
-      await attendance.attendanceReport(parseId(req.params.id), req.user!.id, { from: qs(req.query.from), to: qs(req.query.to), search: qs(req.query.search), groupId: qnum(req.query.groupId) })
-    )
-  )
-);
-
-// Darslar hub — o'qituvchining barcha kurslaridagi darslar (tez yo'qlama).
-teachCoursesRouter.get(
-  "/sessions",
-  wrap(async (req, res) => res.json(await attendance.getTeacherSessions(req.user!.id, { from: qs(req.query.from), to: qs(req.query.to), search: qs(req.query.search) })))
 );
 
 // ---------- Haftalik takroriy jadval (slotlar) + avtomatik darslar ----------
@@ -250,20 +227,6 @@ teachCoursesRouter.post("/attendance-by-date", wrap(async (req, res) => res.json
 
 // Davomat matritsasi (talaba × dars-kuni + %) — kurs+guruh, sana oralig'i.
 teachCoursesRouter.get("/attendance-matrix", wrap(async (req, res) => res.json(await timetable.getAttendanceMatrix(req.user!.id, Number(req.query.courseId), Number(req.query.groupId), qs(req.query.from) ?? "", qs(req.query.to) ?? ""))));
-
-teachCoursesRouter.get("/sessions/:id/roster", wrap(async (req, res) => res.json(await attendance.getRoster(parseId(req.params.id), req.user!.id, qnum(req.query.groupId)))));
-
-teachCoursesRouter.post(
-  "/sessions/:id/attendance",
-  wrap(async (req, res) => res.json(await attendance.markAttendance(parseId(req.params.id), req.user!.id, req.body?.marks ?? [])))
-);
-
-teachCoursesRouter.patch(
-  "/sessions/:id",
-  wrap(async (req, res) => res.json(await attendance.updateSession(parseId(req.params.id), req.user!.id, req.body ?? {})))
-);
-
-teachCoursesRouter.delete("/sessions/:id", wrap(async (req, res) => res.json(await attendance.deleteSession(parseId(req.params.id), req.user!.id))));
 
 // Manual unlock override (audited).
 teachCoursesRouter.post(

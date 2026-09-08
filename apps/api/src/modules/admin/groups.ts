@@ -4,6 +4,7 @@ import { assertFacultyScope, type AdminScope } from "../../middleware/adminScope
 import { forbidden } from "../../lib/errors";
 import { buildMatrix } from "../courses/progress";
 import { loadCourse } from "../me/service";
+import { attendancePct as pctOf, emptyTally, poolTallies, tallyByCourse, tallyByStudent } from "../attendance/facts";
 
 /** Admin Guruh profili — o'qituvchining `getTeacherGroup` naqshi, lekin:
  *  guruhning BARCHA kurslari (o'qituvchi filtri yo'q), fakultet-scope, va har kurs
@@ -32,26 +33,17 @@ export async function getAdminGroup(groupId: number, scope: AdminScope) {
   const metric = new Map<number, { pcts: number[]; quiz: number[]; last: number; behind: boolean }>();
   for (const s of students) metric.set(s.id, { pcts: [], quiz: [], last: 0, behind: false });
 
-  // Per-course attendance (shu guruh talabalari, shu kurs sessiyalari) — har kurs
-  // uchun alohida hisob (guruhda kurslar kam, arzon).
-  const attByCourse = new Map<number, { hit: number; marked: number }>();
-  for (const cid of courseIds) {
-    const rows = await prisma.attendance.groupBy({
-      by: ["status"],
-      where: { studentId: { in: studentIds }, session: { courseId: cid } },
-      _count: true,
-    });
-    let hit = 0, marked = 0;
-    for (const r of rows) { marked += r._count; if (r.status === "PRESENT" || r.status === "LATE") hit += r._count; }
-    attByCourse.set(cid, { hit, marked });
-  }
+  // Per-course attendance (shu guruh talabalari, shu kurs sessiyalari) — BITTA
+  // so'rovda (ilgari har kurs uchun alohida `groupBy` sikli — N+1 edi).
+  const attByCourse = studentIds.length && courseIds.length
+    ? await tallyByCourse({ studentId: { in: studentIds }, session: { courseId: { in: courseIds } } })
+    : new Map();
 
   const courseReport = [];
   for (const cg of cgs) {
     const cid = cg.course.id;
     const teacherName = cg.course.teacher.fullName;
-    const ca = attByCourse.get(cid);
-    const attendancePct = ca && ca.marked > 0 ? Math.round((ca.hit / ca.marked) * 100) : null;
+    const attendancePct = attByCourse.has(cid) ? pctOf(attByCourse.get(cid)!) : null;
     const loaded = await loadCourse(cid).catch(() => null);
     if (!loaded) {
       courseReport.push({ id: cid, name: cg.course.name, teacherName, studentCount: 0, topicsTotal: 0, avgProgress: 0, avgQuizScore: null, attendancePct, behindCount: 0 });
@@ -83,28 +75,20 @@ export async function getAdminGroup(groupId: number, scope: AdminScope) {
   }
 
   // Per-student attendance (barcha kurslar bo'ylab).
-  const attRows = studentIds.length
-    ? await prisma.attendance.groupBy({ by: ["studentId", "status"], where: { studentId: { in: studentIds }, session: { courseId: { in: courseIds } } }, _count: true })
-    : [];
-  const att = new Map<number, { hit: number; marked: number }>();
-  for (const s of students) att.set(s.id, { hit: 0, marked: 0 });
-  for (const a of attRows) {
-    const x = att.get(a.studentId);
-    if (!x) continue;
-    x.marked += a._count;
-    if (a.status === "PRESENT" || a.status === "LATE") x.hit += a._count;
-  }
+  const att = studentIds.length && courseIds.length
+    ? await tallyByStudent({ studentId: { in: studentIds }, session: { courseId: { in: courseIds } } })
+    : new Map();
 
   const studentsOut = students.map((s) => {
     const m = metric.get(s.id)!;
-    const a = att.get(s.id)!;
+    const a = att.get(s.id) ?? emptyTally();
     return {
       id: s.id,
       fullName: s.fullName,
       email: s.email,
       overallPct: m.pcts.length ? Math.round(m.pcts.reduce((x, y) => x + y, 0) / m.pcts.length) : 0,
       avgQuizScore: m.quiz.length ? Math.round(m.quiz.reduce((x, y) => x + y, 0) / m.quiz.length) : null,
-      attendancePct: a.marked ? Math.round((a.hit / a.marked) * 100) : null,
+      attendancePct: pctOf(a),
       lastActiveAt: m.last ? new Date(m.last).toISOString() : null,
       behind: m.behind,
     };
@@ -115,8 +99,11 @@ export async function getAdminGroup(groupId: number, scope: AdminScope) {
   const studentsRanked = studentsOut.map((s) => ({ ...s, rank: rankOf.get(s.id)! }));
 
   const avgProgress = studentsOut.length ? Math.round(studentsOut.reduce((a, s) => a + s.overallPct, 0) / studentsOut.length) : 0;
-  const attVals = studentsOut.map((s) => s.attendancePct).filter((x): x is number => x !== null);
-  const avgAttendance = attVals.length ? Math.round(attVals.reduce((a, b) => a + b, 0) / attVals.length) : null;
+  // ⚠️ TUZATILDI (2026-09-08): guruh davomati endi POOLED nisbat (barcha belgilar
+  // yig'indisi), ilgari FOIZLAR o'rtachasi edi — 2 ta belgisi bor talaba 40 ta
+  // belgisi bor talaba bilan bir xil og'irlikda turardi va guruh raqami kurs
+  // hisoboti bilan mos kelmasdi.
+  const avgAttendance = pctOf(poolTallies(att.values()));
   const behindCount = studentsOut.filter((s) => s.behind).length;
 
   return {
