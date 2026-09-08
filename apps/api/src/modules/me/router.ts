@@ -11,6 +11,7 @@ import * as flashcards from "./flashcards";
 import * as patient from "./patient";
 import * as practice from "./practice";
 import * as checkin from "./checkin";
+import * as excuse from "../attendance/excuse";
 import { computeStudentAutoTasks, listAssigned } from "../tasks/service";
 import { studentSearch } from "../search/service";
 
@@ -64,6 +65,13 @@ meRouter.get(
     )
   )
 );
+
+// PROPUSK HAYOT SIKLI (F3): propusk endi boshi berk ko'cha emas —
+// talaba spravka arizasini yuboradi va otrabotkani topshiradi.
+meRouter.get("/makeups", wrap(async (req, res) => res.json(await excuse.myMakeups(req.user!.id))));
+meRouter.post("/makeups/:id/submit", wrap(async (req, res) => res.json(await excuse.submitMakeup(req.user!.id, Number(req.params.id)))));
+meRouter.get("/excuses", wrap(async (req, res) => res.json(await excuse.myExcuses(req.user!.id))));
+meRouter.post("/excuses", wrap(async (req, res) => res.status(201).json(await excuse.createExcuse(req.user!.id, req.body ?? {}))));
 
 meRouter.get("/profile", wrap(async (req, res) => res.json(await profile.getMyProfile(req.user!.id))));
 meRouter.get(

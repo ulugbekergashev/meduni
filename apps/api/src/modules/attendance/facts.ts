@@ -184,6 +184,8 @@ export interface AttendanceLimit {
   excusedHours: number;
   /** SABABSIZ soat — koridorning asosiy raqami. */
   unexcusedHours: number;
+  /** Otrabotka bilan yopilgan soat — tarixda bor, hisobda yo'q. */
+  makeupClosedHours: number;
   /** Limit: plannedHours × maxUnexcusedPct / 100. */
   limitHours: number;
   /** Limitgacha qolgan soat (manfiy bo'lmaydi). */
@@ -196,6 +198,8 @@ export interface AttendanceLimit {
 export interface AttendanceCorridor {
   maxUnexcusedPct: number;
   warnUnexcusedPct: number;
+  /** Qabul qilingan otrabotka propuskni 25 % hisobidan chiqaradimi (F3). */
+  makeupClearsAbsence?: boolean;
 }
 
 /** Bitta darsning "og'irligi" — DANGER zonasini aniqlash uchun (odatda 2 soat). */
@@ -232,7 +236,9 @@ export async function attendanceLimits(params: {
         studentId: { in: studentIds },
         session: { courseId, status: "HELD", ...(groupId ? { groupId } : {}) },
       },
-      select: { studentId: true, status: true, session: { select: { hours: true } } },
+      // Otrabotka holati ham kerak: QABUL QILINGAN otrabotka propuskni yopadi
+      // (siyosat `makeupClearsAbsence`), tarixda esa propusk qoladi.
+      select: { studentId: true, status: true, session: { select: { hours: true } }, makeup: { select: { status: true } } },
     }),
     prisma.lessonSession.aggregate({
       where: { courseId, status: "HELD", ...(groupId ? { groupId } : {}) },
@@ -251,6 +257,7 @@ export async function attendanceLimits(params: {
     lateHours: 0,
     excusedHours: 0,
     unexcusedHours: 0,
+    makeupClosedHours: 0,
     limitHours,
     remainingHours: limitHours,
     unexcusedPct: plannedHours > 0 ? 0 : null,
@@ -258,6 +265,7 @@ export async function attendanceLimits(params: {
   });
   for (const id of studentIds) out.set(id, blank());
 
+  const clears = corridor.makeupClearsAbsence !== false;
   for (const m of marks) {
     const row = out.get(m.studentId);
     if (!row) continue;
@@ -265,7 +273,11 @@ export async function attendanceLimits(params: {
     if (m.status === "PRESENT") row.presentHours += h;
     else if (m.status === "LATE") row.lateHours += h;
     else if (m.status === "EXCUSED") row.excusedHours += h;
-    else if (m.status === "ABSENT") row.unexcusedHours += h;
+    else if (m.status === "ABSENT") {
+      // Yopilgan propusk sababsiz soatga kirmaydi (lekin `makeupClosedHours` da ko'rinadi).
+      if (clears && m.makeup?.status === "ACCEPTED") row.makeupClosedHours += h;
+      else row.unexcusedHours += h;
+    }
   }
 
   for (const row of out.values()) {

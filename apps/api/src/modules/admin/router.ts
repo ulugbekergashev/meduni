@@ -28,6 +28,7 @@ const qstr = (v: unknown) => (typeof v === "string" && v ? v : undefined);
 // ---------- Admin: AI monitoring / quotas / audit / stats (all admin tiers, scoped) ----------
 import * as control from "../policy/control";
 import * as calendar from "./calendar";
+import * as excuse from "../attendance/excuse";
 
 export const adminRouter = Router();
 adminRouter.use(requireRoles(...ADMIN_ROLES));
@@ -42,6 +43,15 @@ adminRouter.put("/policies", wrap(async (req, res) => res.json(await control.ups
 
 // O'QUV KALENDARI (Davomat 2.0 · F1): semestr sanalari + dars bo'lmaydigan kunlar.
 // Kalendarsiz darslar bayramda ham hosil bo'laveradi va davomat maxraji shishadi.
+// SPRAVKA ARIZALARI — dekanat navbati (siyosat bo'yicha "Sababli"ni dekanat qo'yadi).
+adminRouter.get("/excuses", wrap(async (req, res) => {
+  const scope = await adminScope(req);
+  res.json(await excuse.excuseQueue({ status: qstr(req.query.status), facultyId: scope.facultyId ?? undefined }));
+}));
+adminRouter.post("/excuses/:id/review", wrap(async (req, res) =>
+  res.json(await excuse.reviewExcuse(req.user!.id, Number(req.params.id), { approve: req.body?.approve !== false, comment: req.body?.comment }))
+));
+
 adminRouter.get("/terms", wrap(async (_req, res) => res.json(await calendar.listTerms())));
 adminRouter.put("/terms", wrap(async (req, res) => res.json(await calendar.upsertTerm(await adminScope(req), req.body ?? {}))));
 adminRouter.delete("/terms/:id", wrap(async (req, res) => res.json(await calendar.deleteTerm(await adminScope(req), Number(req.params.id)))));

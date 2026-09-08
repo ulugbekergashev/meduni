@@ -271,6 +271,7 @@ const BOOL_FIELDS = [
   "requireRemediation",
   "allowManualUnlock",
   "requirePresence",
+  "makeupClearsAbsence",
 ] as const;
 
 /** Кто вправе править какой уровень: вуз — только ректорат, факультет — декан. */
@@ -322,6 +323,7 @@ export async function listPolicies(req: Request) {
       maxMissedHoursPerTerm: r.maxMissedHoursPerTerm,
       makeupRequiredFor: r.makeupRequiredFor,
       makeupDeadlineDays: r.makeupDeadlineDays,
+      makeupClearsAbsence: r.makeupClearsAbsence,
       excuseDocDeadlineDays: r.excuseDocDeadlineDays,
       excuseApprover: r.excuseApprover,
       lateThresholdMin: r.lateThresholdMin,

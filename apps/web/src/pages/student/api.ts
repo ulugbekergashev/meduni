@@ -1207,3 +1207,69 @@ export function useChangePassword() {
       api("/api/v1/me/change-password", { method: "POST", body: JSON.stringify(b) }),
   });
 }
+
+// ---------------- Propusk hayot sikli (F3): otrabotka + spravka ----------------
+// ⚠️ Ilgari propusk talaba uchun BOSHI BERK ko'cha edi: ko'radi, lekin na
+// spravka topshira oladi, na otrabotka qila oladi.
+
+export type MakeupKind = "DIGITAL" | "IN_PERSON" | "WRITTEN";
+export type MakeupStatus = "REQUIRED" | "SUBMITTED" | "ACCEPTED" | "REJECTED" | "WAIVED";
+export interface Makeup {
+  id: number;
+  attendanceId: number;
+  kind: MakeupKind;
+  status: MakeupStatus;
+  dueAt: string;
+  overdue: boolean;
+  date: string;
+  courseId: number;
+  courseName: string;
+  lessonType: string;
+  hours: number;
+  topicId: number | null;
+  topicTitle: string | null;
+  comment: string | null;
+}
+export function useMyMakeups() {
+  return useQuery({ queryKey: ["me-makeups"], queryFn: () => api<Makeup[]>("/api/v1/me/makeups") });
+}
+export function useSubmitMakeup() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => api<{ ok: true }>(`/api/v1/me/makeups/${id}/submit`, { method: "POST" }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["me-makeups"] });
+      qc.invalidateQueries({ queryKey: ["me-attendance"] });
+    },
+  });
+}
+
+export type AbsenceReason = "ILLNESS" | "FAMILY" | "OFFICIAL" | "COMPETITION" | "OTHER";
+export interface ExcuseRequest {
+  id: number;
+  fromDate: string;
+  toDate: string;
+  reason: AbsenceReason;
+  note: string | null;
+  documentUrl: string | null;
+  status: "PENDING" | "APPROVED" | "REJECTED";
+  reviewComment: string | null;
+  reviewedByName: string | null;
+  reviewedAt: string | null;
+  createdAt: string;
+  affected: number;
+}
+export function useMyExcuses() {
+  return useQuery({ queryKey: ["me-excuses"], queryFn: () => api<ExcuseRequest[]>("/api/v1/me/excuses") });
+}
+export function useCreateExcuse() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (b: { fromDate: string; toDate: string; reason: AbsenceReason; note?: string }) =>
+      api<{ id: number; matched: number }>("/api/v1/me/excuses", { method: "POST", body: JSON.stringify(b) }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["me-excuses"] });
+      qc.invalidateQueries({ queryKey: ["me-attendance"] });
+    },
+  });
+}

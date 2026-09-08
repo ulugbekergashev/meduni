@@ -44,6 +44,7 @@ export interface ResolvedPolicy {
   maxMissedHoursPerTerm: number;
   makeupRequiredFor: MakeupScope;
   makeupDeadlineDays: number;
+  makeupClearsAbsence: boolean;
   excuseDocDeadlineDays: number;
   excuseApprover: ExcuseApprover;
   lateThresholdMin: number;
@@ -75,6 +76,7 @@ export const FALLBACK_POLICY: ResolvedPolicy = {
   maxMissedHoursPerTerm: 74,
   makeupRequiredFor: "PRACTICE",
   makeupDeadlineDays: 14,
+  makeupClearsAbsence: true,
   excuseDocDeadlineDays: 3,
   excuseApprover: "DEANERY",
   lateThresholdMin: 15,
@@ -104,6 +106,7 @@ type PolicyRow = {
   maxMissedHoursPerTerm: number;
   makeupRequiredFor: MakeupScope;
   makeupDeadlineDays: number;
+  makeupClearsAbsence: boolean;
   excuseDocDeadlineDays: number;
   excuseApprover: ExcuseApprover;
   lateThresholdMin: number;
@@ -137,6 +140,8 @@ function tighten(base: ResolvedPolicy, row: PolicyRow): ResolvedPolicy {
     maxMissedHoursPerTerm: Math.min(base.maxMissedHoursPerTerm, row.maxMissedHoursPerTerm),
     makeupRequiredFor: MAKEUP_RANK[row.makeupRequiredFor] > MAKEUP_RANK[base.makeupRequiredFor] ? row.makeupRequiredFor : base.makeupRequiredFor,
     makeupDeadlineDays: Math.min(base.makeupDeadlineDays, row.makeupDeadlineDays),
+    // Otrabotka propuskni YOPMASLIGI — qattiqroq shart.
+    makeupClearsAbsence: base.makeupClearsAbsence && row.makeupClearsAbsence,
     excuseDocDeadlineDays: Math.min(base.excuseDocDeadlineDays, row.excuseDocDeadlineDays),
     excuseApprover: APPROVER_RANK[row.excuseApprover] > APPROVER_RANK[base.excuseApprover] ? row.excuseApprover : base.excuseApprover,
     lateThresholdMin: Math.min(base.lateThresholdMin, row.lateThresholdMin),
@@ -187,7 +192,7 @@ export async function resolvePolicy(departmentId: number | null): Promise<Resolv
         requirePresence: false,
         // Мягкая отправная точка: строки уровней потом только ужесточают.
         maxUnexcusedPct: 100, warnUnexcusedPct: 100, maxMissedHoursPerTerm: 100000,
-        makeupRequiredFor: "NONE", makeupDeadlineDays: 3650, excuseDocDeadlineDays: 3650,
+        makeupRequiredFor: "NONE", makeupDeadlineDays: 3650, makeupClearsAbsence: true, excuseDocDeadlineDays: 3650,
         excuseApprover: "TEACHER", lateThresholdMin: 1440, lateCountsAsAbsentAfterMin: 1440,
         cycleMaxMissedDays: 9999,
         sources: [] }

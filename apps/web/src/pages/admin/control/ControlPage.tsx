@@ -6,6 +6,7 @@ import { Button, Card, Icon, Input, Modal, Select, Toggle, cls, useToast } from 
 import { AsyncSection } from "../../../components/AsyncSection";
 import { DataTable } from "../../../components/DataTable";
 import { Disclosure } from "../../../components/Disclosure";
+import { ExcuseInbox } from "./ExcuseInbox";
 import { formatDate } from "../../../lib/date";
 import { useLocale } from "../../../lib/useLocale";
 import { useControlReport, usePolicies, useSavePolicy, type PolicyRow } from "../api";
@@ -95,6 +96,10 @@ export function ControlPage() {
         <h1 className="text-h1 font-extrabold text-ink">{t("title")}</h1>
         <p className="mt-1 max-w-[70ch] text-note text-ink-dim">{t("subtitle")}</p>
       </div>
+
+      {/* SPRAVKA ARIZALARI — dekanat ishi: "Sababli"ni o'qituvchi emas, dekanat
+          qo'yadi, aks holda 25 % koridori ma'nosini yo'qotadi (F3). */}
+      <ExcuseInbox />
 
       <AsyncSection
         isLoading={report.isLoading}

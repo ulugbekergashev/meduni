@@ -322,3 +322,42 @@ export function useSavePolicy() {
     },
   });
 }
+
+// ---------------- Spravka arizalari (F3) — dekanat navbati ----------------
+// Siyosat bo'yicha "Sababli"ni DEKANAT qo'yadi (VM №824 / HEMIS naqshi):
+// o'qituvchi o'z darsidagi propuskni o'zi "sababli" qila olmaydi.
+
+export interface AdminExcuse {
+  id: number;
+  fromDate: string;
+  toDate: string;
+  reason: "ILLNESS" | "FAMILY" | "OFFICIAL" | "COMPETITION" | "OTHER";
+  note: string | null;
+  documentUrl: string | null;
+  status: "PENDING" | "APPROVED" | "REJECTED";
+  reviewComment: string | null;
+  reviewedByName: string | null;
+  reviewedAt: string | null;
+  createdAt: string;
+  affected: number;
+  studentId: number;
+  studentName: string;
+  groupName: string | null;
+}
+export function useAdminExcuses(status = "PENDING") {
+  return useQuery({
+    queryKey: ["admin-excuses", status],
+    queryFn: () => api<AdminExcuse[]>(`/api/v1/admin/excuses?status=${status}`),
+  });
+}
+export function useReviewExcuse() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (b: { id: number; approve: boolean; comment?: string }) =>
+      api<{ ok: true; applied: number }>(`/api/v1/admin/excuses/${b.id}/review`, {
+        method: "POST",
+        body: JSON.stringify({ approve: b.approve, comment: b.comment }),
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-excuses"] }),
+  });
+}

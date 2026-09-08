@@ -96,6 +96,28 @@ enum ExcuseApprover {
   BOTH
 }
 
+enum ExcuseStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+/// Otrabotka turi. DIGITAL — mavzuni platformada o'zlashtirish (konspekt + test);
+/// IN_PERSON — kafedrada, o'qituvchi qabul qiladi; WRITTEN — yozma ish.
+enum MakeupKind {
+  DIGITAL
+  IN_PERSON
+  WRITTEN
+}
+
+enum MakeupStatus {
+  REQUIRED
+  SUBMITTED
+  ACCEPTED
+  REJECTED
+  WAIVED
+}
+
 enum TopicStatus {
   DRAFT
   PUBLISHED
@@ -215,6 +237,9 @@ model User {
   attendanceRecords Attendance[]     @relation("AttendanceStudent")
   attendanceChanges AttendanceChange[] @relation("AttendanceChanger")
   attendanceExcused Attendance[]     @relation("AttendanceExcuser")
+  excuseRequests    ExcuseRequest[]  @relation("ExcuseStudent")
+  excusesReviewed   ExcuseRequest[]  @relation("ExcuseReviewer")
+  makeupsAccepted   Makeup[]         @relation("MakeupAcceptor")
   taughtSessions    LessonSession[]  @relation("SessionTeacher")
   createdCycles     CourseCycle[]    @relation("CycleCreator")
   aiUsage           AiUsage[]
@@ -565,6 +590,57 @@ model AttendanceChange {
   @@map("attendance_changes")
 }
 
+/// SPRAVKA ARIZASI — talaba propuskni sababli qilishni so'raydi.
+/// ⚠️ NEGA: ilgari "Sababli" — o'qituvchi popoverda bosadigan status edi: na sabab,
+/// na hujjat, na tasdiqlovchi, na iz. Bu davomatdagi eng siyosiy status.
+/// Sukut bo'yicha ariza DEKANATga boradi (`LearningPolicy.excuseApprover`).
+model ExcuseRequest {
+  id        Int           @id @default(autoincrement())
+  studentId Int
+  student   User          @relation("ExcuseStudent", fields: [studentId], references: [id])
+  fromDate  DateTime
+  toDate    DateTime
+  reason    AbsenceReason
+  note      String?
+  /// Spravka fotosi (095 forma) — `lib/storage.ts` yo'li.
+  documentUrl String?
+  status    ExcuseStatus  @default(PENDING)
+  reviewedById  Int?
+  reviewedBy    User?     @relation("ExcuseReviewer", fields: [reviewedById], references: [id])
+  reviewedAt    DateTime?
+  reviewComment String?
+  createdAt DateTime      @default(now())
+  /// Tasdiqlanganda SABABLIga aylangan darslar.
+  applied   Attendance[]
+
+  @@index([studentId, status])
+  @@index([status, createdAt])
+  @@map("excuse_requests")
+}
+
+/// OTRABOTKA — qoldirilgan darsni yopish. Bitta propuskka bitta otrabotka.
+/// ⚠️ Siyosat (`makeupRequiredFor`) qaysi TURDAGI dars uchun majburiyligini
+/// aytadi: odatda amaliy/lab/klinik — ha, ma'ruza — yo'q.
+model Makeup {
+  id           Int          @id @default(autoincrement())
+  attendanceId Int          @unique
+  attendance   Attendance   @relation(fields: [attendanceId], references: [id], onDelete: Cascade)
+  kind         MakeupKind
+  dueAt        DateTime
+  status       MakeupStatus @default(REQUIRED)
+  /// DIGITAL uchun — mavzu testi urinishi (isbot).
+  evidenceAttemptId Int?
+  submittedAt  DateTime?
+  acceptedById Int?
+  acceptedBy   User?        @relation("MakeupAcceptor", fields: [acceptedById], references: [id])
+  acceptedAt   DateTime?
+  comment      String?
+  createdAt    DateTime     @default(now())
+
+  @@index([status, dueAt])
+  @@map("makeups")
+}
+
 model Attendance {
   id         Int              @id @default(autoincrement())
   sessionId  Int
@@ -590,6 +666,10 @@ model Attendance {
   excusedById Int?
   excusedBy   User?           @relation("AttendanceExcuser", fields: [excusedById], references: [id])
   excusedAt   DateTime?
+  /// Qaysi ariza bo'yicha sababli bo'ldi (dekanat tasdiqlagan).
+  excuseRequestId Int?
+  excuseRequest   ExcuseRequest? @relation(fields: [excuseRequestId], references: [id])
+  makeup      Makeup?
   /// Kechikish daqiqasi (siyosatda: N daqiqadan keyin — kelmadi).
   lateMinutes Int?
   changes    AttendanceChange[]
@@ -740,6 +820,9 @@ model LearningPolicy {
   /// Для каких типов занятий отработка обязательна (лекции обычно не отрабатывают).
   makeupRequiredFor     MakeupScope    @default(PRACTICE)
   makeupDeadlineDays    Int            @default(14)
+  /// Qabul qilingan otrabotka propuskni 25 % hisobidan CHIQARADIMI (HEMIS dagi
+  /// "nb yopildi" naqshi). Tarixda propusk qoladi.
+  makeupClearsAbsence   Boolean        @default(true)
   /// Срок подачи документа о причине (рабочих дней).
   excuseDocDeadlineDays Int            @default(3)
   /// Кто переводит пропуск в «уважительный».

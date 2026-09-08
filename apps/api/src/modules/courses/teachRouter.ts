@@ -7,6 +7,7 @@ import * as review from "./review";
 import * as attendance from "./attendance";
 import * as timetable from "./timetable";
 import * as mistakes from "./mistakes";
+import * as excuse from "../attendance/excuse";
 import { getTeacherTaskBoard } from "../tasks/service";
 import { teacherSearch } from "../search/service";
 
@@ -229,6 +230,12 @@ teachCoursesRouter.post("/attendance-by-date", wrap(async (req, res) => res.json
 
 // "Dars bo'lmadi" — dars maxrajdan chiqadi (o'qituvchi kasal, bayram).
 teachCoursesRouter.post("/lesson-cancel", wrap(async (req, res) => res.json(await timetable.setLessonCancelled(req.user!.id, req.body ?? {}))));
+
+// OTRABOTKA navbati — talaba topshirgan, o'qituvchi qabul qiladi (F3).
+teachCoursesRouter.get("/makeups", wrap(async (req, res) => res.json(await excuse.teacherMakeupQueue(req.user!.id))));
+teachCoursesRouter.post("/makeups/:id/review", wrap(async (req, res) =>
+  res.json(await excuse.reviewMakeup(req.user!.id, parseId(req.params.id), { accept: req.body?.accept !== false, comment: req.body?.comment }))
+));
 
 // SIKL PASPORTI — guruh kafedrada blok bo'lib o'qiydi (ko'pincha mehmon).
 teachCoursesRouter.get("/cycles", wrap(async (req, res) => res.json(await timetable.getTeacherCycles(req.user!.id, { groupId: qnum(req.query.groupId) }))));

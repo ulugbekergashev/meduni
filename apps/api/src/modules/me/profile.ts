@@ -22,7 +22,7 @@ async function courseLimitsFor(studentId: number, courseIds: number[]): Promise<
       courseId: c.id,
       groupId: me?.groupId ?? null,
       plannedHours: c.plannedHours,
-      corridor: { maxUnexcusedPct: policy.maxUnexcusedPct, warnUnexcusedPct: policy.warnUnexcusedPct },
+      corridor: { maxUnexcusedPct: policy.maxUnexcusedPct, warnUnexcusedPct: policy.warnUnexcusedPct, makeupClearsAbsence: policy.makeupClearsAbsence },
     });
     const row = map.get(studentId);
     if (row) out.set(c.id, row);

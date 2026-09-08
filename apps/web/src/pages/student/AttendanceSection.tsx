@@ -9,6 +9,7 @@ import { useLocale } from "../../lib/useLocale";
 import { ATT_META as META, isLowAttendance } from "../../lib/attendance";
 import { useMyAttendance, useMyCourses, useMySchedule, type AttStatus, type AttendanceLimit } from "./api";
 import { CheckInCard } from "./CheckInCard";
+import { ExcuseList, MakeupList } from "./AbsenceActions";
 
 /** Zona → ohang. Ogohlantiruvchi rang RAQAMDA emas, IZOHDA (dizayn qoidasi):
  *  "6 soat" — o'z-o'zidan yomon xabar emas, yomoni — "limitgacha 1 dars qoldi". */
@@ -169,6 +170,15 @@ export function AttendanceSection() {
           </Card>
         </motion.div>
       )}
+
+      {/* PROPUSK BILAN NIMA QILISH MUMKIN — koridordan keyin darrov:
+          qarzlar (otrabotka) va spravka arizalari. */}
+      <motion.div variants={itemVariants}>
+        <MakeupList />
+      </motion.div>
+      <motion.div variants={itemVariants}>
+        <ExcuseList />
+      </motion.div>
 
       {/* Hero: umumiy % + taqsimot + oylik trend */}
       {st && (

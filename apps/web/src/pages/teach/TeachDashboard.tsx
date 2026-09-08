@@ -11,6 +11,7 @@ import { useMe } from "../../lib/auth";
 import { useTaskBoard, useTeacherLessons, useTeachCourses, useTeachDashboard, type RankedStudent } from "./api";
 import { LessonsBlock, dayKey, type LessonMode } from "./home/LessonsBlock";
 import { TasksBlock } from "./home/TasksBlock";
+import { MakeupBlock } from "./home/MakeupBlock";
 import { StarterCard } from "./home/StarterCard";
 import { CourseCard } from "./CourseCard";
 
@@ -176,6 +177,10 @@ export function TeachDashboard() {
       {/* VAZIFALAR — shoshilinch 5 ta ⇄ to'liq bort */}
       <div id="block-tasks" className="scroll-mt-4">
         <TasksBlock expanded={tasksOpen} onExpand={setTasksOpen} />
+
+        {/* Otrabotka navbati — talaba qarzni yopdi, qabul qilish kerak (F3).
+            Navbat bo'sh bo'lsa blok chizilmaydi. */}
+        <MakeupBlock />
         <div className="mt-1.5 px-1">
           <button onClick={() => navigate("/teach/cases/review")} className="inline-flex items-center gap-0.5 text-note font-semibold text-ink-soft hover:text-ink">
             {ttasks("casesReview")} <Icon icon={ChevronRight} size={14} />

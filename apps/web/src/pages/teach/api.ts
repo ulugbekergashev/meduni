@@ -915,3 +915,40 @@ export function useAttendanceMatrix(courseId: number | null, groupId: number, fr
 // `useMarkAttendance`, `useAttendanceReport`. Ular 2026-07 da UI'dan uzilgan
 // (JournalView/SessionsView/ReportView), backend route'lari ham yopildi.
 // Yo'qlama: `useRosterByDate` + `useMarkByDate` (kurs+guruh+sana+vaqt).
+
+// ---------------- Otrabotka navbati (F3) ----------------
+// Talaba qoldirgan amaliy darsni yopadi; o'qituvchi qabul qiladi yoki rad etadi.
+
+export interface TeacherMakeup {
+  id: number;
+  attendanceId: number;
+  kind: "DIGITAL" | "IN_PERSON" | "WRITTEN";
+  status: string;
+  dueAt: string;
+  overdue: boolean;
+  date: string;
+  courseId: number;
+  courseName: string;
+  lessonType: string;
+  hours: number;
+  topicId: number | null;
+  topicTitle: string | null;
+  comment: string | null;
+  studentId: number;
+  studentName: string;
+}
+export function useTeacherMakeups() {
+  return useQuery({ queryKey: ["teach-makeups"], queryFn: () => api<TeacherMakeup[]>("/api/v1/teach/makeups") });
+}
+export function useReviewMakeup() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (b: { id: number; accept: boolean; comment?: string }) =>
+      api<{ ok: true }>(`/api/v1/teach/makeups/${b.id}/review`, { method: "POST", body: JSON.stringify({ accept: b.accept, comment: b.comment }) }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["teach-makeups"] });
+      qc.invalidateQueries({ queryKey: ["attendance-matrix"] });
+      qc.invalidateQueries({ queryKey: ["teach-cycles"] });
+    },
+  });
+}
