@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import {
+import { ArrowLeft,
   BookOpen,
   Check,
   ChevronLeft,
@@ -112,8 +112,8 @@ export function TopicConstructor() {
   if (detail.isError || !topic) {
     return (
       <div>
-        <button onClick={() => navigate("/teach")} className="text-body font-medium text-brand-deep hover:underline">
-          {t("back")}
+        <button onClick={() => navigate("/teach")} className="inline-flex items-center gap-1.5 text-body font-medium text-brand-deep hover:underline">
+          <Icon icon={ArrowLeft} size={14} />{t("back")}
         </button>
         <Card className="mt-4">
           <p className="py-6 text-center text-body text-rose">{tt("empty")}</p>

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Check, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Check, Plus, Trash2 } from "lucide-react";
 import { Button, Card, Icon, Input, Textarea, useToast } from "@meduni/ui";
 import { useUpdateContent, type CaseJson, type CaseStepJson, type ContentFull } from "../topics/api";
 
@@ -66,9 +66,9 @@ export function CaseEditor({ content }: { content: ContentFull }) {
     <div>
       <button
         onClick={() => navigate(`/teach/topics/${content.topicId}`)}
-        className="text-note font-medium text-brand-deep hover:underline"
+        className="inline-flex items-center gap-1.5 text-note font-medium text-brand-deep hover:underline"
       >
-        {t("back")}
+        <Icon icon={ArrowLeft} size={14} />{t("back")}
       </button>
 
       <div className="mt-3 flex flex-wrap items-center justify-between gap-3">

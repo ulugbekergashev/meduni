@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { BookOpen, CalendarDays, ClipboardCheck, DoorClosed, Download, GraduationCap, Users } from "lucide-react";
+import { ArrowLeft, BookOpen, CalendarDays, ClipboardCheck, DoorClosed, Download, GraduationCap, Users } from "lucide-react";
 import { Badge, Button, Card, ChipSelect, Icon, LegendRow, Spinner, StackedBar, cls, useToast } from "@meduni/ui";
 import { Avatar } from "../../../components/Avatar";
 import { DataTable } from "../../../components/DataTable";
@@ -64,8 +64,8 @@ export function CourseDetail() {
   if (course.isError || !course.data) {
     return (
       <div>
-        <button onClick={() => navigate("/admin/courses")} className="text-note text-brand-deep hover:underline">
-          {t("detail.back")}
+        <button onClick={() => navigate("/admin/courses")} className="inline-flex items-center gap-1.5 text-note text-brand-deep hover:underline">
+          <Icon icon={ArrowLeft} size={14} />{t("detail.back")}
         </button>
         <p className="mt-4 text-note text-rose">{tc("loadError")}</p>
       </div>
@@ -93,8 +93,8 @@ export function CourseDetail() {
 
   return (
     <div>
-      <button onClick={() => navigate("/admin/courses")} className="text-note font-medium text-brand-deep hover:underline">
-        {t("detail.back")}
+      <button onClick={() => navigate("/admin/courses")} className="inline-flex items-center gap-1.5 text-note font-medium text-brand-deep hover:underline">
+        <Icon icon={ArrowLeft} size={14} />{t("detail.back")}
       </button>
 
       <h1 className="mt-3 text-h1 font-bold text-ink">

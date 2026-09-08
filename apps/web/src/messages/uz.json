@@ -308,7 +308,7 @@
     }
   },
   "groupProfile": {
-    "back": "← Guruhlar",
+    "back": "Guruhlar",
     "yearN": "{{n}}-kurs",
     "studentsN": "{{n}} talaba",
     "noStudents": "Bu guruhda talaba yoʻq.",
@@ -406,7 +406,7 @@
     "close": "Yopish"
   },
   "userProfile": {
-    "back": "← Foydalanuvchilar",
+    "back": "Foydalanuvchilar",
     "kind": {
       "teacher": "Oʻqituvchi",
       "student": "Talaba",
@@ -747,10 +747,10 @@
     "contentToApprove": "kontent tasdiq kutmoqda",
     "studentsBehind": "talaba orqada qolgan",
     "avgProgress": "Oʻrtacha",
-    "back": "← Bosh sahifa",
+    "back": "Bosh sahifa",
     "reviewSoonTitle": "Keys tekshiruv navbati tez orada",
     "reviewSoonBody": "Talabalar topshirgan keyslarni baholash sahifasi keyingi modulda ochiladi.",
-    "backToCourses": "← Mening kurslarim",
+    "backToCourses": "Mening kurslarim",
     "notFound": "Bu kurs topilmadi yoki sizga ruxsat yoʻq",
     "tabs": {
       "topics": "Mavzular",
@@ -866,7 +866,7 @@
     "chipContent": "Kontent"
   },
   "constructor": {
-    "back": "← Mavzular",
+    "back": "Mavzular",
     "steps": {
       "material": "Material",
       "digest": "Konspekt",
@@ -1016,7 +1016,7 @@
     "kindAuto": "Konspektdan avtomatik — yaratish shart emas"
   },
   "videoEditor": {
-    "back": "← Konstruktor",
+    "back": "Konstruktor",
     "title": "Video tahrirlagichi",
     "downloadMp4": "MP4 yuklab olish",
     "downloadSrt": "Subtitr (SRT)",
@@ -1037,7 +1037,7 @@
     "audioPreviewHint": "Talaba buni ovoz + slaydlar ko’rinishida ko’radi. Quyida ovozni tinglashingiz mumkin."
   },
   "presEditor": {
-    "back": "← Konstruktor",
+    "back": "Konstruktor",
     "title": "Prezentatsiya tahrirlagichi",
     "downloadPptx": "PowerPoint yuklab olish",
     "downloadPdf": "PDF yuklab olish",
@@ -1061,7 +1061,7 @@
     "noImage": "Rasm yoʻq"
   },
   "quizEditor": {
-    "back": "← Konstruktor",
+    "back": "Konstruktor",
     "title": "Test tahrirlagichi",
     "question": "Savol",
     "questionText": "Savol matni",
@@ -1084,7 +1084,7 @@
     }
   },
   "caseEditor": {
-    "back": "← Konstruktor",
+    "back": "Konstruktor",
     "title": "Keys tahrirlagichi",
     "complaints": "Shikoyatlar",
     "anamnesis": "Anamnez",
@@ -1438,7 +1438,7 @@
     "confirmDelete": "Bu kursni oʻchirasizmi? Yozilganlar ham oʻchadi.",
     "confirmDeleteTitle": "Kursni oʻchirish",
     "detail": {
-      "back": "← Kurslar",
+      "back": "Kurslar",
       "info": "Kurs maʼlumoti",
       "enrolledStudents": "Yozilgan talabalar",
       "manageGroups": "Guruhlarni boshqarish",
@@ -1529,7 +1529,7 @@
     "empty": "Reyting hali shakllanmagan"
   },
   "review": {
-    "back": "← Bosh sahifa",
+    "back": "Bosh sahifa",
     "title": "Keys tekshiruv navbati",
     "allCourses": "Hamma kurslar",
     "allTopics": "Hamma mavzular",
@@ -2064,7 +2064,7 @@
     }
   },
   "adminGroup": {
-    "back": "← Talabalar",
+    "back": "Talabalar",
     "yearN": "{{n}}-kurs",
     "studentsN": "{{n}} talaba",
     "topicsN": "{{n}} mavzu",

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Download, FileDown, RefreshCw } from "lucide-react";
+import { ArrowLeft, Download, FileDown, RefreshCw } from "lucide-react";
 import { Button, Card, Icon, Spinner, Textarea, useToast } from "@meduni/ui";
 import { authedFetch } from "../../../lib/api";
 import { API_BASE, useRebuildVideo, useUpdateContent, type ContentFull, type ScriptSegment } from "../topics/api";
@@ -64,9 +64,9 @@ export function VideoEditor({ content }: { content: ContentFull }) {
     <div>
       <button
         onClick={() => navigate(`/teach/topics/${content.topicId}`)}
-        className="text-note font-medium text-brand-deep hover:underline"
+        className="inline-flex items-center gap-1.5 text-note font-medium text-brand-deep hover:underline"
       >
-        {t("back")}
+        <Icon icon={ArrowLeft} size={14} />{t("back")}
       </button>
 
       <div className="mt-3 flex flex-wrap items-center justify-between gap-3">

@@ -1,6 +1,6 @@
 import { Outlet, useLocation, useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { BarChart3, BookOpen, Settings, Users, Users2 } from "lucide-react";
+import { ArrowLeft, BarChart3, BookOpen, Settings, Users, Users2 } from "lucide-react";
 import { Card, Icon } from "@meduni/ui";
 import { SubNav } from "../../../components/SubNav";
 import { useTeachCourseMeta } from "../api";
@@ -40,9 +40,9 @@ export function TeacherCourseShell() {
       <div>
         <button
           onClick={() => navigate("/teach")}
-          className="text-note font-medium text-brand-deep hover:underline"
+          className="inline-flex items-center gap-1.5 text-note font-medium text-brand-deep hover:underline"
         >
-          {t("backToCourses")}
+          <Icon icon={ArrowLeft} size={14} />{t("backToCourses")}
         </button>
         <Card className="mt-4">
           <p className="py-6 text-center text-note text-rose">{t("notFound")}</p>
@@ -61,9 +61,9 @@ export function TeacherCourseShell() {
       {/* Header — stable across tab navigation */}
       <button
         onClick={() => navigate("/teach")}
-        className="text-note font-medium text-brand-deep hover:underline"
+        className="inline-flex items-center gap-1.5 text-note font-medium text-brand-deep hover:underline"
       >
-        {t("backToCourses")}
+        <Icon icon={ArrowLeft} size={14} />{t("backToCourses")}
       </button>
       <h1 className="mt-3 text-h1 font-bold text-ink">{c.subjectName}</h1>
       <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-note text-ink-soft">

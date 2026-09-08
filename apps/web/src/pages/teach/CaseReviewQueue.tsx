@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, CheckCircle2, ChevronDown, ClipboardCheck, Clock, FlaskConical, HeartPulse, ListPlus, Search, Sparkles, Stethoscope, User } from "lucide-react";
+import { ArrowLeft, CheckCircle2, ChevronDown, Clock, FlaskConical, HeartPulse, ListPlus, Search, Sparkles, Stethoscope, User } from "lucide-react";
 import { Badge, Button, Card, Icon, Spinner, cls, useToast } from "@meduni/ui";
 import { AsyncSection } from "../../components/AsyncSection";
 import { Disclosure } from "../../components/Disclosure";
@@ -500,8 +500,10 @@ export function CaseReviewQueue() {
           <AsyncSection
             isLoading={queueQ.isLoading}
             isError={queueQ.isError}
-            isEmpty={queue.length === 0}
-            emptyIcon={<Icon icon={ClipboardCheck} size={22} />}
+            // ⚠️ Bo'sh holatni sahifaning O'ZI chizadi (pastdagi emerald karta):
+            // `isEmpty` bersak, ustiga AsyncSection ham matnsiz bo'sh karta
+            // qo'yardi va ekranda ikkita bo'sh quti turardi.
+            isEmpty={false}
             emptyText=""
             onRetry={() => queueQ.refetch()}
           >
@@ -524,7 +526,7 @@ export function CaseReviewQueue() {
           {selected !== null ? (
             <ReviewPanel id={selected} onSavedNext={gotoNext} onClose={() => setSelected(null)} />
           ) : (
-            <Card className="hidden lg:flex lg:min-h-[40vh] lg:items-center lg:justify-center">
+            <Card className="hidden lg:flex lg:min-h-[220px] lg:items-center lg:justify-center border-dashed">
               <p className="text-note text-ink-faint">{t("selectPrompt")}</p>
             </Card>
           )}
