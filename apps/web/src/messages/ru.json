@@ -661,7 +661,19 @@
     "colMissed": "Пропуски",
     "colPct": "Посещ.",
     "clearFilter": "Сбросить фильтр",
-    "courseJournal": "Все занятия"
+    "courseJournal": "Все занятия",
+    "corridorTitle": "По предметам",
+    "corridorHint": "Если часов без уважительной причины наберётся {{pct}} % от часов предмета, вас не допустят к итоговому контролю.",
+    "unexcusedOf": "без причины {{h}} из {{limit}} ч",
+    "remainingHours": "осталось {{n}} ч",
+    "noPlannedHours": "плановые часы не заданы",
+    "zoneOK": "В норме",
+    "zoneWARN": "Внимание",
+    "zoneDANGER": "Близко к лимиту",
+    "zoneBLOCKED": "Лимит исчерпан",
+    "zoneBlockedHint": "К итоговому контролю не допускают — обратитесь на кафедру.",
+    "hoursShort": "ч",
+    "overallShort": "Общая посещаемость"
   },
   "profile": {
     "title": "Профиль",

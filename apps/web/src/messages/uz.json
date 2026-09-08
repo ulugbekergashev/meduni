@@ -661,7 +661,19 @@
     "colMissed": "Qoldirdi",
     "colPct": "Davomat",
     "clearFilter": "Filtrni tozalash",
-    "courseJournal": "Barcha darslar"
+    "courseJournal": "Barcha darslar",
+    "corridorTitle": "Fanlar bo'yicha holat",
+    "corridorHint": "Sababsiz qoldirilgan soat fanga ajratilgan soatning {{pct}} % iga yetsa, yakuniy nazoratga kiritilmaysiz.",
+    "unexcusedOf": "sababsiz {{h}} / {{limit}} soat",
+    "remainingHours": "{{n}} soat qoldi",
+    "noPlannedHours": "reja soati kiritilmagan",
+    "zoneOK": "Me'yorda",
+    "zoneWARN": "Diqqat",
+    "zoneDANGER": "Limitga yaqin",
+    "zoneBLOCKED": "Limit tugadi",
+    "zoneBlockedHint": "Yakuniy nazoratga kiritilmaysiz — kafedraga murojaat qiling.",
+    "hoursShort": "soat",
+    "overallShort": "Umumiy davomat"
   },
   "profile": {
     "title": "Profil",

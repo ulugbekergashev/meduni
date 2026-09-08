@@ -1,14 +1,57 @@
 import { Fragment, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { motion, type Variants } from "framer-motion";
-import { AlertTriangle, BookOpen, CalendarCheck, CalendarDays, ChevronDown, X } from "lucide-react";
+import { AlertTriangle, BookOpen, CalendarCheck, CalendarDays, ChevronDown, ShieldAlert, X } from "lucide-react";
 import { Card, Icon, LegendRow, MiniBars, Spinner, StackedBar, cls } from "@meduni/ui";
 import { AsyncSection } from "../../components/AsyncSection";
 import { formatDate } from "../../lib/date";
 import { useLocale } from "../../lib/useLocale";
 import { ATT_META as META, isLowAttendance } from "../../lib/attendance";
-import { useMyAttendance, useMyCourses, useMySchedule, type AttStatus } from "./api";
+import { useMyAttendance, useMyCourses, useMySchedule, type AttStatus, type AttendanceLimit } from "./api";
 import { CheckInCard } from "./CheckInCard";
+
+/** Zona → ohang. Ogohlantiruvchi rang RAQAMDA emas, IZOHDA (dizayn qoidasi):
+ *  "6 soat" — o'z-o'zidan yomon xabar emas, yomoni — "limitgacha 1 dars qoldi". */
+const ZONE_TONE: Record<AttendanceLimit["zone"], { bar: string; cap: string; pill: string }> = {
+  OK: { bar: "bg-emerald", cap: "text-ink-faint", pill: "" },
+  WARN: { bar: "bg-amber", cap: "text-amber", pill: "bg-amber-soft text-amber" },
+  DANGER: { bar: "bg-rose", cap: "text-rose", pill: "bg-rose-soft text-rose" },
+  BLOCKED: { bar: "bg-rose", cap: "text-rose", pill: "bg-rose text-white" },
+};
+
+/** Fan bo'yicha SOATLI holat: sababsiz soat / limit + qolgan soat.
+ *  ⚠️ Har chiziq tagida u NIMANING ulushi ekani yozilgan (dizayn qoidasi):
+ *  yolg'iz "13 %" hech narsa anglatmaydi, "sababsiz 6 / 12 soat" — anglatadi. */
+function CorridorRow({ name, limit, first }: { name: string; limit: AttendanceLimit; first: boolean }) {
+  const { t } = useTranslation(undefined, { keyPrefix: "attendanceMe" });
+  const tone = ZONE_TONE[limit.zone];
+  const known = limit.limitHours > 0;
+  const fill = known ? Math.min(100, Math.round((limit.unexcusedHours / limit.limitHours) * 100)) : 0;
+  return (
+    <div className={cls("flex items-start gap-3 px-5 py-3", !first && "border-t border-line-soft")}>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-note text-ink">{name}</p>
+        {/* 0 % da chiziq CHIZILMAYDI — ingichka qoldiq "biroz bor" deb o'qiladi. */}
+        {known && fill > 0 && (
+          <div className="mt-1.5 h-1 overflow-hidden rounded-pill bg-line-soft">
+            <div className={cls("h-full rounded-pill", tone.bar)} style={{ width: `${fill}%` }} />
+          </div>
+        )}
+        <p className={cls("mt-1 text-micro", tone.cap)}>
+          {known ? t("unexcusedOf", { h: limit.unexcusedHours, limit: limit.limitHours }) : t("noPlannedHours")}
+        </p>
+      </div>
+      {known && (
+        <div className="flex shrink-0 flex-col items-end gap-1">
+          {limit.zone !== "OK" && (
+            <span className={cls("rounded-pill px-2 py-0.5 text-micro font-semibold", tone.pill)}>{t(`zone${limit.zone}`)}</span>
+          )}
+          <span className="text-micro text-ink-faint">{t("remainingHours", { n: limit.remainingHours })}</span>
+        </div>
+      )}
+    </div>
+  );
+}
 
 const MONTHS_UZ = ["yanvar", "fevral", "mart", "aprel", "may", "iyun", "iyul", "avgust", "sentabr", "oktabr", "noyabr", "dekabr"];
 const MONTHS_RU = ["январь", "февраль", "март", "апрель", "май", "июнь", "июль", "август", "сентябрь", "октябрь", "ноябрь", "декабрь"];
@@ -62,6 +105,14 @@ export function AttendanceSection() {
     return m;
   }, [data]);
 
+  // KORIDOR: reja soati ma'lum fanlar — eng og'iri birinchi.
+  const corridor = useMemo(() => {
+    const rows = (data?.byCourse ?? []).filter((c) => c.limit && c.limit.plannedHours > 0);
+    const rank: Record<string, number> = { BLOCKED: 0, DANGER: 1, WARN: 2, OK: 3 };
+    return [...rows].sort((a, b) => rank[a.limit!.zone] - rank[b.limit!.zone] || b.limit!.unexcusedHours - a.limit!.unexcusedHours);
+  }, [data]);
+  const worst = corridor[0] ?? null;
+
   // Sessiyalarni oylarga guruhlash (ro'yxat uzayganda o'qilishi uchun).
   const byMonth = useMemo(() => {
     type Row = NonNullable<typeof data>["sessions"][number];
@@ -93,16 +144,42 @@ export function AttendanceSection() {
         <CheckInCard />
       </motion.div>
 
+      {/* KORIDOR — fanlar bo'yicha SOATLI holat. Bu asosiy blok: nizom davomatni
+          darsda emas, akademik soatda hisoblaydi va uning OQIBATI bor. Umumiy
+          foiz pastda, ma'lumot sifatida qoladi. */}
+      {corridor.length > 0 && (
+        <motion.div variants={itemVariants}>
+          <Card className="p-0">
+            <div className="flex items-center gap-2 border-b border-line px-5 py-3.5">
+              <Icon icon={ShieldAlert} size={15} className="text-ink-faint" />
+              <p className="text-note font-bold text-ink-soft">{t("corridorTitle")}</p>
+            </div>
+            <div>
+              {corridor.map((c, i) => (
+                <CorridorRow key={c.courseId} name={c.courseName} limit={c.limit!} first={i === 0} />
+              ))}
+            </div>
+            {worst && worst.limit!.zone !== "OK" && (
+              <p className="border-t border-line-soft px-5 py-3 text-micro text-ink-faint">
+                {worst.limit!.zone === "BLOCKED"
+                  ? t("zoneBlockedHint")
+                  : t("corridorHint", { pct: Math.round((worst.limit!.limitHours / Math.max(1, worst.limit!.plannedHours)) * 100) })}
+              </p>
+            )}
+          </Card>
+        </motion.div>
+      )}
+
       {/* Hero: umumiy % + taqsimot + oylik trend */}
       {st && (
         <motion.div variants={itemVariants}>
         <Card className="grid gap-x-8 gap-y-6 lg:grid-cols-[minmax(0,260px)_minmax(0,1fr)] overflow-hidden relative">
           {/* Subtle glow background */}
           <div className="absolute -top-32 -left-32 w-64 h-64 bg-brand-soft rounded-full blur-3xl"></div>
-          
+
           <div className="relative z-10">
-            <p className="text-note font-bold text-ink-soft">{t("overallPct")}</p>
-            <p className={cls("mt-1 text-[44px] font-bold leading-none font-data tabular-nums", low ? "text-rose" : "text-brand-tint")}>
+            <p className="text-note font-bold text-ink-soft">{t("overallShort")}</p>
+            <p className={cls("mt-1 text-stat font-bold leading-none tabular-nums", low ? "text-rose" : "text-ink")}>
               {pct !== null ? `${pct}%` : "—"}
             </p>
             <div className="mt-4">

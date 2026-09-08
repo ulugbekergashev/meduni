@@ -948,6 +948,25 @@ export function useSubmitCase(topicId: number) {
 
 // ---------------- Attendance + profile (Module 16) ----------------
 
+/**
+ * Soatli koridor (Davomat 2.0 · F1). Nizom davomatni DARSDA emas, akademik
+ * SOATDA hisoblaydi: fanga ajratilgan soatning 25 % i sababsiz qoldirilsa,
+ * talaba yakuniy nazoratga kiritilmaydi (VM №824).
+ */
+export type AttZone = "OK" | "WARN" | "DANGER" | "BLOCKED";
+export interface AttendanceLimit {
+  plannedHours: number;
+  heldHours: number;
+  presentHours: number;
+  lateHours: number;
+  excusedHours: number;
+  unexcusedHours: number;
+  limitHours: number;
+  remainingHours: number;
+  unexcusedPct: number | null;
+  zone: AttZone;
+}
+
 // Holat turi — umumiy manba (`lib/attendance.ts`).
 export type { AttStatus };
 
@@ -963,6 +982,8 @@ export interface MyAttendance {
     excused: number;
     marked: number;
     pct: number | null;
+    /** SOATLI koridor (Davomat 2.0 · F1). Reja soati yo'q bo'lsa `plannedHours=0`. */
+    limit: AttendanceLimit | null;
   }[];
   /** Oxirgi 6 oy trendi. */
   byMonth: { month: string; marked: number; pct: number }[];
