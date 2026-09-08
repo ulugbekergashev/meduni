@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { XCircle } from "lucide-react";
+import { Download, XCircle } from "lucide-react";
 import { Card, Icon, Select, Spinner, cls, useToast } from "@meduni/ui";
-import { apiErrorMessage } from "../../../lib/api";
+import { API_URL, apiErrorMessage } from "../../../lib/api";
 import { useLocale } from "../../../lib/useLocale";
 import { ATT_META, ATT_META_LIST, isLowAttendance } from "../../../lib/attendance";
 import { useAttendanceMatrix, useMarkByDate, type AttStatus, type TeachGroup } from "../api";
@@ -16,6 +16,14 @@ function dayKey(d: Date): string {
 // nusxasi bor edi va "Sababli" ikonkasi boshqa ekranlardan farq qilardi.
 const STATUS_META = ATT_META_LIST;
 const metaOf = (s: AttStatus) => ATT_META[s];
+
+/** Koridor zonasi → matn rangi (raqam neytral, ogohlantirish izohda). */
+const ZONE_TEXT: Record<"OK" | "WARN" | "DANGER" | "BLOCKED", string> = {
+  OK: "text-ink-soft",
+  WARN: "text-amber",
+  DANGER: "text-rose",
+  BLOCKED: "text-rose",
+};
 
 export function AttendanceMatrix({ group }: { group: TeachGroup }) {
   const { t } = useTranslation(undefined, { keyPrefix: "attMatrix" });
@@ -57,11 +65,27 @@ export function AttendanceMatrix({ group }: { group: TeachGroup }) {
     <Card className="!p-0">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-2.5">
         <h3 className="text-note font-bold text-ink">{t("title")}</h3>
-        {group.courses.length > 1 && (
-          <Select value={String(courseId ?? "")} onChange={(e) => setCourseId(Number(e.target.value))} className="w-auto">
-            {group.courses.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </Select>
-        )}
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Maxraj ochiq turadi: 25 % limit REJA soatidan hisoblanadi. */}
+          {data && (
+            <span className="text-micro text-ink-faint">
+              {data.plannedHours ? t("plannedHours", { n: data.plannedHours }) : t("noPlannedHours")}
+            </span>
+          )}
+          {group.courses.length > 1 && (
+            <Select value={String(courseId ?? "")} onChange={(e) => setCourseId(Number(e.target.value))} className="w-auto">
+              {group.courses.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </Select>
+          )}
+          {courseId && (
+            <a
+              href={`${API_URL}/api/v1/teach/courses/${courseId}/attendance-report.xlsx?view=matrix&from=${from}&to=${to}&groupId=${group.id}`}
+              className="inline-flex items-center gap-1.5 rounded-control border border-line px-2.5 py-1 text-micro font-semibold text-ink-soft transition-colors hover:bg-bg hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+            >
+              <Icon icon={Download} size={13} /> {t("exportXlsx")}
+            </a>
+          )}
+        </div>
       </div>
 
       {q.isLoading ? (
@@ -78,6 +102,9 @@ export function AttendanceMatrix({ group }: { group: TeachGroup }) {
                 <th className="sticky left-0 z-20 min-w-[160px] border-b border-r border-line bg-bg px-3 py-2 text-left">
                   <span className="text-micro font-bold text-ink-faint">{t("student")}</span>
                 </th>
+                <th className="min-w-[62px] border-b border-line bg-bg px-2 py-2 text-center">
+                  <span className="text-micro font-bold text-ink-faint">{t("colUnexcused")}</span>
+                </th>
                 <th className="min-w-[52px] border-b border-r border-line bg-bg px-2 py-2 text-center">
                   <span className="text-micro font-bold text-ink-faint">%</span>
                 </th>
@@ -85,12 +112,20 @@ export function AttendanceMatrix({ group }: { group: TeachGroup }) {
                   const { wd, dm } = dayLabel(col.date);
                   const isToday = col.date === todayKey;
                   return (
-                    <th key={col.key} className={cls("min-w-[46px] border-b border-line px-1 py-1.5", isToday ? "bg-brand-soft" : "bg-bg")} title={col.room ? `${col.time} · ${col.room}` : col.time}>
+                    <th
+                      key={col.key}
+                      className={cls("min-w-[46px] border-b border-line px-1 py-1.5", col.cancelled ? "bg-bg opacity-50" : isToday ? "bg-brand-soft" : "bg-bg")}
+                      title={[col.time, col.room, `${col.hours} ${t("hours")}`, col.cancelled ? t("cancelledCol") : ""].filter(Boolean).join(" · ")}
+                    >
                       <div className="flex flex-col items-center">
                         <span className={cls("text-micro font-bold", isToday ? "text-brand-deep" : "text-ink-faint")}>{wd}</span>
                         <span className={cls("text-micro font-semibold font-data tabular-nums", isToday ? "text-brand-deep" : "text-ink-soft")}>{dm}</span>
                         {/* Dars vaqti — bir kunda bir necha dars ustunini farqlaydi */}
                         <span className={cls("text-micro font-data tabular-nums", isToday ? "text-brand-deep/80" : "text-ink-faint")}>{col.time}</span>
+                        {/* Akademik soat — limit shundan hisoblanadi (F1). */}
+                        <span className="text-micro text-ink-faint">
+                          {col.cancelled ? "—" : `${col.hours}${t("hours").slice(0, 1)}`}
+                        </span>
                       </div>
                     </th>
                   );
@@ -104,6 +139,16 @@ export function AttendanceMatrix({ group }: { group: TeachGroup }) {
                   <tr key={s.id} className="transition-colors hover:bg-brand-soft/20">
                     <td className={cls("sticky left-0 z-10 border-b border-r border-line px-3 py-2", rowBg)}>
                       <p className="truncate text-micro font-semibold text-ink">{s.fullName}</p>
+                    </td>
+                    {/* SOATLI koridor — regulyator raqami (VM №824). Zona
+                        rangi IZOHDA: "4 / 18" o'zi yomon xabar emas. */}
+                    <td className="border-b border-line px-2 py-2 text-center">
+                      <span className={cls("text-micro font-semibold font-data tabular-nums", ZONE_TEXT[s.zone])}>
+                        {s.unexcusedHours} / {s.limitHours}
+                      </span>
+                      {s.zone !== "OK" && (
+                        <span className={cls("mt-0.5 block text-micro font-semibold", ZONE_TEXT[s.zone])}>{t(`zone${s.zone}`)}</span>
+                      )}
                     </td>
                     <td className="border-b border-r border-line px-2 py-2 text-center">
                       {s.pct !== null && (

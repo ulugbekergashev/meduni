@@ -5,7 +5,16 @@
     "email": "Email",
     "password": "Parol",
     "submit": "Kirish",
-    "error": "Email yoki parol notoʻgʻri"
+    "error": "Email yoki parol notoʻgʻri",
+    "hint": "Universitet bergan email va parol bilan kiring.",
+    "panelTitle": "Tibbiyot universiteti uchun o‘quv platformasi",
+    "panelBody": "O‘qituvchi material yuklaydi, sun’iy intellekt konspekt, test va klinik keys tayyorlaydi, o‘qituvchi tekshirib tasdiqlaydi — talaba esa mavzularni ketma-ket o‘zlashtiradi.",
+    "featContentTitle": "Kontent bir marta yaratiladi",
+    "featContentBody": "Konspekt, test, klinik keys, taqdimot va video — bitta manbadan.",
+    "featPracticeTitle": "Amaliyot va takrorlash",
+    "featPracticeBody": "Virtual bemor, fleshkartalar va xatolar ustida ishlash.",
+    "featControlTitle": "Nazorat o‘qituvchida",
+    "featControlBody": "Tasdiqsiz hech narsa chop etilmaydi; davomat va o‘zlashtirish ko‘rinib turadi."
   },
   "nav": {
     "dashboard": "Bosh sahifa",
@@ -305,7 +314,17 @@
       "ABSENT": "Kelmadi",
       "LATE": "Kechikdi",
       "EXCUSED": "Sababli"
-    }
+    },
+    "colUnexcused": "Sababsiz",
+    "colLimit": "Limit",
+    "hours": "soat",
+    "exportXlsx": "Excel",
+    "cancelledCol": "Dars bo'lmadi",
+    "plannedHours": "Reja: {{n}} soat",
+    "noPlannedHours": "Reja soati kiritilmagan — hisob o'tkazilgan darslardan",
+    "zoneWARN": "Diqqat",
+    "zoneDANGER": "Limitga yaqin",
+    "zoneBLOCKED": "Limit tugadi"
   },
   "groupProfile": {
     "back": "Guruhlar",
@@ -384,7 +403,18 @@
     "cycleStep1": "Kurs va davr",
     "cycleStep2": "Kunlar va vaqt",
     "cycleNext": "Keyingi",
-    "cycleBack": "Orqaga"
+    "cycleBack": "Orqaga",
+    "cycleTitle": "Sikl",
+    "cycleGuest": "Mehmon",
+    "cycleDay": "{{k}} / {{n}}-kun",
+    "cycleHours": "{{k}} / {{n}} soat",
+    "cycleExam": "Imtihon: {{d}}",
+    "cycleUnmarked": "{{n}} ta darsda yo'qlama yo'q",
+    "cycleFinish": "Siklni yakunlash",
+    "cycleFinished": "Sikl yakunlandi",
+    "cycleAtRisk": "Koridordan chiqqanlar",
+    "cycleNoRisk": "Hamma koridorda",
+    "cycleOf": "{{h}} / {{limit}} soat"
   },
   "courseGroups": {
     "subtitle": "Bu kurs qaysi guruhlarda oʻtiladi. Guruhni bosing — profili (talabalar, jurnal, davomat).",
@@ -1642,7 +1672,21 @@
     "sortPct": "Davomat foizi boʻyicha",
     "sortName": "Ism boʻyicha",
     "emptyReport": "Bu oraliqda mashgʻulot yoʻq",
-    "selfMarked": "oʻzi"
+    "selfMarked": "oʻzi",
+    "lessonPassport": "Dars ma'lumoti",
+    "cancelLesson": "Dars bo'lmadi",
+    "restoreLesson": "Darsni tiklash",
+    "cancelReasonPh": "Sabab (masalan: o'qituvchi kasal)",
+    "cancelledBanner": "Bu dars bo'lmadi — davomat hisobiga kirmaydi.",
+    "typeLECTURE": "Ma'ruza",
+    "typePRACTICE": "Amaliy",
+    "typeSEMINAR": "Seminar",
+    "typeLAB": "Laboratoriya",
+    "typeCLINICAL": "Klinik",
+    "hoursN": "{{n}} soat",
+    "presentCount": "{{n}} keldi",
+    "absentCount": "{{n}} kelmadi",
+    "lateCount": "{{n}} kechikdi"
   },
   "checkin": {
     "eyebrow": "Hozir davomat oynasi ochiq",

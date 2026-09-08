@@ -23,6 +23,7 @@ import {
 } from "../api";
 import { RollCallModal } from "../course/attendance/RollCallModal";
 import { AttendanceMatrix } from "./AttendanceMatrix";
+import { CyclePassportList } from "./CyclePassport";
 
 type TabKey = "timetable" | "davomat" | "students" | "courses";
 const WEEKDAYS_UZ = ["Dushanba", "Seshanba", "Chorshanba", "Payshanba", "Juma", "Shanba", "Yakshanba"];
@@ -620,6 +621,12 @@ export function GroupProfile() {
               </div>
 
               <GroupStats group={group} />
+
+              {/* SIKL PASPORTI — guruh kafedrada blok bo'lib o'qiyotgan bo'lsa.
+                  Semestr kursida hech narsa chizilmaydi. */}
+              <div className="mt-3">
+                <CyclePassportList groupId={group.id} />
+              </div>
 
               {/* Guruh bo'limlari — yon panelda (mobilda tasma). */}
               <div className="mt-3">

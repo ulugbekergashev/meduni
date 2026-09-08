@@ -41,7 +41,7 @@ export function useCreateTeacherCourse() {
   const qc = useQueryClient();
   return useMutation({
     // Semestr endi formada yo'q — backend default beradi (buyurtmachi qarori).
-    mutationFn: (body: { name: string; description?: string; groupIds: number[]; academicYear?: string }) =>
+    mutationFn: (body: { name: string; description?: string; groupIds: number[]; academicYear?: string; format?: "SEMESTER" | "CYCLE" }) =>
       api<TeachCourse & { enrolledCount: number }>("/api/v1/teach/courses", { method: "POST", body: JSON.stringify(body) }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["teach-courses"] });
@@ -777,9 +777,77 @@ export function useSetupCycle() {
 }
 
 // Yo'qlama (kurs, sana) bo'yicha — sessiya lazy yaratiladi
+export type LessonType = "LECTURE" | "PRACTICE" | "SEMINAR" | "LAB" | "CLINICAL";
+export type AttZone = "OK" | "WARN" | "DANGER" | "BLOCKED";
+
+/** Dars "pasporti" — yo'qlama shapkasi shuni ko'rsatadi (F2). */
+export interface LessonMeta {
+  sessionId: number | null;
+  startTime: string | null;
+  lessonType: LessonType;
+  hours: number;
+  room: string | null;
+  topicTitle: string | null;
+  /** "Dars bo'lmadi" — davomat maxrajidan chiqadi. */
+  cancelled: boolean;
+  cancelReason: string | null;
+}
+
 export interface DateRoster {
   date: string;
+  lesson: LessonMeta;
   students: { id: number; fullName: string; status: AttStatus | null; grade: number | null; selfMarked: boolean; markedAt: string | null }[];
+}
+
+/** "Dars bo'lmadi" / tiklash. */
+export function useCancelLesson() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (b: { courseId: number; date: string; startTime?: string; groupId?: number | null; cancelled: boolean; reason?: string }) =>
+      api<{ ok: boolean; sessionId: number; cancelled: boolean }>("/api/v1/teach/lesson-cancel", { method: "POST", body: JSON.stringify(b) }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["roster-by-date"] });
+      qc.invalidateQueries({ queryKey: ["teacher-lessons"] });
+      qc.invalidateQueries({ queryKey: ["attendance-matrix"] });
+      qc.invalidateQueries({ queryKey: ["teach-cycles"] });
+    },
+  });
+}
+
+/** SIKL PASPORTI — guruh kafedrada blok bo'lib o'qiydi (ko'pincha mehmon). */
+export interface CyclePassport {
+  cycleId: number;
+  courseId: number;
+  courseName: string;
+  groupId: number;
+  groupName: string;
+  facultyName: string;
+  isGuest: boolean;
+  startKey: string;
+  endKey: string;
+  examKey: string | null;
+  status: string;
+  dayNo: number;
+  totalDays: number;
+  heldHours: number;
+  totalHours: number;
+  unmarkedLessons: number;
+  studentCount: number;
+  atRisk: { id: number; fullName: string; unexcusedHours: number; limitHours: number; zone: AttZone }[];
+}
+export function useTeachCycles(groupId?: number) {
+  return useQuery({
+    queryKey: ["teach-cycles", groupId ?? null],
+    queryFn: () => api<CyclePassport[]>(`/api/v1/teach/cycles${groupId ? `?groupId=${groupId}` : ""}`),
+  });
+}
+export function useFinishCycle() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => api<{ ok: boolean }>(`/api/v1/teach/cycles/${id}/finish`, { method: "POST" }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["teach-cycles"] }),
+    meta: { silent: true },
+  });
 }
 export function useRosterByDate(courseId: number, date: string, groupId?: number, time?: string) {
   const p = new URLSearchParams({ courseId: String(courseId), date });
@@ -808,11 +876,30 @@ export interface MatrixColumn {
   date: string;
   time: string;
   room: string | null;
+  /** Tur va akademik soat — jurnal ustuni shuni ko'rsatadi (F2). */
+  lessonType: LessonType;
+  hours: number;
+  /** "Dars bo'lmadi" — ustun ko'rinadi, hisobga kirmaydi. */
+  cancelled: boolean;
 }
 export interface AttendanceMatrix {
   columns: MatrixColumn[];
   todayKey: string;
-  students: { id: number; fullName: string; pct: number | null; cells: Record<string, AttStatus> }[];
+  /** O'quv rejasidagi soat (25 % maxraji) — kiritilmagan bo'lsa null. */
+  plannedHours: number | null;
+  corridor: { maxUnexcusedPct: number; warnUnexcusedPct: number };
+  students: {
+    id: number;
+    fullName: string;
+    pct: number | null;
+    cells: Record<string, AttStatus>;
+    heldHours: number;
+    unexcusedHours: number;
+    excusedHours: number;
+    limitHours: number;
+    remainingHours: number;
+    zone: AttZone;
+  }[];
 }
 export function useAttendanceMatrix(courseId: number | null, groupId: number, from: string, to: string) {
   const p = new URLSearchParams({ courseId: String(courseId), groupId: String(groupId), from, to });

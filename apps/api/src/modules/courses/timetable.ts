@@ -5,7 +5,8 @@ import { prisma } from "../../lib/prisma";
 import { ApiError, badRequest, notFound } from "../../lib/errors";
 import type { LessonType } from "@prisma/client";
 import { atTime, dayBounds, dayKey, mondayIdx, timeOf } from "../../lib/time";
-import { type AttStatus as Status, ATT_STATUSES as STATUSES, attendancePct, emptyTally, addMark, isAttStatus } from "../attendance/facts";
+import { type AttStatus as Status, type AttZone, ATT_STATUSES as STATUSES, attendanceLimits, attendancePct, emptyTally, addMark, isAttStatus, zoneOf } from "../attendance/facts";
+import { resolvePolicy } from "../policy/service";
 import { isNonTeaching, loadExceptions } from "../attendance/calendar";
 
 const LESSON_TYPES: LessonType[] = ["LECTURE", "PRACTICE", "SEMINAR", "LAB", "CLINICAL"];
@@ -651,7 +652,12 @@ export async function rosterByDate(teacherId: number, courseId: number, dateKey:
     orderBy: { student: { fullName: "asc" } },
   });
   const found = await findSession(courseId, groupId ?? null, dateKey, time);
-  const session = found ? await prisma.lessonSession.findUnique({ where: { id: found.id }, include: { attendance: true } }) : null;
+  const session = found
+    ? await prisma.lessonSession.findUnique({ where: { id: found.id }, include: { attendance: true, topic: { select: { title: true } } } })
+    : null;
+  // Sessiya hali yaratilmagan bo'lsa — dars ma'lumotini SLOTDAN olamiz
+  // (o'qituvchi yo'qlama shapkasida turini va soatini yozmasdan oldin ko'rsin).
+  const slot = session ? null : await slotFor(courseId, groupId ?? null, dateKey, time ?? "");
   const marks = new Map(
     (session?.attendance ?? []).map((a) => [
       a.studentId,
@@ -660,6 +666,18 @@ export async function rosterByDate(teacherId: number, courseId: number, dateKey:
   );
   return {
     date: dateKey,
+    // ⚠️ F1/F2: dars "pasporti" — tur, soat, mavzu, bekor qilinganmi. Yo'qlama
+    // shapkasi shu ma'lumotni ko'rsatadi; soat davomat limitiga tushadi.
+    lesson: {
+      sessionId: session?.id ?? null,
+      startTime: time ?? (session ? timeOf(session.date) : null),
+      lessonType: session?.lessonType ?? slot?.lessonType ?? "PRACTICE",
+      hours: session?.hours ?? slot?.hours ?? 2,
+      room: session?.room ?? slot?.room ?? null,
+      topicTitle: session?.topic?.title ?? null,
+      cancelled: session?.status === "CANCELLED",
+      cancelReason: session?.cancelReason ?? null,
+    },
     students: enr.map((e) => {
       const m = marks.get(e.student.id);
       return {
@@ -765,6 +783,42 @@ export async function markByDate(
   return { ok: true, sessionId, marked: marks.length, skipped };
 }
 
+/**
+ * "DARS BO'LMADI" — dars bekor qilinadi va davomat MAXRAJIDAN chiqadi
+ * (o'qituvchi kasal, bayram, karantin). Talabaning aybi emas, shuning uchun
+ * uning foizini tushirmasligi kerak.
+ * ⚠️ Bekor qilinganda mavjud yo'qlama belgilari O'CHIRILMAYDI — sessiya tiklansa
+ * qaytadi; hisobdan esa `status: HELD` sharti orqali chiqadi.
+ */
+export async function setLessonCancelled(
+  teacherId: number,
+  body: { courseId: number; date: string; startTime?: string; groupId?: number | null; cancelled: boolean; reason?: string }
+) {
+  await ownCourse(body.courseId, teacherId);
+  const groupId = body.groupId ?? null;
+  const sessionId = await ensureSession(body.courseId, groupId, body.date, body.startTime || "09:00", teacherId);
+  const before = await prisma.lessonSession.findUniqueOrThrow({ where: { id: sessionId }, select: { status: true } });
+  await prisma.lessonSession.update({
+    where: { id: sessionId },
+    data: {
+      status: body.cancelled ? "CANCELLED" : "HELD",
+      cancelReason: body.cancelled ? body.reason?.trim() || null : null,
+    },
+  });
+  await prisma.auditLog
+    .create({
+      data: {
+        actorId: teacherId,
+        action: body.cancelled ? "CANCEL_LESSON" : "RESTORE_LESSON",
+        entity: "LessonSession",
+        entityId: sessionId,
+        detailsJson: { courseId: body.courseId, groupId, date: body.date, startTime: body.startTime ?? null, from: before.status, reason: body.reason ?? null },
+      },
+    })
+    .catch(() => {});
+  return { ok: true, sessionId, cancelled: body.cancelled };
+}
+
 // ---------- Davomat matritsasi (talaba × DARS) ----------
 // Ustun = alohida DARS (sana+vaqt), kun emas! Universitetda bitta kurs bir kunda
 // bir necha marta o'tilishi mumkin — har dars o'z ustuni va o'z yo'qlamasi bilan.
@@ -773,11 +827,36 @@ export interface MatrixColumn {
   date: string;  // YYYY-MM-DD
   time: string;  // HH:MM
   room: string | null;
+  /** Tur va akademik soat — jurnal ustuni shuni ko'rsatadi (F2). */
+  lessonType: LessonType;
+  hours: number;
+  /** "Dars bo'lmadi" — ustun ko'rinadi, lekin hisobga kirmaydi. */
+  cancelled: boolean;
+}
+export interface MatrixStudent {
+  id: number;
+  fullName: string;
+  /** Ma'lumot uchun davomat foizi (belgilangan darslardan). */
+  pct: number | null;
+  cells: Record<string, Status>;
+  // ---- SOATLI hisob (F1 koridori) ----
+  /** O'tkazilgan (bekor qilinmagan) darslar soati — maxraj nazorati. */
+  heldHours: number;
+  /** Sababsiz qoldirilgan soat — koridorning asosiy raqami. */
+  unexcusedHours: number;
+  excusedHours: number;
+  /** Limit va zona kurs siyosatidan (reja soati bo'lsa). */
+  limitHours: number;
+  remainingHours: number;
+  zone: AttZone;
 }
 export interface AttendanceMatrixOut {
   columns: MatrixColumn[]; // darslar, xronologik tartibda
   todayKey: string;
-  students: { id: number; fullName: string; pct: number | null; cells: Record<string, Status> }[];
+  /** Kursning o'quv rejasidagi soati (25 % maxraji) — kiritilmagan bo'lsa null. */
+  plannedHours: number | null;
+  corridor: { maxUnexcusedPct: number; warnUnexcusedPct: number };
+  students: MatrixStudent[];
 }
 
 export async function getAttendanceMatrix(
@@ -788,25 +867,32 @@ export async function getAttendanceMatrix(
   to: string
 ): Promise<AttendanceMatrixOut> {
   await ownCourse(courseId, teacherId);
-  const course = await prisma.course.findUnique({
-    where: { id: courseId },
-    include: { scheduleSlots: true, courseGroups: { where: { groupId } } },
-  });
+  const [course, exceptions] = await Promise.all([
+    prisma.course.findUnique({
+      where: { id: courseId },
+      include: { scheduleSlots: true, courseGroups: { where: { groupId }, include: { group: { select: { facultyId: true } } } }, cycles: true },
+    }),
+    loadExceptions(from, to),
+  ]);
   if (!course) throw notFound("Kurs");
   const cg = course.courseGroups[0];
-  const slots = course.scheduleSlots.filter((s) => s.groupId == null || s.groupId === groupId);
+  const policy = await resolvePolicy(course.departmentId);
+  const corridor = { maxUnexcusedPct: policy.maxUnexcusedPct, warnUnexcusedPct: policy.warnUnexcusedPct };
 
   const fromB = dayBounds(from).gte;
   const toB = dayBounds(to).lt;
 
-  // Ustunlar — haftalik slotlardan (har slot = alohida dars), sikl davri ichida.
+  // Ustunlar — haftalik slotlardan (har slot = alohida dars), sikl davri ichida
+  // va bayram kunlarisiz (F1: darslar bilan bir xil qoida).
+  const windows = cycleWindowsOf(course.cycles, groupId);
+  const legacy = windows.length === 0 ? legacyWindow(cg) : null;
   const columns: MatrixColumn[] = [];
   for (let d = new Date(fromB); d < toB; d.setDate(d.getDate() + 1)) {
     const wd = mondayIdx(d);
     const dk = dayKey(d);
-    if (cg?.cycleStart && cg?.cycleEnd && (dk < dayKey(cg.cycleStart) || dk > dayKey(cg.cycleEnd))) continue;
-    for (const s of slots.filter((x) => x.weekday === wd).sort((a, b) => a.startTime.localeCompare(b.startTime))) {
-      columns.push({ key: `${dk}|${s.startTime}`, date: dk, time: s.startTime, room: s.room });
+    if (isNonTeaching(exceptions, dk, cg?.group.facultyId ?? null)) continue;
+    for (const s of slotsOnDay(course.scheduleSlots, groupId, wd, dk, windows, legacy).sort((a, b) => a.startTime.localeCompare(b.startTime))) {
+      columns.push({ key: `${dk}|${s.startTime}`, date: dk, time: s.startTime, room: s.room, lessonType: s.lessonType, hours: s.hours, cancelled: false });
     }
   }
 
@@ -822,6 +908,9 @@ export async function getAttendanceMatrix(
       orderBy: { date: "asc" },
     }),
   ]);
+  // Bekor qilingan darslar — ustunda ko'rinadi, lekin hisobga kirmaydi.
+  const cancelledKeys = new Set(sessions.filter((s) => s.status === "CANCELLED").map((s) => `${dayKey(s.date)}|${timeOf(s.date)}`));
+  for (const c of columns) if (cancelledKeys.has(c.key)) c.cancelled = true;
 
   // Sessiya → ustun: aniq (sana+vaqt); topilmasa — o'sha kunda bitta ustun bo'lsa unga (legacy).
   const colKeys = new Set(columns.map((c) => c.key));
@@ -845,20 +934,182 @@ export async function getAttendanceMatrix(
     // Ko'p-darsli kunda vaqti noma'lum legacy sessiya — hech qaysi ustunga taxmin qilinmaydi.
   }
 
-  const students = enr.map((e) => {
+  // Soatli hisob: bekor qilingan dars ham maxrajga, ham sanoqqa KIRMAYDI.
+  const heldHours = columns.filter((c) => !c.cancelled).reduce((sum, c) => sum + c.hours, 0);
+  const plannedHours = course.plannedHours && course.plannedHours > 0 ? course.plannedHours : heldHours;
+  const limitHours = Math.round((plannedHours * corridor.maxUnexcusedPct) / 100);
+
+  const students: MatrixStudent[] = enr.map((e) => {
     const cells: Record<string, Status> = {};
     // Foiz — umumiy formula (`attendance/facts.ts`). Ilgari bu yerda o'z nusxasi
     // bor edi; frontend matritsasi esa yana boshqa chegaradan (80/60) rang berardi.
     const tally = emptyTally();
+    let unexcusedHours = 0;
+    let excusedHours = 0;
     for (const c of columns) {
       const st = byCol.get(c.key)?.get(e.student.id);
-      if (st) {
-        cells[c.key] = st;
-        addMark(tally, st);
-      }
+      if (!st) continue;
+      cells[c.key] = st;
+      if (c.cancelled) continue; // ko'rinadi, lekin sanalmaydi
+      addMark(tally, st);
+      if (st === "ABSENT") unexcusedHours += c.hours;
+      else if (st === "EXCUSED") excusedHours += c.hours;
     }
-    return { id: e.student.id, fullName: e.student.fullName, pct: attendancePct(tally), cells };
+    const unexcusedPct = plannedHours > 0 ? Math.round((unexcusedHours / plannedHours) * 100) : null;
+    return {
+      id: e.student.id,
+      fullName: e.student.fullName,
+      pct: attendancePct(tally),
+      cells,
+      heldHours,
+      unexcusedHours,
+      excusedHours,
+      limitHours,
+      remainingHours: Math.max(0, limitHours - unexcusedHours),
+      zone: zoneOf(unexcusedHours, limitHours, unexcusedPct, corridor),
+    };
   });
 
-  return { columns, todayKey: dayKey(new Date()), students };
+  return { columns, todayKey: dayKey(new Date()), plannedHours: course.plannedHours, corridor, students };
+}
+
+// ---------- SIKL PASPORTI (F2) ----------
+// Buyurtmachining asosiy tushunchasi: guruh kafedraga BLOK bo'lib keladi
+// (ko'pincha boshqa fakultetdan), 2-4 hafta o'qiydi, oxirgi kuni imtihon,
+// keyin kafedra dekanatga hisobot beradi. Ilgari bu tushuncha ekranda umuman
+// yo'q edi — faqat "Jadval sozlash" oynasida ikkita sana ko'rinardi.
+
+export interface CyclePassport {
+  cycleId: number;
+  courseId: number;
+  courseName: string;
+  groupId: number;
+  groupName: string;
+  facultyName: string;
+  /** Mehmon sikli — guruh boshqa fakultetdan kelgan. */
+  isGuest: boolean;
+  startKey: string;
+  endKey: string;
+  examKey: string | null;
+  status: string;
+  /** Sikl kunlari: nechanchi kun / jami dars kunlari. */
+  dayNo: number;
+  totalDays: number;
+  /** Soatlar: o'tildi / jami rejalashtirilgan. */
+  heldHours: number;
+  totalHours: number;
+  /** Yo'qlama belgilanmagan o'tgan darslar — siklni yopishga to'siq. */
+  unmarkedLessons: number;
+  studentCount: number;
+  /** Koridordan chiqqan yoki chiqishga yaqin talabalar. */
+  atRisk: { id: number; fullName: string; unexcusedHours: number; limitHours: number; zone: AttZone }[];
+}
+
+/** O'qituvchining sikllari — guruh profili va kurs sahifasi uchun.
+ *  `groupId` berilsa faqat o'sha guruh. */
+export async function getTeacherCycles(teacherId: number, opts: { groupId?: number } = {}): Promise<CyclePassport[]> {
+  const cycles = await prisma.courseCycle.findMany({
+    where: {
+      course: { teacherId },
+      status: { not: "CANCELLED" },
+      ...(opts.groupId ? { groupId: opts.groupId } : {}),
+    },
+    include: {
+      course: { select: { id: true, name: true, departmentId: true, plannedHours: true } },
+      group: { select: { id: true, name: true, faculty: { select: { name: true } } } },
+    },
+    orderBy: { startDate: "desc" },
+  });
+  if (cycles.length === 0) return [];
+
+  const today = dayKey(new Date());
+  const out: CyclePassport[] = [];
+  for (const c of cycles) {
+    const startKey = dayKey(c.startDate);
+    const endKey = dayKey(c.endDate);
+    // Sikl darslari — umumiy generatordan (bayram/jadval qoidalari bir xil bo'lsin).
+    const lessons = (await getTeacherLessons(teacherId, { from: startKey, to: endKey })).filter(
+      (l) => l.courseId === c.courseId && l.groupId === c.groupId
+    );
+    const past = lessons.filter((l) => l.dayKey <= today);
+    const dayKeys = [...new Set(lessons.map((l) => l.dayKey))];
+    const policy = await resolvePolicy(c.course.departmentId);
+    const corridor = { maxUnexcusedPct: policy.maxUnexcusedPct, warnUnexcusedPct: policy.warnUnexcusedPct };
+
+    const limits = await (async () => {
+      const students = await prisma.enrollment.findMany({
+        where: { courseId: c.courseId, status: "ACTIVE", student: { groupId: c.groupId } },
+        select: { studentId: true, student: { select: { fullName: true } } },
+        orderBy: { student: { fullName: "asc" } },
+      });
+      const ids = students.map((s) => s.studentId);
+      const map = await attendanceLimits({
+        studentIds: ids,
+        courseId: c.courseId,
+        groupId: c.groupId,
+        plannedHours: c.course.plannedHours,
+        corridor,
+      });
+      return students.map((s) => ({ id: s.studentId, fullName: s.student.fullName, lim: map.get(s.studentId) }));
+    })();
+
+    out.push({
+      cycleId: c.id,
+      courseId: c.courseId,
+      courseName: c.course.name,
+      groupId: c.groupId,
+      groupName: c.group.name,
+      facultyName: c.group.faculty.name,
+      isGuest: c.isGuest,
+      startKey,
+      endKey,
+      examKey: c.examDate ? dayKey(c.examDate) : null,
+      status: c.status,
+      dayNo: [...new Set(past.map((l) => l.dayKey))].length,
+      totalDays: dayKeys.length,
+      heldHours: past.reduce((s2, l) => s2 + l.hours, 0),
+      totalHours: lessons.reduce((s2, l) => s2 + l.hours, 0),
+      // O'tgan, lekin belgilanmagan darslar — siklni yopishga to'siq.
+      unmarkedLessons: past.filter((l) => l.status === "UNMARKED").length,
+      studentCount: limits.length,
+      atRisk: limits
+        .filter((s2) => s2.lim && s2.lim.zone !== "OK")
+        .map((s2) => ({ id: s2.id, fullName: s2.fullName, unexcusedHours: s2.lim!.unexcusedHours, limitHours: s2.lim!.limitHours, zone: s2.lim!.zone })),
+    });
+  }
+  return out;
+}
+
+/** Siklni YAKUNLASH — kafedra dekanatga hisobot beradi.
+ *  ⚠️ Belgilanmagan dars qolgan bo'lsa yopilmaydi: hisobotdagi raqam to'liq
+ *  bo'lishi kerak (aks holda "davomat 100 %" degan yolg'on hisobot ketadi). */
+export async function finishCycle(teacherId: number, cycleId: number) {
+  const cycle = await prisma.courseCycle.findUnique({ where: { id: cycleId }, include: { course: { select: { teacherId: true } } } });
+  if (!cycle) throw notFound("Sikl");
+  if (cycle.course.teacherId !== teacherId) throw forbidden();
+  const [passport] = await getTeacherCycles(teacherId, { groupId: cycle.groupId }).then((all) => all.filter((p) => p.cycleId === cycleId));
+  if (passport && passport.unmarkedLessons > 0) {
+    throw badRequest(
+      `Yo'qlama belgilanmagan ${passport.unmarkedLessons} ta dars bor — avval ularni to'ldiring`,
+      `Есть ${passport.unmarkedLessons} занятий без отметки — сначала заполните их`
+    );
+  }
+  await prisma.courseCycle.update({ where: { id: cycleId }, data: { status: "FINISHED" } });
+  await prisma.auditLog
+    .create({
+      data: {
+        actorId: teacherId,
+        action: "FINISH_CYCLE",
+        entity: "CourseCycle",
+        entityId: cycleId,
+        detailsJson: {
+          courseId: cycle.courseId,
+          groupId: cycle.groupId,
+          atRisk: passport?.atRisk.length ?? 0,
+          heldHours: passport?.heldHours ?? 0,
+        },
+      },
+    })
+    .catch(() => {});
+  return { ok: true, atRisk: passport?.atRisk ?? [] };
 }

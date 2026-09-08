@@ -64,6 +64,8 @@ teachCoursesRouter.post(
         groupIds: Array.isArray(b.groupIds) ? b.groupIds.map(Number).filter((n: number) => Number.isInteger(n) && n > 0) : [],
         semester: b.semester !== undefined ? Number(b.semester) : undefined,
         academicYear: typeof b.academicYear === "string" ? b.academicYear : undefined,
+        // SIKL formati — mehmon guruh (boshqa fakultet) faqat shunda biriktiriladi.
+        format: b.format === "CYCLE" ? "CYCLE" : "SEMESTER",
       })
     );
   })
@@ -224,6 +226,13 @@ teachCoursesRouter.post(
 // Yo'qlama (kurs, sana) bo'yicha — sessiya lazy yaratiladi.
 teachCoursesRouter.get("/attendance-by-date", wrap(async (req, res) => res.json(await timetable.rosterByDate(req.user!.id, Number(req.query.courseId), qs(req.query.date) ?? "", qnum(req.query.groupId), qs(req.query.time)))));
 teachCoursesRouter.post("/attendance-by-date", wrap(async (req, res) => res.json(await timetable.markByDate(req.user!.id, req.body ?? {}))));
+
+// "Dars bo'lmadi" — dars maxrajdan chiqadi (o'qituvchi kasal, bayram).
+teachCoursesRouter.post("/lesson-cancel", wrap(async (req, res) => res.json(await timetable.setLessonCancelled(req.user!.id, req.body ?? {}))));
+
+// SIKL PASPORTI — guruh kafedrada blok bo'lib o'qiydi (ko'pincha mehmon).
+teachCoursesRouter.get("/cycles", wrap(async (req, res) => res.json(await timetable.getTeacherCycles(req.user!.id, { groupId: qnum(req.query.groupId) }))));
+teachCoursesRouter.post("/cycles/:id/finish", wrap(async (req, res) => res.json(await timetable.finishCycle(req.user!.id, parseId(req.params.id)))));
 
 // Davomat matritsasi (talaba × dars-kuni + %) — kurs+guruh, sana oralig'i.
 teachCoursesRouter.get("/attendance-matrix", wrap(async (req, res) => res.json(await timetable.getAttendanceMatrix(req.user!.id, Number(req.query.courseId), Number(req.query.groupId), qs(req.query.from) ?? "", qs(req.query.to) ?? ""))));
