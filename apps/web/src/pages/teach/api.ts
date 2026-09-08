@@ -182,9 +182,26 @@ export interface StudentDetailSession {
   grade: number | null;
   topicTitle: string | null;
 }
+/** Soatli koridor (F1) — talaba, o'qituvchi va dekanat bir xil raqamni ko'radi. */
+export interface AttendanceLimit {
+  plannedHours: number;
+  heldHours: number;
+  presentHours: number;
+  lateHours: number;
+  excusedHours: number;
+  unexcusedHours: number;
+  makeupClosedHours: number;
+  limitHours: number;
+  remainingHours: number;
+  unexcusedPct: number | null;
+  zone: AttZone;
+}
+
 export interface StudentDetailCourse {
   courseId: number;
   subjectName: string;
+  /** Regulyator raqam: sababsiz soat / limit + zona. */
+  limit: AttendanceLimit | null;
   topicsTotal: number;
   completedCount: number;
   overallPct: number;

@@ -26,6 +26,14 @@ const stateTone: Record<CellState, BadgeTone> = { COMPLETED: "emerald", IN_PROGR
 /** Holat rangi — umumiy xarita (`lib/attendance.ts`). */
 const attTone = (s: AttStatus) => ATT_META[s].chip;
 
+/** Koridor zonasi → chip. Ogohlantirish IZOHDA, raqamda emas. */
+const ZONE_CHIP: Record<string, string> = {
+  OK: "bg-bg text-ink-soft",
+  WARN: "bg-amber-soft text-amber",
+  DANGER: "bg-rose-soft text-rose",
+  BLOCKED: "bg-rose text-white",
+};
+
 type TabKey = "overview" | "courses" | "journal";
 
 /* ============================ Amaliyot faolligi ============================ */
@@ -218,6 +226,7 @@ function JournalRow({ s, studentId, courseId }: { s: StudentDetailSession; stude
 function AttendanceSummary({ course }: { course: StudentDetailCourse }) {
   const { t } = useTranslation(undefined, { keyPrefix: "studentDetail" });
   const a = course.attendance;
+  const limit = course.limit;
   const legend: { tone: string; label: string; value: number }[] = [
     { tone: "bg-emerald", label: t("att.PRESENT"), value: a.present },
     { tone: "bg-amber", label: t("att.LATE"), value: a.late },
@@ -226,8 +235,15 @@ function AttendanceSummary({ course }: { course: StudentDetailCourse }) {
   ];
   return (
     <div className="px-4 py-3">
-      <div className="mb-2.5 flex items-center justify-between gap-2">
+      <div className="mb-2.5 flex flex-wrap items-center justify-between gap-2">
         <span className="text-micro font-semibold text-ink-soft">{t("attendance")}</span>
+        {/* KORIDOR — nizom raqami (VM №824). Foiz yonida turadi, chunki
+            oqibati bor: limit tugasa yakuniy nazoratga kiritilmaydi. */}
+        {limit && limit.limitHours > 0 && (
+          <span className={cls("rounded-pill px-2 py-0.5 text-micro font-semibold", ZONE_CHIP[limit.zone])}>
+            {t("unexcusedOf", { h: limit.unexcusedHours, limit: limit.limitHours })}
+          </span>
+        )}
         <span className={cls("text-note font-bold font-data tabular-nums", isLowAttendance(a.pct) ? "text-rose" : "text-emerald")}>{a.pct !== null ? `${a.pct}%` : "—"}</span>
       </div>
       <div className="h-2.5 overflow-hidden rounded-full">

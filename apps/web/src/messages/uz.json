@@ -538,7 +538,8 @@
     "lockedTopics": "Qulfdagi mavzular",
     "lockedTopicsHint": "talab bajarilmagan darslar",
     "noAttentionShort": "kutayotgan ish yoʻq",
-    "attHint": "kelgan darslar ulushi"
+    "attHint": "kelgan darslar ulushi",
+    "unexcusedOf": "sababsiz {{h}} / {{limit}} soat"
   },
   "journal": {
     "hint": "Katakni bosing — yoʻqlama va baho qoʻying.",

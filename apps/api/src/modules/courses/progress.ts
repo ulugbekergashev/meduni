@@ -3,7 +3,7 @@ import { prisma } from "../../lib/prisma";
 import { clampQuiz, resolvePolicy } from "../policy/service";
 import { ApiError, notFound } from "../../lib/errors";
 import { computeTopics, loadCourse, studentFactsMap, type CourseWithTopics, type FullFacts, type TopicOut } from "../me/service";
-import { addMark, attendancePct, emptyTally, tallyOf } from "../attendance/facts";
+import { addMark, attendanceLimits, attendancePct, emptyTally, tallyOf } from "../attendance/facts";
 
 function forbidden(): ApiError {
   return new ApiError(403, "forbidden", "Bu sizning kursingiz emas", "Это не ваш курс");
@@ -354,9 +354,20 @@ export async function getStudentDetail(teacherId: number, studentId: number) {
         topicTitle: a.session.topic?.title ?? null,
       };
     });
+    // ⚠️ F4: bir odam haqida uch rol BIR XIL regulyator raqamni ko'rsin —
+    // talaba o'z sahifasida, o'qituvchi bu yerda, dekanat nazorat ekranida.
+    const policy = await resolvePolicy(course.departmentId);
+    const limMap = await attendanceLimits({
+      studentIds: [studentId],
+      courseId: course.id,
+      groupId: student.groupId ?? null,
+      plannedHours: course.plannedHours,
+      corridor: { maxUnexcusedPct: policy.maxUnexcusedPct, warnUnexcusedPct: policy.warnUnexcusedPct, makeupClearsAbsence: policy.makeupClearsAbsence },
+    });
     courses.push({
       courseId: course.id,
       subjectName: course.name,
+      limit: limMap.get(studentId) ?? null,
       topicsTotal: topicOuts.length,
       completedCount,
       overallPct: topicOuts.length === 0 ? 0 : Math.round((completedCount / topicOuts.length) * 100),
