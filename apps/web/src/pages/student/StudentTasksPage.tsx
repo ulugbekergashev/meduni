@@ -41,6 +41,7 @@ const META: Record<string, { icon: LucideIcon; labelKey: string; chip: string }>
   case_todo: { icon: Stethoscope, labelKey: "caseTodo", chip: "bg-rose-soft text-rose" },
   case_graded: { icon: CheckCircle2, labelKey: "caseGraded", chip: "bg-emerald-soft text-emerald" },
   attendance_low: { icon: CalendarCheck, labelKey: "attendanceLow", chip: "bg-amber-soft text-amber" },
+  makeup_due: { icon: ClipboardCheck, labelKey: "makeupDue", chip: "bg-rose-soft text-rose" },
 };
 
 /** Avto-vazifa bo'limi: sarlavha + KONKRET qatorlar (qaysi mavzu, qaysi fan). */
@@ -61,7 +62,7 @@ function AutoTaskGroup({ task }: { task: AutoTask }) {
           </span>
           <h3 className="min-w-0 flex-1 truncate text-body font-bold text-ink">{t(meta.labelKey)}</h3>
           <span className="rounded-pill bg-surface-raised px-2.5 py-0.5 text-note font-bold font-data tabular-nums text-ink-soft">
-            {task.type === "attendance_low" ? `${task.count}%` : task.count}
+            {task.count}
           </span>
         </div>
 
@@ -86,7 +87,17 @@ function AutoTaskGroup({ task }: { task: AutoTask }) {
                   <p className="truncate text-note text-ink-faint">{it.courseName}</p>
                 </div>
                 {it.value !== undefined && it.value !== null && (
-                  <span className="shrink-0 text-section font-bold tabular-nums text-emerald">{it.value}</span>
+                  // Koridor qatorida bu — LIMITGACHA QOLGAN SOAT. 0 bo'lsa
+                  // yashil emas: bu yomon xabar (yakuniy nazoratga kiritilmaydi).
+                  <span
+                    className={cls(
+                      "shrink-0 text-section font-bold tabular-nums",
+                      task.type === "attendance_low" ? (it.value === 0 ? "text-rose" : "text-amber") : "text-emerald"
+                    )}
+                  >
+                    {it.value}
+                    {task.type === "attendance_low" && <span className="ml-1 text-note font-semibold">{t("hoursLeft")}</span>}
+                  </span>
                 )}
                 <Icon
                   icon={ArrowRight}

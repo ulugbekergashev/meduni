@@ -16,6 +16,7 @@ import { CourseDetail } from "./pages/admin/courses/CourseDetail";
 import { AiMonitoringPage } from "./pages/admin/ai/AiMonitoringPage";
 import { AuditPage } from "./pages/admin/audit/AuditPage";
 import { ControlPage } from "./pages/admin/control/ControlPage";
+import { AttendanceControlPage } from "./pages/admin/attendance/AttendanceControlPage";
 import { AdminTasksPage } from "./pages/admin/tasks/AdminTasksPage";
 import { TeachShell } from "./pages/teach/TeachShell";
 import { TeachDashboard } from "./pages/teach/TeachDashboard";
@@ -74,6 +75,7 @@ export function App() {
         <Route path="tasks" element={<AdminTasksPage />} />
         <Route path="ai" element={<AiMonitoringPage />} />
         <Route path="control" element={<ControlPage />} />
+        <Route path="attendance" element={<AttendanceControlPage />} />
         <Route path="audit" element={<AuditPage />} />
         <Route path="settings" element={<AccountSettings />} />
       </Route>

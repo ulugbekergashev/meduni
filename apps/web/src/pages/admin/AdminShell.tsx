@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import { Outlet } from "react-router-dom";
-import { BookOpen, GraduationCap, Home, ListChecks, Network, ScrollText, Settings, ShieldCheck, Sparkles, UserRound, Users, Users2 } from "lucide-react";
+import { BookOpen, CalendarCheck, GraduationCap, Home, ListChecks, Network, ScrollText, Settings, ShieldCheck, Sparkles, UserRound, Users, Users2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Icon } from "@meduni/ui";
 import { RoleShell } from "../../components/RoleShell";
@@ -84,6 +84,8 @@ export function AdminShell() {
         { href: "/admin/courses", label: t("courses"), shortLabel: ts("courses"), icon: <Icon icon={BookOpen} /> },
         { href: "/admin/tasks", label: t("tasks"), shortLabel: ts("tasks"), icon: <Icon icon={ListChecks} /> },
         { href: "/admin/control", label: t("control"), shortLabel: ts("control"), icon: <Icon icon={ShieldCheck} /> },
+        // Davomat nazorati — dekanatning kundalik ekrani (F5).
+        { href: "/admin/attendance", label: t("attendanceControl"), shortLabel: ts("attendanceControl"), icon: <Icon icon={CalendarCheck} /> },
         { href: "/admin/ai", label: t("ai"), shortLabel: ts("ai"), icon: <Icon icon={Sparkles} /> },
         // University-wide audit trail is superadmin-only (backend enforces too).
         ...(isSuper ? [{ href: "/admin/audit", label: t("audit"), shortLabel: ts("audit"), icon: <Icon icon={ScrollText} /> }] : []),

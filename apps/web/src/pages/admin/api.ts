@@ -361,3 +361,30 @@ export function useReviewExcuse() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-excuses"] }),
   });
 }
+
+// ---------------- Davomat nazorati (F5) — dekanat ekrani ----------------
+
+export interface AttControlGroup {
+  groupId: number; groupName: string; facultyName: string; studentCount: number;
+  markedLessons: number; unmarkedLessons: number; attendancePct: number | null; atRisk: number;
+}
+export interface AttControlRisk {
+  studentId: number; studentName: string; groupId: number | null; groupName: string | null;
+  courseId: number; courseName: string; teacherName: string;
+  unexcusedHours: number; limitHours: number; remainingHours: number;
+  zone: "OK" | "WARN" | "DANGER" | "BLOCKED"; isGuest: boolean;
+}
+export interface AttControlCycle {
+  cycleId: number; courseName: string; departmentName: string; groupName: string;
+  facultyName: string; isGuest: boolean; startKey: string; endKey: string; status: string; studentCount: number;
+}
+export interface AttendanceControl {
+  period: { academicYear: string; semester: number; startKey: string; endKey: string } | null;
+  totals: { groups: number; students: number; unmarkedLessons: number; atRisk: number; blocked: number };
+  groups: AttControlGroup[];
+  risk: AttControlRisk[];
+  cycles: AttControlCycle[];
+}
+export function useAttendanceControl() {
+  return useQuery({ queryKey: ["admin-attendance-control"], queryFn: () => api<AttendanceControl>("/api/v1/admin/attendance") });
+}

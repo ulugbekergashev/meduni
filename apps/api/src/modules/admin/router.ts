@@ -29,6 +29,7 @@ const qstr = (v: unknown) => (typeof v === "string" && v ? v : undefined);
 import * as control from "../policy/control";
 import * as calendar from "./calendar";
 import * as excuse from "../attendance/excuse";
+import * as attendanceControl from "./attendance";
 
 export const adminRouter = Router();
 adminRouter.use(requireRoles(...ADMIN_ROLES));
@@ -43,6 +44,9 @@ adminRouter.put("/policies", wrap(async (req, res) => res.json(await control.ups
 
 // O'QUV KALENDARI (Davomat 2.0 · F1): semestr sanalari + dars bo'lmaydigan kunlar.
 // Kalendarsiz darslar bayramda ham hosil bo'laveradi va davomat maxraji shishadi.
+// DAVOMAT NAZORATI — dekanat ekrani (guruhlar, xavf ro'yxati, sikllar).
+adminRouter.get("/attendance", wrap(async (req, res) => res.json(await attendanceControl.getAttendanceControl(await adminScope(req)))));
+
 // SPRAVKA ARIZALARI — dekanat navbati (siyosat bo'yicha "Sababli"ni dekanat qo'yadi).
 adminRouter.get("/excuses", wrap(async (req, res) => {
   const scope = await adminScope(req);

@@ -5,7 +5,9 @@ import type { Role } from "../../lib/prisma";
 import { buildMatrix } from "../courses/progress";
 import { getTeacherLessons } from "../courses/timetable";
 import { computeTopics, enrolledCourseIds, loadCourse, studentFactsMap } from "../me/service";
-import { LOW_ATTENDANCE_PCT, attendancePct, tallyOf } from "../attendance/facts";
+import { attendanceLimits, attendancePct, tallyOf } from "../attendance/facts";
+import { ensureMakeups } from "../attendance/excuse";
+import { resolvePolicy } from "../policy/service";
 
 // An auto-derived task: computed live from existing data, disappears once resolved.
 // The frontend maps `type` → icon + label; `link` is where the teacher/student acts.
@@ -455,8 +457,72 @@ export async function computeStudentAutoTasks(studentId: number): Promise<AutoTa
   push("quiz_todo", "blue", quiz);
   push("case_todo", "rose", cases);
   push("case_graded", "emerald", graded);
-  if (attPct !== null && attPct < LOW_ATTENDANCE_PCT) {
-    tasks.push({ type: "attendance_low", count: attPct, tone: "amber", link: "/app/attendance", items: [] });
+
+  // ⚠️ F6: OGOHLANTIRISH ORTIDA AMAL BO'LISHI SHART.
+  // Tadqiqotlar (Pasco County va b.) bir narsani ko'rsatadi: vmeshatelstvasiz
+  // "bayroq" davomatga UMUMAN ta'sir qilmaydi. Shuning uchun bu yerda mavhum
+  // "davomat 62 %" emas, KONKRET qatorlar: qaysi fanda qancha soat qoldi va
+  // qaysi otrabotkani qachongacha topshirish kerak.
+  const corridorItems: AutoTaskItem[] = [];
+  const courseRows = await prisma.enrollment.findMany({
+    where: { studentId, status: "ACTIVE" },
+    select: { course: { select: { id: true, name: true, departmentId: true, plannedHours: true } } },
+  });
+  const me = await prisma.user.findUnique({ where: { id: studentId }, select: { groupId: true } });
+  for (const e of courseRows) {
+    const policy = await resolvePolicy(e.course.departmentId);
+    const map = await attendanceLimits({
+      studentIds: [studentId],
+      courseId: e.course.id,
+      groupId: me?.groupId ?? null,
+      plannedHours: e.course.plannedHours,
+      corridor: { maxUnexcusedPct: policy.maxUnexcusedPct, warnUnexcusedPct: policy.warnUnexcusedPct, makeupClearsAbsence: policy.makeupClearsAbsence },
+    });
+    const lim = map.get(studentId);
+    if (!lim || lim.zone === "OK") continue;
+    corridorItems.push({
+      topicId: 0,
+      topicTitle: e.course.name,
+      courseName: `${lim.unexcusedHours}/${lim.limitHours}`,
+      link: "/app/attendance",
+      // Qolgan soat — talaba ko'radigan asosiy raqam.
+      value: lim.remainingHours,
+    });
+  }
+  if (corridorItems.length > 0) {
+    tasks.push({
+      type: "attendance_low",
+      count: corridorItems.length,
+      tone: corridorItems.some((c) => (c.value ?? 1) === 0) ? "rose" : "amber",
+      link: "/app/attendance",
+      items: corridorItems,
+    });
+  }
+
+  // Otrabotka qarzlari — muddati bilan.
+  await ensureMakeups(studentId);
+  const openMakeups = await prisma.makeup.findMany({
+    where: { attendance: { studentId }, status: { in: ["REQUIRED", "REJECTED"] } },
+    select: {
+      id: true, dueAt: true,
+      attendance: { select: { session: { select: { topicId: true, course: { select: { name: true } }, topic: { select: { title: true } } } } } },
+    },
+    orderBy: { dueAt: "asc" },
+    take: 20,
+  });
+  if (openMakeups.length > 0) {
+    tasks.push({
+      type: "makeup_due",
+      count: openMakeups.length,
+      tone: openMakeups.some((m) => m.dueAt < new Date()) ? "rose" : "amber",
+      link: "/app/attendance",
+      items: openMakeups.map((m) => ({
+        topicId: m.attendance.session.topicId ?? 0,
+        topicTitle: m.attendance.session.topic?.title ?? m.attendance.session.course.name,
+        courseName: m.attendance.session.course.name,
+        link: "/app/attendance",
+      })),
+    });
   }
   return tasks;
 }

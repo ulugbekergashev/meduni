@@ -13,6 +13,7 @@ import { prisma } from "../lib/prisma";
 import { dayKey } from "../lib/time";
 import { attendanceLimits } from "../modules/attendance/facts";
 import { createExcuse, ensureMakeups, excuseQueue, myMakeups, reviewExcuse, reviewMakeup, submitMakeup, teacherMakeupQueue } from "../modules/attendance/excuse";
+import { computeStudentAutoTasks } from "../modules/tasks/service";
 
 const TAG = "ZZ-F3-SMOKE";
 let ok = 0;
@@ -120,7 +121,7 @@ async function main() {
   check("ariza qamragan propusk soni ko'rsatildi", req.matched === 1, req.matched);
   const q = (await excuseQueue({ status: "PENDING" })).filter((r) => r.id === req.id);
   check("dekanat navbatida ko'rindi", q.length === 1, q.length);
-  check("talaba va guruh ko'rinadi", q[0]?.studentName.includes(TAG) && q[0]?.groupName?.includes(TAG), { s: q[0]?.studentName, g: q[0]?.groupName });
+  check("talaba va guruh ko'rinadi", !!q[0]?.studentName.includes(TAG) && !!q[0]?.groupName?.includes(TAG), { s: q[0]?.studentName, g: q[0]?.groupName });
 
   const res = await reviewExcuse(teacher.id, req.id, { approve: true, comment: "spravka qabul qilindi" });
   check("bitta propusk sababliga aylandi", res.applied === 1, res.applied);
@@ -155,6 +156,30 @@ async function main() {
     alien = (e as { code?: string }).code ?? "error";
   }
   check("begona otrabotkani topshirib bo'lmaydi", alien !== null, alien);
+
+  // ---------- 5. Ogohlantirish KONKRET bo'lishi (F6) ----------
+  // ⚠️ Tadqiqotlar (Pasco County va b.): amalsiz "bayroq" davomatga UMUMAN
+  // ta'sir qilmaydi. Shuning uchun vazifa mavhum "davomat 62 %" emas — qaysi
+  // fanda qancha soat qolgani bo'lishi kerak. Talabani ataylab zonaga tushiramiz.
+  console.log("\n5) Ogohlantirish konkretmi (F6)");
+  await prisma.makeup.updateMany({
+    where: { attendance: { studentId: student.id } },
+    data: { status: "REQUIRED", acceptedAt: null, acceptedById: null },
+  });
+  const extra = await prisma.lessonSession.create({
+    data: { courseId: course.id, groupId: group.id, date: new Date(Date.now() - 3 * 86_400_000), createdById: teacher.id, lessonType: "PRACTICE", hours: 6, status: "HELD" },
+  });
+  await prisma.attendance.create({ data: { sessionId: extra.id, studentId: student.id, status: "ABSENT", markedById: teacher.id } });
+
+  const tasks = await computeStudentAutoTasks(student.id);
+  const att = tasks.find((t) => t.type === "attendance_low");
+  check("davomat ogohlantirishi paydo bo'ldi", !!att, tasks.map((t) => t.type));
+  check("u KONKRET (fan qatorlari bilan)", (att?.items?.length ?? 0) > 0, att?.items?.length);
+  const item = att?.items?.find((i) => i.topicTitle.includes(TAG));
+  check("qatorda fan nomi va soat nisbati bor", !!item && /\d+\/\d+/.test(item.courseName), item ? { fan: item.topicTitle, soat: item.courseName, qolgan: item.value } : null);
+  check("qolgan soat ko'rsatilgan", typeof item?.value === "number", item?.value);
+  const mk = tasks.find((t) => t.type === "makeup_due");
+  check("otrabotka qarzi vazifasi bor", !!mk && (mk.items?.length ?? 0) > 0, mk?.count);
 
   console.log(`\n${fail === 0 ? "HAMMASI O'TDI" : "XATO BOR"} — ${ok} ✓ / ${fail} ✗\n`);
 }

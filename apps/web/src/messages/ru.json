@@ -44,7 +44,8 @@
     "more": "Ещё",
     "theme": "Тёмная тема",
     "language": "Язык",
-    "control": "Контроль"
+    "control": "Контроль",
+    "attendanceControl": "Посещаемость"
   },
   "theme": {
     "label": "Тема оформления",
@@ -200,7 +201,9 @@
     "statusOverdue": "Просрочено",
     "studentsAssignmentKind": "Задание студентам",
     "sourceLabel": "Источник",
-    "showAll": "Все"
+    "showAll": "Все",
+    "makeupDue": "Долг по отработке",
+    "hoursLeft": "ч осталось"
   },
   "teachAssign": {
     "newBtn": "Новая задача",
@@ -2388,7 +2391,8 @@
     "ai": "AI",
     "audit": "Аудит",
     "settings": "Настройки",
-    "control": "Контроль"
+    "control": "Контроль",
+    "attendanceControl": "Посещ."
   },
   "podcast": {
     "title": "Аудиоподкаст",
@@ -2534,5 +2538,44 @@
     "stAPPROVED": "Одобрено",
     "stREJECTED": "Отклонено",
     "stPENDING": "На рассмотрении"
+  },
+  "attControl": {
+    "title": "Контроль посещаемости",
+    "subtitle": "Кто вышел за коридор и где не отмечены занятия — поимённо.",
+    "loadError": "Не удалось загрузить",
+    "semesterN": "{{n}}-й семестр",
+    "allClear": "Отклонений нет",
+    "blockedN": "Исчерпали лимит: {{n}}",
+    "atRiskN": "В зоне риска: {{n}}",
+    "unmarkedN": "Занятий без отметки: {{n}}",
+    "groupsWord": "групп",
+    "studentsWord": "студентов",
+    "guest": "Гость",
+    "hours": "ч",
+    "noRisk": "Все в коридоре",
+    "noCycles": "Циклов нет",
+    "colGroup": "Группа",
+    "colStudents": "Студентов",
+    "colUnmarked": "Без отметки",
+    "colAtRisk": "В риске",
+    "colPct": "Посещаемость",
+    "tab": {
+      "risk": "Зона риска",
+      "groups": "Группы",
+      "excuses": "Заявки",
+      "cycles": "Циклы"
+    },
+    "zone": {
+      "OK": "В норме",
+      "WARN": "Внимание",
+      "DANGER": "Близко к лимиту",
+      "BLOCKED": "Лимит исчерпан"
+    },
+    "cycleStatus": {
+      "PLANNED": "Запланирован",
+      "ACTIVE": "Идёт",
+      "FINISHED": "Завершён",
+      "CANCELLED": "Отменён"
+    }
   }
 }

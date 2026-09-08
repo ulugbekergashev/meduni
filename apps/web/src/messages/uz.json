@@ -44,7 +44,8 @@
     "more": "Yana",
     "theme": "Tungi rejim",
     "language": "Til",
-    "control": "Nazorat"
+    "control": "Nazorat",
+    "attendanceControl": "Davomat"
   },
   "theme": {
     "label": "Mavzu (rang)",
@@ -200,7 +201,9 @@
     "statusOverdue": "Muddati oʻtgan",
     "studentsAssignmentKind": "Talabalarga topshiriq",
     "sourceLabel": "Manba",
-    "showAll": "Hammasi"
+    "showAll": "Hammasi",
+    "makeupDue": "Otrabotka qarzi",
+    "hoursLeft": "soat qoldi"
   },
   "teachAssign": {
     "newBtn": "Yangi topshiriq",
@@ -2388,7 +2391,8 @@
     "ai": "AI",
     "audit": "Audit",
     "settings": "Sozlamalar",
-    "control": "Nazorat"
+    "control": "Nazorat",
+    "attendanceControl": "Davomat"
   },
   "podcast": {
     "title": "Audio-podkast",
@@ -2534,5 +2538,44 @@
     "stAPPROVED": "Tasdiqlandi",
     "stREJECTED": "Rad etildi",
     "stPENDING": "Tekshiruvda"
+  },
+  "attControl": {
+    "title": "Davomat nazorati",
+    "subtitle": "Kim koridordan chiqdi va qaysi darslar belgilanmagan — ismlar bilan.",
+    "loadError": "Ma'lumot yuklanmadi",
+    "semesterN": "{{n}}-semestr",
+    "allClear": "Chetlanish yo'q",
+    "blockedN": "{{n}} ta talaba limitni tugatdi",
+    "atRiskN": "{{n}} ta talaba xavf zonasida",
+    "unmarkedN": "{{n}} ta darsda yo'qlama yo'q",
+    "groupsWord": "guruh",
+    "studentsWord": "talaba",
+    "guest": "Mehmon",
+    "hours": "soat",
+    "noRisk": "Hamma koridorda",
+    "noCycles": "Sikl yo'q",
+    "colGroup": "Guruh",
+    "colStudents": "Talaba",
+    "colUnmarked": "Belgilanmagan",
+    "colAtRisk": "Xavfda",
+    "colPct": "Davomat",
+    "tab": {
+      "risk": "Xavf ro'yxati",
+      "groups": "Guruhlar",
+      "excuses": "Sabab arizalari",
+      "cycles": "Sikllar"
+    },
+    "zone": {
+      "OK": "Me'yorda",
+      "WARN": "Diqqat",
+      "DANGER": "Limitga yaqin",
+      "BLOCKED": "Limit tugadi"
+    },
+    "cycleStatus": {
+      "PLANNED": "Rejada",
+      "ACTIVE": "Davom etmoqda",
+      "FINISHED": "Yakunlandi",
+      "CANCELLED": "Bekor"
+    }
   }
 }
