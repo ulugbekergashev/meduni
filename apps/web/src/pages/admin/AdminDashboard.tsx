@@ -165,7 +165,7 @@ export function AdminDashboard() {
           <motion.section variants={itemVariants} className="mt-3">
             <h2 className="mb-4 text-section font-bold tracking-tight text-ink">{t("attention")}</h2>
             {allClear ? (
-              <Card className="flex items-center gap-3 border-emerald/30 bg-emerald/5 shadow-sm">
+              <Card className="flex items-center gap-3 border-emerald/30 bg-emerald/5">
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-soft text-emerald">
                   <Icon icon={CheckCircle2} size={20} />
                 </div>
@@ -183,7 +183,7 @@ export function AdminDashboard() {
           {/* AI spend */}
           <motion.section variants={itemVariants} className="mt-4">
             <button onClick={() => navigate("/admin/ai")} className="block w-full text-left outline-none group">
-              <div className="relative overflow-hidden rounded-card bg-surface p-4 shadow-sm border border-line transition-all duration-300 group-hover:shadow-md group-hover:border-brand/30">
+              <div className="relative overflow-hidden rounded-card bg-surface p-4 border border-line transition-all duration-300 group- group-hover:border-brand/30">
                 {/* Subtle gradient background effect */}
                 <div className="absolute top-0 right-0 w-64 h-64 bg-brand-soft rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
                 

@@ -99,7 +99,7 @@ export function RollCallModal({
                         onClick={() => setOne(st.id, status)}
                         className={cls(
                           "flex-1 rounded-[8px] border-2 px-3 py-2.5 text-note font-black transition-all active:scale-95 sm:flex-none sm:px-5 sm:py-2",
-                          on ? `${meta.solid} scale-[1.02] border-transparent shadow-sm` : "border-line bg-surface text-ink-soft hover:bg-bg hover:text-ink"
+                          on ? `${meta.solid} scale-[1.02] border-transparent` : "border-line bg-surface text-ink-soft hover:bg-bg hover:text-ink"
                         )}
                       >
                         {t(`status.${status}`)}

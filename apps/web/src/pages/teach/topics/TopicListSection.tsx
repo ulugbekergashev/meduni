@@ -155,10 +155,14 @@ export function TopicListSection({ scope }: { scope: TopicScope }) {
         emptyText={t("empty")}
         onRetry={() => list.refetch()}
       >
-        <ul className="space-y-2">
+        {/* ⚠️ Har mavzu ALOHIDA kartochka edi: 5 ta mavzu ekranda 5 ta suzuvchi
+            quti bo'lib, orasida havo ko'p va ro'yxat "sanoqli" ko'rinmasdi.
+            Endi bitta kartochka + qatorlar orasida ingichka ajratgich. */}
+        <Card className="!p-0">
+          <ul>
           {topics.map((tp, i) => (
             <li key={tp.id}>
-              <Card className="flex items-center gap-3 py-3">
+              <div className={cls("flex items-center gap-3 px-4 py-3", i > 0 && "border-t border-line-soft")}>
                 <div className="flex flex-col">
                   <button
                     onClick={() => move(i, -1)}
@@ -178,14 +182,14 @@ export function TopicListSection({ scope }: { scope: TopicScope }) {
                   </button>
                 </div>
 
-                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-bg text-note font-bold text-ink-soft">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-surface-raised font-data text-micro font-bold tabular-nums text-ink-faint">
                   {i + 1}
                 </span>
 
                 <div className="min-w-0 flex-1">
                   <button
                     onClick={() => navigate(`/teach/topics/${tp.id}`)}
-                    className="block max-w-full truncate text-left font-medium text-ink hover:text-brand-deep hover:underline"
+                    className="block max-w-full truncate text-left text-note text-ink hover:text-brand-deep hover:underline"
                   >
                     {tp.title}
                   </button>
@@ -210,10 +214,11 @@ export function TopicListSection({ scope }: { scope: TopicScope }) {
                 >
                   {t("open")}
                 </Button>
-              </Card>
+              </div>
             </li>
           ))}
-        </ul>
+          </ul>
+        </Card>
       </AsyncSection>
 
       <ConfirmDialog

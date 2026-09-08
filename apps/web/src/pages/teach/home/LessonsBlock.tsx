@@ -51,7 +51,7 @@ function LessonCell({ l, onMark }: { l: DerivedLesson; onMark: () => void }) {
     <button
       onClick={onMark}
       className={cls(
-        "group flex w-full flex-col gap-0.5 rounded-control border-l-4 bg-surface px-2.5 py-2 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-card-hover focus-visible:ring-2 focus-visible:ring-brand",
+        "group flex w-full flex-col gap-0.5 rounded-control border-l-4 bg-surface px-2.5 py-2 text-left transition-all hover:-translate-y-0.5 hover:shadow-card-hover focus-visible:ring-2 focus-visible:ring-brand",
         statusBorder(l.status)
       )}
     >

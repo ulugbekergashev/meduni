@@ -295,7 +295,7 @@ export function StudentDashboard() {
                       </div>
                     </div>
                     <Link to={`/app/topics/${d.resume.topicId}`} className="relative shrink-0">
-                      <button className="flex items-center gap-2 rounded-control bg-brand px-5 py-3 text-note font-bold text-white transition-all duration-300 hover:scale-105 hover:bg-white hover:shadow-md">
+                      <button className="flex items-center gap-2 rounded-control bg-brand px-5 py-3 text-note font-bold text-white transition-all duration-300 hover:scale-105 hover:bg-white">
                         <Icon icon={PlayCircle} size={18} />
                         {t("continue")}
                       </button>

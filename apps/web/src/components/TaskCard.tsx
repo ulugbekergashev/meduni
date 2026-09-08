@@ -31,7 +31,7 @@ export function TaskCard({
       disabled={!onClick}
       className={`flex w-full items-center gap-3 rounded-card border p-3.5 text-left transition-all ${
         toneClass[tone] ?? toneClass.brand
-      } ${onClick ? "hover:-translate-y-0.5 hover:shadow-sm" : "cursor-default"}`}
+      } ${onClick ? "hover:-translate-y-0.5" : "cursor-default"}`}
     >
       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/60">
         <Icon icon={icon} size={18} />

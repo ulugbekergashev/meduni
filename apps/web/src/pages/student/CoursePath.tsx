@@ -126,7 +126,7 @@ function TopicCard({ topic, last }: { topic: StudentTopic; last: boolean }) {
         <Card
           className={cls(
             "flex flex-col gap-3",
-            current && "border-brand shadow-md",
+            current && "border-brand",
             topic.state === "LOCKED" && "opacity-80"
           )}
         >

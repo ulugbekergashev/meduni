@@ -91,7 +91,7 @@ export function GlobalSearch({ fetch }: { fetch: (q: string) => Promise<SearchSe
 
   return (
     <div ref={boxRef} className="relative max-w-md w-full sm:w-[320px] lg:w-[400px]">
-      <div className="group flex items-center gap-2 rounded-full border border-line bg-surface-raised px-4 shadow-sm ring-1 ring-black/5 transition-all focus-within:ring-2 focus-within:ring-brand/30 hover:bg-surface-glass">
+      <div className="group flex items-center gap-2 rounded-full border border-line bg-surface-raised px-4 ring-1 ring-black/5 transition-all focus-within:ring-2 focus-within:ring-brand/30 hover:bg-surface-glass">
         <Icon icon={Search} size={18} className="shrink-0 text-ink-faint transition-colors group-focus-within:text-brand" />
         <input
           ref={inputRef}
@@ -104,7 +104,7 @@ export function GlobalSearch({ fetch }: { fetch: (q: string) => Promise<SearchSe
           placeholder={t("placeholder")}
           className="h-10 w-full bg-transparent text-note font-medium text-ink outline-none placeholder:text-ink-faint"
         />
-        <kbd className="hidden shrink-0 rounded-md border border-line bg-surface px-2 py-0.5 text-micro font-bold tracking-wider text-ink-faint shadow-sm sm:block">
+        <kbd className="hidden shrink-0 rounded-md border border-line bg-surface px-2 py-0.5 text-micro font-bold tracking-wider text-ink-faint sm:block">
           Ctrl K
         </kbd>
       </div>

@@ -189,7 +189,7 @@ export function SchedulePage() {
                     onClick={() => setView(v)}
                     className={cls(
                       "rounded-[6px] px-3.5 py-1.5 text-body font-bold transition-colors",
-                      view === v ? "bg-surface text-ink shadow-sm" : "text-ink-soft hover:text-ink"
+                      view === v ? "bg-surface text-ink" : "text-ink-soft hover:text-ink"
                     )}
                   >
                     {t(v === "week" ? "viewWeek" : "viewMonth")}
@@ -245,7 +245,7 @@ export function SchedulePage() {
         </div>
       ) : view === "month" ? (
         <motion.div variants={itemVariants} className="space-y-3">
-          <Card className="p-0 shadow-sm border border-line bg-surface">
+          <Card className="p-0 border border-line bg-surface">
             <MonthCalendar
               monthDate={monthDate}
               weekdayNames={ru ? WD_SHORT_MON_RU : WD_SHORT_MON_UZ}
@@ -300,7 +300,7 @@ export function SchedulePage() {
               const dayRows = slots.flatMap((slot) => at(slot, d.key).map((s) => ({ slot, s })));
               if (dayRows.length === 0) return null;
               return (
-                <Card key={d.key} className="p-0 shadow-sm">
+                <Card key={d.key} className="p-0">
                   <div
                     className={cls(
                       "flex items-center gap-2 rounded-t-card border-b border-line px-3 py-2",
@@ -330,7 +330,7 @@ export function SchedulePage() {
           </div>
 
           {/* ——— DESKTOP: to'liq vaqt×kun to'ri ——— */}
-          <Card className="hidden overflow-x-auto p-0 shadow-sm border border-line bg-surface lg:block">
+          <Card className="hidden overflow-x-auto p-0 border border-line bg-surface lg:block">
             {/* Jadval to'ri: vaqt ustuni + 7 kun */}
             <div className="min-w-[820px]">
               {/* Sarlavha qatori */}

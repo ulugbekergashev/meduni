@@ -390,7 +390,7 @@ export function AttendanceSection() {
         <select
           value={courseId ?? ""}
           onChange={(e) => setCourseId(e.target.value ? Number(e.target.value) : undefined)}
-          className="rounded-control border border-line bg-surface px-3 py-2 text-body font-medium outline-none transition-colors focus:border-brand shadow-sm"
+          className="rounded-control border border-line bg-surface px-3 py-2 text-body font-medium outline-none transition-colors focus:border-brand"
         >
           <option value="">{t("allCourses")}</option>
           {(coursesQ.data ?? []).map((c) => (
@@ -399,7 +399,7 @@ export function AttendanceSection() {
             </option>
           ))}
         </select>
-        <div className="flex items-center gap-2 bg-surface border border-line rounded-control p-0.5 shadow-sm">
+        <div className="flex items-center gap-2 bg-surface border border-line rounded-control p-0.5">
           <input
             type="date"
             value={range.from ?? ""}
@@ -446,7 +446,7 @@ export function AttendanceSection() {
                             {formatDate(locale === "ru" ? "ru" : "uz", s.date, "short")} · {hhmm(new Date(s.date))} · {s.courseName}
                           </p>
                         </div>
-                        <span className={cls("shrink-0 rounded-pill px-3 py-1 text-note font-semibold shadow-sm border border-transparent", m.chip)}>
+                        <span className={cls("shrink-0 rounded-pill px-3 py-1 text-note font-semibold border border-transparent", m.chip)}>
                           {t(`status.${s.status}`)}
                         </span>
                       </div>

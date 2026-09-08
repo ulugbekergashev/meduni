@@ -53,7 +53,7 @@ function QuizRow({ q, onOpen }: { q: GradeQuiz; onOpen: () => void }) {
         onClick={() => setOpen((o) => !o)}
         className="flex w-full cursor-pointer items-center gap-5 px-5 py-4 text-left transition-all duration-300 hover:bg-surface-raised hover:pl-6"
       >
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-blue-soft text-blue shadow-sm transition-transform duration-300 group-hover:scale-110">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-blue-soft text-blue transition-transform duration-300 group-hover:scale-110">
           <Icon icon={ClipboardList} size={20} />
         </div>
         <div className="min-w-0 flex-1">
@@ -64,7 +64,7 @@ function QuizRow({ q, onOpen }: { q: GradeQuiz; onOpen: () => void }) {
           </p>
         </div>
         <span className={cls("shrink-0 text-section font-bold tabular-nums tracking-tight", scoreTone(q.bestScore))}>{q.bestScore}%</span>
-        <div className={cls("flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface text-ink-soft transition-all ml-2 border border-line shadow-sm", open && "bg-brand-soft text-brand border-transparent")}>
+        <div className={cls("flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface text-ink-soft transition-all ml-2 border border-line", open && "bg-brand-soft text-brand border-transparent")}>
           <Icon
             icon={ChevronDown}
             size={16}
@@ -122,7 +122,7 @@ function CaseRow({ c, onOpen }: { c: GradeCase; onOpen: () => void }) {
   return (
     <div className="group border-b border-line last:border-b-0 px-5 py-4 transition-all duration-300 hover:bg-surface-raised hover:pl-6">
       <div className="flex items-center gap-5">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-rose-soft text-rose shadow-sm transition-transform duration-300 group-hover:scale-110">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-rose-soft text-rose transition-transform duration-300 group-hover:scale-110">
           <Icon icon={Stethoscope} size={20} />
         </div>
         <button onClick={onOpen} className="min-w-0 flex-1 text-left">
@@ -168,18 +168,18 @@ function CourseBlock({ c, filter }: { c: GradesCourse; filter: Filter }) {
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2 px-1">
         <div className="flex items-center gap-3">
           <h2 className="text-section font-bold text-ink">{c.subjectName}</h2>
-          <span className="rounded-full bg-surface-glass backdrop-blur-md border border-line px-3 py-1 text-note font-bold text-ink-soft shadow-sm">
+          <span className="rounded-full bg-surface-glass backdrop-blur-md border border-line px-3 py-1 text-note font-bold text-ink-soft">
             {c.academicYear} · {tp("semester", { n: c.semester })}
           </span>
         </div>
         {c.avgQuiz !== null && (
-          <span className="rounded-full bg-surface border border-line px-3 py-1 text-body font-bold text-ink-soft shadow-sm">
+          <span className="rounded-full bg-surface border border-line px-3 py-1 text-body font-bold text-ink-soft">
             {t("avgQuizShort")}: <span className={cls(scoreTone(c.avgQuiz), "ml-1")}>{c.avgQuiz}%</span>
           </span>
         )}
       </div>
 
-      <Card className="p-0 overflow-hidden shadow-sm">
+      <Card className="p-0 overflow-hidden">
         {quizzes.map((q) => (
           <QuizRow key={`q${q.topicId}`} q={q} onOpen={() => navigate(`/app/topics/${q.topicId}?tab=quiz`)} />
         ))}
@@ -313,14 +313,14 @@ function GradesHome() {
 
       {/* Tur filtri — segmented */}
       {withGradesAny && (
-        <motion.div variants={itemVariants} className="inline-flex gap-1.5 rounded-full border border-line bg-surface/80 backdrop-blur-md p-1.5 shadow-sm">
+        <motion.div variants={itemVariants} className="inline-flex gap-1.5 rounded-full border border-line bg-surface/80 backdrop-blur-md p-1.5">
           {(["all", "quiz", "case"] as Filter[]).map((f) => (
             <button
               key={f}
               onClick={() => setFilter(f)}
               className={cls(
                 "rounded-full px-5 py-2 text-body font-bold transition-all duration-300",
-                filter === f ? "bg-brand text-white shadow-md scale-105" : "text-ink-soft hover:bg-surface-raised hover:text-ink"
+                filter === f ? "bg-brand text-white scale-105" : "text-ink-soft hover:bg-surface-raised hover:text-ink"
               )}
             >
               {t(`filter.${f}`)}
