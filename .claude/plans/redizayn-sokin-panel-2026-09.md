@@ -166,9 +166,15 @@ Bitta commit, butun ilovaga o'z-o'zidan tarqaladi (fayllarga tegilmaydi).
 | F3/F4 talaba+admin | ✅ | Tokenlar orqali avtomatik; qo'lda: 152 ta jadval raqami mono shriftga, LeaderboardCard medallari tinchlandi, AI-monitoring/kurs yo'li gradientlari ketdi. |
 | CLAUDE.md §4 | ✅ | Yangi tokenlar, tipografika, StatCard 4 qoidasi, komponentlar ro'yxati. |
 
-### Keyingi (ixtiyoriy, bu redizayndan tashqarida)
+| Sayqal | ✅ | Qo'sh strelkalar (12 i18n satri + 7 havolaga ikonka), keys navbatidagi ikkilamchi bo'sh karta, mavzular ro'yxati bitta zich ro'yxatga, 31 ad-hoc soya, 6 `backdrop-blur`, dekorativ blur dog'lar, tarjimasiz inglizcha izoh. |
+| Kirish sahifasi | ✅ | Butunlay boshqa dizayn tili edi (qora texno-fon, 3 ta cheksiz pulsatsiya, INGLIZCHA matn) → o'sha tokenlar, tekis brend paneli, uz+ru. |
+
+### Qolgan (bu redizayndan tashqarida)
 
 - Bosh sahifadagi «o'zlashtirish dinamikasi» grafigi — backendda 6 haftalik
-  seriya yo'q (`getTeacherDashboard`), shuning uchun qo'shilmadi.
-- `Login.tsx` — marketing tomoni, ataylab tegilmadi (gradient o'z o'rnida).
-- Admin AI-monitoring kartasidagi inglizcha izoh — i18n kaliti yetishmaydi.
+  seriya yo'q (`getTeacherDashboard`), shuning uchun qo'shilmadi. Qo'shilsa,
+  `TeachDashboard` da grafik uchun joy tayyor.
+- `MiniBars` o'qi hamisha noldan boshlanadi. Referens tor diapazonda o'qni
+  moslashtirishni tavsiya qiladi (davomat 92–100% da ustunlar bir xil
+  ko'rinadi), lekin nolsiz ustun grafigi o'quvchini chalg'itadi — ataylab
+  qilinmadi.
