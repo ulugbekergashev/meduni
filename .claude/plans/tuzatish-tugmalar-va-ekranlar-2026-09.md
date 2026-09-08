@@ -24,6 +24,12 @@ yomonroq, chunki u o'zini aybdor his qiladi ("noto'g'ri bosdimmi?").
 Eng ko'p uchraydigani — **dekanat bergan vazifa qatori**: u o'qituvchining bosh
 sahifasida turadi va bosilganda hech narsa qilmaydi.
 
+**Brauzer obhodi (uchala rol, 18 sahifa) yana bir narsani ko'rsatdi**, statik
+tahlil ko'ra olmagan: topilgan 15 ta "javob bermaydigan" elementning **9 tasi
+bitta naqsh** — tugma **o'zi allaqachon turgan holatni** o'rnatadi (A5). Ya'ni
+bu 9 ta alohida bug emas, bitta qoida yo'qligi. Shuning uchun F1 aynan shundan
+boshlanadi: bitta qoida — to'qqiz joy.
+
 ---
 
 ## A. TUGMALAR — tasdiqlangan nosozliklar
@@ -88,6 +94,72 @@ faol holatda fon ham o'zgarsin (faqat chegara emas).
 (yo'qlama oynasini ochadi), lekin element — oddiy `<span>`: `cursor-pointer`
 yo'q, `role` yo'q, fokus halqasi yo'q. Ishlaydi, lekin **ishlamaydigandek
 ko'rinadi** — "bosdim, hech narsa bo'lmadi" aynan shundan.
+
+### A5. "O'zi turgan holatini qo'yadigan" filtrlar ⬜ **[tizimli xato]**
+Brauzer obhodi topdi (statik tahlil ko'ra olmaydi). Bir nechta kartochka
+bosilganda **o'zi allaqachon turgan holatni** o'rnatadi, ya'ni klik hech narsa
+qilmaydi — lekin kartochka bosiladigandek ko'rinadi va yoritilgan:
+
+| Joy | Kod | Nima bo'ladi |
+|---|---|---|
+| `pages/student/StudentTasksPage.tsx:177` "Bajarilgan" | `setHistoryOpen(true)` | `historyOpen` **sukut bo'yicha `true`** (`:125`) — klik hech narsa qilmaydi |
+| `pages/student/StudentTasksPage.tsx:154` "Ochiq vazifalar" | `setFilter("all")` | `filter` sukut bo'yicha `"all"` |
+| `pages/student/StudentCoursesPage.tsx:182` "Joriy" | `backToCurrent()` | sahifa ochilishida allaqachon joriy semestr (`:115-119`) |
+| `pages/student/GradesPage.tsx:320` "Barchasi" | `setFilter("all")` | `filter` sukut bo'yicha `"all"` |
+| `pages/teach/home/LessonsBlock.tsx:202` "Hafta" | `onMode("week")` | rejim sukut bo'yicha `week` |
+| `pages/teach/home/LessonsBlock.tsx:256` "Bugun" (oy) | joriy oyga qaytaradi | oy allaqachon joriy — hech nima o'zgarmaydi |
+| `pages/teach/group/GroupProfile.tsx:616` kurs chiplari | `setTab("courses")` | `?tab=courses` da allaqachon shu tab ochiq |
+| `/app/attendance?sub=jadval` "Hafta"/"Bugun" | o'sha naqsh | sukut holat |
+| `/app/profile` "O'zbek (lotin)" | `changeLanguage("uz")` | til allaqachon uz |
+
+**To'g'ri naqsh loyihada ALLAQACHON bor:** `LessonsBlock.tsx:249` — hafta
+"Bugun" tugmasi faqat `weekOffset !== 0` bo'lganda **umuman chizilmaydi**.
+Aynan shu qoida qolgan joylarga ko'chiriladi.
+
+**Tuzatish (uchta yo'ldan biri, holatga qarab):**
+1. **Toggle** — filtr kartochkasi bo'lsa (`toggle("all")` naqshi
+   `StudentTasksPage.tsx:143` da bor): ikkinchi bosish filtrni tozalaydi.
+2. **Chizilmaydi** — "Bugun"/"Joriyga qaytish" kabi qaytaruvchi tugma o'z
+   holatida turganda render qilinmaydi (`LessonsBlock.tsx:249`).
+3. **`aria-pressed` + faol ko'rinish** — segmented tanlagichda tugma qoladi,
+   lekin `disabled`+`aria-pressed="true"` bo'ladi: skrinrider ham, sichqoncha
+   ham "bu allaqachon tanlangan" deb tushunadi.
+
+Qoida (yangi, CLAUDE.md §4 ga qo'shiladi): *o'zi turgan holatini qo'yadigan
+tugma bo'lmasin — u toggle bo'ladi, chizilmaydi yoki bosilmaydigan ko'rinadi.*
+
+### A5B. Bir ishni qiladigan IKKI boshqaruv ⬜
+`pages/student/GradesPage.tsx:279-311` — to'rtta `HeroTile`, lekin ular atigi
+**ikki** amalni bajaradi: 1- va 2-kartochka ikkalasi `toggle("quiz")`,
+3- va 4-kartochka ikkalasi `toggle("case")`. Ya'ni "Sinov bahosi" ni bosish
+"O'rtacha ball" ni bosish bilan aynan bir xil natija beradi. Ustiga o'sha
+filtrning uchinchi nusxasi pastdagi segmented tasmada (`:320`).
+Bitta fakt — bitta joy (§4) buzilgan: **bir filtr — uch boshqaruv**.
+
+**Tuzatish:** segmented tasma qoladi (u filtr ekani ochiq ko'rinadi),
+kartochkalar esa **ko'rsatkich** bo'ladi (bosilmaydi) — yoki har kartochka
+o'z filtrini olsin (o'rtacha→quiz, o'tilgan→passed, keys→case, tekshiruvda→
+pending). Ikkinchisi afzal: kartochka bosilsa haqiqatan boshqa ro'yxat chiqadi.
+
+### A5C. Kurs chipi qaysi kursligini bildirmaydi ⬜
+`GroupProfile.tsx:615-616` — shapkadagi har kurs chipi (`Nefrologiya`,
+`Kardiologiya`) **bir xil** `setTab("courses")` chaqiradi. Chipda kurs nomi
+turibdi, `title` esa "hisobotni ochish" deydi — ya'ni foydalanuvchi SHU kurs
+hisobotini kutadi, lekin barcha kurslar ro'yxati ochiladi.
+
+**Tuzatish:** chip `setTab("courses")` bilan birga o'sha kursning kartasiga
+**skroll qilsin va uni yoritsin** (`?tab=courses&course=<id>`), yoki chiplar
+umuman bosilmaydigan yorliqqa aylansin.
+
+### A6. Filtr ishlaganini bilib bo'lmaydi ⬜
+`StatCard` `selected` faqat **1px chegara** rangini o'zgartiradi. Demo
+ma'lumotida "Jami 10 / Faol 10 / Orqada 10" — uchala filtr bir xil ro'yxatni
+beradi, ya'ni bosgandan keyin ekranda **hech nima** o'zgarmaydi. Filtr ishlaydi,
+lekin foydalanuvchi uchun u ishlamaydi.
+
+**Tuzatish:** A3 bilan birga — faol filtr foni ham o'zgarsin, va ro'yxat ustida
+"10 tadan 10 tasi ko'rsatilmoqda · filtrni tozalash" qatori chiqsin. Natija
+bir xil bo'lsa ham, tizim javob berayotgani ko'rinsin.
 
 ---
 
@@ -164,12 +236,17 @@ Adminda bunday formalar 2026-07 da modalga ko'chirilgan, o'qituvchida qolib ketg
 ## D. Bajarish tartibi
 
 ### F1 — tugmalar rost gapirsin ⬜ (1 sessiya, dizayn tegilmaydi)
-A1 · A2 · A3 · A4 · B1 · B2 · B3 · B4 · B5 · B6.
-Har biri kichik; A1 va A3 — eng ko'p ko'riladigan.
+A1 · A2 · A3 · A4 · **A5 (tizimli — eng ko'p qatorni tuzatadi)** · A5B · A5C ·
+A6 · B1 · B2 · B3 · B4 · B5 · B6.
+Tartib: avval A5 (bitta qoida — 9 joy), keyin A1 va A3 (eng ko'p ko'riladigan).
 **Приёмка:** brauzer bo'yicha avtomatik obhod — har bosiladigan element uchun
 "URL / DOM / tarmoq so'rovi / modal" o'zgarishi qayd etiladi; hech narsa
 qilmaydigan element qolmasin (skript: `scratchpad/crawl2.mjs` asosida repo'ga
 `scripts/uiCrawl.mjs` sifatida ko'chiriladi).
+⚠️ Obhod **demo ma'lumotiga sezgir**: "Jami 10 / Faol 10 / Orqada 10" bo'lgani
+uchun to'g'ri ishlaydigan filtr ham "hech nima o'zgarmadi" deb belgilanadi
+(A6). Shuning uchun obhod natijasi **avtomatik hukm emas** — har qator kod
+bilan tasdiqlanadi; F1 tugagach bazaga farqli demo qatorlari qo'shiladi.
 
 ### F2 — o'qituvchi bosh sahifasi rost gapirsin ⬜ (0.5 sessiya)
 C3 (yolg'on subtitr + belgilanmagan darslar birinchi qatorga) · C4 (bort tozalash)
