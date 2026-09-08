@@ -1,20 +1,14 @@
 import { Fragment, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { motion, type Variants } from "framer-motion";
-import { AlertTriangle, BookOpen, CalendarCheck, CalendarDays, Check, ChevronDown, Clock, Minus, X } from "lucide-react";
+import { AlertTriangle, BookOpen, CalendarCheck, CalendarDays, ChevronDown, X } from "lucide-react";
 import { Card, Icon, LegendRow, MiniBars, Spinner, StackedBar, cls } from "@meduni/ui";
 import { AsyncSection } from "../../components/AsyncSection";
 import { formatDate } from "../../lib/date";
 import { useLocale } from "../../lib/useLocale";
+import { ATT_META as META, isLowAttendance } from "../../lib/attendance";
 import { useMyAttendance, useMyCourses, useMySchedule, type AttStatus } from "./api";
 import { CheckInCard } from "./CheckInCard";
-
-const META: Record<AttStatus, { icon: typeof Check; chip: string }> = {
-  PRESENT: { icon: Check, chip: "bg-emerald-soft text-emerald" },
-  ABSENT: { icon: X, chip: "bg-rose-soft text-rose" },
-  LATE: { icon: Clock, chip: "bg-amber-soft text-amber" },
-  EXCUSED: { icon: Minus, chip: "bg-blue-soft text-blue" },
-};
 
 const MONTHS_UZ = ["yanvar", "fevral", "mart", "aprel", "may", "iyun", "iyul", "avgust", "sentabr", "oktabr", "noyabr", "dekabr"];
 const MONTHS_RU = ["январь", "февраль", "март", "апрель", "май", "июнь", "июль", "август", "сентябрь", "октябрь", "ноябрь", "декабрь"];
@@ -54,7 +48,7 @@ export function AttendanceSection() {
   const q = useMyAttendance(courseId, range);
   const data = q.data;
   const pct = data?.stats.pct;
-  const low = pct !== null && pct !== undefined && pct < 75;
+  const low = isLowAttendance(pct);
   const schedule = scheduleQ.data ?? [];
 
   // Qoldirilgan darslar — fan kesimida (kelmagan sessiyalar).
@@ -205,7 +199,7 @@ export function AttendanceSection() {
                 const missed = missedByCourse.get(c.courseName) ?? [];
                 const courseSessions = (data?.sessions ?? []).filter((x) => x.courseName === c.courseName);
                 const open = expanded === c.courseId;
-                const lowRow = c.pct !== null && c.pct < 75;
+                const lowRow = isLowAttendance(c.pct);
                 return (
                   <Fragment key={c.courseId}>
                     <tr

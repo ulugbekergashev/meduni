@@ -20,6 +20,7 @@ import { ConfirmDialog } from "../../../components/ConfirmDialog";
 import { DataTable } from "../../../components/DataTable";
 import { useDebounced } from "../../../lib/useDebounced";
 import { useList } from "../../../lib/crud";
+import { isLowAttendance } from "../../../lib/attendance";
 import type { Faculty, Group } from "../structure/types";
 import { PasswordModal } from "../users/PasswordModal";
 import { StudentFormModal } from "./StudentFormModal";
@@ -84,7 +85,7 @@ export function StudentsPage() {
   };
 
   const attClass = (pct: number | null) =>
-    pct === null ? "text-ink-faint" : pct < 75 ? "font-bold text-rose" : "font-semibold text-ink";
+    pct === null ? "text-ink-faint" : isLowAttendance(pct) ? "font-bold text-rose" : "font-semibold text-ink";
 
   return (
     <div>

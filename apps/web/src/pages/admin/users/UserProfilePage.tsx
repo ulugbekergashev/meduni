@@ -19,6 +19,7 @@ import { AsyncSection } from "../../../components/AsyncSection";
 import { ConfirmDialog } from "../../../components/ConfirmDialog";
 import { api } from "../../../lib/api";
 import { useLocale } from "../../../lib/useLocale";
+import { isLowAttendance } from "../../../lib/attendance";
 import { formatDate } from "../../../lib/date";
 import { useUserProfile, type StudentProfileCourse, type TeacherProfileCourse } from "../api";
 import { PasswordModal } from "./PasswordModal";
@@ -153,7 +154,7 @@ export function UserProfilePage() {
                             "text-section font-bold tabular-nums",
                             p.attendancePct === null || p.attendancePct === undefined
                               ? "text-ink-faint"
-                              : p.attendancePct < 75
+                              : isLowAttendance(p.attendancePct)
                                 ? "text-rose"
                                 : "text-emerald"
                           )}

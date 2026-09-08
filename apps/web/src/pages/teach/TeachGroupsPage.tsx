@@ -7,6 +7,7 @@ import { AsyncSection } from "../../components/AsyncSection";
 import { Field } from "../../components/Field";
 import { apiErrorMessage } from "../../lib/api";
 import { useLocale } from "../../lib/useLocale";
+import { isLowAttendance } from "../../lib/attendance";
 import { useCreateTeacherGroup, useTeachGroups, type TeachGroup } from "./api";
 
 /** O'qituvchi yangi guruh yaratadi (o'z fakultetida). */
@@ -57,7 +58,7 @@ function GroupCard({ g, onClick }: { g: TeachGroup; onClick: () => void }) {
   const att = g.avgAttendance ?? null;
   const progress = g.avgProgress ?? 0;
   const behind = g.behindCount ?? 0;
-  const lowAtt = att !== null && att < 75;
+  const lowAtt = isLowAttendance(att);
   return (
     <Card interactive onClick={onClick} className="flex flex-col gap-3 !p-0">
       <div className="flex items-center gap-3 border-b border-line px-4 pt-4 pb-3">

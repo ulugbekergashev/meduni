@@ -14,6 +14,7 @@ import { SubNav } from "../../components/SubNav";
 import { QuickTaskModal, type QuickTaskPrefill } from "../../components/QuickTaskModal";
 import { formatDate } from "../../lib/date";
 import { useLocale } from "../../lib/useLocale";
+import { ATT_META, isLowAttendance } from "../../lib/attendance";
 import { apiErrorMessage } from "../../lib/api";
 import {
   useGradeSession, useStudentDetail, useUnlockForStudent,
@@ -22,12 +23,8 @@ import {
 } from "./api";
 
 const stateTone: Record<CellState, BadgeTone> = { COMPLETED: "emerald", IN_PROGRESS: "amber", AVAILABLE: "blue", LOCKED: "slate" };
-const attTone: Record<AttStatus, string> = {
-  PRESENT: "bg-emerald-soft text-emerald",
-  ABSENT: "bg-rose-soft text-rose",
-  LATE: "bg-amber-soft text-amber",
-  EXCUSED: "bg-blue-soft text-blue",
-};
+/** Holat rangi — umumiy xarita (`lib/attendance.ts`). */
+const attTone = (s: AttStatus) => ATT_META[s].chip;
 
 type TabKey = "overview" | "courses" | "journal";
 
@@ -202,7 +199,7 @@ function JournalRow({ s, studentId, courseId }: { s: StudentDetailSession; stude
         <p className="text-micro font-data tabular-nums text-ink-faint">{s.time}</p>
       </div>
       <p className="min-w-0 flex-1 truncate text-micro text-ink-soft">{s.topicTitle ?? "—"}</p>
-      <span className={cls("shrink-0 rounded-pill px-2.5 py-0.5 text-micro font-semibold", attTone[s.status])}>{t(`att.${s.status}`)}</span>
+      <span className={cls("shrink-0 rounded-pill px-2.5 py-0.5 text-micro font-semibold", attTone(s.status))}>{t(`att.${s.status}`)}</span>
       {editing ? (
         <div className="flex shrink-0 items-center gap-1">
           <Input value={val} onChange={(e) => setVal(e.target.value)} inputMode="numeric" placeholder="0–100" className="w-16 !py-1 text-center" autoFocus onKeyDown={(e) => e.key === "Enter" && save()} />
@@ -231,7 +228,7 @@ function AttendanceSummary({ course }: { course: StudentDetailCourse }) {
     <div className="px-4 py-3">
       <div className="mb-2.5 flex items-center justify-between gap-2">
         <span className="text-micro font-semibold text-ink-soft">{t("attendance")}</span>
-        <span className={cls("text-note font-bold font-data tabular-nums", a.pct !== null && a.pct < 75 ? "text-rose" : "text-emerald")}>{a.pct !== null ? `${a.pct}%` : "—"}</span>
+        <span className={cls("text-note font-bold font-data tabular-nums", isLowAttendance(a.pct) ? "text-rose" : "text-emerald")}>{a.pct !== null ? `${a.pct}%` : "—"}</span>
       </div>
       <div className="h-2.5 overflow-hidden rounded-full">
         <StackedBar segments={[{ value: a.present, tone: "emerald" }, { value: a.late, tone: "amber" }, { value: a.excused, tone: "blue" }, { value: a.absent, tone: "rose" }]} />
@@ -374,7 +371,7 @@ export function StudentDetailPage() {
                   label={t("attendance")}
                   value={attPct !== null ? attPct : "—"}
                   unit={attPct !== null ? "%" : undefined}
-                  tone={attPct !== null && attPct < 75 ? "bad" : undefined}
+                  tone={isLowAttendance(attPct) ? "bad" : undefined}
                   sub={t("attHint")}
                 />
                 <StatCard

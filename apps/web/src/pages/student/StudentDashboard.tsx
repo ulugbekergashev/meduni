@@ -25,6 +25,7 @@ import { HeroCard, RailCard } from "../../components/HeroStats";
 import { Disclosure } from "../../components/Disclosure";
 import { CheckInCard } from "./CheckInCard";
 import { useLocale } from "../../lib/useLocale";
+import { isLowAttendance } from "../../lib/attendance";
 import { formatDate } from "../../lib/date";
 import {
   useMyActivity,
@@ -249,7 +250,7 @@ export function StudentDashboard() {
                     {t("summaryTopics").toLowerCase()}
                   </span>
                   {attPct !== null && (
-                    <span className={attPct < 75 ? "font-bold text-rose" : undefined}>
+                    <span className={isLowAttendance(attPct) ? "font-bold text-rose" : undefined}>
                       <b className="font-data tabular-nums">{attPct}%</b> {t("summaryAttendance").toLowerCase()}
                     </span>
                   )}
@@ -442,7 +443,7 @@ export function StudentDashboard() {
                         <p className="text-note font-bold text-ink-soft">{t("semesterAttendance")}</p>
                       </div>
                       <div className="mt-3 flex items-end justify-between">
-                        <span className={cls("text-stat font-bold tabular-nums", attPct !== null && attPct < 75 ? "text-rose" : "text-ink")}>
+                        <span className={cls("text-stat font-bold tabular-nums", isLowAttendance(attPct) ? "text-rose" : "text-ink")}>
                           {attPct !== null ? `${attPct}%` : "—"}
                         </span>
                         {attMissed > 0 && (

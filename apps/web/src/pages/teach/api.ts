@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, API_URL } from "../../lib/api";
 import type { UnlockRule } from "./topics/api";
+import type { AttStatus } from "../../lib/attendance";
 
 export { API_URL };
 
@@ -687,73 +688,12 @@ export function useReviewCase() {
 
 // ---------------- Attendance (Module 15) ----------------
 
-export type AttStatus = "PRESENT" | "ABSENT" | "LATE" | "EXCUSED";
+// Holat turi — umumiy manba (`lib/attendance.ts`), rang/ikonka xaritasi ham o'sha yerda.
+export type { AttStatus };
 
-export interface SessionRow {
-  id: number;
-  date: string;
-  title: string | null;
-  topicId: number | null;
-  room: string | null;
-  markedCount: number;
-  rosterSize: number;
-  status: "UNMARKED" | "PARTIAL" | "FULL";
-}
-
-export interface RosterData {
-  session: { id: number; date: string; title: string | null; topicId: number | null; room: string | null; groupName: string | null };
-  students: { id: number; fullName: string; status: AttStatus | null; grade: number | null }[];
-}
-
-export interface AttCell {
-  status: AttStatus;
-  grade: number | null;
-}
-
-export interface AttReport {
-  sessions: { id: number; date: string; title: string | null }[];
-  students: {
-    id: number;
-    fullName: string;
-    cells: Record<number, AttCell>;
-    present: number;
-    absent: number;
-    late: number;
-    excused: number;
-    attendancePct: number | null;
-    avgGrade: number | null;
-  }[];
-}
-
-export interface DateRange {
-  from?: string;
-  to?: string;
-  search?: string;
-  groupId?: number;
-}
-
-// Darslar hub — o'qituvchining barcha kurslaridagi darslar
-export interface TeacherSession {
-  id: number;
-  date: string;
-  title: string | null;
-  room: string | null;
-  courseId: number;
-  courseName: string;
-  topicTitle: string | null;
-  groupId: number | null;
-  groupName: string | null;
-  markedCount: number;
-  rosterSize: number;
-  status: "UNMARKED" | "PARTIAL" | "FULL";
-}
-export function useTeacherSessions(range: { from?: string; to?: string; search?: string }) {
-  const p = new URLSearchParams();
-  if (range.from) p.set("from", range.from);
-  if (range.to) p.set("to", range.to);
-  if (range.search?.trim()) p.set("search", range.search.trim());
-  return useQuery({ queryKey: ["teacher-sessions", range], queryFn: () => api<TeacherSession[]>(`/api/v1/teach/sessions?${p}`) });
-}
+// ⚠️ 2026-09-08 (F0): `TeacherSession` + `useTeacherSessions` o'chirildi — ular
+// sessiya-markazli eski route'ga (`GET /teach/sessions`) tayanardi va hech qayerdan
+// chaqirilmasdi. Darslar SLOTLARDAN hosil bo'ladi: `useTeacherLessons`.
 
 // ---- Haftalik takroriy jadval (slotlar) → darslar AVTOMATIK ----
 export interface ScheduleSlot {
@@ -883,78 +823,8 @@ export function useAttendanceMatrix(courseId: number | null, groupId: number, fr
   });
 }
 
-export function useSessions(courseId: number, range: DateRange) {
-  const p = new URLSearchParams();
-  if (range.from) p.set("from", range.from);
-  if (range.to) p.set("to", range.to);
-  if (range.search?.trim()) p.set("search", range.search.trim());
-  return useQuery({ queryKey: ["sessions", courseId, range], queryFn: () => api<SessionRow[]>(`/api/v1/teach/courses/${courseId}/sessions?${p}`) });
-}
-
-export function useCreateSession(courseId: number) {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (b: { date: string; title?: string; topicId?: number | null; room?: string }) =>
-      api(`/api/v1/teach/courses/${courseId}/sessions`, { method: "POST", body: JSON.stringify(b) }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["sessions", courseId] });
-      qc.invalidateQueries({ queryKey: ["att-report", courseId] }); // journal columns
-      qc.invalidateQueries({ queryKey: ["teacher-sessions"] }); // Darslar hub
-    },
-  });
-}
-
-export function useUpdateSession(courseId: number) {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (b: { id: number; date?: string; title?: string; topicId?: number | null; room?: string }) =>
-      api(`/api/v1/teach/sessions/${b.id}`, { method: "PATCH", body: JSON.stringify(b) }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["sessions", courseId] });
-      qc.invalidateQueries({ queryKey: ["att-report", courseId] });
-    },
-  });
-}
-
-export function useDeleteSession(courseId: number) {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (id: number) => api(`/api/v1/teach/sessions/${id}`, { method: "DELETE" }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["sessions", courseId] });
-      qc.invalidateQueries({ queryKey: ["att-report", courseId] });
-    },
-  });
-}
-
-export function useRoster(sessionId: number | null, groupId?: number) {
-  return useQuery({
-    queryKey: ["roster", sessionId, groupId],
-    queryFn: () => api<RosterData>(`/api/v1/teach/sessions/${sessionId}/roster${groupId ? `?groupId=${groupId}` : ""}`),
-    enabled: sessionId !== null,
-    retry: false,
-  });
-}
-
-export function useMarkAttendance(courseId: number) {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (b: { sessionId: number; marks: { studentId: number; status: AttStatus; grade?: number | null }[] }) =>
-      api(`/api/v1/teach/sessions/${b.sessionId}/attendance`, { method: "POST", body: JSON.stringify({ marks: b.marks }) }),
-    onSuccess: (_d, b) => {
-      qc.invalidateQueries({ queryKey: ["sessions", courseId] });
-      qc.invalidateQueries({ queryKey: ["roster", b.sessionId] });
-      qc.invalidateQueries({ queryKey: ["att-report", courseId] });
-      qc.invalidateQueries({ queryKey: ["teacher-sessions"] }); // Darslar hub
-    },
-  });
-}
-
-export function useAttendanceReport(courseId: number, range: DateRange) {
-  const p = new URLSearchParams();
-  if (range.from) p.set("from", range.from);
-  if (range.to) p.set("to", range.to);
-  if (range.search?.trim()) p.set("search", range.search.trim());
-  if (range.groupId) p.set("groupId", String(range.groupId));
-  return useQuery({ queryKey: ["att-report", courseId, range], queryFn: () => api<AttReport>(`/api/v1/teach/courses/${courseId}/attendance-report?${p}`) });
-}
+// ⚠️ 2026-09-08 (F0): sessiya-markazli hooklar o'chirildi — `useSessions`,
+// `useCreateSession`, `useUpdateSession`, `useDeleteSession`, `useRoster`,
+// `useMarkAttendance`, `useAttendanceReport`. Ular 2026-07 da UI'dan uzilgan
+// (JournalView/SessionsView/ReportView), backend route'lari ham yopildi.
+// Yo'qlama: `useRosterByDate` + `useMarkByDate` (kurs+guruh+sana+vaqt).

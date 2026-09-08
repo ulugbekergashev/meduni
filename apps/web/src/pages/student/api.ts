@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../lib/api";
+import type { AttStatus } from "../../lib/attendance";
 
 export type TopicState = "LOCKED" | "AVAILABLE" | "IN_PROGRESS" | "COMPLETED";
 
@@ -947,7 +948,8 @@ export function useSubmitCase(topicId: number) {
 
 // ---------------- Attendance + profile (Module 16) ----------------
 
-export type AttStatus = "PRESENT" | "ABSENT" | "LATE" | "EXCUSED";
+// Holat turi — umumiy manba (`lib/attendance.ts`).
+export type { AttStatus };
 
 export interface MyAttendance {
   stats: { present: number; absent: number; late: number; excused: number; pct: number | null };

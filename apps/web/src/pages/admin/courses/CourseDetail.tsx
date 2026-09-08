@@ -8,6 +8,7 @@ import { DataTable } from "../../../components/DataTable";
 import { API_URL, apiErrorMessage } from "../../../lib/api";
 import { useList } from "../../../lib/crud";
 import { useLocale } from "../../../lib/useLocale";
+import { isLowAttendance } from "../../../lib/attendance";
 import { useCourse, useUpdateCourse } from "./api";
 
 interface GroupLite {
@@ -137,7 +138,7 @@ export function CourseDetail() {
             <Icon icon={ClipboardCheck} size={16} className="text-blue" />
             <h2 className="text-section font-bold text-ink">{t("detail.attendanceTitle")}</h2>
             {c.attendanceSummary.pct !== null && (
-              <span className={cls("rounded-pill px-2.5 py-1 text-note font-bold font-data tabular-nums", c.attendanceSummary.pct < 75 ? "bg-rose-soft text-rose" : "bg-emerald-soft text-emerald")}>
+              <span className={cls("rounded-pill px-2.5 py-1 text-note font-bold font-data tabular-nums", isLowAttendance(c.attendanceSummary.pct) ? "bg-rose-soft text-rose" : "bg-emerald-soft text-emerald")}>
                 {c.attendanceSummary.pct}%
               </span>
             )}

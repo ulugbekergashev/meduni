@@ -7,6 +7,7 @@ import { AsyncSection } from "../../../components/AsyncSection";
 import { MonthCalendar, type CalEntry } from "../../../components/MonthCalendar";
 import { formatDate } from "../../../lib/date";
 import { useLocale } from "../../../lib/useLocale";
+import { isLowAttendance } from "../../../lib/attendance";
 import { useAdminGroup, useAdminGroupLessons, type AdminGroup, type AdminGroupCourse, type AdminGroupLesson, type AdminGroupStudent } from "../api";
 
 type TabKey = "students" | "courses" | "timetable";
@@ -70,7 +71,7 @@ function StudentsTab({ g }: { g: AdminGroup }) {
 function StudentRow({ s, onClick }: { s: AdminGroupStudent; onClick: () => void }) {
   const { t } = useTranslation(undefined, { keyPrefix: "adminGroup" });
   const initials = s.fullName.split(" ").filter(Boolean).slice(0, 2).map((x) => x[0]?.toUpperCase()).join("");
-  const lowAtt = s.attendancePct !== null && s.attendancePct < 75;
+  const lowAtt = isLowAttendance(s.attendancePct);
   return (
     <button onClick={onClick} className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-bg">
       <span className={cls("flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-note font-bold font-data tabular-nums", s.rank <= 3 ? "bg-brand-soft text-brand-deep" : "bg-bg text-ink-faint")}>{s.rank}</span>

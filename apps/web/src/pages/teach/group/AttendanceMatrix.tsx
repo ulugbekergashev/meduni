@@ -1,9 +1,10 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Check, Clock, HelpCircle, X, XCircle } from "lucide-react";
+import { XCircle } from "lucide-react";
 import { Card, Icon, Select, Spinner, cls, useToast } from "@meduni/ui";
 import { apiErrorMessage } from "../../../lib/api";
 import { useLocale } from "../../../lib/useLocale";
+import { ATT_META, ATT_META_LIST, isLowAttendance } from "../../../lib/attendance";
 import { useAttendanceMatrix, useMarkByDate, type AttStatus, type TeachGroup } from "../api";
 
 function dayKey(d: Date): string {
@@ -11,13 +12,10 @@ function dayKey(d: Date): string {
 }
 
 /** Holat → rang/belgi (medUni 4 holat). Solid rang — matritsa katagi uchun. */
-const STATUS_META: { key: AttStatus; solid: string; hover: string; text: string; icon: typeof Check; short: string }[] = [
-  { key: "PRESENT", solid: "bg-emerald text-white", hover: "hover:bg-emerald-soft hover:text-emerald", text: "text-emerald", icon: Check, short: "✓" },
-  { key: "ABSENT", solid: "bg-rose text-white", hover: "hover:bg-rose-soft hover:text-rose", text: "text-rose", icon: X, short: "✗" },
-  { key: "LATE", solid: "bg-amber text-white", hover: "hover:bg-amber-soft hover:text-amber", text: "text-amber", icon: Clock, short: "~" },
-  { key: "EXCUSED", solid: "bg-blue text-white", hover: "hover:bg-blue-soft hover:text-blue", text: "text-blue", icon: HelpCircle, short: "S" },
-];
-const metaOf = (s: AttStatus) => STATUS_META.find((m) => m.key === s)!;
+// Holat -> rang/belgi: umumiy xarita (`lib/attendance.ts`). Ilgari bu yerda o'z
+// nusxasi bor edi va "Sababli" ikonkasi boshqa ekranlardan farq qilardi.
+const STATUS_META = ATT_META_LIST;
+const metaOf = (s: AttStatus) => ATT_META[s];
 
 export function AttendanceMatrix({ group }: { group: TeachGroup }) {
   const { t } = useTranslation(undefined, { keyPrefix: "attMatrix" });
@@ -109,7 +107,7 @@ export function AttendanceMatrix({ group }: { group: TeachGroup }) {
                     </td>
                     <td className="border-b border-r border-line px-2 py-2 text-center">
                       {s.pct !== null && (
-                        <span className={cls("text-micro font-bold font-data tabular-nums", s.pct >= 80 ? "text-emerald" : s.pct >= 60 ? "text-amber" : "text-rose")}>{s.pct}%</span>
+                        <span className={cls("text-micro font-bold font-data tabular-nums", isLowAttendance(s.pct) ? "text-rose" : "text-emerald")}>{s.pct}%</span>
                       )}
                     </td>
                     {data.columns.map((col) => {
@@ -132,7 +130,7 @@ export function AttendanceMatrix({ group }: { group: TeachGroup }) {
                                 : "border border-line text-ink-faint hover:border-brand hover:bg-brand-soft"
                             )}
                           >
-                            {m ? m.short : isFuture ? "" : "—"}
+                            {m ? m.glyph : isFuture ? "" : "—"}
                           </button>
                         </td>
                       );
@@ -149,7 +147,7 @@ export function AttendanceMatrix({ group }: { group: TeachGroup }) {
       <div className="flex flex-wrap gap-x-4 gap-y-1.5 border-t border-line px-4 py-2.5">
         {STATUS_META.map((m) => (
           <span key={m.key} className="inline-flex items-center gap-1.5">
-            <span className={cls("flex h-4 w-4 items-center justify-center rounded text-micro font-bold", m.solid)}>{m.short}</span>
+            <span className={cls("flex h-4 w-4 items-center justify-center rounded text-micro font-bold", m.solid)}>{m.glyph}</span>
             <span className="text-micro font-semibold text-ink-soft">{t(`status.${m.key}`)}</span>
           </span>
         ))}

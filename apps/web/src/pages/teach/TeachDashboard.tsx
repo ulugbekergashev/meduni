@@ -220,7 +220,7 @@ export function TeachDashboard() {
                   <p className="border-b border-line px-4 py-3 text-note font-semibold text-ink-soft">{t("upcoming")}</p>
                   <div className="divide-y divide-line">
                     {dash.data.upcomingSessions.map((s) => (
-                      <button key={s.id} onClick={() => navigate(s.groupId ? `/teach/groups/${s.groupId}?tab=sessions` : `/teach/courses/${s.courseId}`)} className="flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-bg">
+                      <button key={s.id} onClick={() => navigate(s.groupId ? `/teach/groups/${s.groupId}?tab=timetable` : `/teach/courses/${s.courseId}`)} className="flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-bg">
                         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-control bg-brand-soft text-brand-deep"><Icon icon={CalendarDays} size={18} /></div>
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-note font-bold text-ink">{s.title ?? s.subjectName}</p>

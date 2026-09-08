@@ -1,13 +1,14 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
-import { CalendarDays, Check, ChevronLeft, ChevronRight, Clock, DoorOpen, Minus, X } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, Clock, DoorOpen } from "lucide-react";
 import { Card, Icon, Spinner, cls } from "@meduni/ui";
 import { HeroCard, HeroTile } from "../../components/HeroStats";
 import { MonthCalendar, type CalEntry } from "../../components/MonthCalendar";
 import { formatDate } from "../../lib/date";
 import { useLocale } from "../../lib/useLocale";
-import { useMySchedule, type AttStatus, type ScheduleItem } from "./api";
+import { ATT_META } from "../../lib/attendance";
+import { useMySchedule, type ScheduleItem } from "./api";
 
 const WD_SHORT_MON_UZ = ["Dush", "Sesh", "Chor", "Pay", "Juma", "Shan", "Yak"];
 const WD_SHORT_MON_RU = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
@@ -37,12 +38,7 @@ const WEEKDAYS_RU = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
 /** Katak ohangi: o'tgan dars — yo'qlama holati, kelgusi — brand.
  *  Fon hamma katakda bir xil ko'tarilgan (surface-raised) — holat faqat chap
  *  chekka rangi + kichik belgi bilan aytiladi (rang shovqini kam). */
-const STATUS_CELL: Record<AttStatus, { border: string; chip: string; icon: typeof Check }> = {
-  PRESENT: { border: "border-l-emerald", chip: "text-emerald", icon: Check },
-  ABSENT: { border: "border-l-rose", chip: "text-rose", icon: X },
-  LATE: { border: "border-l-amber", chip: "text-amber", icon: Clock },
-  EXCUSED: { border: "border-l-blue", chip: "text-blue", icon: Minus },
-};
+const STATUS_CELL = ATT_META;
 
 function mondayOf(d: Date) {
   const x = new Date(d);
@@ -80,7 +76,7 @@ function LessonCell({ s }: { s: ScheduleItem }) {
           </span>
         )}
         {meta && (
-          <span className={cls("inline-flex items-center", meta.chip)}>
+          <span className={cls("inline-flex items-center", meta.text)}>
             <Icon icon={meta.icon} size={13} strokeWidth={3} />
           </span>
         )}
@@ -278,7 +274,7 @@ export function SchedulePage() {
                           <p className="truncate text-body font-bold text-ink">{s.title ?? s.courseName}</p>
                           <p className="truncate text-note text-ink-soft">{s.courseName}{s.room ? ` · ${s.room}` : ""}</p>
                         </div>
-                        {meta && <Icon icon={meta.icon} size={16} className={meta.chip} strokeWidth={2.5} />}
+                        {meta && <Icon icon={meta.icon} size={16} className={meta.text} strokeWidth={2.5} />}
                         {!meta && !s.isPast && <span className="rounded-pill bg-brand-soft px-2 py-0.5 text-micro font-bold text-brand-tint">{t("upcomingBadge")}</span>}
                       </div>
                     );

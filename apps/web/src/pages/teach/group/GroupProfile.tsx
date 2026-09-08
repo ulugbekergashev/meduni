@@ -10,6 +10,7 @@ import { QuickTaskModal } from "../../../components/QuickTaskModal";
 import { Field } from "../../../components/Field";
 import { formatDate } from "../../../lib/date";
 import { useLocale } from "../../../lib/useLocale";
+import { isLowAttendance } from "../../../lib/attendance";
 import {
   useGroupTimetable,
   useSetupCycle,
@@ -73,7 +74,7 @@ function GroupStats({ group }: { group: TeachGroup }) {
 function StudentRow({ s, onClick, onAssign, tRel }: { s: GroupStudent; onClick: () => void; onAssign: () => void; tRel: (iso: string | null) => string }) {
   const { t } = useTranslation(undefined, { keyPrefix: "groupProfile" });
   const initials = s.fullName.split(" ").filter(Boolean).slice(0, 2).map((x) => x[0]?.toUpperCase()).join("");
-  const lowAtt = s.attendancePct !== null && s.attendancePct < 75;
+  const lowAtt = isLowAttendance(s.attendancePct);
   return (
     <div className="flex w-full items-center gap-3 px-4 py-3 transition-colors hover:bg-bg">
       <span className={cls("flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-note font-bold font-data tabular-nums", s.rank <= 3 ? "bg-brand-soft text-brand-deep" : "bg-bg text-ink-faint")} title={t("rankHint")}>
@@ -132,13 +133,13 @@ function StudentsTab({ group }: { group: TeachGroup }) {
   };
 
   const behindCount = group.students.filter((s) => s.behind).length;
-  const lowAttCount = group.students.filter((s) => s.attendancePct !== null && s.attendancePct < 75).length;
+  const lowAttCount = group.students.filter((s) => isLowAttendance(s.attendancePct)).length;
 
   const view = useMemo(() => {
     const q = search.trim().toLowerCase();
     let list = group.students.filter((s) => (q ? s.fullName.toLowerCase().includes(q) : true));
     if (filter === "behind") list = list.filter((s) => s.behind);
-    else if (filter === "lowAtt") list = list.filter((s) => s.attendancePct !== null && s.attendancePct < 75);
+    else if (filter === "lowAtt") list = list.filter((s) => isLowAttendance(s.attendancePct));
     const sorted = [...list];
     if (sort === "rank") sorted.sort((a, b) => a.rank - b.rank);
     else if (sort === "progress") sorted.sort((a, b) => b.overallPct - a.overallPct);
