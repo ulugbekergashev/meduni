@@ -186,6 +186,8 @@ export function LessonsBlock({ mode, onMode }: { mode: LessonMode; onMode: (m: L
     setSelectedDay(null);
     setMonthDate((d) => new Date(d.getFullYear(), d.getMonth() + dir, 1));
   };
+  const isCurrentMonth =
+    monthDate.getFullYear() === now.getFullYear() && monthDate.getMonth() === now.getMonth();
 
   return (
     <section className="space-y-2.5">
@@ -199,10 +201,12 @@ export function LessonsBlock({ mode, onMode }: { mode: LessonMode; onMode: (m: L
           {(["today", "week", "month"] as const).map((v) => (
             <button
               key={v}
-              onClick={() => onMode(v)}
+              type="button"
+              aria-pressed={mode === v}
+              onClick={mode === v ? undefined : () => onMode(v)}
               className={cls(
                 "rounded-[8px] px-3 py-1 text-note font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
-                mode === v ? "bg-brand-soft text-brand-deep" : "text-ink-soft hover:bg-bg hover:text-ink"
+                mode === v ? "bg-brand-soft text-brand-deep cursor-default" : "text-ink-soft hover:bg-bg hover:text-ink"
               )}
             >
               {v === "today" ? t("today") : v === "week" ? t("viewWeek") : t("viewMonth")}
@@ -253,7 +257,13 @@ export function LessonsBlock({ mode, onMode }: { mode: LessonMode; onMode: (m: L
               <button onClick={() => shiftMonth(-1)} className="rounded-control p-2 text-ink-soft hover:bg-bg" aria-label="prev"><Icon icon={ChevronLeft} size={18} /></button>
               <span className="min-w-[140px] text-center text-note font-semibold capitalize text-ink">{monthLabel}</span>
               <button onClick={() => shiftMonth(1)} className="rounded-control p-2 text-ink-soft hover:bg-bg" aria-label="next"><Icon icon={ChevronRight} size={18} /></button>
-              <Button size="sm" variant="ghost" onClick={() => { setMonthDate(new Date(now.getFullYear(), now.getMonth(), 1)); setSelectedDay(null); }}>{t("today")}</Button>
+              {/* ⚠️ "Bugun" faqat joriy oydan chiqib ketganda chiziladi —
+                  hafta ko'rinishidagi bilan bir xil qoida (yuqoridagi
+                  `weekOffset !== 0`). Ilgari u doim turardi va joriy oyda
+                  bosilganda hech narsa qilmasdi. */}
+              {!isCurrentMonth && (
+                <Button size="sm" variant="ghost" onClick={() => { setMonthDate(new Date(now.getFullYear(), now.getMonth(), 1)); setSelectedDay(null); }}>{t("today")}</Button>
+              )}
             </div>
           )}
         </div>

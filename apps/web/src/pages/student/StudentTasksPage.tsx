@@ -151,7 +151,9 @@ export function StudentTasksPage() {
             value={String(totalOpen)}
             label={t("statOpen")}
             tone="bg-brand-soft text-brand-tint"
-            onClick={() => setFilter("all")}
+            // ⚠️ "Hammasi" — FILTRNI TOZALAYDIGAN amal. Filtr allaqachon "all"
+            // bo'lsa tugma hech narsa qilmasdi, lekin bosiladigandek turardi.
+            onClick={filter === "all" ? undefined : () => setFilter("all")}
             selected={filter === "all"}
           />
           <HeroTile
@@ -175,7 +177,10 @@ export function StudentTasksPage() {
             value={String(history.length)}
             label={t("statDone")}
             tone="bg-emerald-soft text-emerald"
-            onClick={() => setHistoryOpen(true)}
+            // ⚠️ `historyOpen` sukut bo'yicha `true` — `setHistoryOpen(true)`
+            // hech qachon hech narsa qilmasdi. Endi ochib-yopadi.
+            onClick={history.length === 0 ? undefined : () => setHistoryOpen((v) => !v)}
+            selected={history.length === 0 ? undefined : historyOpen}
           />
         </HeroCard>
       </motion.div>

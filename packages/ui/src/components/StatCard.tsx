@@ -44,7 +44,14 @@ export interface StatCardProps {
 
   /** Butun kartochkani qizil qiladi — qatordagi BITTA e'tibor raqami uchun. */
   accent?: boolean;
-  /** Kartochka filtr vazifasini bajarganda — faol holat. */
+  /**
+   * Kartochka FILTR vazifasini bajarganda — faol holat.
+   *
+   * ⚠️ `undefined` va `false` FARQ QILADI:
+   *  · `undefined` — kartochka filtr emas (oddiy o'tish yoki bosilmaydi);
+   *  · `false`/`true` — filtr, ya'ni `aria-pressed` e'lon qilinadi.
+   * Shuning uchun bu yerda sukut qiymat YO'Q.
+   */
   selected?: boolean;
   /** Zich qatorlar uchun kichikroq variant. */
   compact?: boolean;
@@ -87,28 +94,45 @@ export function StatCard({
   barTone = "brand",
   barCaption,
   accent = false,
-  selected = false,
+  selected,
   compact = false,
   onClick,
   className,
 }: StatCardProps) {
   const caption = sub ?? hint;
-  const shell = accent
-    ? "bg-rose-soft border-rose-line hover:border-rose"
-    : "bg-surface border-line hover:border-line-raised";
   const pct = typeof bar === "number" ? Math.max(0, Math.min(100, bar)) : null;
 
+  // Filtr kartochkasimi? `selected` berilgan bo'lsa — ha.
+  const isFilter = selected !== undefined;
+  const on = selected === true;
+
+  // Faol filtr FONI bilan ham ajraladi, faqat 1px chegara bilan emas.
+  // ⚠️ Sabab: demo/kichik ma'lumotda filtr natijasi bir xil bo'lishi mumkin —
+  // agar ekranda hech nima o'zgarmasa, foydalanuvchi tugmani "ishlamaydi"
+  // deb hisoblaydi. Faol holat KO'RINISHI kerak (reja A6).
+  const shell = on
+    ? "bg-brand-soft border-brand ring-1 ring-brand"
+    : accent
+      ? "bg-rose-soft border-rose-line hover:border-rose"
+      : "bg-surface border-line hover:border-line-raised";
+
+  // ⚠️ Haqiqiy <button> — ilgari `div role="button"` edi: klaviatura bilan
+  // ishlardi, lekin skrinrider uni bosilgan/bosilmagan holatda ayta olmasdi.
+  const Tag = onClick ? "button" : "div";
+
   return (
-    <div
-      onClick={onClick}
-      role={onClick ? "button" : undefined}
-      tabIndex={onClick ? 0 : undefined}
-      onKeyDown={onClick ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); } } : undefined}
+    <Tag
+      {...(onClick
+        ? { type: "button" as const, onClick, "aria-pressed": isFilter ? on : undefined }
+        : // Bosilmaydigan, lekin FAOL filtr (masalan "Hammasi" — tozalanadigan
+          // narsa qolmagan). Skrinrider uni holat sifatida o'qisin.
+          isFilter && on
+          ? { "aria-current": true as const }
+          : {})}
       className={cls(
-        "min-w-0 rounded-card border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
+        "min-w-0 rounded-card border text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
         compact ? "px-3.5 py-3" : "p-4",
         shell,
-        selected && "!border-brand ring-1 ring-brand",
         onClick && "cursor-pointer",
         className
       )}
@@ -145,7 +169,7 @@ export function StatCard({
           {caption}
         </span>
       ) : null}
-    </div>
+    </Tag>
   );
 }
 

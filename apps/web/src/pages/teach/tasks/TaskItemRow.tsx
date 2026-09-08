@@ -158,7 +158,18 @@ export function TaskItemRow({
       metaTone={age.overdue ? "rose" : null}
       badge={badge}
       done={item.status === "done"}
-      onClick={qa || item.link ? handleClick : undefined}
+      /**
+       * ⚠️ Qator FAQAT haqiqiy amal bo'lganda bosiladi.
+       *
+       * Ilgari sharti `qa || item.link` edi. Dekanat/admin bergan vazifada
+       * `quickAction.type === "done"` bo'ladi (u — o'ngdagi alohida
+       * "Bajardim" tugmasi), `link` esa HAR DOIM bo'sh satr: backend
+       * `linkUrl` maydonini hech qachon to'ldirmaydi. Ya'ni qator
+       * `cursor-pointer` va hover olardi, bosilganda esa `handleClick`
+       * ichida ikkala shart ham o'tmay, HECH NARSA sodir bo'lmasdi.
+       * Bu o'qituvchi bosh sahifasidagi eng ko'p ko'riladigan qator edi.
+       */
+      onClick={qa?.type === "attendance" || item.link ? handleClick : undefined}
       trailing={trailing}
     />
   );

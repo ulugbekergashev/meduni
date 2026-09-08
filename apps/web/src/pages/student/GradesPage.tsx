@@ -238,7 +238,6 @@ function GradesHome() {
     filter === "quiz" ? c.quizzes.length > 0 : filter === "case" ? c.cases.length > 0 : c.quizzes.length > 0 || c.cases.length > 0
   );
   const s = data?.summary;
-  const toggle = (f: Filter) => setFilter((cur) => (cur === f ? "all" : f));
   const withGradesAny = (data?.courses ?? []).some((c) => c.quizzes.length > 0 || c.cases.length > 0);
   const allCases = (data?.courses ?? []).flatMap((c) => c.cases.map((k) => ({ ...k, subjectName: c.subjectName })));
   const pendingCases = allCases.filter((k) => !k.reviewed);
@@ -276,37 +275,37 @@ function GradesHome() {
       {/* Sarlavha GradesPage o'rovida (tablar ustida) — bu yerda faqat kartalar */}
       <motion.div variants={itemVariants}>
         <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+          {/*
+            ⚠️ Ilgari to'rtta kartochka atigi IKKI amalni bajarardi (1+2 → quiz,
+            3+4 → case), ustiga o'sha filtrning uchinchi nusxasi pastdagi
+            segmented tasmada turardi. "Sinov bahosi" ni bosish "O'rtacha ball"
+            ni bosish bilan aynan bir xil natija berardi.
+            Endi filtr — FAQAT pastdagi tasmada (bitta fakt — bitta joy, §4),
+            kartochkalar esa ko'rsatkich: bosilmaydi, `selected` berilmaydi.
+          */}
           <HeroTile
             icon={TrendingUp}
             value={s?.avgQuiz !== null && s?.avgQuiz !== undefined ? `${s.avgQuiz}%` : "—"}
             label={t("avgQuiz")}
             tone="bg-blue-soft text-blue"
-            onClick={() => toggle("quiz")}
-            selected={filter === "quiz"}
           />
           <HeroTile
             icon={Target}
             value={`${s?.quizzesPassed ?? 0}/${s?.quizzesTotal ?? 0}`}
             label={t("quizzesPassed")}
             tone="bg-emerald-soft text-emerald"
-            onClick={() => toggle("quiz")}
-            selected={filter === "quiz"}
           />
           <HeroTile
             icon={Award}
             value={`${s?.casesGraded ?? 0}/${s?.casesTotal ?? 0}`}
             label={t("casesGraded")}
             tone="bg-rose-soft text-rose"
-            onClick={() => toggle("case")}
-            selected={filter === "case"}
           />
           <HeroTile
             icon={Clock}
             value={String(pendingCases.length)}
             label={t("statPending")}
             tone={pendingCases.length > 0 ? "bg-amber-soft text-amber" : "bg-surface text-ink-faint"}
-            onClick={() => toggle("case")}
-            selected={filter === "case"}
           />
         </div>
       </motion.div>
@@ -315,12 +314,19 @@ function GradesHome() {
       {withGradesAny && (
         <motion.div variants={itemVariants} className="inline-flex gap-1.5 rounded-full border border-line bg-surface/80 p-1.5">
           {(["all", "quiz", "case"] as Filter[]).map((f) => (
+            // ⚠️ Faol segment o'z holatini QAYTA qo'ymaydi: skrinrider uchun
+            // `aria-pressed`, sichqoncha uchun oddiy kursor — "bosdim, hech
+            // narsa bo'lmadi" taassuroti shundan chiqardi.
             <button
               key={f}
-              onClick={() => setFilter(f)}
+              type="button"
+              aria-pressed={filter === f}
+              onClick={filter === f ? undefined : () => setFilter(f)}
               className={cls(
                 "rounded-full px-5 py-2 text-body font-bold transition-all duration-300",
-                filter === f ? "bg-brand text-white scale-105" : "text-ink-soft hover:bg-surface-raised hover:text-ink"
+                filter === f
+                  ? "bg-brand text-white scale-105 cursor-default"
+                  : "text-ink-soft hover:bg-surface-raised hover:text-ink"
               )}
             >
               {t(`filter.${f}`)}

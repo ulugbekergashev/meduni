@@ -131,6 +131,23 @@ export function StudentCoursesPage() {
     setYear(newest.academicYear);
     setSemester(String(newest.semester));
   };
+  /**
+   * "Joriy semestr" kartochkasi — TOGGLE.
+   *
+   * ⚠️ Ilgari u faqat `backToCurrent()` chaqirardi, sahifa esa allaqachon
+   * joriy semestrda ochilardi (yuqoridagi `useEffect`) — ya'ni birinchi
+   * bosish HECH NARSA qilmasdi, lekin kartochka bosiladigandek turardi.
+   * Endi: faol bo'lsa filtrni tozalaydi (barcha davrlar), aks holda qaytaradi.
+   */
+  const toggleCurrent = () => {
+    touched.current = true;
+    if (isCurrentDefault) {
+      setYear("");
+      setSemester("");
+      return;
+    }
+    backToCurrent();
+  };
 
   const filtered = useMemo(() => {
     const needle = search.trim().toLowerCase();
@@ -178,8 +195,8 @@ export function StudentCoursesPage() {
             value={String(currentCount)}
             label={t("statCurrent")}
             tone="bg-blue-soft text-blue"
-            selected={isCurrentDefault}
-            onClick={newest ? backToCurrent : undefined}
+            selected={newest ? isCurrentDefault : undefined}
+            onClick={newest ? toggleCurrent : undefined}
           />
         </HeroCard>
       </motion.div>

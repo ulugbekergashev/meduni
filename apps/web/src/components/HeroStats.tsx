@@ -48,7 +48,7 @@ export function HeroTile({
   label,
   hint,
   onClick,
-  selected = false,
+  selected,
 }: {
   icon?: LucideIcon;
   value: string;
@@ -56,6 +56,7 @@ export function HeroTile({
   tone?: string;
   hint?: ReactNode;
   onClick?: () => void;
+  /** Faqat FILTR kartochkalarida beriladi — `undefined` = filtr emas. */
   selected?: boolean;
   accent?: boolean;
 }) {

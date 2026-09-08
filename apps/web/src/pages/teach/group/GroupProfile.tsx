@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ArrowLeft, ArrowRight, BookOpen, CalendarDays, ChevronLeft, ChevronRight, ChevronRight as Chev, ClipboardCheck, DoorClosed, GraduationCap, ListPlus, Settings2, UserRoundPlus, UserX, Users2 } from "lucide-react";
@@ -492,10 +492,18 @@ function TimetableSetupModal({ group, onClose }: { group: TeachGroup; onClose: (
 }
 
 /* ---------------- Courses report ---------------- */
-function CourseReportCard({ c, onView }: { c: GroupCourseReport; onView: () => void }) {
+function CourseReportCard({ c, onView, focus = false }: { c: GroupCourseReport; onView: () => void; focus?: boolean }) {
   const { t } = useTranslation(undefined, { keyPrefix: "groupProfile" });
+  const ref = useRef<HTMLDivElement | null>(null);
+
+  // Shapkadagi chipdan kelingan bo'lsa — kartochkani ekranga olib kelamiz.
+  useEffect(() => {
+    if (focus) ref.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }, [focus]);
+
   return (
-    <Card className="flex flex-col gap-3">
+    <div ref={ref}>
+    <Card className={cls("flex flex-col gap-3", focus && "!border-brand ring-1 ring-brand")}>
       <div className="flex items-start gap-3">
         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-control bg-brand-soft text-brand-deep"><Icon icon={BookOpen} size={20} /></span>
         <div className="min-w-0 flex-1">
@@ -533,10 +541,11 @@ function CourseReportCard({ c, onView }: { c: GroupCourseReport; onView: () => v
         {t("reportView")}
       </Button>
     </Card>
+    </div>
   );
 }
 
-function CoursesTab({ group }: { group: TeachGroup }) {
+function CoursesTab({ group, focusCourseId }: { group: TeachGroup; focusCourseId?: number | null }) {
   const { t } = useTranslation(undefined, { keyPrefix: "groupProfile" });
   const navigate = useNavigate();
   const report = group.courseReport ?? [];
@@ -554,7 +563,12 @@ function CoursesTab({ group }: { group: TeachGroup }) {
       </div>
       <div className="grid gap-3 md:grid-cols-2">
         {report.map((c) => (
-          <CourseReportCard key={c.id} c={c} onView={() => navigate(`/teach/courses/${c.id}`)} />
+          <CourseReportCard
+            key={c.id}
+            c={c}
+            focus={focusCourseId === c.id}
+            onView={() => navigate(`/teach/courses/${c.id}`)}
+          />
         ))}
       </div>
     </div>
@@ -574,7 +588,17 @@ export function GroupProfile() {
 
   const raw = params.get("tab") as TabKey | null;
   const tab: TabKey = raw === "students" || raw === "courses" || raw === "davomat" ? raw : "timetable";
-  const setTab = (k: TabKey) => setParams({ tab: k }, { replace: true });
+  /**
+   * Shapkadagi kurs chipi — AYNAN o'sha kursga.
+   *
+   * ⚠️ Ilgari har chip bir xil `setTab("courses")` chaqirardi: chipda kurs
+   * nomi turardi, `title` esa "hisobotni ochish" derdi — foydalanuvchi SHU
+   * kurs hisobotini kutardi, lekin butun ro'yxat ochilardi. Va agar tab
+   * allaqachon "courses" bo'lsa, klik umuman hech narsa qilmasdi.
+   */
+  const openCourseReport = (courseId: number) =>
+    setParams({ tab: "courses", course: String(courseId) }, { replace: true });
+  const focusCourseId = Number(params.get("course")) || null;
 
   const TABS: { key: TabKey; icon: typeof Users2 }[] = [
     { key: "timetable", icon: CalendarDays },
@@ -609,11 +633,23 @@ export function GroupProfile() {
                     <span className="inline-flex items-center gap-1"><Icon icon={GraduationCap} size={14} /> {t("studentsN", { n: group.studentCount })}</span>
                   </p>
                 </div>
-                {/* Kurs chiplari — bosilsa "Kurslar" hisobot tabini ochadi
-                    (to'g'ridan-to'g'ri kursga o'tkazmaydi; hisobot shu yerda). */}
+                {/* Kurs chiplari — bosilsa "Kurslar" tabidagi AYNAN SHU kurs
+                    hisoboti yoritiladi (kursga o'tkazmaydi; o'tish uchun
+                    kartochkadagi alohida tugma bor). */}
                 <div className="flex flex-wrap gap-1.5">
                   {group.courses.map((c) => (
-                    <button key={c.id} onClick={() => setTab("courses")} title={t("openReport")} className="rounded-pill bg-brand-soft px-2.5 py-1 text-note font-semibold text-brand-deep transition-colors hover:bg-brand/10">
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => openCourseReport(c.id)}
+                      title={t("openReport")}
+                      className={cls(
+                        "rounded-pill px-2.5 py-1 text-note font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
+                        tab === "courses" && focusCourseId === c.id
+                          ? "bg-brand text-white"
+                          : "bg-brand-soft text-brand-deep hover:bg-brand/10"
+                      )}
+                    >
                       {c.name}
                     </button>
                   ))}
@@ -643,7 +679,7 @@ export function GroupProfile() {
               </div>
 
               <div className="mt-5">
-                {tab === "timetable" ? <TimetableTab group={group} /> : tab === "davomat" ? <AttendanceMatrix group={group} /> : tab === "courses" ? <CoursesTab group={group} /> : <StudentsTab group={group} />}
+                {tab === "timetable" ? <TimetableTab group={group} /> : tab === "davomat" ? <AttendanceMatrix group={group} /> : tab === "courses" ? <CoursesTab group={group} focusCourseId={focusCourseId} /> : <StudentsTab group={group} />}
               </div>
             </>
           )}

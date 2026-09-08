@@ -82,11 +82,22 @@ export function MonthCalendar({
             const shown = entries.slice(0, maxPerCell);
             const extra = entries.length - shown.length;
             return (
-              <button
+              // Katak <button> EMAS, chunki ichida dars "pill"lari o'zi
+              // bosiladigan tugma — tugma ichida tugma yaroqsiz HTML
+              // (CLAUDE.md §11 dagi BarRow bug'i bilan bir xil sinf).
+              <div
                 key={k}
+                role="button"
+                tabIndex={0}
                 onClick={() => onSelectDay?.(k)}
+                onKeyDown={(ev) => {
+                  if (ev.key === "Enter" || ev.key === " ") {
+                    ev.preventDefault();
+                    onSelectDay?.(k);
+                  }
+                }}
                 className={cls(
-                  "min-h-[104px] border-b border-l border-line p-1.5 text-left align-top transition-colors [&:nth-child(7n)]:border-r-0 hover:bg-bg",
+                  "min-h-[104px] cursor-pointer border-b border-l border-line p-1.5 text-left align-top transition-colors [&:nth-child(7n)]:border-r-0 hover:bg-bg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand",
                   !inMonth && "bg-bg/40",
                   isSelected && "ring-2 ring-inset ring-brand"
                 )}
@@ -106,26 +117,42 @@ export function MonthCalendar({
                 </div>
                 <div className="space-y-1">
                   {shown.map((e) => (
-                    <span
-                      key={e.key}
-                      onClick={(ev) => {
-                        if (e.onClick) {
+                    // ⚠️ Ilgari bu oddiy <span> edi: ota-komponent unga
+                    // `onClick` berardi (yo'qlama oynasini ochadi), lekin
+                    // kursor ham, fokus halqasi ham yo'q edi — ya'ni ishlardi,
+                    // lekin ISHLAMAYDIGANDEK ko'rinardi.
+                    e.onClick ? (
+                      <button
+                        key={e.key}
+                        type="button"
+                        onClick={(ev) => {
                           ev.stopPropagation();
-                          e.onClick();
-                        }
-                      }}
-                      className={cls(
-                        "block truncate rounded-[6px] border-l-[3px] px-1.5 py-0.5 text-micro font-semibold",
-                        pillTone[e.tone]
-                      )}
-                      title={`${e.time} · ${e.title}`}
-                    >
-                      <span className="font-data tabular-nums">{e.time}</span> {e.title}
-                    </span>
+                          e.onClick!();
+                        }}
+                        className={cls(
+                          "block w-full truncate rounded-[6px] border-l-[3px] px-1.5 py-0.5 text-left text-micro font-semibold transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
+                          pillTone[e.tone]
+                        )}
+                        title={`${e.time} · ${e.title}`}
+                      >
+                        <span className="font-data tabular-nums">{e.time}</span> {e.title}
+                      </button>
+                    ) : (
+                      <span
+                        key={e.key}
+                        className={cls(
+                          "block truncate rounded-[6px] border-l-[3px] px-1.5 py-0.5 text-micro font-semibold",
+                          pillTone[e.tone]
+                        )}
+                        title={`${e.time} · ${e.title}`}
+                      >
+                        <span className="font-data tabular-nums">{e.time}</span> {e.title}
+                      </span>
+                    )
                   ))}
                   {extra > 0 && <span className="block px-1 text-micro font-semibold text-ink-faint">+{extra}</span>}
                 </div>
-              </button>
+              </div>
             );
           })}
         </div>
