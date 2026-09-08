@@ -91,7 +91,7 @@ export function GlobalSearch({ fetch }: { fetch: (q: string) => Promise<SearchSe
 
   return (
     <div ref={boxRef} className="relative max-w-md w-full sm:w-[320px] lg:w-[400px]">
-      <div className="group flex items-center gap-2 rounded-full border border-line bg-surface-raised px-4 ring-1 ring-black/5 transition-all focus-within:ring-2 focus-within:ring-brand/30 hover:bg-surface-glass">
+      <div className="group flex items-center gap-2 rounded-full border border-line bg-surface-raised px-4 transition-colors focus-within:border-brand hover:border-line-raised">
         <Icon icon={Search} size={18} className="shrink-0 text-ink-faint transition-colors group-focus-within:text-brand" />
         <input
           ref={inputRef}
@@ -110,7 +110,7 @@ export function GlobalSearch({ fetch }: { fetch: (q: string) => Promise<SearchSe
       </div>
 
       {showDropdown && (
-        <div className="absolute left-0 right-0 top-full z-40 mt-2 max-h-[60vh] overflow-y-auto rounded-[20px] border border-line bg-surface/90 p-2 shadow-[0_10px_40px_rgb(0,0,0,0.1)] backdrop-blur-2xl ring-1 ring-black/5">
+        <div className="absolute left-0 right-0 top-full z-40 mt-2 max-h-[60vh] overflow-y-auto rounded-card border border-line bg-surface p-2 shadow-pop">
           {loading ? (
             <div className="flex items-center justify-center gap-2 py-5 text-note text-ink-soft">
               <Spinner size={15} /> {t("searching")}

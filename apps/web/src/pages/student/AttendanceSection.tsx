@@ -174,9 +174,6 @@ export function AttendanceSection() {
       {st && (
         <motion.div variants={itemVariants}>
         <Card className="grid gap-x-8 gap-y-6 lg:grid-cols-[minmax(0,260px)_minmax(0,1fr)] overflow-hidden relative">
-          {/* Subtle glow background */}
-          <div className="absolute -top-32 -left-32 w-64 h-64 bg-brand-soft rounded-full blur-3xl"></div>
-
           <div className="relative z-10">
             <p className="text-note font-bold text-ink-soft">{t("overallShort")}</p>
             <p className={cls("mt-1 text-stat font-bold leading-none tabular-nums", low ? "text-rose" : "text-ink")}>

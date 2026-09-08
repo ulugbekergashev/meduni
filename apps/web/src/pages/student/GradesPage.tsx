@@ -168,7 +168,7 @@ function CourseBlock({ c, filter }: { c: GradesCourse; filter: Filter }) {
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2 px-1">
         <div className="flex items-center gap-3">
           <h2 className="text-section font-bold text-ink">{c.subjectName}</h2>
-          <span className="rounded-full bg-surface-glass backdrop-blur-md border border-line px-3 py-1 text-note font-bold text-ink-soft">
+          <span className="rounded-full bg-surface border border-line px-3 py-1 text-note font-bold text-ink-soft">
             {c.academicYear} · {tp("semester", { n: c.semester })}
           </span>
         </div>
@@ -313,7 +313,7 @@ function GradesHome() {
 
       {/* Tur filtri — segmented */}
       {withGradesAny && (
-        <motion.div variants={itemVariants} className="inline-flex gap-1.5 rounded-full border border-line bg-surface/80 backdrop-blur-md p-1.5">
+        <motion.div variants={itemVariants} className="inline-flex gap-1.5 rounded-full border border-line bg-surface/80 p-1.5">
           {(["all", "quiz", "case"] as Filter[]).map((f) => (
             <button
               key={f}

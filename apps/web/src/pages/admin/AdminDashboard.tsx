@@ -183,17 +183,15 @@ export function AdminDashboard() {
           {/* AI spend */}
           <motion.section variants={itemVariants} className="mt-4">
             <button onClick={() => navigate("/admin/ai")} className="block w-full text-left outline-none group">
-              <div className="relative overflow-hidden rounded-card bg-surface p-4 border border-line transition-all duration-300 group- group-hover:border-brand/30">
+              <div className="relative overflow-hidden rounded-card bg-surface p-4 border border-line transition-colors group-hover:border-line-raised">
                 {/* Subtle gradient background effect */}
-                <div className="absolute top-0 right-0 w-64 h-64 bg-brand-soft rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
-                
                 <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-3">
                   <div>
                     <div className="flex items-center gap-2 text-brand font-bold mb-2">
                       <Icon icon={Sparkles} size={18} />
                       <p className="text-note">{t("aiThisMonth")}</p>
                     </div>
-                    <p className="text-note text-ink-soft">Review AI token usage and estimated costs across all departments.</p>
+                    <p className="text-note text-ink-soft">{t("aiHint")}</p>
                   </div>
                   
                   <div className="flex flex-wrap items-center gap-x-8 gap-y-4 md:border-l md:border-line md:pl-8">

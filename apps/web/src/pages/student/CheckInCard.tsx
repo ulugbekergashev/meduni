@@ -129,8 +129,6 @@ export function CheckInCard() {
           : "bg-brand"
       )}
     >
-      <div className="pointer-events-none absolute -right-10 -top-10 h-36 w-36 rounded-full bg-white/10 blur-3xl" />
-
       {/* Mobilda ustma-ust (CTA to'liq kenglikda), sm+ da yonma-yon.
           Bu karta asosan TELEFONDA ishlatiladi — darsda passkey bilan
           belgilanish, shuning uchun mobil ko'rinish birlamchi. */}

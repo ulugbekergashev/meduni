@@ -71,7 +71,7 @@ function CourseRow({ course }: { course: CourseSummary }) {
               e.stopPropagation();
               navigate(`/app/topics/${course.nextTopicId}`);
             }}
-            className="inline-flex items-center gap-2 rounded-control border border-brand/20 bg-brand-soft/50 px-4 py-2 text-body font-bold text-brand-tint backdrop-blur-sm transition-all duration-300 hover:border-brand/40 hover:bg-brand-soft hover:scale-105"
+            className="inline-flex items-center gap-2 rounded-control border border-brand/20 bg-brand-soft/50 px-4 py-2 text-body font-bold text-brand-tint transition-all duration-300 hover:border-brand/40 hover:bg-brand-soft hover:scale-105"
           >
             <Icon icon={PlayCircle} size={16} />
             <span className="hidden sm:inline">{t("continueShort")}</span>
@@ -184,7 +184,7 @@ export function StudentCoursesPage() {
         </HeroCard>
       </motion.div>
 
-      <motion.div variants={itemVariants} className="sticky top-4 z-10 flex flex-wrap items-center gap-3 rounded-2xl bg-surface-glass px-5 py-4 backdrop-blur-xl border border-white/50">
+      <motion.div variants={itemVariants} className="sticky top-4 z-10 flex flex-wrap items-center gap-3 rounded-2xl bg-surface px-5 py-4 border border-white/50">
         <div className="relative min-w-[240px] flex-1">
           <Icon icon={Search} size={18} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-ink-faint" />
           <input
@@ -215,7 +215,7 @@ export function StudentCoursesPage() {
         {!isCurrentDefault && newest && (
           <button
             onClick={backToCurrent}
-            className="inline-flex items-center gap-2 rounded-control border border-line bg-surface/60 px-4 py-2.5 text-body font-semibold text-brand-tint backdrop-blur-sm transition-all hover:border-brand-soft hover:bg-brand-soft"
+            className="inline-flex items-center gap-2 rounded-control border border-line bg-surface/60 px-4 py-2.5 text-body font-semibold text-brand-tint transition-all hover:border-brand-soft hover:bg-brand-soft"
           >
             <Icon icon={RotateCcw} size={16} />
             {t("backToCurrent")}
