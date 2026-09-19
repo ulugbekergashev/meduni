@@ -1,38 +1,96 @@
-# Production/demo deploy — Oracle VM (yoki istalgan Docker host) uchun.
-# Ishga tushirish:  docker compose -f docker-compose.deploy.yml up -d --build
+# MedUni — universitet serveriga o'rnatish (bitta mashina, hamma narsa ichida).
+#
+#   cp .env.server.example .env      # parol va kalitlarni to'ldiring
+#   docker compose -f docker-compose.deploy.yml up -d --build
+#
+# TLS: universitetning o'z proxy'si bo'lsa — uni APP_PORT ga yo'naltiring.
+# Bo'lmasa avtomatik sertifikat bilan:
+#   docker compose -f docker-compose.deploy.yml --profile tls up -d --build
+#
+# ⚠️ HTTPS SHART. NODE_ENV=production da cookie `Secure` bo'ladi va brauzer uni
+#    ochiq HTTP orqali SAQLAMAYDI — login jimgina ishlamay qoladi. Ichki tarmoqda
+#    ham sertifikat qo'ying (universitet CA'si yetadi).
+
 services:
   db:
     image: postgres:16
     environment:
       POSTGRES_USER: meduni
-      POSTGRES_PASSWORD: meduni
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD .env da berilishi shart}
       POSTGRES_DB: meduni
     volumes:
       - dbdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U meduni -d meduni"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
     restart: unless-stopped
 
   app:
     build:
       context: .
-      # Bu rejimда web ham shu konteynerdan tarqatiladi (bitta origin).
+      # Bu rejimda web ham shu konteynerdan tarqatiladi (bitta origin —
+      # cross-site cookie muammosi umuman chiqmaydi).
       args:
         BUILD_WEB: "1"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     environment:
-      DATABASE_URL: postgresql://meduni:meduni@db:5432/meduni
-      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
-      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      DATABASE_URL: postgresql://meduni:${DB_PASSWORD}@db:5432/meduni
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?to'ldiring}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?to'ldiring}
       GEMINI_API_KEY: ${GEMINI_API_KEY}
       SERVE_WEB: "1"
       PORT: "8080"
-      DEMO_SEED: "1"          # birinchi ishga tushishda demo login akkauntlar
+      NODE_ENV: production
+
+      # Media fayllar DISKDA (ulangan volume'da), bazada EMAS.
+      # Bulutda `db` drayveri ishlatilgan edi — u yerda doimiy disk yo'q edi.
+      # O'lchangan: bitta to'liq mavzu ≈ 21 MB media; bazaga solinsa Postgres
+      # shu qadar shishadi va zaxira nusxasi ham o'shancha og'irlashadi.
+      STORAGE_DRIVER: disk
+
+      # ⚠️ Image'da sukut bo'yicha 400 MB (Render bepul tarifi = 512 MB RAM).
+      # Bu yerda serverning haqiqiy xotirasiga qarab ko'tariladi — aks holda
+      # video montaji 16 GB li mashinada ham xotira yetmasligidan yiqiladi.
+      NODE_OPTIONS: --max-old-space-size=${NODE_HEAP_MB:-2048}
+
+      # To'liq HD kadr. Bulutda 720p edi (0.1 CPU).
+      VIDEO_HEIGHT: ${VIDEO_HEIGHT:-1080}
+
+      # Birinchi ishga tushishda demo akkauntlar yaratiladi. Haqiqiy
+      # foydalanuvchilar kiritilgach 0 ga o'zgartiring va qayta ishga tushiring.
+      DEMO_SEED: ${DEMO_SEED:-1}
     volumes:
-      - storage:/app/apps/api/storage   # media (video/rasm/audio) doimiy saqlanadi
+      - storage:/app/apps/api/storage
     ports:
-      - "80:8080"             # http://VM_IP orqali ochiladi
+      # TLS proxy ortida turgani uchun faqat LOOPBACK'ga chiqadi.
+      # To'g'ridan-to'g'ri ochish kerak bo'lsa: APP_BIND=0.0.0.0
+      - "${APP_BIND:-127.0.0.1}:${APP_PORT:-8080}:8080"
+    restart: unless-stopped
+
+  # Ixtiyoriy: avtomatik HTTPS (Let's Encrypt). Universitetning o'z proxy'si
+  # bo'lsa bu profil ishlatilmaydi — proxy'ni APP_PORT ga yo'naltiring.
+  caddy:
+    image: caddy:2-alpine
+    profiles: ["tls"]
+    depends_on:
+      - app
+    environment:
+      DOMAIN: ${DOMAIN:?DOMAIN .env da berilishi shart (masalan meduni.tashmi.uz)}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddydata:/data
+      - caddyconfig:/config
+    ports:
+      - "80:80"
+      - "443:443"
     restart: unless-stopped
 
 volumes:
   dbdata:
   storage:
+  caddydata:
+  caddyconfig:

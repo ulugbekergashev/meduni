@@ -1,0 +1,33 @@
+# Avtomatik HTTPS. Faqat `--profile tls` bilan ishlatiladi.
+# Universitetning o'z proxy'si bo'lsa bu fayl kerak emas.
+#
+# Let's Encrypt domenni TASHQARIDAN tekshiradi: 80/443 portlari internetdan
+# ochiq bo'lishi va DNS shu serverga qarashi shart. Ichki tarmoqda ishlatsangiz
+# bu shartlar bajarilmaydi — universitetning o'z sertifikatini qo'ying
+# (pastdagi ichki variantga qarang).
+
+{$DOMAIN} {
+	encode gzip zstd
+
+	# Yuklanadigan material va generatsiya qilingan video katta bo'lishi mumkin.
+	request_body {
+		max_size 200MB
+	}
+
+	reverse_proxy app:8080
+}
+
+# ── Ichki tarmoq varianti (universitet sertifikati bilan) ────────────────
+# Yuqoridagi blokni izohga oling va buni yoqing; sertifikat fayllarini
+# compose'da caddy konteyneriga ulang:
+#   volumes:
+#     - ./certs:/certs:ro
+#
+# {$DOMAIN} {
+# 	tls /certs/meduni.crt /certs/meduni.key
+# 	encode gzip zstd
+# 	request_body {
+# 		max_size 200MB
+# 	}
+# 	reverse_proxy app:8080
+# }
