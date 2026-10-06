@@ -60,6 +60,17 @@ services:
       # To'liq HD kadr. Bulutda 720p edi (0.1 CPU).
       VIDEO_HEIGHT: ${VIDEO_HEIGHT:-1080}
 
+      # Passkey bilan yo'qlama. Berilmasa kod "localhost" ga tushadi va
+      # haqiqiy domenda check-in ishlamaydi.
+      WEBAUTHN_RP_ID: ${WEBAUTHN_RP_ID:-${DOMAIN}}
+      WEBAUTHN_ORIGIN: ${WEBAUTHN_ORIGIN:-https://${DOMAIN}}
+      WEB_ORIGIN: https://${DOMAIN}
+
+      # Geofence (ixtiyoriy) — bo'sh qolsa GPS tekshiruvi o'chiq.
+      CAMPUS_LAT: ${CAMPUS_LAT:-}
+      CAMPUS_LNG: ${CAMPUS_LNG:-}
+      CAMPUS_RADIUS_M: ${CAMPUS_RADIUS_M:-300}
+
       # Birinchi ishga tushishda demo akkauntlar yaratiladi. Haqiqiy
       # foydalanuvchilar kiritilgach 0 ga o'zgartiring va qayta ishga tushiring.
       DEMO_SEED: ${DEMO_SEED:-1}
