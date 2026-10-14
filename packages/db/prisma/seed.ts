@@ -14,9 +14,13 @@ async function main() {
 
   for (const s of seeds) {
     const passwordHash = await argon2.hash(s.pass);
+    // ⚠️ `update` ATAYLAB bo'sh: mavjud foydalanuvchiga TEGILMAYDI. Ilgari bu yerda
+    // `update: { passwordHash }` bor edi va DEMO_SEED=1 (compose'da sukut) bo'lsa HAR
+    // restart/deploy superadmin parolini `admin123` ga QAYTARIB qo'yardi — ya'ni
+    // egasi parolni almashtirsa ham u keyingi ishga tushishda ochiq parolga qaytardi.
     await prisma.user.upsert({
       where: { email: s.email },
-      update: { passwordHash, role: s.role },
+      update: {},
       create: {
         fullName: s.fullName,
         email: s.email,
