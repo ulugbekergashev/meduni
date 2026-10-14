@@ -226,6 +226,18 @@ export async function deleteDepartment(id: number) {
       `Нельзя удалить: на этой кафедре ${subCount} курсов`
     );
   }
+  // Kafedraga bog'langan xodimlar FK bilan to'siq bo'ladi — 500 o'rniga aniq 409.
+  const [teachers, admins] = await Promise.all([
+    prisma.teacherProfile.count({ where: { departmentId: id } }),
+    prisma.user.count({ where: { adminDepartmentId: id } }),
+  ]);
+  if (teachers + admins > 0) {
+    throw conflict(
+      "HAS_CHILDREN",
+      `Oʻchirib boʻlmaydi: bu kafedrada ${teachers + admins} ta xodim bor`,
+      `Нельзя удалить: на этой кафедре ${teachers + admins} сотрудников`
+    );
+  }
   await prisma.department.delete({ where: { id } });
 }
 
