@@ -4,8 +4,9 @@ import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { Building2, ChevronRight, Landmark, Plus, ShieldCheck, UserRound, Users } from "lucide-react";
 import { Button, Card, EmptyState, Icon, Spinner } from "@meduni/ui";
-import { api } from "../../../lib/api";
+import { api, apiErrorMessage } from "../../../lib/api";
 import { useMe } from "../../../lib/auth";
+import { useLocale } from "../../../lib/useLocale";
 import { Avatar } from "../../../components/Avatar";
 import { PasswordModal } from "../users/PasswordModal";
 import { EntityFormModal, useStructureTree } from "./shared";
@@ -18,6 +19,7 @@ export function StructurePage() {
   const { t: ts } = useTranslation(undefined, { keyPrefix: "staff" });
   const { t: tc } = useTranslation(undefined, { keyPrefix: "common" });
   const navigate = useNavigate();
+  const locale = useLocale();
   const { data: me } = useMe();
   const tree = useStructureTree();
   const [adding, setAdding] = useState(false);
@@ -46,6 +48,20 @@ export function StructurePage() {
   });
 
   if (me && me.role !== "superadmin") {
+    // Pastki daraja o'z birligiga yo'naltiriladi (yuqoridagi effekt). Lekin birlik
+    // biriktirilmagan bo'lsa server 403 ("Kafedra biriktirilmagan") qaytaradi yoki
+    // daraxt bo'sh keladi — ilgari bu holatda spinner ABADIY aylanardi.
+    const noUnit =
+      !!tree.data && (me.role === "faculty_admin" ? !tree.data[0] : !tree.data[0]?.departments[0]);
+    if (tree.isError || noUnit) {
+      return (
+        <EmptyState
+          icon={<Icon icon={Landmark} size={24} />}
+          text={(tree.isError && apiErrorMessage(tree.error, locale)) || ts("noUnitAssigned")}
+          hint={ts("noUnitAssignedHint")}
+        />
+      );
+    }
     return <div className="flex min-h-[40vh] items-center justify-center"><Spinner size={26} /></div>;
   }
 

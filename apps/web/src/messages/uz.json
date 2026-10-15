@@ -2155,6 +2155,8 @@
   },
   "staff": {
     "leadership": "Rahbariyat",
+    "noUnitAssigned": "Sizga hali fakultet yoki kafedra biriktirilmagan",
+    "noUnitAssignedHint": "Superadmin sizni Xodimlar boʻlimida fakultet yoki kafedraga biriktirishi kerak. Shundan keyin bu yerda oʻz boʻlimingizni koʻrasiz.",
     "teachersSection": "O'qituvchilar",
     "noTeachers": "Bu kafedrada hali o'qituvchi yo'q.",
     "noAdmin": "{{role}} hali tayinlanmagan.",
