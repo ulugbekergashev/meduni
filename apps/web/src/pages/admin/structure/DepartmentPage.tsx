@@ -9,6 +9,7 @@ import { ConfirmDialog } from "../../../components/ConfirmDialog";
 import { api } from "../../../lib/api";
 import { useMe } from "../../../lib/auth";
 import { PasswordModal } from "../users/PasswordModal";
+import { DeptAiKeyCard } from "./DeptAiKeyCard";
 import {
   AdminCard,
   AppointModal,
@@ -120,6 +121,11 @@ export function DepartmentPage() {
           onAppoint={() => setAppointing("DEPT_ADMIN")}
           onReveal={setRevealPassword}
         />
+      </div>
+
+      {/* Kafedraning O'Z Gemini kaliti — AI shu kalit bilan ishlaydi */}
+      <div className="mt-4">
+        <DeptAiKeyCard deptId={d.id} canManage={canStaff} />
       </div>
 
       <div className="mt-4 grid gap-4 lg:grid-cols-2">

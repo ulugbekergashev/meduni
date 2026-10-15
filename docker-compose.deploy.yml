@@ -41,7 +41,12 @@ services:
       DATABASE_URL: postgresql://meduni:${DB_PASSWORD}@db:5432/meduni
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?to'ldiring}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?to'ldiring}
-      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      # Umumiy (zaxira) kalit — IXTIYORIY. Asosiy yo'l: har kafedra o'z kalitini
+      # Kafedra sahifasida kiritadi (bazada AES-256-GCM bilan shifrlanadi).
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      # Kafedra kalitlarini shifrlash siri. PRODUCTION'da MAJBURIY (kamida 32 belgi) —
+      # yo'q bo'lsa kafedra kalit saqlay olmaydi. Bir marta qo'yiladi, keyin o'zgartirilmaydi.
+      AI_KEY_SECRET: ${AI_KEY_SECRET:-}
       SERVE_WEB: "1"
       PORT: "8080"
       NODE_ENV: production

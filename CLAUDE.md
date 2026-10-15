@@ -3061,3 +3061,50 @@ F1 25/25, control 26/26, examPlan 40/40, storage 12/12; браузер на тр
 `Course.plannedHours` вводится вручную — `scripts/demoPlannedHours.ts` для демо);
 ведётся ли HEMIS (нужен ли экспорт в его колонках); рейтинговый регламент для
 зачётки.
+
+---
+
+## 27. HAR KAFEDRA O'Z GEMINI KALITINI KIRITADI (2026-10-15, buyurtmachi)
+
+Ilgari bitta `GEMINI_API_KEY` serverning `.env` ida turardi (productionda umuman
+yo'q edi → `no_api_key`, butun AI o'lik). Endi kalit **kafedra darajasida**:
+kafedra mudiri (yoki fakultet-admin / superadmin) kafedra sahifasida kiritadi.
+
+- **Saqlash:** Prisma `DepartmentAiKey` (departmentId PK, keyEnc, last4, setById,
+  setAt, checkedAt; migratsiya `20261015100000_department_ai_key`, additive).
+  `Department` qatoridan ATAYLAB alohida jadval — `include`/spread orqali kalit
+  tasodifan frontendga chiqib ketmasin.
+- **Shifrlash** (`ai/keyVault.ts`): AES-256-GCM, format `v1.<iv>.<tag>.<ct>`.
+  Format `v2`, shifr kafedraga bog'langan (AAD `dept:<id>` — boshqa kafedra qatoriga
+  ko'chirib bo'lmaydi), IV 12 / teg 16 bayt qat'iy. Sir: `AI_KEY_SECRET` — PRODUCTION'DA
+  MAJBURIY (≥32 belgi, JWT sirga o'tilmaydi); dev'da JWT sirdan hosil qilinadi.
+  ⚠️ Sir almashsa saqlangan kalitlar o'qilmaydi — bir marta qo'yib, o'zgartirma.
+- **Aniqlash** (`ai/keys.ts::resolveGeminiKey(departmentId)`): kafedra kaliti →
+  (qator YO'Q bo'lsa va bor bo'lsa) serverning umumiy `GEMINI_API_KEY` i (ZAXIRA,
+  ixtiyoriy) → `null` → `ai_key_missing` (409). ⚠️ Kafedra kaliti BOR-u o'qilmasa
+  (sir almashgan/buzilgan) → `ai_key_unreadable` (409), umumiy kalitga JIMGINA
+  O'TILMAYDI (aks holda hamma kafedra universitet hisobidan ishlab ketardi). Kafedra
+  kaliti buzuq bo'lsa provayder zanjiri (pollinations/openai) ham to'xtaydi —
+  material mazmuni uchinchi tomonga ketmaydi (`isKeyFatal`). 60s kesh;
+  kalit o'zgarsa `invalidateDepartmentKey`. Gemini mijozi kalit hash'i bo'yicha
+  keshlanadi — kafedralar bir-biriga aralashmaydi.
+- **Qamrov:** hamma AI chaqiruvi allaqachon `departmentId` uzatardi (kvota uchun),
+  shuning uchun o'zgarish `ai/gemini.ts` ichida qoldi (matn, rasm, TTS). Rasm
+  zanjirida kalit yo'q bo'lsa Gemini o'tkazib yuboriladi (keyingi provayder).
+- **API** (`modules/admin/aiKey.ts`, `/api/v1/admin/...`, scope = `assertDeptScope`):
+  `GET /ai-keys` (jadval uchun), `GET|PUT|DELETE /departments/:id/ai-key`,
+  `POST .../check`. PUT kalitni **Google'da tekshiradi** (`models.list` — kvota
+  sarflamaydi): noto'g'ri → 400 `ai_key_invalid`; Google'ga yetib bo'lmasa → 502
+  `ai_key_unverified` (saqlanmaydi). Kalit HECH QACHON qaytmaydi (faqat `last4`),
+  audit logga ham faqat `last4` (`SET_AI_KEY` / `REMOVE_AI_KEY`). PUT/check —
+  foydalanuvchi bo'yicha daqiqasiga 5 ta (begona kalitlarni tekshiruvchi oracle bo'lmasin).
+- **UI:** `pages/admin/structure/DeptAiKeyCard.tsx` kafedra sahifasida (holat,
+  kiritish modali, tekshirish, almashtirish, o'chirish); `/admin/ai` jadvalida
+  "AI kaliti" ustuni (kiritilmagan = amber, kafedra sahifasiga link). i18n `aiKey.*`.
+- **Google noto'g'ri kalitga 401 emas, 400 "API key not valid" qaytaradi** —
+  `isAuthError` buni auth xatosi deb darrov to'xtatadi (ilgari 2 model × 2 urinish
+  bekorga kutardi).
+- **Deploy:** `docker-compose.deploy.yml` faqat sanalgan o'zgaruvchilarni uzatadi —
+  `AI_KEY_SECRET` qo'shildi (yo'qsa konteynerga tushmaydi). Tekshiruv:
+  `scripts/smokeAiKey.ts` 29/29 (bazasiz: shifrlash, AAD, GCM buzilishi/qisqa teg,
+  sir talablari, resolver fail-closed). Mustaqil xavfsizlik tekshiruvi o'tkazildi.

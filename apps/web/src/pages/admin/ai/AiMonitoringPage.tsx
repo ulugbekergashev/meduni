@@ -4,7 +4,8 @@ import { Coins, Image as ImageIcon, Mic, Sparkles } from "lucide-react";
 import { Button, Card, Icon, MiniBars, Modal, Spinner, cls, useToast } from "@meduni/ui";
 import { useLocale } from "../../../lib/useLocale";
 import { formatDate } from "../../../lib/date";
-import { useAiUsage, useSetQuota, type AiUsage } from "../api";
+import { Link } from "react-router-dom";
+import { useAiUsage, useDeptAiKeys, useSetQuota, type AiUsage } from "../api";
 
 type DeptRow = AiUsage["byDept"][number];
 
@@ -91,6 +92,8 @@ export function AiMonitoringPage() {
   const locale = useLocale();
   const [month, setMonth] = useState(new Date().toISOString().slice(0, 7));
   const usage = useAiUsage(month);
+  const keys = useDeptAiKeys();
+  const keyByDept = new Map((keys.data ?? []).map((k) => [k.departmentId, k]));
   const [editing, setEditing] = useState<DeptRow | null>(null);
   const u = usage.data;
 
@@ -189,7 +192,7 @@ export function AiMonitoringPage() {
                 <table className="w-full border-collapse text-body">
                   <thead>
                     <tr className="border-b border-line bg-bg text-left text-micro font-bold text-ink-faint">
-                      <th className="px-4 py-3">{t("dept")}</th><th className="px-4 py-3">{t("cost")}</th>
+                      <th className="px-4 py-3">{t("dept")}</th><th className="px-4 py-3">{t("keyCol")}</th><th className="px-4 py-3">{t("cost")}</th>
                       <th className="px-4 py-3">{t("tokenQuota")}</th><th className="px-4 py-3">{t("imageQuota")}</th><th className="px-4 py-3">{t("costQuota")}</th>
                       <th className="px-4 py-3 text-right">{t("quota")}</th>
                     </tr>
@@ -198,6 +201,11 @@ export function AiMonitoringPage() {
                     {u.byDept.map((d) => (
                       <tr key={d.departmentId} className="border-b border-line last:border-0 hover:bg-bg">
                         <td className="px-4 py-3 font-medium text-ink">{d.name}</td>
+                        <td className="px-4 py-3">
+                          <Link to={`/admin/staff/d/${d.departmentId}`} className={cls("inline-flex items-center rounded-full px-2 py-0.5 text-micro font-semibold", keyByDept.has(d.departmentId) ? "bg-emerald-soft text-emerald" : "bg-amber-soft text-amber")}>
+                            {keyByDept.has(d.departmentId) ? `••••${keyByDept.get(d.departmentId)!.last4}` : t("keyMissing")}
+                          </Link>
+                        </td>
                         <td className="px-4 py-3 font-semibold font-data tabular-nums text-ink">{money(d.cost)}</td>
                         <td className="px-4 py-3"><QuotaBar pct={d.tokenPct} /></td>
                         <td className="px-4 py-3"><QuotaBar pct={d.imagePct} /></td>

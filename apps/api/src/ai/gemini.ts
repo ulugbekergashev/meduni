@@ -1,6 +1,7 @@
-import { GoogleGenAI } from "@google/genai";
+import type { GoogleGenAI } from "@google/genai";
 import { ApiError } from "../lib/errors";
 import { recordAiUsage } from "./usage";
+import { AI_KEY_MISSING, clientFor, isKeyFatal, resolveGeminiKey } from "./keys";
 import { imageProvider, openaiImageConfig, openaiTextConfig, textChain, textProviderFor, type ImageProviderName } from "./config";
 import { generateStructuredOpenAI } from "./providers/openaiText";
 import { generateImageOpenAI } from "./providers/openaiImage";
@@ -26,15 +27,13 @@ const MIN_THINKING_BUDGET = 128;
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-let client: GoogleGenAI | null = null;
-
-function getClient(): GoogleGenAI {
-  const key = process.env.GEMINI_API_KEY;
-  if (!key) {
-    throw new ApiError(500, "no_api_key", "Gemini API kaliti sozlanmagan", "Ключ Gemini API не настроен");
-  }
-  if (!client) client = new GoogleGenAI({ apiKey: key });
-  return client;
+/** Kafedraning O'Z kaliti (bo'lmasa serverning umumiy kaliti — zaxira). Hech biri
+ *  yo'q bo'lsa aniq `ai_key_missing` xatosi: foydalanuvchi nima qilish kerakligini
+ *  biladi. Mijoz kalit bo'yicha keshlanadi (kafedralar bir-biriga aralashmaydi). */
+async function getClient(departmentId?: number | null): Promise<GoogleGenAI> {
+  const resolved = await resolveGeminiKey(departmentId);
+  if (!resolved) throw AI_KEY_MISSING();
+  return clientFor(resolved.key);
 }
 
 function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
@@ -44,11 +43,23 @@ function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
   ]);
 }
 
+/** Google noto'g'ri kalitga ko'pincha 401/403 emas, 400 "API key not valid" qaytaradi. */
+function isAuthError(err: unknown): boolean {
+  const status = (err as { status?: number })?.status;
+  const msg = String((err as { message?: string })?.message ?? "");
+  return status === 401 || status === 403 || (status === 400 && /API key|API_KEY/i.test(msg));
+}
+
 function toApiError(err: unknown): ApiError {
   const msg = String((err as { message?: string })?.message ?? err ?? "");
   const status = (err as { status?: number })?.status;
-  if (status === 401 || status === 403 || /API key|permission|unauthenticated/i.test(msg)) {
-    return new ApiError(502, "ai_key_error", "Gemini API kaliti ishlamayapti", "Ключ Gemini API не работает");
+  if (status === 401 || status === 403 || /API key|API_KEY|permission|unauthenticated/i.test(msg)) {
+    return new ApiError(
+      502,
+      "ai_key_error",
+      "Kafedraning Gemini API kaliti ishlamayapti. Kafedra mudiri kalitni yangilashi kerak.",
+      "Ключ Gemini API кафедры не работает. Заведующему кафедрой нужно обновить ключ."
+    );
   }
   if (status === 429 || /quota|rate limit|resource_exhausted/i.test(msg)) {
     return new ApiError(502, "ai_quota", "Gemini limiti tugadi, keyinroq urinib koʻring", "Лимит Gemini исчерпан, попробуйте позже");
@@ -81,6 +92,8 @@ export async function generateStructured<T>(opts: GenerateOpts): Promise<T> {
     } catch (err) {
       lastErr = err;
       console.warn(`[ai] ${opts.kind}: "${link.name}" ishlamadi →`, (err as Error)?.message?.slice(0, 200));
+      // Kafedra kaliti buzuq/o'qilmaydi — boshqa provayderga (platforma hisobi) o'tmaymiz.
+      if (isKeyFatal(err)) throw err;
     }
   }
   throw lastErr instanceof ApiError
@@ -95,7 +108,7 @@ export async function generateStructured<T>(opts: GenerateOpts): Promise<T> {
 
 /** Calls Gemini for structured JSON, logs token usage, retries transient failures. */
 async function generateStructuredGemini<T>(opts: GenerateOpts): Promise<T> {
-  const ai = getClient();
+  const ai = await getClient(opts.departmentId);
   let lastErr: unknown;
 
   // 3D: preferLite bo'lsa lite avval (arzon), flash fallback qoladi.
@@ -136,7 +149,7 @@ async function generateStructuredGemini<T>(opts: GenerateOpts): Promise<T> {
         lastErr = err;
         const status = (err as { status?: number })?.status;
         // Auth xatosi hech qaysi modelda o'zgarmaydi → darrov to'xtaymiz.
-        if (status === 401 || status === 403) throw toApiError(err);
+        if (isAuthError(err)) throw toApiError(err);
         // ⚠️ 429 (2026-08-02 tuzatildi): ilgari bu ham darrov tashlanardi
         // ("kvota modelga bog'liq emas" degan taxmin bilan). Aslida limit HAR
         // MODEL uchun alohida — flash tugaganda lite hali ishlaydi. Shuning
@@ -188,11 +201,15 @@ export async function generateImage(prompt: string, opts: ImageOpts): Promise<Ge
         return await generateImageOpenAI(prompt, opts, cfg);
       }
       if (provider === "pollinations") return await generateImagePollinations(prompt, opts);
-      if (!process.env.GEMINI_API_KEY) continue;
+      // Kafedra kaliti ham, umumiy kalit ham yo'q → keyingi provayderga (pollinations).
+      if (!(await resolveGeminiKey(opts.departmentId))) continue;
       return await generateImageGemini(prompt, opts);
     } catch (err) {
       lastErr = err;
       console.warn(`[ai] image provider "${provider}" failed:`, (err as Error)?.message);
+      // Kafedra kaliti buzuq: material mazmunini uchinchi tomon xizmatiga (pollinations)
+      // yubormaymiz va o'qituvchi sababni darrov ko'radi.
+      if (isKeyFatal(err)) throw err;
     }
   }
   throw lastErr instanceof ApiError
@@ -202,7 +219,7 @@ export async function generateImage(prompt: string, opts: ImageOpts): Promise<Ge
 
 /** Generates a single image via Nano Banana Pro. Logs one AiUsage row. */
 async function generateImageGemini(prompt: string, opts: ImageOpts): Promise<GeneratedImage> {
-  const ai = getClient();
+  const ai = await getClient(opts.departmentId);
   try {
     const res = await withTimeout(
       ai.models.generateContent({
@@ -257,7 +274,7 @@ export async function generateSpeech(
   voiceName: string,
   opts: { topicId?: number; departmentId?: number | null; userId?: number | null } = {}
 ): Promise<GeneratedSpeech> {
-  const ai = getClient();
+  const ai = await getClient(opts.departmentId);
   let lastErr: unknown;
   for (let attempt = 1; attempt <= MAX_TTS_ATTEMPTS; attempt++) {
     try {
@@ -288,7 +305,7 @@ export async function generateSpeech(
     } catch (err) {
       lastErr = err;
       const status = (err as { status?: number })?.status;
-      if (status === 401 || status === 403) throw toApiError(err);
+      if (isAuthError(err)) throw toApiError(err);
       if (attempt < MAX_TTS_ATTEMPTS) await sleep(1500 * attempt);
     }
   }

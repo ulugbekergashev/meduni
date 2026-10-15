@@ -89,8 +89,21 @@ JWT_REFRESH_SECRET=$(openssl rand -hex 32)
 DOMAIN=meduni.tashmi.uz
 ```
 
-Sun'iy intellekt uchun `GEMINI_API_KEY` ham kiritiladi
-([aistudio.google.com](https://aistudio.google.com)).
+**Sun'iy intellekt kaliti serverga yozilmaydi.** Har kafedra o'z Gemini kalitini
+platformada o'zi kiritadi: *Xodimlar → kafedra sahifasi → "Gemini AI kaliti"*
+([aistudio.google.com/apikey](https://aistudio.google.com/apikey) dan olinadi).
+Kalit bazada shifrlangan holda saqlanadi.
+
+Kalitlar shifrlanadigan sir **majburiy** (kamida 32 belgi; yo'q bo'lsa kafedralar
+kalit saqlay olmaydi). Uni bir marta qo'ying va **keyin o'zgartirmang** (o'zgarsa
+saqlangan kalitlar o'qilmay qoladi, kafedralar qayta kiritadi):
+
+```bash
+AI_KEY_SECRET=$(openssl rand -hex 32)
+```
+
+`GEMINI_API_KEY` (umumiy kalit) ixtiyoriy: berilsa, o'z kalitini kiritmagan
+kafedralar shuni ishlatadi; berilmasa har kafedra faqat o'z kalitida ishlaydi.
 
 Serverning xotirasiga qarab `NODE_HEAP_MB` ni qo'ying — **8 GB → 2048**,
 16 GB → 4096. Sukut qiymat past (bulutdagi bepul tarif uchun edi) va video
@@ -232,7 +245,8 @@ Sertifikat yo'q yoki sayt HTTP orqali ochilyapti. Brauzer himoyalanmagan
 ulanishda sessiya cookie'sini saqlamaydi. HTTPS qo'ying.
 
 **Konspekt/test/video yaratilmayapti, qolgani ishlaydi.**
-`GEMINI_API_KEY` kiritilmagan yoki chiquvchi ulanish yopiq (1-bo'limdagi
+Shu kafedra o'z Gemini kalitini kiritmagan (kafedra sahifasida "Gemini AI kaliti"),
+kalit eskirgan/bekor qilingan, yoki chiquvchi ulanish yopiq (1-bo'limdagi
 `curl` bilan tekshiring).
 
 **Video montaji yiqilyapti.**

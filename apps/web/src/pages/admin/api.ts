@@ -42,6 +42,10 @@ export interface Quota {
   quota: { monthlyTokenLimit: number; monthlyImageLimit: number; monthlyCostLimit: number };
   used: { tokens: number; images: number; cost: number };
 }
+export interface DeptKeyBrief { departmentId: number; configured: boolean; last4: string | null; setAt: string | null }
+export function useDeptAiKeys() {
+  return useQuery({ queryKey: ["ai-keys"], queryFn: () => api<DeptKeyBrief[]>("/api/v1/admin/ai-keys") });
+}
 export function useQuotas() {
   return useQuery({ queryKey: ["quotas"], queryFn: () => api<Quota[]>("/api/v1/admin/quotas") });
 }

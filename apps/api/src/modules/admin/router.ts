@@ -4,6 +4,7 @@ import { requireRoles } from "../../middleware/rbac";
 import { ADMIN_ROLES, adminScope } from "../../middleware/adminScope";
 import { prisma } from "../../lib/prisma";
 import * as monitoring from "./monitoring";
+import * as aiKey from "./aiKey";
 import * as audit from "./audit";
 import * as students from "./students";
 import { getAdminGroup, assertGroupInScope } from "./groups";
@@ -35,6 +36,22 @@ export const adminRouter = Router();
 adminRouter.use(requireRoles(...ADMIN_ROLES));
 
 adminRouter.get("/stats", wrap(async (req, res) => res.json(await adminStats(await adminScope(req)))));
+
+// KAFEDRANING O'Z GEMINI KALITI. Kalit javoblarda HECH QACHON qaytmaydi (faqat last4).
+// Ko'rish/o'zgartirish: SUPER, o'z fakultetidagi kafedra uchun FAKULTET-ADMIN, o'z kafedrasi uchun MUDIR.
+adminRouter.get("/ai-keys", wrap(async (req, res) => res.json(await aiKey.listKeyStatuses(await adminScope(req)))));
+adminRouter.get("/departments/:id/ai-key", wrap(async (req, res) =>
+  res.json(await aiKey.getKeyStatus(parseId(req.params.id), await adminScope(req)))
+));
+adminRouter.put("/departments/:id/ai-key", wrap(async (req, res) =>
+  res.json(await aiKey.setKey(req.user!.id, parseId(req.params.id), await adminScope(req), req.body?.apiKey))
+));
+adminRouter.delete("/departments/:id/ai-key", wrap(async (req, res) =>
+  res.json(await aiKey.removeKey(req.user!.id, parseId(req.params.id), await adminScope(req)))
+));
+adminRouter.post("/departments/:id/ai-key/check", wrap(async (req, res) =>
+  res.json(await aiKey.recheckKey(req.user!.id, parseId(req.params.id), await adminScope(req)))
+));
 
 // ЖЁСТКИЙ КОНТРОЛЬ (2026-08-11): отклонения от коридора политики + редактирование
 // самого коридора. Область видимости — как во всём админ-контуре.

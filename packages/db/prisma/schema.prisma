@@ -301,6 +301,7 @@ model Department {
   teachers  TeacherProfile[]
   aiUsage   AiUsage[]
   aiQuota   AiQuota?
+  aiKey     DepartmentAiKey?
   admins    User[]           @relation("DepartmentAdmins")
 
   @@unique([facultyId, name])
@@ -1215,4 +1216,20 @@ model Task {
   @@index([createdById])
   @@index([batchId])
   @@map("tasks")
+}
+
+/// Kafedraning O'Z Gemini API kaliti (AES-256-GCM bilan shifrlangan).
+/// ⚠️ Department qatoridan ATAYLAB alohida jadval: `include`/spread orqali kalit
+/// tasodifan frontendga chiqib ketmasin. Kalit API orqali HECH QACHON qaytarilmaydi
+/// (faqat `last4`).
+model DepartmentAiKey {
+  departmentId Int        @id
+  department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  keyEnc       String
+  last4        String
+  setById      Int?
+  setAt        DateTime   @default(now())
+  checkedAt    DateTime?
+
+  @@map("department_ai_keys")
 }
