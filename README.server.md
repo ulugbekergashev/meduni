@@ -228,6 +228,20 @@ docker run --rm -v meduni_storage:/data -v /var/backups/meduni:/out \
 
 ## 8. Yangilash
 
+**Avtomatik (tavsiya etiladi).** Bir marta o'rnatiladi: server har 5 daqiqada
+GitHub `main` ni tekshiradi va yangi commit bo'lsa o'zi tortib, qayta quradi
+(`scripts/auto-deploy.sh`). Serverga har safar kirish kerak bo'lmaydi.
+
+```bash
+(crontab -l 2>/dev/null | grep -v auto-deploy; \
+ echo '*/5 * * * * sh /opt/meduni/scripts/auto-deploy.sh >> $HOME/meduni-deploy.log 2>&1') | crontab -
+```
+
+Jurnal: `tail -n 30 ~/meduni-deploy.log`. O'chirish: `crontab -e` va qatorni olib tashlang.
+Build yiqilsa sayt eski versiyada ishlab turaveradi (sababi jurnalda).
+
+**Qo'lda:**
+
 ```bash
 cd /opt/meduni
 git pull
