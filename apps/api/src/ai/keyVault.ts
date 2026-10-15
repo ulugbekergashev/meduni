@@ -71,16 +71,17 @@ export const last4Of = (key: string) => key.slice(-4);
 /** Foydalanuvchi kiritgan kalitni normallashtiradi va ASOSIY shaklini tekshiradi. */
 export function normalizeApiKey(input: unknown): string {
   const key = typeof input === "string" ? input.trim() : "";
-  // Google AI Studio kalitlari odatda "AIza..." bilan boshlanadi (~39 belgi).
-  // Qat'iy uzunlik/prefiksni tekshirmaymiz (format o'zgarishi mumkin) — haqiqiy
-  // tekshiruv Google'ga chaqiruv bilan. Lekin belgilar to'plami cheklangan: ASCII
-  // bo'lmagan belgi HTTP sarlavhada yiqilib, "aloqa yo'q" bo'lib ko'rinmasin.
-  if (key.length < 20 || key.length > 200 || !/^[A-Za-z0-9_-]+$/.test(key)) {
+  // Google kalitlari: eski "AIza..." (~39 belgi) va YANGI "AQ.Ab8R..." (ichida nuqta
+  // bor — 2026-10-15 buyurtmachi kiritganda aynan shu rad etildi). Prefiks/uzunlikni
+  // qat'iy tekshirmaymiz — haqiqiy tekshiruv Google'ga chaqiruv bilan. Faqat belgilar
+  // to'plami cheklangan: ASCII bo'lmagan belgi HTTP sarlavhada yiqilib, "aloqa yo'q"
+  // bo'lib ko'rinmasin.
+  if (key.length < 20 || key.length > 200 || !/^[A-Za-z0-9._-]+$/.test(key)) {
     throw new ApiError(
       400,
       "ai_key_format",
-      "Kalit formati notoʻgʻri (faqat lotin harflari, raqamlar, - va _ boʻlishi kerak)",
-      "Неверный формат ключа (допустимы только латинские буквы, цифры, - и _)"
+      "Kalit formati notoʻgʻri (faqat lotin harflari, raqamlar, nuqta, - va _ boʻlishi kerak)",
+      "Неверный формат ключа (допустимы только латинские буквы, цифры, точка, - и _)"
     );
   }
   return key;

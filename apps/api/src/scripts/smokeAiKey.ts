@@ -80,6 +80,8 @@ async function main() {
 
   // --- Normalizatsiya ------------------------------------------------------------------
   ok(normalizeApiKey("  " + KEY + "\n") === KEY, "bo'shliqlar kesiladi");
+  const NEW_FORMAT = "AQ.Ab8RN6dummy_TEST-key0000000000000000000000000";
+  ok(normalizeApiKey(NEW_FORMAT) === NEW_FORMAT, "yangi format (AQ. — nuqta bilan) qabul qilinadi");
   ok(throws(() => normalizeApiKey("qisqa"), "ai_key_format"), "juda qisqa rad etiladi");
   ok(throws(() => normalizeApiKey("AIza with space inside the key value here"), "ai_key_format"), "ichida probel rad etiladi");
   ok(throws(() => normalizeApiKey("AIzaSyDUMMY-тест-key-1234567890abcdef"), "ai_key_format"), "ASCII bo'lmagan belgi rad etiladi");
