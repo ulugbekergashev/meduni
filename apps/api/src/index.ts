@@ -8,6 +8,7 @@ import { env, isAllowedOrigin } from "./env";
 import { textChain } from "./ai/config";
 import { authMiddleware } from "./middleware/auth";
 import { errorMiddleware } from "./middleware/error";
+import { heartbeat } from "./middleware/heartbeat";
 import { authRouter } from "./modules/auth/router";
 import { orgRouter } from "./modules/org/router";
 import { usersRouter } from "./modules/users/router";
@@ -85,8 +86,13 @@ app.use(apiLimiter);
 app.use(express.json());
 app.use(cookieParser());
 app.use(authMiddleware);
+// Tashqi proxy 60s da uzmasin (uzoq AI generatsiyasi) — `middleware/heartbeat.ts`.
+app.use(heartbeat);
 
-app.get("/health", (_req, res) => res.json({ ok: true }));
+// `startedAt` — deploy haqiqatan tushganini (konteyner qayta ko'tarilganini) tashqaridan
+// bilish uchun; serverga kirmasdan tekshiriladi. Sir yoki versiya ma'lumoti yo'q.
+const STARTED_AT = new Date().toISOString();
+app.get("/health", (_req, res) => res.json({ ok: true, startedAt: STARTED_AT }));
 app.use("/auth", authRouter);
 // Specific routers first; the org router is mounted on the generic /api/v1
 // prefix (and carries an ADMIN guard), so it must come LAST or it would

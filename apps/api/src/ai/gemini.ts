@@ -148,8 +148,16 @@ async function generateStructuredGemini<T>(opts: GenerateOpts): Promise<T> {
       } catch (err) {
         lastErr = err;
         const status = (err as { status?: number })?.status;
+        const msg = String((err as { message?: string })?.message ?? err);
+        // ⚠️ 2026-10-15: ichki model xatolari ilgari HECH QAYERGA yozilmasdi — production'da
+        // konspekt 60s+ ketdi, jurnal esa bo'sh edi va sababni topib bo'lmadi.
+        // (Kalit sarlavhada ketadi, xabar matnida yo'q.)
+        console.warn(`[ai] ${opts.kind}: ${model} urinish ${attempt} → ${status ?? "-"} ${msg.slice(0, 180)}`);
         // Auth xatosi hech qaysi modelda o'zgarmaydi → darrov to'xtaymiz.
         if (isAuthError(err)) throw toApiError(err);
+        // Model OSILIB qolgan (timeout) — xuddi shu modelni yana 90s kutish ma'nosiz,
+        // darrov keyingi (lite) modelga o'tamiz.
+        if (msg === "timeout") break;
         // ⚠️ 429 (2026-08-02 tuzatildi): ilgari bu ham darrov tashlanardi
         // ("kvota modelga bog'liq emas" degan taxmin bilan). Aslida limit HAR
         // MODEL uchun alohida — flash tugaganda lite hali ishlaydi. Shuning

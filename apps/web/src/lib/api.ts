@@ -134,7 +134,24 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
   }
 
   if (res.status === 204) return undefined as T;
-  return res.json();
+  const data = await res.json();
+  // Uzoq so'rov ("yurak urishi", server `middleware/heartbeat.ts`): sarlavha 200 bilan
+  // allaqachon ketgan, shuning uchun xato TANADA keladi — yolg'iz `error` obyekti.
+  if (
+    data &&
+    typeof data === "object" &&
+    Object.keys(data).length === 1 &&
+    data.error?.code &&
+    typeof data.error.messageUz === "string"
+  ) {
+    throw new ApiError(
+      typeof data.error.status === "number" ? data.error.status : 500,
+      data.error.code,
+      data.error.messageUz,
+      data.error.messageRu ?? data.error.messageUz
+    );
+  }
+  return data as T;
 }
 
 /** Fayl yuklash (multipart). `api()` bilan bir xil: refresh-retry + tushunarli

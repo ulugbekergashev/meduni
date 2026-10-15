@@ -3108,3 +3108,30 @@ kafedra mudiri (yoki fakultet-admin / superadmin) kafedra sahifasida kiritadi.
   `AI_KEY_SECRET` qo'shildi (yo'qsa konteynerga tushmaydi). Tekshiruv:
   `scripts/smokeAiKey.ts` 29/29 (bazasiz: shifrlash, AAD, GCM buzilishi/qisqa teg,
   sir talablari, resolver fail-closed). Mustaqil xavfsizlik tekshiruvi o'tkazildi.
+
+---
+
+## 28. TASHQI PROXY 60s · AVTO-DEPLOY · YANGI KALIT FORMATI (2026-10-15)
+
+- **Universitet nginx'i (Miraziz aka, bizning nazoratimizda emas) 60s da uzadi.**
+  Productionda birinchi AI konspekt 504 bilan tugadi, holbuki u serverda TUGAGAN
+  (AiUsage yozilgan, keyin mavzu yo'q bo'lgani uchun Prisma xatosi). Yechim —
+  `middleware/heartbeat.ts`: POST/PUT/PATCH javobi 20s ichida tayyor bo'lmasa, 200
+  sarlavhasi + har 15s bitta bo'shliq yuboriladi (nginx taymeri nolga qaytadi).
+  Xato bu holatda TANADA keladi `{error:{...,status}}` — `web/lib/api.ts` 2xx dagi
+  yolg'iz `error` ni ApiError qiladi (asl status bilan). GET va multipart chetlab
+  o'tiladi; tez javoblarga tegmaydi. ⚠️ Compression middleware qo'shsang heartbeat
+  bo'shliqlari bufer'da qoladi — flush qilishni unutma. Sinov: `smokeHeartbeat.ts` 7/7.
+- **Gemini ichki model xatolari endi jurnalga yoziladi** (`[ai] KIND: model urinish N → status xabar`).
+  Ilgari jurnal bo'sh edi va sekinlik sababini topib bo'lmadi. Timeout bo'lgan model
+  qayta kutilmaydi — darrov keyingi (lite) modelga.
+- **Avto-deploy** (`scripts/auto-deploy.sh` + cron har 5 daqiqa, `install-auto-deploy.sh`
+  bilan bir marta o'rnatilgan): `main` ga push → ≤5 daqiqa + ~2-3 daqiqa qurilish →
+  production. ⚠️ Shuning uchun `main` ga faqat tsc+build o'tgan kod push qilinadi.
+  Deploy tushganini tashqaridan: `GET /health` → `startedAt` o'zgaradi. Jurnal:
+  serverda `~/meduni-deploy.log`.
+- **Google'ning yangi API kaliti formati `AQ.…` (ichida nuqta)** — `normalizeApiKey`
+  dastlab rad etgan; endi `[A-Za-z0-9._-]`.
+- Birlik biriktirilmagan fakultet/kafedra admini Xodimlar sahifasida cheksiz spinner
+  o'rniga sababni ko'radi (`StructurePage`). Demo `fakultet.admin@`/`kafedra.admin@`
+  productionda hech narsaga bog'lanmagan.
