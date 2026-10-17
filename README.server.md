@@ -214,11 +214,14 @@ EOF
 sudo chmod +x /etc/cron.daily/meduni-backup
 ```
 
-Media fayllar `storage` volume'ida — ularni haftada bir marta nusxalash yetadi:
+Media fayllar (materiallar, slayd rasmlari, video, podkast) `meduni_storage`
+volume'ida — yuqoridagi skript ularni **saqlamaydi**. Ular uchun `scripts/backup-storage.sh`
+(har kuni, 14 kun saqlanadi, `~/meduni-backups/`). Root kerak emas — docker guruhidagi
+foydalanuvchining o'z crontab'i yetadi:
 
 ```bash
-docker run --rm -v meduni_storage:/data -v /var/backups/meduni:/out \
-  alpine tar czf /out/storage-$(date +%F).tar.gz -C /data .
+(crontab -l 2>/dev/null | grep -v backup-storage; \
+ echo '30 6 * * * sh /opt/meduni/scripts/backup-storage.sh >> $HOME/meduni-backup.log 2>&1') | crontab -
 ```
 
 > ⚠️ Nusxalar **shu serverdan tashqarida** ham turishi kerak — aks holda
