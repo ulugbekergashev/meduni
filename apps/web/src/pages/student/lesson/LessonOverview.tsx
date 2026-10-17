@@ -8,10 +8,10 @@ import type { Lesson } from "../api";
 import { overallPct, type StageInfo, type StageKey } from "./stages";
 
 function Marker({ n, state }: { n: number; state: StageInfo["state"] }) {
-  const base = "flex h-8 w-8 shrink-0 items-center justify-center rounded-control";
+  const base = "flex h-8 w-8 shrink-0 items-center justify-center rounded-full";
   if (state === "done")
     return (
-      <div className={cls(base, "bg-emerald text-white")}>
+      <div className={cls(base, "border border-emerald/50 text-emerald")}>
         <Icon icon={Check} size={15} strokeWidth={3} />
       </div>
     );
@@ -34,7 +34,7 @@ function Marker({ n, state }: { n: number; state: StageInfo["state"] }) {
       </div>
     );
   return (
-    <div className={cls(base, "bg-surface-raised text-note font-extrabold font-data tabular-nums text-ink-soft")}>{n}</div>
+    <div className={cls(base, "bg-surface-raised text-note font-semibold font-data tabular-nums text-ink-2")}>{n}</div>
   );
 }
 
@@ -101,11 +101,11 @@ export function LessonOverview({
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
       >
-        <p className="text-micro font-extrabold text-brand-tint">
+        <p className="text-micro font-semibold text-brand-tint">
           {t("topic")} {lesson.orderIndex} · {lesson.subjectName}
         </p>
-        <h2 className="mt-1 text-h1 font-extrabold text-ink">{lesson.title}</h2>
-        <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-note text-ink-dim">
+        <h2 className="mt-1 text-h1 font-semibold text-ink">{lesson.title}</h2>
+        <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-note text-ink-soft">
           {lesson.estimatedMinutes > 0 && (
             <span className="inline-flex items-center gap-1">
               <Icon icon={Clock} size={12} />
@@ -113,7 +113,7 @@ export function LessonOverview({
             </span>
           )}
           {started && (
-            <span className="font-bold font-data tabular-nums text-ink-soft">{t("topicProgress")}: {pct}%</span>
+            <span className="rounded-pill bg-brand-soft px-2 py-0.5 text-micro font-semibold tabular-nums text-brand-deep">{t("topicProgress")}: {pct}%</span>
           )}
         </div>
       </motion.div>
@@ -122,14 +122,14 @@ export function LessonOverview({
           va video endi menyu bandi emas — muqovasi va progressi bor material. */}
       {studyBlocks.length > 0 && onBlock && (
         <div className="mt-4">
-          <p className="mb-2 text-micro font-extrabold text-ink-faint">{t("materialsPanelTitle")}</p>
+          <p className="mb-2 text-section font-semibold text-ink">{t("materialsPanelTitle")}</p>
           <MaterialsPanel lesson={lesson} blocks={studyBlocks} onPick={(v) => onBlock?.(v)} />
         </div>
       )}
 
       {/* Bosqichlar ro'yxati */}
       <motion.ol
-        className="mt-4 overflow-hidden rounded-card border border-line"
+        className="mt-3 overflow-hidden rounded-card border border-line bg-surface p-1"
         initial={reduce ? false : "hidden"}
         animate="show"
         variants={{ show: { transition: { staggerChildren: 0.05 } } }}
@@ -143,29 +143,27 @@ export function LessonOverview({
               key={st.key}
               variants={{ hidden: { opacity: 0, y: 8 }, show: { opacity: 1, y: 0 } }}
               transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-              className="border-b border-line last:border-b-0"
+              className="border-b border-line-soft last:border-b-0"
             >
               <Wrapper
                 onClick={clickable ? () => onStage(st.key) : undefined}
                 className={cls(
-                  "group flex w-full items-center gap-3 px-3.5 py-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
+                  "group flex w-full items-center gap-3 rounded-control px-3 py-2.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
                   clickable ? "hover:bg-surface-raised" : "cursor-default opacity-55"
                 )}
               >
                 <Marker n={i + 1} state={st.state} />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-body font-bold text-ink">{t(`stage_${st.key}`)}</p>
-                  {subLine && <p className="truncate text-micro text-ink-dim">{subLine}</p>}
+                  <p className="truncate text-body font-semibold text-ink">{t(`stage_${st.key}`)}</p>
+                  {subLine && <p className="truncate text-micro text-ink-soft">{subLine}</p>}
                 </div>
                 {st.key === "quiz" && st.hint && (
-                  <span className="shrink-0 text-body font-extrabold font-data tabular-nums text-ink">{st.hint}</span>
+                  <span className="shrink-0 text-body font-semibold font-data tabular-nums text-ink">{st.hint}</span>
                 )}
                 {clickable && (
-                  <Icon
-                    icon={ChevronRight}
-                    size={15}
-                    className="shrink-0 text-ink-dim transition-transform duration-150 group-hover:translate-x-0.5"
-                  />
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-line text-ink-soft transition-colors group-hover:border-ink group-hover:bg-ink group-hover:text-surface">
+                    <Icon icon={ChevronRight} size={13} />
+                  </span>
                 )}
               </Wrapper>
             </motion.li>
@@ -180,7 +178,7 @@ export function LessonOverview({
         animate={{ opacity: 1, y: 0 }}
         whileTap={reduce ? undefined : { scale: 0.98 }}
         transition={{ delay: 0.15, duration: 0.25 }}
-        className="mt-4 flex w-full items-center justify-center gap-2 rounded-control bg-brand px-4 py-2.5 text-body font-extrabold text-white transition-colors hover:bg-brand-deep focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+        className="mt-4 flex w-full items-center justify-center gap-2 rounded-pill bg-ink px-4 py-2.5 text-body font-semibold text-surface transition-colors hover:bg-ink-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
       >
         <Icon icon={PlayCircle} size={17} />
         {started ? t("overviewResume") : t("overviewStart")}

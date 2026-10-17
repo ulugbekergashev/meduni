@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { AnimatePresence, motion, useReducedMotion, type PanInfo } from "framer-motion";
 import { cls } from "../cls";
 
@@ -47,7 +48,10 @@ export function Sheet({ open, onClose, title, children, className, disableDrag =
     if (info.offset.y > 120 || info.velocity.y > 600) onClose();
   };
 
-  return (
+  // Portal — ota konteynerning `space-y-*`/transform qoidalari fixed qatlamga
+  // ta'sir qilmasin (space-y-3 ichida overlay 12px pastga surilib, tepada
+  // yorug' tasma qolardi).
+  return createPortal(
     <AnimatePresence>
       {open && (
         <div className="fixed inset-0 z-50 flex flex-col justify-end" role="dialog" aria-modal="true">
@@ -88,6 +92,7 @@ export function Sheet({ open, onClose, title, children, className, disableDrag =
           </motion.div>
         </div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }

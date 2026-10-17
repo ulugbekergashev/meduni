@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { Building2, ChevronRight, Landmark, Plus, ShieldCheck, UserRound, Users } from "lucide-react";
-import { Button, Card, EmptyState, Icon, Spinner } from "@meduni/ui";
+import { ArrowRight, Building2, Landmark, Plus, ShieldCheck, UserRound, Users } from "lucide-react";
+import { Button, EmptyState, Icon, Spinner } from "@meduni/ui";
+import { BentoCard, BentoRow, PageHeader, RetryLine } from "../../../components/bento";
 import { api, apiErrorMessage } from "../../../lib/api";
 import { useMe } from "../../../lib/auth";
 import { useLocale } from "../../../lib/useLocale";
@@ -17,7 +18,6 @@ interface SuperRow { id: number; fullName: string; email: string }
 export function StructurePage() {
   const { t } = useTranslation(undefined, { keyPrefix: "structure" });
   const { t: ts } = useTranslation(undefined, { keyPrefix: "staff" });
-  const { t: tc } = useTranslation(undefined, { keyPrefix: "common" });
   const navigate = useNavigate();
   const locale = useLocale();
   const { data: me } = useMe();
@@ -65,97 +65,122 @@ export function StructurePage() {
     return <div className="flex min-h-[40vh] items-center justify-center"><Spinner size={26} /></div>;
   }
 
+  const totals = faculties.reduce(
+    (acc, f) => ({
+      depts: acc.depts + f.departments.length,
+      groups: acc.groups + f.groups.length,
+      students: acc.students + f.groups.reduce((s, g) => s + g.studentCount, 0),
+    }),
+    { depts: 0, groups: 0, students: 0 }
+  );
+  const leaders = supers.data?.items ?? [];
+
   return (
-    <div>
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-h1 font-bold text-ink">{t("title")}</h1>
-          <p className="mt-1 text-note text-ink-soft">{t("subtitle")}</p>
-        </div>
-        {canFaculty && (
-          <Button icon={<Icon icon={Plus} size={16} />} onClick={() => setAdding(true)}>
-            {t("add.faculty")}
-          </Button>
-        )}
-      </div>
+    <div className="space-y-3">
+      <PageHeader
+        className="mb-0"
+        title={t("title")}
+        subtitle={
+          faculties.length > 0
+            ? [t("nDepts", { n: totals.depts }), t("nGroups", { n: totals.groups }), t("nStudents", { n: totals.students })].join(" · ")
+            : t("subtitle")
+        }
+        right={
+          canFaculty && (
+            <Button size="lg" icon={<Icon icon={Plus} size={16} />} onClick={() => setAdding(true)}>
+              {t("add.faculty")}
+            </Button>
+          )
+        }
+      />
 
       {/* Leadership (university-level admins) */}
-      {canFaculty && (supers.data?.items.length ?? 0) > 0 && (
-        <Card className="mt-3 !p-0">
-          <div className="flex items-center gap-2 border-b border-line px-5 py-3">
-            <Icon icon={ShieldCheck} size={16} className="text-brand-deep" />
-            <h2 className="text-body font-bold text-ink">{ts("leadership")}</h2>
-          </div>
-          <div className="flex flex-wrap gap-x-8 gap-y-2 px-5 py-3">
-            {supers.data!.items.map((u) => (
-              <Link key={u.id} to={`/admin/users/${u.id}`} className="group flex items-center gap-2.5">
-                <Avatar name={u.fullName} />
-                <span className="min-w-0">
-                  <span className="block truncate text-note font-semibold text-ink group-hover:underline">{u.fullName}</span>
-                  <span className="block truncate text-micro text-ink-faint">{u.email}</span>
-                </span>
-              </Link>
+      {canFaculty && leaders.length > 0 && (
+        <BentoCard
+          title={
+            <span className="inline-flex items-center gap-2">
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-soft text-brand-tint">
+                <Icon icon={ShieldCheck} size={15} />
+              </span>
+              {ts("leadership")}
+            </span>
+          }
+          count={leaders.length}
+          bodyClassName="px-2 pb-3"
+        >
+          <ul className="grid gap-1 sm:grid-cols-2 xl:grid-cols-3">
+            {leaders.map((u) => (
+              <li key={u.id}>
+                <BentoRow
+                  lead={<Avatar name={u.fullName} />}
+                  title={u.fullName}
+                  sub={u.email}
+                  onClick={() => navigate(`/admin/users/${u.id}`)}
+                />
+              </li>
             ))}
-          </div>
-        </Card>
+          </ul>
+        </BentoCard>
       )}
 
-      <div className="mt-5">
-        {tree.isLoading ? (
-          <div className="flex min-h-[30vh] items-center justify-center"><Spinner size={26} /></div>
-        ) : tree.isError ? (
-          <Card><p className="py-6 text-center text-note text-rose">{tc("genericError")}</p></Card>
-        ) : faculties.length === 0 ? (
-          <EmptyState
-            icon={<Icon icon={Building2} size={24} />}
-            text={t("emptyFaculties")}
-            hint={t("emptyFacultiesHint")}
-            action={canFaculty ? <Button size="sm" onClick={() => setAdding(true)}>{t("add.faculty")}</Button> : undefined}
-          />
-        ) : (
-          <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {faculties.map((f) => {
-              const teacherCount = f.departments.reduce((s, d) => s + d.teacherCount, 0);
-              const studentCount = f.groups.reduce((s, g) => s + g.studentCount, 0);
-              return (
-                <li key={f.id}>
-                  <Card
-                    interactive
-                    onClick={() => navigate(`/admin/staff/f/${f.id}`)}
-                    className="flex h-full flex-col gap-4"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-control bg-brand-soft text-brand-deep">
-                        <Icon icon={Building2} size={20} />
-                      </div>
-                      <Icon icon={ChevronRight} size={17} className="mt-1 text-ink-faint" />
-                    </div>
-                    <div className="min-w-0">
-                      <h3 className="line-clamp-2 text-body font-bold leading-snug text-ink">{f.name}</h3>
-                      {f.admins[0] && (
-                        <p className="mt-1 flex items-center gap-1.5 truncate text-note text-ink-soft">
-                          <Icon icon={UserRound} size={13} className="shrink-0 text-brand" />
-                          {f.admins[0].fullName}
-                        </p>
-                      )}
-                    </div>
-                    <div className="mt-auto grid grid-cols-2 gap-x-4 gap-y-2 border-t border-line pt-3 text-note text-ink-soft">
-                      <span className="inline-flex items-center gap-1.5">
-                        <Icon icon={Landmark} size={14} className="text-amber" /> {t("nDepts", { n: f.departments.length })}
+      {tree.isLoading ? (
+        <div className="flex min-h-[30vh] items-center justify-center"><Spinner size={26} /></div>
+      ) : tree.isError ? (
+        <BentoCard>
+          <RetryLine onRetry={() => tree.refetch()} />
+        </BentoCard>
+      ) : faculties.length === 0 ? (
+        <EmptyState
+          icon={<Icon icon={Building2} size={24} />}
+          text={t("emptyFaculties")}
+          hint={t("emptyFacultiesHint")}
+          action={canFaculty ? <Button size="sm" onClick={() => setAdding(true)}>{t("add.faculty")}</Button> : undefined}
+        />
+      ) : (
+        <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          {faculties.map((f) => {
+            const teacherCount = f.departments.reduce((s, d) => s + d.teacherCount, 0);
+            const studentCount = f.groups.reduce((s, g) => s + g.studentCount, 0);
+            return (
+              <li key={f.id}>
+                <button
+                  type="button"
+                  onClick={() => navigate(`/admin/staff/f/${f.id}`)}
+                  className="group flex h-full w-full flex-col gap-4 rounded-card border border-line bg-surface p-4 text-left transition-colors hover:border-line-raised focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                >
+                  <span className="flex items-start justify-between gap-3">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand-tint">
+                      <Icon icon={Building2} size={18} />
+                    </span>
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-line text-ink-soft transition-colors group-hover:border-ink group-hover:bg-ink group-hover:text-surface">
+                      <Icon icon={ArrowRight} size={13} />
+                    </span>
+                  </span>
+                  <span className="min-w-0">
+                    <span className="line-clamp-2 block text-section font-semibold leading-snug text-ink">{f.name}</span>
+                    {f.admins[0] && (
+                      <span className="mt-1 flex items-center gap-1.5 truncate text-note text-ink-soft">
+                        <Icon icon={UserRound} size={13} className="shrink-0" />
+                        {f.admins[0].fullName}
                       </span>
-                      <span className="inline-flex items-center gap-1.5">
-                        <Icon icon={Users} size={14} className="text-violet" /> {t("nGroups", { n: f.groups.length })}
-                      </span>
-                      <span>{t("nTeachers", { n: teacherCount })}</span>
-                      <span>{t("nStudents", { n: studentCount })}</span>
-                    </div>
-                  </Card>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </div>
+                    )}
+                  </span>
+                  <span className="mt-auto grid grid-cols-2 gap-x-4 gap-y-1.5 border-t border-line pt-3 text-note text-ink-2">
+                    <span className="inline-flex items-center gap-1.5">
+                      <Icon icon={Landmark} size={14} className="text-amber" /> {t("nDepts", { n: f.departments.length })}
+                    </span>
+                    <span className="inline-flex items-center gap-1.5">
+                      <Icon icon={Users} size={14} className="text-violet" /> {t("nGroups", { n: f.groups.length })}
+                    </span>
+                    <span>{t("nTeachers", { n: teacherCount })}</span>
+                    <span>{t("nStudents", { n: studentCount })}</span>
+                  </span>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
 
       {adding && (
         <EntityFormModal

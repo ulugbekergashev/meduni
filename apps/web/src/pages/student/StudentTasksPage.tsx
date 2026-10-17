@@ -1,48 +1,36 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { motion, AnimatePresence, type Variants } from "framer-motion";
 import {
-  AlertTriangle,
-  ArrowRight,
   CalendarCheck,
-  CalendarDays,
   CheckCircle2,
   ChevronDown,
   ClipboardCheck,
   ClipboardList,
   Clock,
-  ListChecks,
+  ExternalLink,
   PlayCircle,
   Sparkles,
   Stethoscope,
   UserRound,
   type LucideIcon,
 } from "lucide-react";
-import { Badge, Button, Card, Icon, Spinner, cls } from "@meduni/ui";
-import { HeroCard, HeroTile, RailCard } from "../../components/HeroStats";
+import { Button, Icon, cls } from "@meduni/ui";
+import { BentoCard, BentoRow, MetricTile, PageHeader } from "../../components/bento";
 import { formatDate } from "../../lib/date";
 import { useLocale } from "../../lib/useLocale";
-import { useMySchedule, useMyTasks, useSetMyTaskDone, type AutoTask } from "./api";
-
-const containerVariants: Variants = {
-  hidden: { opacity: 0 },
-  show: { opacity: 1, transition: { staggerChildren: 0.08 } }
-};
-
-const itemVariants: Variants = {
-  hidden: { opacity: 0, y: 15 },
-  show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
-};
+import { useMySchedule, useMyTasks, useSetMyTaskDone, type AssignedTask, type AutoTask } from "./api";
 
 const META: Record<string, { icon: LucideIcon; labelKey: string; chip: string }> = {
-  study: { icon: PlayCircle, labelKey: "study", chip: "bg-brand-soft text-brand-tint" },
+  study: { icon: PlayCircle, labelKey: "study", chip: "bg-brand-soft text-brand-deep" },
   quiz_todo: { icon: ClipboardList, labelKey: "quizTodo", chip: "bg-blue-soft text-blue" },
   case_todo: { icon: Stethoscope, labelKey: "caseTodo", chip: "bg-rose-soft text-rose" },
   case_graded: { icon: CheckCircle2, labelKey: "caseGraded", chip: "bg-emerald-soft text-emerald" },
   attendance_low: { icon: CalendarCheck, labelKey: "attendanceLow", chip: "bg-amber-soft text-amber" },
   makeup_due: { icon: ClipboardCheck, labelKey: "makeupDue", chip: "bg-rose-soft text-rose" },
 };
+
+const SCHEDULE_URL = "/app/attendance?sub=jadval";
 
 /** Avto-vazifa bo'limi: sarlavha + KONKRET qatorlar (qaysi mavzu, qaysi fan). */
 function AutoTaskGroup({ task }: { task: AutoTask }) {
@@ -53,63 +41,121 @@ function AutoTaskGroup({ task }: { task: AutoTask }) {
   const items = task.items ?? [];
 
   return (
-    <motion.section variants={itemVariants}>
-      {/* Guruh + qatorlar bitta kartada — sarlavha karta shapkasi sifatida */}
-      <Card className="overflow-hidden p-0">
-        <div className="flex items-center gap-2.5 border-b border-line px-4 py-2.5">
-          <span className={cls("flex h-7 w-7 shrink-0 items-center justify-center rounded-control", meta.chip)}>
+    <BentoCard
+      title={
+        <span className="flex items-center gap-2">
+          <span className={cls("flex h-7 w-7 shrink-0 items-center justify-center rounded-full", meta.chip)}>
             <Icon icon={meta.icon} size={14} />
           </span>
-          <h3 className="min-w-0 flex-1 truncate text-body font-bold text-ink">{t(meta.labelKey)}</h3>
-          <span className="rounded-pill bg-surface-raised px-2.5 py-0.5 text-note font-bold font-data tabular-nums text-ink-soft">
-            {task.count}
-          </span>
-        </div>
-
-        {items.length === 0 ? (
-          <button
-            onClick={() => navigate(task.link)}
-            className="group flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-surface-raised"
-          >
-            <p className="min-w-0 flex-1 text-body font-medium text-ink">{t("attendanceLowHint", { pct: task.count })}</p>
-            <Icon icon={ArrowRight} size={16} className="shrink-0 text-ink-dim transition-transform group-hover:translate-x-0.5" />
-          </button>
-        ) : (
-          <div className="divide-y divide-line">
-            {items.map((it, i) => (
-              <button
-                key={`${it.topicId}-${i}`}
+          {t(meta.labelKey)}
+        </span>
+      }
+      count={task.count}
+      bodyClassName="px-2 pb-2"
+    >
+      {items.length === 0 ? (
+        <BentoRow title={t("attendanceLowHint", { pct: task.count })} onClick={() => navigate(task.link)} />
+      ) : (
+        <ul className="divide-y divide-line-soft">
+          {items.map((it, i) => (
+            <li key={`${it.topicId}-${i}`}>
+              <BentoRow
+                title={it.topicTitle}
+                sub={it.courseName}
                 onClick={() => navigate(it.link)}
-                className="group flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-surface-raised"
-              >
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-body font-semibold text-ink transition-colors group-hover:text-brand-tint">{it.topicTitle}</p>
-                  <p className="truncate text-note text-ink-faint">{it.courseName}</p>
-                </div>
-                {it.value !== undefined && it.value !== null && (
-                  // Koridor qatorida bu — LIMITGACHA QOLGAN SOAT. 0 bo'lsa
-                  // yashil emas: bu yomon xabar (yakuniy nazoratga kiritilmaydi).
-                  <span
-                    className={cls(
-                      "shrink-0 text-section font-bold tabular-nums",
-                      task.type === "attendance_low" ? (it.value === 0 ? "text-rose" : "text-amber") : "text-emerald"
-                    )}
-                  >
-                    {it.value}
-                    {task.type === "attendance_low" && <span className="ml-1 text-note font-semibold">{t("hoursLeft")}</span>}
-                  </span>
-                )}
-                <Icon
-                  icon={ArrowRight}
-                  size={16}
-                  className="shrink-0 text-ink-dim transition-transform group-hover:translate-x-0.5"
-                />
-              </button>
-            ))}
-          </div>
+                right={
+                  it.value !== undefined && it.value !== null ? (
+                    // Koridor qatorida bu — LIMITGACHA QOLGAN SOAT. 0 bo'lsa
+                    // yashil emas: bu yomon xabar (yakuniy nazoratga kiritilmaydi).
+                    <span
+                      className={cls(
+                        "text-section font-semibold",
+                        task.type === "attendance_low" ? (it.value === 0 ? "text-rose" : "text-amber") : "text-emerald"
+                      )}
+                    >
+                      {it.value}
+                      {task.type === "attendance_low" && <span className="ml-1 text-micro">{t("hoursLeft")}</span>}
+                    </span>
+                  ) : undefined
+                }
+              />
+            </li>
+          ))}
+        </ul>
+      )}
+    </BentoCard>
+  );
+}
+
+/** O'qituvchi topshirig'i — tavsif, muallif, muddat va ikki amal. */
+function AssignedRow({
+  task,
+  onDone,
+  busy,
+  fmt,
+}: {
+  task: AssignedTask;
+  onDone: () => void;
+  busy: boolean;
+  fmt: (iso: string) => string;
+}) {
+  const { t } = useTranslation(undefined, { keyPrefix: "tasks" });
+  const navigate = useNavigate();
+  const isOverdue = !!task.dueDate && new Date(task.dueDate) < new Date();
+  return (
+    <li
+      className={cls(
+        "flex flex-wrap items-start gap-3 rounded-control px-2 py-3",
+        isOverdue && "bg-rose-soft"
+      )}
+    >
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-violet-soft text-violet">
+        <Icon icon={ClipboardCheck} size={15} />
+      </span>
+      <div className="min-w-0 flex-1 basis-56">
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="min-w-0 text-body font-semibold text-ink">{task.title}</p>
+          {task.priority === "HIGH" && (
+            <span className="rounded-pill bg-rose-soft px-2 py-0.5 text-micro font-semibold text-rose">{t("priorityHigh")}</span>
+          )}
+        </div>
+        {task.description && <p className="mt-1 text-note leading-relaxed text-ink-2">{task.description}</p>}
+        <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-micro text-ink-soft">
+          <span className="inline-flex items-center gap-1">
+            <Icon icon={UserRound} size={12} /> {task.createdByName}
+          </span>
+          {task.dueDate && (
+            <span className={cls("inline-flex items-center gap-1 tabular-nums", isOverdue && "font-semibold text-rose")}>
+              <Icon icon={Clock} size={12} /> {fmt(task.dueDate)}
+              {isOverdue && ` · ${t("overdue")}`}
+            </span>
+          )}
+        </div>
+      </div>
+      <div className="flex shrink-0 items-center gap-2">
+        {task.linkUrl && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="rounded-pill"
+            icon={<Icon icon={ExternalLink} size={13} />}
+            onClick={() => navigate(task.linkUrl!)}
+          >
+            {t("open")}
+          </Button>
         )}
-      </Card>
-    </motion.section>
+        <Button
+          variant={isOverdue ? "danger" : "primary"}
+          size="sm"
+          className="rounded-pill"
+          icon={<Icon icon={CheckCircle2} size={14} />}
+          onClick={onDone}
+          disabled={busy}
+        >
+          {t("markDone")}
+        </Button>
+      </div>
+    </li>
   );
 }
 
@@ -129,7 +175,8 @@ export function StudentTasksPage() {
   const assignedAll = useMemo(() => (q.data?.assigned ?? []).filter((a) => a.status === "OPEN"), [q.data]);
   const history = (q.data?.assigned ?? []).filter((a) => a.status !== "OPEN");
   const schedule = scheduleQ.data ?? [];
-  const fmt = (iso: string) => formatDate(locale === "ru" ? "ru" : "uz", iso, "short");
+  const lang = locale === "ru" ? "ru" : "uz";
+  const fmt = (iso: string) => formatDate(lang, iso, "short");
 
   const overdue = assignedAll.filter((a) => a.dueDate && new Date(a.dueDate) < new Date());
   const studyCount = auto.reduce((n, a) => n + (a.items?.length ?? (a.type === "attendance_low" ? 1 : 0)), 0);
@@ -141,237 +188,169 @@ export function StudentTasksPage() {
   const assigned = filter === "overdue" ? overdue : assignedAll;
   const nothing = totalOpen === 0;
   const toggle = (f: Filter) => setFilter((cur) => (cur === f ? "all" : f));
+  const openHistory = () => {
+    setHistoryOpen(true);
+    document.getElementById("tasks-history")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  };
 
   return (
-    <motion.div variants={containerVariants} initial="hidden" animate="show" className="space-y-4">
-      <motion.div variants={itemVariants}>
-        <HeroCard title={t("studentTitle")} subtitle={t("studentHint")}>
-          <HeroTile
-            icon={ListChecks}
-            value={String(totalOpen)}
-            label={t("statOpen")}
-            tone="bg-brand-soft text-brand-tint"
-            // ⚠️ "Hammasi" — FILTRNI TOZALAYDIGAN amal. Filtr allaqachon "all"
-            // bo'lsa tugma hech narsa qilmasdi, lekin bosiladigandek turardi.
-            onClick={filter === "all" ? undefined : () => setFilter("all")}
-            selected={filter === "all"}
-          />
-          <HeroTile
-            icon={UserRound}
-            value={String(assignedAll.length)}
-            label={t("statFromTeacher")}
-            tone="bg-violet-soft text-violet"
-            onClick={() => toggle("teacher")}
-            selected={filter === "teacher"}
-          />
-          <HeroTile
-            icon={AlertTriangle}
-            value={String(overdue.length)}
-            label={t("statOverdue")}
-            tone={overdue.length > 0 ? "bg-rose-soft text-rose" : "bg-surface text-ink-faint"}
-            onClick={() => toggle("overdue")}
-            selected={filter === "overdue"}
-          />
-          <HeroTile
-            icon={CheckCircle2}
-            value={String(history.length)}
-            label={t("statDone")}
-            tone="bg-emerald-soft text-emerald"
-            // ⚠️ `historyOpen` sukut bo'yicha `true` — `setHistoryOpen(true)`
-            // hech qachon hech narsa qilmasdi. Endi ochib-yopadi.
-            onClick={history.length === 0 ? undefined : () => setHistoryOpen((v) => !v)}
-            selected={history.length === 0 ? undefined : historyOpen}
-          />
-        </HeroCard>
-      </motion.div>
+    <div className="space-y-3">
+      <PageHeader className="mb-0" title={t("studentTitle")} subtitle={t("studentHint")} />
 
-      {q.isLoading ? (
-        <div className="flex h-40 items-center justify-center">
-          <Spinner size={24} />
-        </div>
-      ) : q.isError ? (
-        <Card className="mt-5">
-          <p className="py-4 text-center text-body text-rose">{t("error")}</p>
-        </Card>
+      {/* STAT DIETASI: 4 karta — uchtasi FILTR, to'rtinchisi tarixga o'tish. */}
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <MetricTile
+          size="stat"
+          tone="brand"
+          label={t("statOpen")}
+          value={totalOpen}
+          onClick={() => setFilter("all")}
+          selected={filter === "all"}
+        />
+        <MetricTile
+          size="stat"
+          label={t("statFromTeacher")}
+          value={assignedAll.length}
+          onClick={() => toggle("teacher")}
+          selected={filter === "teacher"}
+        />
+        <MetricTile
+          size="stat"
+          tone={overdue.length > 0 ? "rose" : "plain"}
+          valueTone={overdue.length > 0 ? "rose" : "ink"}
+          label={t("statOverdue")}
+          value={overdue.length}
+          onClick={() => toggle("overdue")}
+          selected={filter === "overdue"}
+        />
+        <MetricTile size="stat" label={t("statDone")} value={history.length} onClick={openHistory} />
+      </div>
+
+      {q.isLoading || q.isError ? (
+        <BentoCard isLoading={q.isLoading} isError={q.isError} onRetry={() => q.refetch()} />
       ) : (
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
-          <div className="min-w-0 space-y-4">
+        <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_340px]">
+          <div className="min-w-0 space-y-3">
             {/* O'qituvchi topshiriqlari */}
             {showTeacher && assigned.length > 0 && (
-              <motion.section variants={itemVariants}>
-                <h2 className="mb-4 text-section font-bold tracking-tight text-ink">{t("teacherAssignedSection")}</h2>
-                <div className="space-y-3">
-                  <AnimatePresence>
-                  {assigned.map((task) => {
-                    const isOverdue = task.dueDate && new Date(task.dueDate) < new Date();
-                    return (
-                      <motion.div
-                        key={task.id}
-                        layout
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.9, filter: "blur(4px)" }}
-                      >
-                        <Card
-                          className={cls("flex flex-wrap items-start justify-between gap-4", isOverdue && "border-rose")}
-                        >
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2">
-                              <p className="text-body font-bold text-ink">{task.title}</p>
-                              {task.priority === "HIGH" && <Badge tone="rose">{t("priorityHigh")}</Badge>}
-                            </div>
-                            {task.description && <p className="mt-1 text-body text-ink-soft leading-relaxed">{task.description}</p>}
-                            <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-note text-ink-faint">
-                              <span className="inline-flex items-center gap-1.5 font-medium">
-                                <Icon icon={UserRound} size={14} className="text-ink-soft" /> {task.createdByName}
-                              </span>
-                              {task.dueDate && (
-                                <span className={cls("inline-flex items-center gap-1.5 font-medium", isOverdue && "font-bold text-rose")}>
-                                  <Icon icon={Clock} size={14} /> {fmt(task.dueDate)}
-                                  {isOverdue && ` · ${t("overdue")}`}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                          <div className="flex shrink-0 items-center gap-2">
-                            {task.linkUrl && (
-                              <Button variant="ghost" size="sm" onClick={() => navigate(task.linkUrl!)}>
-                                {t("open")}
-                              </Button>
-                            )}
-                            <Button
-                              variant={isOverdue ? "primary" : "soft"}
-                              size="sm"
-                              icon={<Icon icon={CheckCircle2} size={16} />}
-                              onClick={() => done.mutate(task.id)}
-                              disabled={done.isPending && done.variables === task.id}
-                              className={isOverdue ? "bg-rose text-white hover:opacity-90" : ""}
-                            >
-                              {t("markDone")}
-                            </Button>
-                          </div>
-                        </Card>
-                      </motion.div>
-                    );
-                  })}
-                  </AnimatePresence>
-                </div>
-              </motion.section>
+              <BentoCard title={t("teacherAssignedSection")} count={assigned.length} bodyClassName="px-2 pb-2">
+                <ul className="space-y-1">
+                  {assigned.map((task) => (
+                    <AssignedRow
+                      key={task.id}
+                      task={task}
+                      fmt={fmt}
+                      onDone={() => done.mutate(task.id)}
+                      busy={done.isPending && done.variables === task.id}
+                    />
+                  ))}
+                </ul>
+              </BentoCard>
             )}
 
             {/* O'quv vazifalari — konkret mavzular */}
             {showStudy && auto.length > 0 && (
-              <motion.section variants={itemVariants}>
-                <h2 className="mb-4 text-section font-bold tracking-tight text-ink">{t("studySection")}</h2>
-                <div className="space-y-3">
+              <>
+                <h2 className="px-1 pt-1 text-section font-semibold text-ink">{t("studySection")}</h2>
+                <div className="grid gap-3 xl:grid-cols-2">
                   {auto.map((task) => (
                     <AutoTaskGroup key={task.type} task={task} />
                   ))}
                 </div>
-              </motion.section>
+              </>
             )}
 
             {nothing && (
-              <motion.div variants={itemVariants}>
-                <Card className="flex items-center gap-3 p-4">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-control bg-emerald-soft text-emerald">
-                    <Icon icon={Sparkles} size={22} />
-                  </div>
-                  <p className="text-body font-bold text-emerald">{t("studentAllDone")}</p>
-                </Card>
-              </motion.div>
+              <BentoCard tone="emerald" bodyClassName="flex items-center gap-3 px-4 pb-4">
+                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-surface/70 text-emerald">
+                  <Icon icon={Sparkles} size={20} />
+                </span>
+                <p className="text-body font-semibold text-emerald">{t("studentAllDone")}</p>
+              </BentoCard>
             )}
 
-            {!nothing && ((showTeacher && assigned.length === 0 && filter !== "all") || (showStudy && auto.length === 0 && filter === "study")) && (
-              <motion.div variants={itemVariants}>
-                <Card className="bg-surface border-dashed p-4 text-center">
-                  <p className="text-body text-ink-faint">{t("noMatchFilter")}</p>
-                </Card>
-              </motion.div>
-            )}
+            {!nothing &&
+              ((showTeacher && assigned.length === 0 && filter !== "all") ||
+                (showStudy && auto.length === 0 && filter === "study")) && (
+                <div className="rounded-card border border-dashed border-line p-4 text-center text-body text-ink-soft">
+                  {t("noMatchFilter")}
+                </div>
+              )}
           </div>
 
           {/* O'ng ustun — kontekst */}
-          <aside className="min-w-0 space-y-4">
-            <motion.div variants={itemVariants}>
-              <RailCard
-                title={t("upcomingLessons")}
-                icon={CalendarDays}
-                action={{ label: t("open"), onClick: () => navigate("/app/schedule") }}
-              >
-                {schedule.length === 0 ? (
-                  <p className="px-5 py-5 text-body text-ink-faint">{t("noLessonsShort")}</p>
-                ) : (
-                  <div className="divide-y divide-line">
-                    {schedule.slice(0, 3).map((s) => (
-                      <button
-                        key={s.key}
-                        onClick={() => navigate("/app/schedule")}
-                        className="flex w-full items-center gap-3 px-5 py-3 text-left transition-colors hover:bg-surface-raised"
-                      >
-                        <div className="w-10 shrink-0 text-center">
-                          <p className="text-section font-bold leading-none tabular-nums text-brand-tint">
-                            {new Date(s.date).getDate()}
-                          </p>
-                          <p className="mt-0.5 text-note font-data tabular-nums text-ink-soft">
-                            {`${String(new Date(s.date).getHours()).padStart(2, "0")}:${String(new Date(s.date).getMinutes()).padStart(2, "0")}`}
-                          </p>
-                        </div>
-                        <div className="min-w-0 flex-1 border-l border-line pl-4">
-                          <p className="truncate text-body font-semibold text-ink">{s.title ?? s.courseName}</p>
-                          <p className="truncate text-note text-ink-soft mt-0.5">{s.courseName}</p>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </RailCard>
-            </motion.div>
+          <aside className="min-w-0 space-y-3">
+            <BentoCard
+              title={t("upcomingLessons")}
+              action={{ label: t("open"), onClick: () => navigate(SCHEDULE_URL) }}
+              isLoading={scheduleQ.isLoading}
+              isError={scheduleQ.isError}
+              onRetry={() => scheduleQ.refetch()}
+              bodyClassName="px-2 pb-2"
+            >
+              {schedule.length === 0 ? (
+                <p className="px-2 py-3 text-note text-ink-soft">{t("noLessonsShort")}</p>
+              ) : (
+                <ul>
+                  {schedule.slice(0, 3).map((s) => {
+                    const d = new Date(s.date);
+                    return (
+                      <li key={s.key}>
+                        <BentoRow
+                          lead={
+                            <span className="flex w-11 shrink-0 flex-col items-center rounded-control bg-surface-raised py-1">
+                              <span className="text-section font-semibold leading-none tabular-nums text-ink">{d.getDate()}</span>
+                              <span className="mt-0.5 font-data text-micro tabular-nums text-ink-soft">
+                                {`${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`}
+                              </span>
+                            </span>
+                          }
+                          title={s.title ?? s.courseName}
+                          sub={s.courseName}
+                          onClick={() => navigate(SCHEDULE_URL)}
+                        />
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </BentoCard>
 
-            <motion.div variants={itemVariants}>
-              <RailCard title={t("doneSection")} icon={ClipboardCheck}>
+            <div id="tasks-history">
+              <BentoCard title={t("doneSection")} count={history.length} bodyClassName="px-2 pb-2">
                 {history.length === 0 ? (
-                  <p className="px-5 py-5 text-body text-ink-faint">{t("noDoneYet")}</p>
+                  <p className="px-2 py-3 text-note text-ink-soft">{t("noDoneYet")}</p>
                 ) : (
                   <>
                     <button
+                      type="button"
                       onClick={() => setHistoryOpen((o) => !o)}
-                      className="flex w-full items-center gap-2 px-5 py-3 text-left text-body font-semibold text-ink-soft transition-colors hover:bg-surface-raised"
+                      aria-expanded={historyOpen}
+                      className="flex w-full items-center gap-2 rounded-control px-2 py-2 text-left text-note font-semibold text-ink-soft transition-colors hover:bg-surface-raised focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                     >
-                      <Icon
-                        icon={ChevronDown}
-                        size={15}
-                        className={cls("transition-transform", !historyOpen && "-rotate-90")}
-                      />
+                      <Icon icon={ChevronDown} size={15} className={cls("transition-transform", !historyOpen && "-rotate-90")} />
                       {t("doneCountN", { n: history.length })}
                     </button>
-                    <AnimatePresence>
                     {historyOpen && (
-                      <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: "auto", opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        className="overflow-hidden border-t border-line"
-                      >
-                        <div className="divide-y divide-line">
-                          {history.slice(0, 8).map((h) => (
-                            <div key={h.id} className="flex items-center gap-3 px-4 py-2.5">
-                              <Icon icon={CheckCircle2} size={16} className="shrink-0 text-emerald opacity-60" />
-                              <p className="min-w-0 flex-1 truncate text-body text-ink-soft line-through">{h.title}</p>
-                              {h.doneAt && <span className="shrink-0 text-note font-medium font-data tabular-nums text-ink-faint">{fmt(h.doneAt)}</span>}
-                            </div>
-                          ))}
-                        </div>
-                      </motion.div>
+                      <ul className="divide-y divide-line-soft">
+                        {history.slice(0, 8).map((h) => (
+                          <li key={h.id} className="flex items-center gap-3 px-2 py-2">
+                            <Icon icon={CheckCircle2} size={15} className="shrink-0 text-emerald" />
+                            <p className="min-w-0 flex-1 truncate text-note text-ink-soft line-through">{h.title}</p>
+                            {h.doneAt && (
+                              <span className="shrink-0 font-data text-micro tabular-nums text-ink-faint">{fmt(h.doneAt)}</span>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
                     )}
-                    </AnimatePresence>
                   </>
                 )}
-              </RailCard>
-            </motion.div>
+              </BentoCard>
+            </div>
           </aside>
         </div>
       )}
-    </motion.div>
+    </div>
   );
 }

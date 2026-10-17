@@ -96,7 +96,7 @@ export function StudyToolbar({
           title={t("showAllBlocks")}
           aria-label={t("showAllBlocks")}
           className={cls(
-            "inline-flex shrink-0 items-center gap-1.5 rounded-control border border-line px-2 py-1.5 text-note font-bold text-ink-soft transition-colors hover:border-brand hover:text-brand",
+            "inline-flex shrink-0 items-center gap-1.5 rounded-pill border border-line px-2.5 py-1.5 text-note font-semibold text-ink-2 transition-colors hover:border-ink hover:text-ink",
             FOCUS
           )}
         >
@@ -116,22 +116,22 @@ export function StudyToolbar({
               key={v}
               onClick={() => onBlock(v)}
               className={cls(
-                "relative inline-flex shrink-0 items-center gap-1.5 rounded-control px-2.5 py-1.5 text-note font-bold transition-colors",
+                "relative inline-flex shrink-0 items-center gap-1.5 rounded-pill px-3 py-1.5 text-note font-semibold transition-colors",
                 FOCUS,
-                on ? "text-brand-tint" : locked ? "text-ink-dim" : "text-ink-soft hover:bg-surface-raised hover:text-ink"
+                on ? "text-surface" : locked ? "text-ink-dim" : "text-ink-soft hover:bg-surface-raised hover:text-ink"
               )}
             >
               {on && (
                 <motion.span
                   layoutId="study-tab-active"
-                  className="absolute inset-0 rounded-control bg-brand-soft"
+                  className="absolute inset-0 rounded-pill bg-ink"
                   transition={reduce ? { duration: 0 } : { type: "spring", stiffness: 480, damping: 40 }}
                 />
               )}
               <Icon icon={locked ? Lock : BLOCK_ICON[v]} size={15} className="relative z-[1] shrink-0" />
               <span className="relative z-[1] whitespace-nowrap">{t(`tab_${v}`)}</span>
               {/* "Tugadi" — kontur belgi (§4: yorqin to'ldirilgan chip emas) */}
-              {done && <Icon icon={Check} size={13} strokeWidth={3} className="relative z-[1] shrink-0 text-emerald" />}
+              {done && <Icon icon={Check} size={13} strokeWidth={3} className={cls("relative z-[1] shrink-0", on ? "text-surface" : "text-emerald")} />}
             </button>
           );
         })}
@@ -143,14 +143,14 @@ export function StudyToolbar({
           <button
             onClick={onToggleSections}
             className={cls(
-              "inline-flex items-center gap-1.5 rounded-control border px-2.5 py-1.5 text-note font-bold transition-colors",
+              "inline-flex items-center gap-1.5 rounded-pill border px-3 py-1.5 text-note font-semibold transition-colors",
               FOCUS,
-              sectionsOpen ? "border-brand bg-brand-soft text-brand-tint" : "border-line text-ink-soft hover:bg-surface-raised hover:text-ink"
+              sectionsOpen ? "border-ink bg-ink text-surface" : "border-line text-ink-2 hover:border-ink hover:text-ink"
             )}
           >
             <Icon icon={List} size={15} />
             <span className="hidden sm:inline">{t("sectionsBtn")}</span>
-            <span className="font-data tabular-nums text-micro text-ink-faint">
+            <span className="font-data tabular-nums text-micro opacity-70">
               {readCount}/{sections.length}
             </span>
           </button>
@@ -178,8 +178,8 @@ export function StudyToolbar({
                       >
                         <span
                           className={cls(
-                            "mt-[3px] flex h-4 w-4 shrink-0 items-center justify-center rounded-pill text-micro font-extrabold font-data tabular-nums",
-                            cur ? "bg-brand text-white" : s.read ? "text-emerald" : "bg-line text-ink-dim"
+                            "mt-[3px] flex h-4 w-4 shrink-0 items-center justify-center rounded-pill text-micro font-semibold font-data tabular-nums",
+                            cur ? "bg-ink text-surface" : s.read ? "text-emerald" : "bg-line text-ink-soft"
                           )}
                         >
                           {s.read && !cur ? <Icon icon={Check} size={10} strokeWidth={4} /> : s.index + 1}
@@ -202,14 +202,14 @@ export function StudyToolbar({
         <button
           onClick={onToggleSources}
           className={cls(
-            "inline-flex shrink-0 items-center gap-1.5 rounded-control border px-2.5 py-1.5 text-note font-bold transition-colors",
+            "inline-flex shrink-0 items-center gap-1.5 rounded-pill border px-3 py-1.5 text-note font-semibold transition-colors",
             FOCUS,
-            sourcesOpen ? "border-brand bg-brand-soft text-brand-tint" : "border-line text-ink-soft hover:bg-surface-raised hover:text-ink"
+            sourcesOpen ? "border-ink bg-ink text-surface" : "border-line text-ink-2 hover:border-ink hover:text-ink"
           )}
         >
           <Icon icon={sourcesOpen ? X : FolderOpen} size={15} />
           <span className="hidden sm:inline">{t("sourcesBtn")}</span>
-          <span className="font-data tabular-nums text-micro text-ink-faint">{sourcesCount}</span>
+          <span className="font-data tabular-nums text-micro opacity-70">{sourcesCount}</span>
         </button>
       )}
     </div>

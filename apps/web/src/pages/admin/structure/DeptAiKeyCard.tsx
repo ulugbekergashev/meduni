@@ -2,7 +2,7 @@ import { useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { ExternalLink, KeyRound, RefreshCw, ShieldAlert, ShieldCheck, Trash2 } from "lucide-react";
-import { Button, Card, Icon, Input, Modal, Spinner, useToast } from "@meduni/ui";
+import { Button, Icon, Input, Modal, Spinner, cls, useToast } from "@meduni/ui";
 import { ConfirmDialog } from "../../../components/ConfirmDialog";
 import { Field } from "../../../components/Field";
 import { api, apiErrorMessage } from "../../../lib/api";
@@ -129,14 +129,14 @@ export function DeptAiKeyCard({ deptId, canManage }: { deptId: number; canManage
   const [confirmRemove, setConfirmRemove] = useState(false);
 
   if (status.isLoading) {
-    return <Card className="flex h-20 items-center justify-center"><Spinner size={20} /></Card>;
+    return <section className="flex h-full min-h-20 items-center justify-center rounded-card border border-line bg-surface"><Spinner size={20} /></section>;
   }
   if (status.isError || !status.data) {
     return (
-      <Card className="flex items-center justify-between gap-3">
+      <section className="flex h-full items-center justify-between gap-3 rounded-card border border-line bg-surface p-4">
         <p className="text-note text-rose">{t("loadError")}</p>
         <Button size="sm" variant="ghost" onClick={() => status.refetch()}>{t("retry")}</Button>
-      </Card>
+      </section>
     );
   }
 
@@ -144,24 +144,26 @@ export function DeptAiKeyCard({ deptId, canManage }: { deptId: number; canManage
   const date = (iso: string | null) => (iso ? formatDate(locale, iso, "shortYear") : "");
 
   return (
-    <Card>
+    // Kalit yo‘q — bu kafedra AI ishlata olmaydi: pastel amber urg‘u (diqqat).
+    <section className={cls("h-full rounded-card p-4", s.configured ? "border border-line bg-surface" : "bg-amber-soft")}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex min-w-0 items-start gap-3">
           <div
-            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-control ${
-              s.configured ? "bg-emerald-soft text-emerald" : "bg-amber-soft text-amber"
-            }`}
+            className={cls(
+              "flex h-9 w-9 shrink-0 items-center justify-center rounded-full",
+              s.configured ? "bg-emerald-soft text-emerald" : "bg-surface/70 text-amber"
+            )}
           >
             <Icon icon={s.configured ? ShieldCheck : ShieldAlert} size={18} />
           </div>
           <div className="min-w-0">
-            <h2 className="text-section font-bold text-ink">{t("title")}</h2>
+            <h2 className="text-section font-semibold text-ink">{t("title")}</h2>
             {s.configured ? (
               <>
                 <p className="mt-0.5 text-body text-ink-2">
                   <span className="font-data">••••{s.last4}</span> · {t("statusSet")}
                 </p>
-                <p className="mt-0.5 text-note text-ink-faint">
+                <p className="mt-0.5 text-note text-ink-soft">
                   {[
                     s.setByName ? t("setBy", { name: s.setByName }) : null,
                     s.setAt ? t("setAt", { date: date(s.setAt) }) : null,
@@ -172,7 +174,7 @@ export function DeptAiKeyCard({ deptId, canManage }: { deptId: number; canManage
                 </p>
               </>
             ) : (
-              <p className="mt-0.5 text-note text-ink-soft">
+              <p className="mt-0.5 text-note text-ink-2">
                 {s.platformFallback ? t("whyFallback") : t("whyMissing")}
               </p>
             )}
@@ -231,6 +233,6 @@ export function DeptAiKeyCard({ deptId, canManage }: { deptId: number; canManage
         }
         onClose={() => setConfirmRemove(false)}
       />
-    </Card>
+    </section>
   );
 }

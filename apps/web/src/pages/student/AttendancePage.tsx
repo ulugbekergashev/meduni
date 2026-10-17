@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { CalendarCheck, CalendarDays } from "lucide-react";
 import { Icon } from "@meduni/ui";
 import { SubNav } from "../../components/SubNav";
+import { PageHeader } from "../../components/bento";
 import { AttendanceSection } from "./AttendanceSection";
 import { SchedulePage } from "./SchedulePage";
 
@@ -11,12 +12,13 @@ import { SchedulePage } from "./SchedulePage";
  *  Bo'limlar yon paneldagi ikkinchi darajada (mobilda — segmented tasma). */
 export function AttendancePage() {
   const { t } = useTranslation(undefined, { keyPrefix: "attendanceMe" });
+  const { t: ts } = useTranslation(undefined, { keyPrefix: "schedule" });
   const [params] = useSearchParams();
   const sub = params.get("sub") === "jadval" ? "jadval" : "davomat";
 
   return (
     <div>
-      <h1 className="mb-3 text-h1 font-bold text-ink">{t("title")}</h1>
+      <PageHeader title={t("title")} subtitle={sub === "jadval" ? ts("subtitle") : t("subtitle")} />
 
       <SubNav
         title={t("title")}

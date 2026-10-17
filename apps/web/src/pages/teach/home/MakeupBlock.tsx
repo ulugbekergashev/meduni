@@ -1,7 +1,8 @@
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { Check, ClipboardCheck, X } from "lucide-react";
-import { Button, Card, Icon, Num, cls, useToast } from "@meduni/ui";
+import { Button, Icon, useToast } from "@meduni/ui";
+import { BentoCard, BentoRow } from "../../../components/bento";
 import { apiErrorMessage } from "../../../lib/api";
 import { useLocale } from "../../../lib/useLocale";
 import { formatDate } from "../../../lib/date";
@@ -28,45 +29,46 @@ export function MakeupBlock() {
   if (q.isLoading || rows.length === 0) return null;
 
   return (
-    <Card className="p-0">
-      <div className="flex items-center gap-2 border-b border-line px-4 py-3">
-        <Icon icon={ClipboardCheck} size={15} className="text-ink-faint" />
-        <p className="text-note font-bold text-ink">{t("queueTitle")}</p>
-        <span className="ml-auto rounded-pill bg-amber-soft px-2 py-0.5 text-micro font-semibold text-amber">
-          <Num>{rows.length}</Num>
-        </span>
-      </div>
-      {rows.map((m, i) => (
-        <div key={m.id} className={cls("flex flex-wrap items-center gap-2 px-4 py-3", i > 0 && "border-t border-line-soft")}>
-          <button
-            onClick={() => navigate(`/teach/students/${m.studentId}`)}
-            className="min-w-0 flex-1 rounded-control text-left transition-colors hover:bg-bg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
-          >
-            <p className="truncate text-note text-ink">{m.studentName}</p>
-            <p className="truncate text-micro text-ink-faint">
-              {m.topicTitle ?? m.courseName} · <Num>{formatDate(locale, m.date, "short")}</Num> · <Num>{m.hours}</Num> {t("hours")} ·{" "}
-              {t(`kind${m.kind}`)}
-            </p>
-          </button>
-          <div className="flex shrink-0 gap-1.5">
-            <Button
-              size="sm"
-              variant="ghost"
-              disabled={review.isPending}
-              onClick={() => review.mutate({ id: m.id, accept: false }, { onError: (e) => show(apiErrorMessage(e, locale) ?? "Xatolik", "warn") })}
-            >
-              <Icon icon={X} size={14} /> {t("reject")}
-            </Button>
-            <Button
-              size="sm"
-              disabled={review.isPending}
-              onClick={() => review.mutate({ id: m.id, accept: true }, { onError: (e) => show(apiErrorMessage(e, locale) ?? "Xatolik", "warn") })}
-            >
-              <Icon icon={Check} size={14} /> {t("accept")}
-            </Button>
-          </div>
-        </div>
-      ))}
-    </Card>
+    <BentoCard title={t("queueTitle")} count={rows.length} bodyClassName="px-2 pb-3">
+      <ul className="space-y-0.5">
+        {rows.map((m) => (
+          <li key={m.id}>
+            <BentoRow
+              icon={ClipboardCheck}
+              iconTone="bg-amber-soft text-amber"
+              title={m.studentName}
+              sub={
+                <>
+                  {m.topicTitle ?? m.courseName} · {formatDate(locale, m.date, "short")} · {m.hours} {t("hours")} · {t(`kind${m.kind}`)}
+                </>
+              }
+              onClick={() => navigate(`/teach/students/${m.studentId}`)}
+              arrow={false}
+              trailing={
+                <span className="flex shrink-0 gap-1.5">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    disabled={review.isPending}
+                    aria-label={t("reject")}
+                    onClick={() => review.mutate({ id: m.id, accept: false }, { onError: (e) => show(apiErrorMessage(e, locale) ?? "Xatolik", "warn") })}
+                  >
+                    <Icon icon={X} size={14} /> <span className="hidden sm:inline">{t("reject")}</span>
+                  </Button>
+                  <Button
+                    size="sm"
+                    disabled={review.isPending}
+                    aria-label={t("accept")}
+                    onClick={() => review.mutate({ id: m.id, accept: true }, { onError: (e) => show(apiErrorMessage(e, locale) ?? "Xatolik", "warn") })}
+                  >
+                    <Icon icon={Check} size={14} /> <span className="hidden sm:inline">{t("accept")}</span>
+                  </Button>
+                </span>
+              }
+            />
+          </li>
+        ))}
+      </ul>
+    </BentoCard>
   );
 }

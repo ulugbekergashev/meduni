@@ -2,7 +2,7 @@ import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { motion, useReducedMotion, type Variants } from "framer-motion";
-import { AtSign, BookOpen, ClipboardCheck, Lock, LogIn, Stethoscope } from "lucide-react";
+import { ArrowRight, AtSign, BookOpen, ClipboardCheck, FileText, GraduationCap, Lock, LogIn, Sparkles, Stethoscope, UserCheck } from "lucide-react";
 
 import { LocaleSwitcher } from "../components/LocaleSwitcher";
 import { roleHome, useLogin } from "../lib/auth";
@@ -33,10 +33,20 @@ const item: Variants = {
   show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 26 } },
 };
 
+// Dizayn v3: har imkoniyat — o'z pastel kartochkasi (bento), tekis brend
+// paneli o'rniga. Ton ma'noli: kontent=violet, amaliyot=amber, nazorat=emerald.
+/** Platformaning ishlash oqimi — hero ichida (panelBody aytgan zanjir). */
+const FLOW = [
+  { icon: FileText, key: "flowMaterial" },
+  { icon: Sparkles, key: "flowAi" },
+  { icon: UserCheck, key: "flowTeacher" },
+  { icon: GraduationCap, key: "flowStudent" },
+] as const;
+
 const FEATURES = [
-  { icon: BookOpen, key: "featContent" },
-  { icon: Stethoscope, key: "featPractice" },
-  { icon: ClipboardCheck, key: "featControl" },
+  { icon: BookOpen, key: "featContent", tone: "bg-violet-soft", chip: "bg-surface/70 text-violet" },
+  { icon: Stethoscope, key: "featPractice", tone: "bg-amber-soft", chip: "bg-surface/70 text-amber" },
+  { icon: ClipboardCheck, key: "featControl", tone: "bg-emerald-soft", chip: "bg-surface/70 text-emerald" },
 ] as const;
 
 export function Login() {
@@ -83,16 +93,16 @@ export function Login() {
         >
           <motion.div variants={item} className="mb-9 flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <span className="flex h-9 w-9 items-center justify-center rounded-control bg-brand text-body font-bold text-white">
+              <span className="flex h-9 w-9 items-center justify-center rounded-control bg-ink text-body font-semibold text-surface">
                 M
               </span>
-              <span className="text-section font-bold tracking-tight text-ink">MedUni AI</span>
+              <span className="text-section font-semibold tracking-tight text-ink">MedUni AI</span>
             </div>
             <LocaleSwitcher />
           </motion.div>
 
           <motion.div variants={item} className="mb-7">
-            <h1 className="text-h1 font-bold leading-tight text-ink">{t("subtitle")}</h1>
+            <h1 className="text-h1 font-semibold leading-tight text-ink">{t("subtitle")}</h1>
             <p className="mt-1.5 text-note text-ink-soft">{t("hint")}</p>
           </motion.div>
 
@@ -153,10 +163,10 @@ export function Login() {
             <button
               type="submit"
               disabled={login.isPending}
-              className="mt-1 flex h-10 w-full items-center justify-center gap-2 rounded-control bg-brand text-note font-bold text-white transition-colors hover:bg-brand-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-bg disabled:pointer-events-none disabled:opacity-60"
+              className="mt-1 flex h-11 w-full items-center justify-center gap-2 rounded-pill bg-ink text-note font-semibold text-surface transition-colors hover:bg-ink-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-bg disabled:pointer-events-none disabled:opacity-60"
             >
               {login.isPending ? (
-                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-surface/40 border-t-surface" />
               ) : (
                 <LogIn size={16} />
               )}
@@ -166,29 +176,46 @@ export function Login() {
         </motion.div>
       </div>
 
-      {/* ───────────────── O'ng: brend paneli ─────────────────
-          Bitta tekis brend yuzasi. Gradient dog'lar va cheksiz pulsatsiya
-          yo'q — ular ekranda eng ko'p harakat qiladigan, lekin hech narsa
-          aytmaydigan qism edi. */}
-      <div className="hidden flex-1 items-center justify-center bg-brand px-12 lg:flex">
-        <div className="max-w-md">
-          <h2 className="text-h1 font-bold leading-tight text-white">{t("panelTitle")}</h2>
-          <p className="mt-3 text-body leading-relaxed text-white/80">{t("panelBody")}</p>
-
-          <ul className="mt-8 flex flex-col gap-4">
-            {FEATURES.map(({ icon: Ico, key }) => (
-              <li key={key} className="flex items-start gap-3">
-                <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-control bg-white/15 text-white">
-                  <Ico size={16} />
-                </span>
-                <div className="min-w-0">
-                  <p className="text-note font-bold text-white">{t(`${key}Title`)}</p>
-                  <p className="mt-0.5 text-micro text-white/70">{t(`${key}Body`)}</p>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
+      {/* ───────────────── O'ng: bento paneli ─────────────────
+          Dizayn v3 «Pastel bento»: ilova ichidagi kabi bloklar — bitta
+          brand-soft hero va uchta pastel imkoniyat kartasi. Animatsiya
+          faqat kirishda (stagger), loop yo'q. */}
+      <div className="hidden flex-1 justify-center p-3 lg:flex">
+        <motion.div
+          variants={stagger}
+          initial={reduce ? false : "hidden"}
+          animate="show"
+          className="grid w-full max-w-5xl grid-cols-3 content-center gap-3 self-center"
+        >
+          <motion.div variants={item} className="col-span-3 flex min-h-80 flex-col justify-between gap-10 rounded-card bg-brand-soft p-10">
+            <ol className="flex flex-wrap items-center gap-2">
+              {FLOW.map(({ icon: Ico, key }, i) => (
+                <li key={key} className="flex items-center gap-2">
+                  <span className="inline-flex items-center gap-2 rounded-pill bg-surface/80 py-1.5 pl-1.5 pr-3.5 text-note font-semibold text-ink">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-ink text-surface">
+                      <Ico size={14} />
+                    </span>
+                    {t(key)}
+                  </span>
+                  {i < FLOW.length - 1 && <ArrowRight size={16} className="text-brand-deep" aria-hidden />}
+                </li>
+              ))}
+            </ol>
+            <div>
+            <h2 className="max-w-xl text-h1 font-semibold leading-tight text-ink">{t("panelTitle")}</h2>
+            <p className="mt-3 max-w-xl text-body leading-relaxed text-ink-2">{t("panelBody")}</p>
+            </div>
+          </motion.div>
+          {FEATURES.map(({ icon: Ico, key, tone, chip }) => (
+            <motion.div key={key} variants={item} className={`flex min-h-44 flex-col rounded-card p-5 ${tone}`}>
+              <span className={`flex h-10 w-10 items-center justify-center rounded-full ${chip}`}>
+                <Ico size={18} />
+              </span>
+              <p className="mt-auto pt-6 text-body font-semibold text-ink">{t(`${key}Title`)}</p>
+              <p className="mt-1 text-note text-ink-2">{t(`${key}Body`)}</p>
+            </motion.div>
+          ))}
+        </motion.div>
       </div>
     </div>
   );

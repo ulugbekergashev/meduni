@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, CheckCircle2, ChevronDown, Clock, FlaskConical, HeartPulse, ListPlus, Search, Sparkles, Stethoscope, User } from "lucide-react";
-import { Badge, Button, Card, Icon, Spinner, cls, useToast } from "@meduni/ui";
+import { CheckCircle2, ChevronDown, Clock, FlaskConical, HeartPulse, ListPlus, Search, Sparkles, Stethoscope, User } from "lucide-react";
+import { Badge, Button, Card, Icon, Segmented, Spinner, cls, useToast } from "@meduni/ui";
 import { AsyncSection } from "../../components/AsyncSection";
+import { PageHeader } from "../../components/bento";
+import { BackLink } from "./BackLink";
 import { Disclosure } from "../../components/Disclosure";
 import { QuickTaskModal } from "../../components/QuickTaskModal";
 import {
@@ -202,9 +204,10 @@ function QueueCard({ item, active, onClick }: { item: QueueItem; active: boolean
     <button
       onClick={onClick}
       className={cls(
-        "w-full rounded-control border p-3 text-left transition-all",
-        active ? "border-brand bg-brand-soft" : "border-line bg-surface hover:border-brand/40"
+        "w-full rounded-card border p-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
+        active ? "border-transparent bg-brand-soft" : "border-line bg-surface hover:border-ink-faint"
       )}
+      aria-current={active ? "true" : undefined}
     >
       <div className="flex items-center justify-between gap-2">
         <p className="truncate text-note font-semibold text-ink">{item.studentName}</p>
@@ -297,16 +300,14 @@ function ReviewPanel({ id, onSavedNext, onClose }: { id: number; onSavedNext: ()
   if (detailQ.isError || !detail) return <Card><p className="py-6 text-center text-note text-rose">{t("loadError")}</p></Card>;
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between gap-2 lg:hidden">
-        <button onClick={onClose} className="flex items-center gap-1 text-note font-medium text-brand-deep">
-          <Icon icon={ArrowLeft} size={15} /> {t("backToQueue")}
-        </button>
+    <div className="space-y-3">
+      <div className="lg:hidden">
+        <BackLink onClick={onClose}>{t("backToQueue")}</BackLink>
       </div>
 
       <div>
         <div className="flex items-center gap-2">
-          <h2 className="text-body font-bold text-ink">{detail.studentName}</h2>
+          <h2 className="text-section font-semibold text-ink">{detail.studentName}</h2>
           {detail.status === "REVIEWED" && <Badge tone="emerald">{t("reviewed")}: {detail.score}</Badge>}
         </div>
         <p className="text-micro text-ink-faint">
@@ -347,7 +348,7 @@ function ReviewPanel({ id, onSavedNext, onClose }: { id: number; onSavedNext: ()
       {detail.patientSession && <PatientSessionCard session={detail.patientSession} />}
 
       {/* Grade Sticky Bottom */}
-      <div className="sticky bottom-0 z-20 mt-3 border-t-2 border-brand/20 bg-surface p-5 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] sm:rounded-card">
+      <div className="sticky bottom-0 z-20 mt-3 rounded-card border border-line-raised bg-surface p-4">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           
           <div className="flex flex-1 flex-col gap-3">
@@ -360,7 +361,8 @@ function ReviewPanel({ id, onSavedNext, onClose }: { id: number; onSavedNext: ()
                   max={100}
                   value={score}
                   onChange={(e) => { setScore(e.target.value); setErr(null); }}
-                  className="w-28 rounded-[8px] border-2 border-line bg-white px-3 py-2 text-body font-black outline-none transition-all focus:border-brand focus:ring-4 focus:ring-brand/10"
+                  aria-label={t("score")}
+                  className="w-28 rounded-control border border-line-raised bg-surface-raised px-3 py-2 text-body font-black text-ink outline-none transition-colors focus:border-brand focus:bg-surface"
                   placeholder="0–100"
                 />
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-note font-bold text-ink-faint">/ 100</span>
@@ -372,14 +374,16 @@ function ReviewPanel({ id, onSavedNext, onClose }: { id: number; onSavedNext: ()
               onChange={(e) => setFeedback(e.target.value)}
               placeholder={t("feedbackPlaceholder")}
               rows={2}
-              className="w-full rounded-[8px] border-2 border-line bg-white px-3 py-2 text-note outline-none transition-all focus:border-brand focus:ring-4 focus:ring-brand/10 resize-y"
+              aria-label={t("feedbackPlaceholder")}
+              className="w-full resize-y rounded-control border border-line-raised bg-surface-raised px-3 py-2 text-note text-ink outline-none transition-colors focus:border-brand focus:bg-surface"
             />
             <div className="flex flex-wrap gap-1.5">
               {templates.map((tpl) => (
                 <button
                   key={tpl}
                   onClick={() => setFeedback((f) => (f ? f + " " : "") + tpl)}
-                  className="rounded-pill border border-line bg-white px-3 py-1 text-micro font-medium text-ink-soft transition-colors hover:border-brand/40 hover:bg-brand-soft hover:text-brand-deep"
+                  type="button"
+                  className="rounded-pill bg-surface-raised px-3 py-1 text-micro font-semibold text-ink-2 transition-colors hover:bg-brand-soft hover:text-brand-deep focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                 >
                   + {tpl}
                 </button>
@@ -388,15 +392,15 @@ function ReviewPanel({ id, onSavedNext, onClose }: { id: number; onSavedNext: ()
             {err && <p className="text-micro font-bold text-rose">{err}</p>}
           </div>
 
-          <div className="flex flex-col gap-2 sm:w-[180px]">
-            <Button onClick={() => save(true)} disabled={review.isPending} className="w-full hover:-translate-y-0.5 transition-all text-note font-bold">
+          <div className="flex flex-col gap-2 sm:w-[230px]">
+            <Button size="lg" onClick={() => save(true)} disabled={review.isPending} className="h-auto min-h-10 w-full py-2 text-note leading-tight">
               <Icon icon={CheckCircle2} size={18} /> {t("saveAndNext")}
             </Button>
-            <Button variant="soft" onClick={() => save(false)} disabled={review.isPending} className="w-full h-[40px]">
+            <Button size="lg" variant="ghost" onClick={() => save(false)} disabled={review.isPending} className="w-full rounded-pill text-note">
               {t("saveOnly")}
             </Button>
-            <div className="flex items-center justify-between mt-1">
-              <button onClick={() => setAssign(true)} className="text-micro font-medium text-brand-deep hover:underline">
+            <div className="mt-1 flex items-center justify-between">
+              <button type="button" onClick={() => setAssign(true)} className="text-micro font-semibold text-brand-tint hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
                 <Icon icon={ListPlus} size={14} className="inline mr-1 mb-0.5" />{t("assignTask")}
               </button>
               <button onClick={onSavedNext} className="text-micro font-medium text-ink-faint hover:text-ink">
@@ -453,23 +457,34 @@ export function CaseReviewQueue() {
 
   return (
     <div>
-      <button onClick={() => navigate("/teach")} className="mb-3 flex items-center gap-1 text-note font-medium text-brand-deep hover:underline">
-        <Icon icon={ArrowLeft} size={15} /> {t("back")}
-      </button>
-      <h1 className="text-h1 font-bold text-ink">{t("title")}</h1>
+      <BackLink onClick={() => navigate("/teach")}>{t("back")}</BackLink>
+      <PageHeader className="mb-0 mt-2" title={t("title")} />
 
       {/* Filtrlar — sukut bo'yicha faqat holat + qidiruv (navbat FIFO ishlaydi).
           Kurs/mavzu/tartib kamdan-kam kerak → "Batafsil" ostida (5 boshqaruv
           bir qatorda turgani sahifani og'irlashtirardi). */}
-      <div className="mt-4 flex flex-wrap items-center gap-2">
-        <select value={query.status} onChange={(e) => patch({ status: e.target.value as QueueQuery["status"] })} className="rounded-control border border-line bg-surface px-2 py-2 text-note outline-none focus:border-brand">
-          <option value="PENDING">{t("pending")}</option>
-          <option value="REVIEWED">{t("reviewed")}</option>
-          <option value="all">{t("all")}</option>
-        </select>
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <div className="max-w-full overflow-x-auto">
+          <Segmented
+            value={query.status}
+            onChange={(v) => patch({ status: v })}
+            aria-label={t("pending")}
+            options={[
+              { key: "PENDING", label: t("pending") },
+              { key: "REVIEWED", label: t("reviewed") },
+              { key: "all", label: t("all") },
+            ]}
+          />
+        </div>
         <div className="relative min-w-[160px] flex-1">
-          <Icon icon={Search} size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-faint" />
-          <input value={query.search} onChange={(e) => patch({ search: e.target.value })} placeholder={t("searchStudent")} className="w-full rounded-control border border-line bg-surface py-2 pl-9 pr-3 text-note outline-none focus:border-brand" />
+          <Icon icon={Search} size={15} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-faint" />
+          <input
+            value={query.search}
+            onChange={(e) => patch({ search: e.target.value })}
+            placeholder={t("searchStudent")}
+            aria-label={t("searchStudent")}
+            className="h-10 w-full rounded-pill border border-line bg-surface pl-10 pr-4 text-note text-ink outline-none transition-colors focus:border-brand"
+          />
         </div>
       </div>
       <Disclosure
@@ -494,7 +509,7 @@ export function CaseReviewQueue() {
       </Disclosure>
 
       {/* Two-pane */}
-      <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,35%)_minmax(0,1fr)]">
+      <div className="mt-3 grid gap-3 lg:grid-cols-[minmax(0,35%)_minmax(0,1fr)]">
         {/* Queue (hidden on mobile when a card is selected) */}
         <div className={cls(selected !== null && "hidden lg:block")}>
           <AsyncSection

@@ -2,9 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { ArrowRight, CalendarClock, Check, CheckCircle2, Repeat, X } from "lucide-react";
-import { Card, EmptyState, Icon, ProgressRing, Spinner, cls } from "@meduni/ui";
-import { HeroTile, RailCard } from "../../../components/HeroStats";
+import { CalendarClock, Check, CheckCircle2, Repeat, X } from "lucide-react";
+import { Button, EmptyState, Icon, ProgressRing, cls } from "@meduni/ui";
+import { BentoCard, BentoRow, MetricTile } from "../../../components/bento";
 import { formatDate } from "../../../lib/date";
 import { useLocale } from "../../../lib/useLocale";
 import { CardFace } from "../lesson/FlashcardsTab";
@@ -60,12 +60,12 @@ function SessionPlayer({ cards, onDone }: { cards: ReviewSessionCard[]; onDone: 
       {/* Jarayon + mavzu konteksti */}
       <div className="space-y-2">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-          <span className="text-note font-extrabold text-ink-dim">
+          <span className="text-note font-semibold tabular-nums text-ink-soft">
             {tl("cardOf", { n: i + 1, total: cards.length })}
           </span>
-          <span className="inline-flex min-w-0 items-center gap-1.5 rounded-pill bg-brand-soft px-2.5 py-0.5 text-note font-bold text-brand-tint">
+          <span className="inline-flex min-w-0 items-center gap-1.5 rounded-pill bg-brand-soft px-2.5 py-0.5 text-note font-semibold text-brand-deep">
             <span className="truncate">{card.topicTitle}</span>
-            <span className="shrink-0 text-ink-dim">· {card.subjectName}</span>
+            <span className="shrink-0 text-ink-soft">· {card.subjectName}</span>
           </span>
         </div>
         <div className="flex gap-1">
@@ -78,7 +78,7 @@ function SessionPlayer({ cards, onDone }: { cards: ReviewSessionCard[]; onDone: 
               key={`${c.topicId}:${c.key}`}
               className={cls(
                 "h-1.5 flex-1 rounded-pill transition-colors",
-                n < i ? "bg-emerald" : n === i ? "bg-brand" : "bg-line-raised"
+                n < i ? "bg-ink" : n === i ? "bg-ink/40" : "bg-ink/10"
               )}
             />
           ))}
@@ -105,21 +105,23 @@ function SessionPlayer({ cards, onDone }: { cards: ReviewSessionCard[]; onDone: 
       <div className="space-y-2">
         <div className="flex items-center gap-2">
           <button
+            type="button"
             onClick={() => answer(false)}
-            className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-control border border-rose text-body font-bold text-rose transition-colors hover:bg-rose-soft"
+            className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-pill border border-rose/40 text-body font-semibold text-rose transition-colors hover:bg-rose-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
           >
             <Icon icon={X} size={18} strokeWidth={3} />
             {tl("cardDontKnow")}
           </button>
-          <button
+          <Button
+            size="lg"
             onClick={() => answer(true)}
-            className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-control bg-emerald text-body font-extrabold text-white transition-opacity hover:opacity-90"
+            className="h-12 flex-1"
+            icon={<Icon icon={Check} size={18} strokeWidth={3} />}
           >
-            <Icon icon={Check} size={18} strokeWidth={3} />
             {tl("cardKnow")}
-          </button>
+          </Button>
         </div>
-        <p className="text-center text-micro text-ink-dim">{t("kbHint")}</p>
+        <p className="text-center text-micro text-ink-soft">{t("kbHint")}</p>
       </div>
     </div>
   );
@@ -149,34 +151,31 @@ export function ReviewTab() {
   };
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
-      <div className="min-w-0 space-y-4">
-        {/* STAT DIETASI: 4 tile ham filtr emas edi — asosiy amal kartani
-            takrorlash. Bitta tile ("bugun takrorlash kerak") + xulosa qatori. */}
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,220px)_1fr] sm:items-center">
-          <HeroTile
-            icon={Repeat}
-            value={String(stats?.dueNow ?? "—")}
-            label={t("statDue")}
-            tone={stats && stats.dueNow > 0 ? "bg-brand-soft text-brand-tint" : "bg-surface text-ink-faint"}
-          />
-          <p className="text-note text-ink-soft">
-            {t("summaryLine", {
-              today: stats?.reviewedToday ?? 0,
-              known: stats?.knownPct ?? 0,
-              next: stats?.nextDueAt ? fmt(stats.nextDueAt) : "—",
-            })}
-          </p>
-        </div>
+    <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_340px]">
+      <div className="min-w-0 space-y-3">
+        {/* STAT DIETASI: bitta ko'rsatkich ("bugun takrorlash kerak") + xulosa
+            qatori izohda — asosiy amal kartani takrorlash. */}
+        <MetricTile
+          size="stat"
+          tone={stats && stats.dueNow > 0 ? "brand" : "plain"}
+          label={t("statDue")}
+          value={stats?.dueNow ?? null}
+          sub={t("summaryLine", {
+            today: stats?.reviewedToday ?? 0,
+            known: stats?.knownPct ?? 0,
+            next: stats?.nextDueAt ? fmt(stats.nextDueAt) : "—",
+          })}
+        />
 
         {/* Sessiya / natija / bo'sh holat */}
-        <Card className="p-5 sm:p-6">
-          {sessionQ.isLoading ? (
-            <div className="flex justify-center py-12">
-              <Spinner size={24} />
-            </div>
-          ) : result ? (
-            <div className="mx-auto flex max-w-[440px] flex-col items-center gap-4 py-6 text-center">
+        <BentoCard
+          isLoading={sessionQ.isLoading}
+          isError={sessionQ.isError}
+          onRetry={() => sessionQ.refetch()}
+          bodyClassName="p-4 sm:p-6"
+        >
+          {result ? (
+            <div className="mx-auto flex max-w-md flex-col items-center gap-4 py-6 text-center">
               <ProgressRing
                 value={result.total ? Math.round((result.known / result.total) * 100) : 0}
                 size={120}
@@ -184,68 +183,55 @@ export function ReviewTab() {
                 tone="emerald"
               />
               <div>
-                <p className="text-section font-extrabold text-ink">{t("sessionDoneTitle")}</p>
+                <p className="text-section font-semibold text-ink">{t("sessionDoneTitle")}</p>
                 <p className="mt-1 text-body text-ink-soft">
                   {t("sessionDoneHint", { n: result.known, total: result.total })}
                 </p>
               </div>
-              <button
-                onClick={restart}
-                className="inline-flex items-center gap-2 rounded-control border border-line px-5 py-2.5 text-body font-bold text-ink-soft transition-colors hover:bg-surface-raised hover:text-ink"
-              >
-                <Icon icon={Repeat} size={16} />
+              <Button size="lg" onClick={restart} icon={<Icon icon={Repeat} size={16} />}>
                 {t("checkMore")}
-              </button>
+              </Button>
             </div>
           ) : cards.length > 0 ? (
             <SessionPlayer key={cards.map((c) => `${c.topicId}:${c.key}`).join("|")} cards={cards} onDone={finish} />
           ) : (
-            <div className="py-6">
-              <EmptyState
-                icon={<Icon icon={CheckCircle2} size={24} />}
-                text={t("emptyTitle")}
-                hint={
-                  stats?.nextDueAt
-                    ? t("emptyNext", { date: fmt(stats.nextDueAt) })
-                    : t("emptyNoUpcoming")
-                }
-              />
-            </div>
+            <EmptyState
+              icon={<Icon icon={CheckCircle2} size={24} />}
+              text={t("emptyTitle")}
+              hint={stats?.nextDueAt ? t("emptyNext", { date: fmt(stats.nextDueAt) }) : t("emptyNoUpcoming")}
+            />
           )}
-        </Card>
+        </BentoCard>
       </div>
 
       {/* O'ng ustun — kelgusi takrorlar jadvali */}
-      <aside className="min-w-0 space-y-4">
-        <RailCard title={t("upcomingTitle")} icon={CalendarClock}>
+      <aside className="min-w-0 space-y-3">
+        <BentoCard
+          title={t("upcomingTitle")}
+          isLoading={statsQ.isLoading}
+          isError={statsQ.isError}
+          onRetry={() => statsQ.refetch()}
+          bodyClassName="px-2 pb-2"
+        >
           {(stats?.upcoming ?? []).length === 0 ? (
-            <p className="px-4 py-4 text-note text-ink-faint">{t("upcomingEmpty")}</p>
+            <p className="px-2 py-3 text-note text-ink-soft">{t("upcomingEmpty")}</p>
           ) : (
-            <div className="divide-y divide-line">
+            <ul>
               {stats!.upcoming.slice(0, 8).map((u) => (
-                <button
-                  key={u.topicId}
-                  onClick={() => navigate(`/app/topics/${u.topicId}?view=flashcards`)}
-                  className="group flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-surface-raised"
-                >
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-body font-semibold text-ink">{u.topicTitle}</p>
-                    <p className="truncate text-note text-ink-faint">{u.subjectName}</p>
-                  </div>
-                  <div className="shrink-0 text-right">
-                    <p className="text-body font-bold font-data tabular-nums text-ink">{u.count}</p>
-                    <p className="text-micro font-data tabular-nums text-ink-faint">{fmt(u.nextDueAt)}</p>
-                  </div>
-                  <Icon
-                    icon={ArrowRight}
-                    size={15}
-                    className="shrink-0 text-ink-dim transition-transform group-hover:translate-x-0.5"
+                <li key={u.topicId}>
+                  <BentoRow
+                    icon={CalendarClock}
+                    iconTone="bg-violet-soft text-violet"
+                    title={u.topicTitle}
+                    sub={`${u.subjectName} · ${fmt(u.nextDueAt)}`}
+                    right={u.count}
+                    onClick={() => navigate(`/app/topics/${u.topicId}?view=flashcards`)}
                   />
-                </button>
+                </li>
               ))}
-            </div>
+            </ul>
           )}
-        </RailCard>
+        </BentoCard>
       </aside>
     </div>
   );

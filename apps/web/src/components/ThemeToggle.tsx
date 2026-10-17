@@ -30,7 +30,7 @@ export function ThemeToggle() {
             onClick={() => pick(value)}
             className={cls(
               "flex flex-1 items-center justify-center gap-1.5 px-3 py-2 text-note font-semibold transition-colors",
-              theme === value ? "bg-brand-soft text-brand-deep" : "text-ink-soft hover:bg-bg"
+              theme === value ? "bg-ink text-surface" : "text-ink-soft hover:bg-bg"
             )}
           >
             <Icon icon={icon} size={15} /> {t(value)}

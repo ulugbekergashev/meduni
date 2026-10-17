@@ -14,7 +14,11 @@
     "featPracticeTitle": "Практика и повторение",
     "featPracticeBody": "Виртуальный пациент, карточки и разбор ошибок.",
     "featControlTitle": "Контроль у преподавателя",
-    "featControlBody": "Без утверждения ничего не публикуется; посещаемость и успеваемость на виду."
+    "featControlBody": "Без утверждения ничего не публикуется; посещаемость и успеваемость на виду.",
+    "flowMaterial": "Материал",
+    "flowAi": "AI-конспект и тест",
+    "flowTeacher": "Преподаватель утверждает",
+    "flowStudent": "Студент изучает"
   },
   "nav": {
     "dashboard": "Главная",
@@ -45,7 +49,9 @@
     "theme": "Тёмная тема",
     "language": "Язык",
     "control": "Контроль",
-    "attendanceControl": "Посещаемость"
+    "attendanceControl": "Посещаемость",
+    "collapse": "Свернуть меню",
+    "expand": "Развернуть меню"
   },
   "theme": {
     "label": "Тема оформления",
@@ -619,7 +625,15 @@
     "publishedShort": "контента",
     "timelineEmpty": "В этом периоде активности не было.",
     "aiDetails": "Подробнее",
-    "aiHint": "Расход AI-токенов и примерные затраты по кафедрам."
+    "aiHint": "Расход AI-токенов и примерные затраты по кафедрам.",
+    "heroEyebrow": "Состояние университета",
+    "heroClean": "Всё в порядке",
+    "heroCleanHint": "Отклонений от политики нет, ничего не ждёт решения.",
+    "heroIssues": "Требуется внимание",
+    "issuesWord": "вопр.",
+    "openControl": "Открыть контроль",
+    "controlError": "Данные контроля не загрузились",
+    "pendingWork": "Ждут решения: {{n}}"
   },
   "ai": {
     "title": "AI мониторинг",
@@ -653,7 +667,22 @@
     "costLimit": "Лимит стоимости/мес ($)",
     "cancel": "Отмена",
     "save": "Сохранить",
-    "saved": "Квота сохранена"
+    "saved": "Квота сохранена",
+    "kind": {
+      "DIGEST": "Конспект",
+      "QUIZ": "Тест",
+      "CASE": "Кейс",
+      "SLIDES": "Слайды",
+      "IMAGE": "Изображения",
+      "VIDEO": "Видео",
+      "TTS": "Озвучка",
+      "FACTCHECK": "Фактчек",
+      "PATIENT": "Виртуальный пациент",
+      "PATIENT_EVAL": "Оценка пациента",
+      "TUTOR": "AI-тьютор",
+      "CASE_SUGGEST": "AI-рекомендация",
+      "PODCAST": "Подкаст"
+    }
   },
   "audit": {
     "title": "Аудит",
@@ -741,7 +770,9 @@
     "mkOpenTopic": "Открыть тему",
     "mkSubmit": "Отработал",
     "mkDigestHint": "Сдайте тест по теме на проходной балл",
-    "mkInPersonHint": "Отработайте на кафедре, затем отметьте здесь"
+    "mkInPersonHint": "Отработайте на кафедре, затем отметьте здесь",
+    "excusesEmpty": "Заявок пока нет",
+    "subtitle": "Лимит часов, долги и журнал занятий"
   },
   "profile": {
     "title": "Профиль",
@@ -903,7 +934,28 @@
     "tileStudents": "Студенты",
     "tileCoursesN": "{{n}} курса",
     "tileTopics": "Темы",
-    "tileTopicsCaption": "из {{n}} тем опубликовано {{pct}}%"
+    "tileTopicsCaption": "из {{n}} тем опубликовано {{pct}}%",
+    "goodMorning": "Доброе утро",
+    "goodAfternoon": "Добрый день",
+    "goodEvening": "Добрый вечер",
+    "heroNextLesson": "Следующее занятие",
+    "heroStartsAt": "начало",
+    "heroMarkedOf": "Отмечено {{m}} из {{n}} студентов",
+    "heroRollCall": "Отметить посещаемость",
+    "heroDaysWaiting": "дн. ожидает",
+    "heroFirst": "В первую очередь",
+    "heroOpen": "Открыть",
+    "heroMoreTasks": "Ещё {{n}} задач ниже",
+    "heroAllDone": "На сегодня всё сделано",
+    "heroAllDoneSub": "Нет открытых задач и занятий без отметки.",
+    "heroGoCourses": "К курсам",
+    "nextLessonsTitle": "Ближайшие занятия",
+    "openSchedule": "Расписание",
+    "tileReview": "Кейсы на проверке",
+    "tileReviewSub": "ответы ждут оценки",
+    "tileReviewNone": "очередь пуста",
+    "noGroups": "Групп пока нет",
+    "behindN": "{{n}} отстают"
   },
   "topics": {
     "subjectShared": "Темы принадлежат предмету — все курсы (группы) по этому предмету видят одни и те же темы.",
@@ -1588,7 +1640,31 @@
     "back": "К курсам",
     "noTopics": "Темы ещё не добавлены",
     "topics": "тем",
-    "allDone": "Все темы пройдены!"
+    "allDone": "Все темы пройдены!",
+    "goodMorning": "Доброе утро",
+    "goodAfternoon": "Добрый день",
+    "goodEvening": "Добрый вечер",
+    "topicsOfCourse": "{{done}}/{{total}} тем",
+    "topicDone": "темы пройдено",
+    "overallProgress": "общий прогресс",
+    "nowPill": "Сейчас",
+    "pastPill": "Прошло",
+    "upcomingPill": "Ожидается",
+    "tasksTitle": "Задачи",
+    "allTasks": "Все",
+    "reviewRow": "Повторение: {{topic}}",
+    "coursesTitle": "Курсы",
+    "currentSemester": "текущий семестр",
+    "allCoursesN": "Все ({{count}})",
+    "aiTitle": "AI-тьютор",
+    "aiHint": "Есть вопрос по теме? Тьютор отвечает по конспекту и материалам.",
+    "aiNoTopic": "Задать вопрос тьютору можно, когда открыта тема.",
+    "aiTopic": "Тема: {{topic}}",
+    "aiPlaceholder": "Задайте вопрос…",
+    "aiSend": "Отправить",
+    "masterySub": "средний балл тестов",
+    "attendanceSub": "пропусков нет",
+    "pathTitle": "Путь по темам"
   },
   "leaderboard": {
     "title": "Рейтинг группы",
@@ -2120,7 +2196,9 @@
       "noGroupsHint": "Сначала добавьте группу (раздел Сотрудники).",
       "password": "Пароль",
       "passwordHint": "Оставьте пустым — создастся автоматически."
-    }
+    },
+    "summary": "{{total}} студентов · {{active}} активных · {{groups}} групп",
+    "byFaculty": "По факультетам"
   },
   "aiKey": {
     "title": "Ключ Gemini AI",
@@ -2265,7 +2343,8 @@
     "allDone": "Все пройдено",
     "topics": "тем",
     "summaryLine": "Всего {{all}} курсов · {{done}} завершено · темы {{topicsDone}}/{{topicsTotal}}",
-    "periodFilter": "По периоду"
+    "periodFilter": "По периоду",
+    "currentSemesterTile": "Текущий семестр"
   },
   "practice": {
     "patientTitle": "Практика с виртуальным пациентом",
@@ -2346,7 +2425,8 @@
     "statNextNone": "Занятий больше нет",
     "viewWeek": "Неделя",
     "viewMonth": "Месяц",
-    "summaryLine": "На этой неделе {{total}} занятий · были {{attended}} · пропустили {{missed}}"
+    "summaryLine": "На этой неделе {{total}} занятий · были {{attended}} · пропустили {{missed}}",
+    "summaryLineMonth": "В этом месяце {{total}} занятий · посетили {{attended}} · пропустили {{missed}}"
   },
   "mistakes": {
     "title": "Карта ошибок группы",
@@ -2612,6 +2692,7 @@
       "ACTIVE": "Идёт",
       "FINISHED": "Завершён",
       "CANCELLED": "Отменён"
-    }
+    },
+    "noGroups": "Групп нет"
   }
 }

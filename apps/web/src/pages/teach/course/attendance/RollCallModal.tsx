@@ -150,14 +150,14 @@ export function RollCallModal({
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder={t("searchStudent")}
-                className="w-full rounded-control border-2 border-line bg-surface py-2.5 pl-10 pr-4 text-body outline-none transition-all focus:border-brand focus:ring-4 focus:ring-brand/10"
+                className="w-full rounded-pill border border-line bg-surface py-2.5 pl-10 pr-4 text-body text-ink outline-none transition-colors focus:border-brand"
               />
             </div>
           )}
 
           <div className={cls("max-h-[50vh] space-y-2 overflow-y-auto pr-1", cancelled && "pointer-events-none opacity-45")}>
             {filtered.map((st) => (
-              <div key={st.id} className="flex flex-col gap-2 rounded-[12px] border border-line bg-surface p-3 transition-all hover:border-brand/30 sm:flex-row sm:items-center sm:gap-3">
+              <div key={st.id} className="flex flex-col gap-2 rounded-card border border-line bg-surface p-3 transition-colors hover:border-line-raised sm:flex-row sm:items-center sm:gap-3">
                 <span className="min-w-0 flex-1 truncate pl-1 text-body font-bold text-ink">
                   {st.fullName}
                   {st.selfMarked && (
@@ -175,9 +175,11 @@ export function RollCallModal({
                     return (
                       <button
                         key={status}
+                        type="button"
+                        aria-pressed={on}
                         onClick={() => setOne(st.id, status)}
                         className={cls(
-                          "flex-1 rounded-[8px] border-2 px-3 py-2.5 text-note font-black transition-all active:scale-95 sm:flex-none sm:px-5 sm:py-2",
+                          "flex-1 rounded-pill border-2 px-3 py-2.5 text-note font-black transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand active:scale-95 sm:flex-none sm:px-5 sm:py-2",
                           on ? `${meta.solid} scale-[1.02] border-transparent` : "border-line bg-surface text-ink-soft hover:bg-bg hover:text-ink"
                         )}
                       >

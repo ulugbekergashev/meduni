@@ -308,7 +308,7 @@ export function FlashcardsTab({ topicId }: { topicId: number }) {
                 setI(firstUnknown);
                 setKeepReviewing(true);
               }}
-              className="inline-flex items-center gap-2 rounded-control bg-brand px-5 py-2.5 text-body font-bold text-white transition-colors hover:bg-brand-deep"
+              className="inline-flex items-center gap-2 rounded-pill bg-ink px-5 py-2.5 text-body font-semibold text-surface transition-colors hover:bg-ink-2"
             >
               <Icon icon={RotateCw} size={16} />
               {t("cardReviewUnknown")}

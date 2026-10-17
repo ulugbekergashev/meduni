@@ -17,7 +17,7 @@ import type { ContentView } from "./stages";
  */
 
 const META: Record<ContentView, { icon: typeof BookText; tone: string; chip: string }> = {
-  konspekt: { icon: BookText, tone: "text-brand-tint", chip: "bg-brand-soft text-brand-tint" },
+  konspekt: { icon: BookText, tone: "text-brand", chip: "bg-brand-soft text-brand-deep" },
   slides: { icon: Layers, tone: "text-blue", chip: "bg-blue-soft text-blue" },
   video: { icon: Video, tone: "text-violet", chip: "bg-violet-soft text-violet" },
   podcast: { icon: Headphones, tone: "text-amber", chip: "bg-amber-soft text-amber" },
@@ -162,19 +162,19 @@ export function MaterialsPanel({
             onClick={() => !b.locked && onPick(b.key)}
             disabled={b.locked}
             className={cls(
-              "group flex flex-col gap-2 overflow-hidden rounded-card border border-line bg-surface p-3 text-left transition-[border-color,transform] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
-              wide && "sm:col-span-2",
-              b.locked ? "cursor-not-allowed opacity-55" : "hover:-translate-y-0.5 hover:border-brand"
+              "group flex flex-col gap-2 overflow-hidden rounded-card border p-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
+              wide ? "border-transparent bg-brand-soft sm:col-span-2" : "border-line bg-surface",
+              b.locked ? "cursor-not-allowed opacity-55" : "hover:border-ink"
             )}
           >
             <div className="flex items-center gap-2.5">
-              <span className={cls("flex h-9 w-9 shrink-0 items-center justify-center rounded-control", m.chip)}>
+              <span className={cls("flex h-9 w-9 shrink-0 items-center justify-center rounded-full", wide ? "bg-surface/70 text-brand-deep" : m.chip)}>
                 <Icon icon={b.locked ? Lock : m.icon} size={17} />
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-body font-extrabold text-ink">{t(`block_${b.key}`)}</span>
+                <span className="block truncate text-body font-semibold text-ink">{t(`block_${b.key}`)}</span>
                 {b.meta && (
-                  <span className="block text-micro font-data tabular-nums text-ink-faint">
+                  <span className="block text-micro tabular-nums text-ink-soft">
                     {t(`blockMeta_${b.key}`, { v: b.meta })}
                   </span>
                 )}
@@ -188,7 +188,7 @@ export function MaterialsPanel({
                 <img src={b.cover!} alt="" className="h-full w-full object-cover" loading="lazy" />
                 {b.key === "video" && (
                   <span className="absolute inset-0 flex items-center justify-center">
-                    <span className="flex h-10 w-10 items-center justify-center rounded-full bg-ink/55 text-white">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-full bg-ink/70 text-surface">
                       <Icon icon={Play} size={16} />
                     </span>
                   </span>
@@ -197,7 +197,7 @@ export function MaterialsPanel({
             )}
 
             {b.pct > 0 && (
-              <span className="block h-1 overflow-hidden rounded-pill bg-surface-raised">
+              <span className={cls("block h-1.5 overflow-hidden rounded-pill", wide ? "bg-surface" : "bg-surface-raised")}>
                 <span className={cls("block h-full rounded-pill", m.tone.replace("text-", "bg-"))} style={{ width: `${b.pct}%` }} />
               </span>
             )}

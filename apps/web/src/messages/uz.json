@@ -14,7 +14,11 @@
     "featPracticeTitle": "Amaliyot va takrorlash",
     "featPracticeBody": "Virtual bemor, fleshkartalar va xatolar ustida ishlash.",
     "featControlTitle": "Nazorat o‘qituvchida",
-    "featControlBody": "Tasdiqsiz hech narsa chop etilmaydi; davomat va o‘zlashtirish ko‘rinib turadi."
+    "featControlBody": "Tasdiqsiz hech narsa chop etilmaydi; davomat va o‘zlashtirish ko‘rinib turadi.",
+    "flowMaterial": "Material",
+    "flowAi": "AI konspekt va test",
+    "flowTeacher": "Oʻqituvchi tasdiqlaydi",
+    "flowStudent": "Talaba oʻrganadi"
   },
   "nav": {
     "dashboard": "Bosh sahifa",
@@ -45,7 +49,9 @@
     "theme": "Tungi rejim",
     "language": "Til",
     "control": "Nazorat",
-    "attendanceControl": "Davomat"
+    "attendanceControl": "Davomat",
+    "collapse": "Menyuni yigʻish",
+    "expand": "Menyuni yoyish"
   },
   "theme": {
     "label": "Mavzu (rang)",
@@ -619,7 +625,15 @@
     "publishedShort": "kontent",
     "timelineEmpty": "Bu davrda faollik boʻlmadi.",
     "aiDetails": "Batafsil",
-    "aiHint": "Kafedralar bo‘yicha AI token sarfi va taxminiy xarajat."
+    "aiHint": "Kafedralar bo‘yicha AI token sarfi va taxminiy xarajat.",
+    "heroEyebrow": "Universitet holati",
+    "heroClean": "Hammasi joyida",
+    "heroCleanHint": "Siyosatdan chetlashish yoʻq, kutilayotgan ish yoʻq.",
+    "heroIssues": "Diqqat kerak",
+    "issuesWord": "masala",
+    "openControl": "Nazoratni ochish",
+    "controlError": "Nazorat maʼlumoti yuklanmadi",
+    "pendingWork": "{{n}} ta ish kutmoqda"
   },
   "ai": {
     "title": "AI monitoring",
@@ -653,7 +667,22 @@
     "costLimit": "Oylik narx limiti ($)",
     "cancel": "Bekor",
     "save": "Saqlash",
-    "saved": "Kvota saqlandi"
+    "saved": "Kvota saqlandi",
+    "kind": {
+      "DIGEST": "Konspekt",
+      "QUIZ": "Test",
+      "CASE": "Keys",
+      "SLIDES": "Slaydlar",
+      "IMAGE": "Rasmlar",
+      "VIDEO": "Video",
+      "TTS": "Ovoz",
+      "FACTCHECK": "Faktcheck",
+      "PATIENT": "Virtual bemor",
+      "PATIENT_EVAL": "Bemor bahosi",
+      "TUTOR": "AI-tutor",
+      "CASE_SUGGEST": "AI tavsiya",
+      "PODCAST": "Podkast"
+    }
   },
   "audit": {
     "title": "Audit",
@@ -741,7 +770,9 @@
     "mkOpenTopic": "Mavzuni ochish",
     "mkSubmit": "Topshirdim",
     "mkDigestHint": "Mavzu testidan o'tish ballidan yuqori natija oling",
-    "mkInPersonHint": "Kafedrada topshiring, keyin bu yerda belgilang"
+    "mkInPersonHint": "Kafedrada topshiring, keyin bu yerda belgilang",
+    "excusesEmpty": "Hali sabab arizasi yoʻq",
+    "subtitle": "Soatlar limiti, qarzlar va darslar jurnali"
   },
   "profile": {
     "title": "Profil",
@@ -903,7 +934,28 @@
     "tileStudents": "Talabalar",
     "tileCoursesN": "{{n}} ta kurs",
     "tileTopics": "Mavzular",
-    "tileTopicsCaption": "{{n}} mavzudan {{pct}}% chop etilgan"
+    "tileTopicsCaption": "{{n}} mavzudan {{pct}}% chop etilgan",
+    "goodMorning": "Xayrli tong",
+    "goodAfternoon": "Xayrli kun",
+    "goodEvening": "Xayrli kech",
+    "heroNextLesson": "Navbatdagi dars",
+    "heroStartsAt": "boshlanish vaqti",
+    "heroMarkedOf": "{{m}}/{{n}} talaba belgilangan",
+    "heroRollCall": "Yoʻqlama qilish",
+    "heroDaysWaiting": "kundan beri kutmoqda",
+    "heroFirst": "Birinchi navbatda",
+    "heroOpen": "Ochish",
+    "heroMoreTasks": "Yana {{n}} ta vazifa pastda",
+    "heroAllDone": "Bugun hammasi joyida",
+    "heroAllDoneSub": "Ochiq vazifa va yoʻqlama kutayotgan dars yoʻq.",
+    "heroGoCourses": "Kurslarga oʻtish",
+    "nextLessonsTitle": "Keyingi darslar",
+    "openSchedule": "Jadval",
+    "tileReview": "Keys tekshiruvda",
+    "tileReviewSub": "javoblar bahoni kutmoqda",
+    "tileReviewNone": "navbat boʻsh",
+    "noGroups": "Hali guruh yoʻq",
+    "behindN": "{{n}} orqada"
   },
   "topics": {
     "subjectShared": "Mavzular fanga tegishli — bu fandan ochilgan barcha kurslar (guruhlar) bir xil mavzularni ko‘radi.",
@@ -1588,7 +1640,31 @@
     "back": "Kurslarga qaytish",
     "noTopics": "Mavzular hali qo'shilmagan",
     "topics": "mavzu",
-    "allDone": "Barcha mavzular tugallandi!"
+    "allDone": "Barcha mavzular tugallandi!",
+    "goodMorning": "Xayrli tong",
+    "goodAfternoon": "Xayrli kun",
+    "goodEvening": "Xayrli kech",
+    "topicsOfCourse": "{{done}}/{{total}} mavzu",
+    "topicDone": "mavzu bajarildi",
+    "overallProgress": "umumiy progress",
+    "nowPill": "Hozir",
+    "pastPill": "Oʻtdi",
+    "upcomingPill": "Kutilmoqda",
+    "tasksTitle": "Vazifalar",
+    "allTasks": "Barchasi",
+    "reviewRow": "Takrorlash: {{topic}}",
+    "coursesTitle": "Kurslar",
+    "currentSemester": "joriy semestr",
+    "allCoursesN": "Barchasi ({{count}})",
+    "aiTitle": "AI tutor",
+    "aiHint": "Mavzu boʻyicha savolingiz bormi? Tutor konspekt va materiallar asosida javob beradi.",
+    "aiNoTopic": "Ochiq mavzu boʻlganda tutorga savol berish mumkin.",
+    "aiTopic": "Mavzu: {{topic}}",
+    "aiPlaceholder": "Savol bering…",
+    "aiSend": "Yuborish",
+    "masterySub": "oʻrtacha test bali",
+    "attendanceSub": "qoldirilgan dars yoʻq",
+    "pathTitle": "Mavzular yoʻli"
   },
   "leaderboard": {
     "title": "Guruh reytingi",
@@ -2120,7 +2196,9 @@
       "noGroupsHint": "Avval guruh qo'shing (Xodimlar bo'limida).",
       "password": "Parol",
       "passwordHint": "Bo'sh qoldirsangiz — avtomatik yaratiladi."
-    }
+    },
+    "summary": "{{total}} talaba · {{active}} faol · {{groups}} guruh",
+    "byFaculty": "Fakultetlar boʻyicha"
   },
   "aiKey": {
     "title": "Gemini AI kaliti",
@@ -2265,7 +2343,8 @@
     "allDone": "Barchasi bajarildi",
     "topics": "mavzu",
     "summaryLine": "Jami {{all}} kurs · {{done}} tugallangan · mavzular {{topicsDone}}/{{topicsTotal}}",
-    "periodFilter": "Davr boʻyicha"
+    "periodFilter": "Davr boʻyicha",
+    "currentSemesterTile": "Joriy semestr"
   },
   "practice": {
     "patientTitle": "Virtual bemor amaliyoti",
@@ -2346,7 +2425,8 @@
     "statNextNone": "Keyingi dars yoʻq",
     "viewWeek": "Hafta",
     "viewMonth": "Oy",
-    "summaryLine": "Bu hafta {{total}} dars · keldingiz {{attended}} · qoldirdingiz {{missed}}"
+    "summaryLine": "Bu hafta {{total}} dars · keldingiz {{attended}} · qoldirdingiz {{missed}}",
+    "summaryLineMonth": "Bu oyda {{total}} dars · keldingiz {{attended}} · qoldirdingiz {{missed}}"
   },
   "mistakes": {
     "title": "Guruh xatolari xaritasi",
@@ -2612,6 +2692,7 @@
       "ACTIVE": "Davom etmoqda",
       "FINISHED": "Yakunlandi",
       "CANCELLED": "Bekor"
-    }
+    },
+    "noGroups": "Guruh yoʻq"
   }
 }

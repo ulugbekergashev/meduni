@@ -39,12 +39,14 @@ export interface SubNavData {
 interface Ctx {
   data: SubNavData | null;
   set: (d: SubNavData | null) => void;
+  /** Yon menyu yig'ilgan — bo'limlar menyuda yo'q, tasma desktopda ham chiziladi. */
+  inline: boolean;
 }
-const SubNavCtx = createContext<Ctx>({ data: null, set: () => {} });
+const SubNavCtx = createContext<Ctx>({ data: null, set: () => {}, inline: false });
 
-export function SubNavProvider({ children }: { children: ReactNode }) {
+export function SubNavProvider({ children, inline = false }: { children: ReactNode; inline?: boolean }) {
   const [data, set] = useState<SubNavData | null>(null);
-  const value = useMemo(() => ({ data, set }), [data]);
+  const value = useMemo(() => ({ data, set, inline }), [data, inline]);
   return <SubNavCtx.Provider value={value}>{children}</SubNavCtx.Provider>;
 }
 
@@ -62,7 +64,7 @@ export function useSubNavData() {
  * bitta joy").
  */
 export function SubNav({ title, items, activeKey, footer, variant = "panel" }: SubNavData) {
-  const { set } = useContext(SubNavCtx);
+  const { set, inline } = useContext(SubNavCtx);
   // Elementlar har renderда yangi massiv bo'ladi — solishtirish uchun barqaror kalit.
   const sig = JSON.stringify(items.map((i) => [i.key, i.label, i.to, i.badge]));
 
@@ -85,9 +87,10 @@ export function SubNav({ title, items, activeKey, footer, variant = "panel" }: S
     <>
       <div
       className={cls(
-        "mb-3 flex max-w-full snap-x snap-mandatory gap-1 overflow-x-auto rounded-control border border-line bg-surface p-1 shadow-card [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
-        // "panel" rejimida tasma faqat mobilda (desktopda yon panel bor).
-        variant === "panel" && "lg:hidden"
+        "mb-3 flex w-fit max-w-full snap-x snap-mandatory gap-1 overflow-x-auto rounded-pill border border-line bg-surface p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+        // "panel" rejimida tasma faqat mobilda (desktopda bo'limlar menyuda) —
+        // menyu yig'ilgan bo'lsa desktopda ham.
+        variant === "panel" && !inline && "lg:hidden"
       )}
     >
       {items.map((item) => (
@@ -95,8 +98,8 @@ export function SubNav({ title, items, activeKey, footer, variant = "panel" }: S
           key={item.key}
           to={item.to}
           className={cls(
-            "shrink-0 snap-start whitespace-nowrap rounded-[8px] px-4 py-2 text-note font-semibold transition-colors",
-            item.key === activeKey ? "bg-brand-soft text-brand-deep" : "text-ink-soft hover:bg-bg hover:text-ink"
+            "shrink-0 snap-start whitespace-nowrap rounded-pill px-4 py-1.5 text-note font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
+            item.key === activeKey ? "bg-ink text-surface" : "text-ink-soft hover:bg-surface-raised hover:text-ink"
           )}
         >
           {item.label}
@@ -111,11 +114,18 @@ export function SubNav({ title, items, activeKey, footer, variant = "panel" }: S
   );
 }
 
-/** Yon paneldagi ko'rinish — RoleShell SidebarLayout'ga uzatadi. */
-export function SubNavPanel({ data }: { data: SubNavData }) {
+/** Menyudagi ko'rinish — faol band OSTIDA ichma-ich ro'yxat (Dizayn v3). */
+export function SubNavPanel({ data, parentLabel }: { data: SubNavData; parentLabel?: string }) {
+  // Sarlavha ota band nomini takrorlasa (O'zlashtirish → O'zlashtirish) — ko'rsatilmaydi;
+  // kontekst nomi bo'lsa (kurs/guruh nomi) — foyda beradi, qoladi.
+  const showTitle = data.title.trim().toLowerCase() !== parentLabel?.trim().toLowerCase();
   return (
     <>
-      <p className="px-3 pb-1.5 pt-2 text-micro font-extrabold text-side-soft">{data.title}</p>
+      {showTitle && (
+        <p className="truncate px-2.5 pb-1 pt-1 text-micro font-medium text-side-soft" title={data.title}>
+          {data.title}
+        </p>
+      )}
       <nav className="flex flex-col gap-0.5">
         {data.items.map((item) => {
           const on = item.key === data.activeKey;
@@ -124,8 +134,8 @@ export function SubNavPanel({ data }: { data: SubNavData }) {
               key={item.key}
               to={item.to}
               className={cls(
-                "flex items-center gap-2.5 rounded-control px-3 py-2.5 text-body font-semibold transition-colors",
-                on ? "bg-side-active text-side-active-ink" : "text-side-soft hover:bg-side-hover hover:text-side-ink"
+                "flex items-center gap-2 rounded-control px-2.5 py-1.5 text-note transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
+                on ? "bg-side-hover font-semibold text-side-ink" : "font-medium text-side-soft hover:bg-side-hover hover:text-side-ink"
               )}
             >
               {item.icon && <span className="shrink-0">{item.icon}</span>}
@@ -140,7 +150,7 @@ export function SubNavPanel({ data }: { data: SubNavData }) {
           );
         })}
       </nav>
-      {data.footer && <div className="mt-auto pt-2">{data.footer}</div>}
+      {data.footer && <div className="pt-1.5">{data.footer}</div>}
     </>
   );
 }

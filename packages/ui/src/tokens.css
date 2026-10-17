@@ -88,17 +88,19 @@
   --side-hover-bg-rgb: 244 246 245;
 
   /* --- O'lchamlar ----------------------------------------------------------
-     Referens: kartochka 12px, tugma/input 8px. Ilgari 20/12 edi — burchaklar
-     yumaloqligi "o'yinchoq" taassurotini berardi. */
-  --radius-card: 12px;
-  --radius-control: 8px;
+     Dizayn v3 «Pastel bento» (2026-10, buyurtmachi maketi): kartochka 16px —
+     maketdagi yumshoq bento bloklari. Tugma/input 10px, asosiy amal — pill. */
+  --radius-card: 16px;
+  --radius-control: 10px;
   --radius-pill: 9999px;
 
   /* Yuqori panel balandligi. Sticky elementlar (wizard stepper, dars sahifasi
      tasmasi) shu qiymatdan oladi — qo'lda yozilgan piksel YO'Q. */
-  --header-h: 54px;
-  /* Chap ikonka reyi kengligi (1-daraja menyu). */
+  --header-h: 60px;
+  /* Yig'ilgan menyu — ikonka reyi kengligi. */
   --rail-w: 76px;
+  /* Yoyilgan (yozuvli) menyu kengligi. */
+  --sidebar-w: 248px;
   /* Mobil pastki tab-bar balandligi (safe-area'siz). */
   --bottomnav-h: 64px;
 

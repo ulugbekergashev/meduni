@@ -1,11 +1,11 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ChevronDown, ChevronRight, ChevronUp, FileText, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronRight, ChevronUp, FileText, Plus, Trash2 } from "lucide-react";
 import { Badge, Button, Card, Icon, Input, cls, useToast } from "@meduni/ui";
 import { AsyncSection } from "../../../components/AsyncSection";
+import { BentoCard } from "../../../components/bento";
 import { ConfirmDialog } from "../../../components/ConfirmDialog";
-import { Field } from "../../../components/Field";
 import { apiErrorMessage } from "../../../lib/api";
 import { useLocale } from "../../../lib/useLocale";
 import {
@@ -130,22 +130,22 @@ export function TopicListSection({ scope }: { scope: TopicScope }) {
 
   return (
     <div className="space-y-3">
-      <Card>
-        <h2 className="mb-4 text-section font-bold text-ink">{t("addForm")}</h2>
-        <form onSubmit={onAdd} className="flex flex-wrap items-start gap-3">
-          <div className="min-w-[240px] flex-1">
-            <Field label={t("titleOne")}>
-              <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t("titlePlaceholder")} />
-            </Field>
+      <BentoCard title={t("addForm")}>
+        <form onSubmit={onAdd} className="flex flex-wrap items-start gap-2">
+          <div className="min-w-[220px] flex-1">
+            <Input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder={t("titlePlaceholder")}
+              aria-label={t("titleOne")}
+            />
             {formError && <p className="mt-1 text-note text-rose">{formError}</p>}
           </div>
-          <div className="pt-6">
-            <Button type="submit" icon={<span className="text-lg leading-none">+</span>} disabled={create.isPending}>
-              {t("add")}
-            </Button>
-          </div>
+          <Button type="submit" icon={<Icon icon={Plus} size={15} />} disabled={create.isPending}>
+            {t("add")}
+          </Button>
         </form>
-      </Card>
+      </BentoCard>
 
       <AsyncSection
         isLoading={list.isLoading}
@@ -189,7 +189,7 @@ export function TopicListSection({ scope }: { scope: TopicScope }) {
                 <div className="min-w-0 flex-1">
                   <button
                     onClick={() => navigate(`/teach/topics/${tp.id}`)}
-                    className="block max-w-full truncate text-left text-note text-ink hover:text-brand-deep hover:underline"
+                    className="block max-w-full truncate text-left text-body font-semibold text-ink hover:text-brand-tint hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                   >
                     {tp.title}
                   </button>

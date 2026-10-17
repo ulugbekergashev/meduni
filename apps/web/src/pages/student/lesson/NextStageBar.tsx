@@ -29,7 +29,7 @@ export function NextStageBar({
     >
       <button
         onClick={() => onSelect(next.key)}
-        className="group inline-flex items-center gap-2 rounded-control bg-brand px-5 py-3 text-body font-extrabold text-white transition-[background-color,transform] hover:bg-brand-deep focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand active:scale-[0.98]"
+        className="group inline-flex items-center gap-2 rounded-pill bg-ink px-5 py-3 text-body font-semibold text-surface transition-[background-color,transform] hover:bg-ink-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand active:scale-[0.98]"
       >
         {t("nextStage")}: {t(`stage_${next.key}`)}
         <Icon icon={ArrowRight} size={17} className="transition-transform duration-150 group-hover:translate-x-0.5" />

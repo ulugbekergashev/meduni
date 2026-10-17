@@ -90,7 +90,7 @@ function Intro({ data, onStart, starting }: { data: QuizTabData; onStart: () => 
       <button
         onClick={onStart}
         disabled={starting || !data.canStart}
-        className="mt-4 flex w-full items-center justify-center gap-2 rounded-control bg-brand px-4 py-2.5 text-body font-extrabold text-white transition-colors hover:bg-brand-deep disabled:opacity-50"
+        className="mt-4 flex w-full items-center justify-center gap-2 rounded-pill bg-ink px-4 py-2.5 text-body font-semibold text-surface transition-colors hover:bg-ink-2 disabled:opacity-50"
       >
         {starting ? (
           <>
@@ -276,7 +276,7 @@ function Running({ attempt, topicId }: { attempt: QuizAttemptView; topicId: numb
           {qi < total - 1 ? (
             <button
               onClick={() => setQi((p) => Math.min(p + 1, total - 1))}
-              className="inline-flex items-center gap-1.5 rounded-control bg-brand px-3.5 py-1.5 text-note font-bold text-white transition-colors hover:bg-brand-deep"
+              className="inline-flex items-center gap-1.5 rounded-pill bg-ink px-3.5 py-1.5 text-note font-semibold text-surface transition-colors hover:bg-ink-2"
             >
               {t("next")} <Icon icon={ArrowRight} size={14} />
             </button>
@@ -360,7 +360,7 @@ function Result({
               <button
                 onClick={onStart}
                 disabled={starting}
-                className="flex w-full items-center justify-center gap-2 rounded-control bg-brand px-4 py-2.5 text-body font-extrabold text-white transition-colors hover:bg-brand-deep disabled:opacity-50"
+                className="flex w-full items-center justify-center gap-2 rounded-pill bg-ink px-4 py-2.5 text-body font-semibold text-surface transition-colors hover:bg-ink-2 disabled:opacity-50"
               >
                 {starting ? <Spinner size={16} className="text-white" /> : <Icon icon={RotateCcw} size={15} />}
                 {t("retakeBtn")}

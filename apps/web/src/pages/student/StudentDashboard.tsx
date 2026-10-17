@@ -1,34 +1,19 @@
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { motion, type Variants } from "framer-motion";
-import {
-  ArrowRight,
-  BookOpen,
-  CalendarCheck2,
-  CalendarDays,
-  CheckCircle2,
-  ClipboardCheck,
-  ClipboardList,
-  DoorOpen,
-  Flame,
-  GraduationCap,
-  Medal,
-  PlayCircle,
-  Repeat,
-  Sparkles,
-  Stethoscope,
-  type LucideIcon,
-} from "lucide-react";
-import { Card, EmptyState, Icon, ProgressRing, BarRow, cls } from "@meduni/ui";
+import { Flame, GraduationCap, Trophy } from "lucide-react";
+import { Icon } from "@meduni/ui";
+import { HeaderChip, MetricTile, PageHeader } from "../../components/bento";
 import { AsyncSection } from "../../components/AsyncSection";
-import { HeroCard, RailCard } from "../../components/HeroStats";
-import { Disclosure } from "../../components/Disclosure";
 import { CheckInCard } from "./CheckInCard";
 import { useLocale } from "../../lib/useLocale";
 import { isLowAttendance } from "../../lib/attendance";
 import { formatDate } from "../../lib/date";
+import { HomeHero } from "./home/HomeHero";
+import { TodayCard, type DaySchedule } from "./home/TodayCard";
+import { HomeTasks } from "./home/HomeTasks";
+import { HomeCourses } from "./home/HomeCourses";
+import { TutorCard } from "./home/TutorCard";
 import {
-  useMyActivity,
   useMyAttendance,
   useMyDashboard,
   useMyGrades,
@@ -38,108 +23,46 @@ import {
   useMyTasks,
   useReviewDue,
   useSetMyTaskDone,
-  type ActivityType,
   type ScheduleItem,
 } from "./api";
-
-const ACTIVITY_META: Record<ActivityType, { icon: LucideIcon; tone: string }> = {
-  topic_completed: { icon: CheckCircle2, tone: "bg-emerald-soft text-emerald" },
-  topic_activity: { icon: PlayCircle, tone: "bg-brand-soft text-brand-tint" },
-  quiz_passed: { icon: ClipboardList, tone: "bg-blue-soft text-blue" },
-  quiz_failed: { icon: ClipboardList, tone: "bg-rose-soft text-rose" },
-  case_submitted: { icon: Stethoscope, tone: "bg-violet-soft text-violet" },
-  case_graded: { icon: Medal, tone: "bg-emerald-soft text-emerald" },
-};
-
-const AUTO_META: Record<string, { icon: LucideIcon; labelKey: string; tone: string }> = {
-  study: { icon: PlayCircle, labelKey: "study", tone: "bg-brand-soft text-brand-tint" },
-  quiz_todo: { icon: ClipboardList, labelKey: "quizTodo", tone: "bg-blue-soft text-blue" },
-  case_todo: { icon: Stethoscope, labelKey: "caseTodo", tone: "bg-rose-soft text-rose" },
-  case_graded: { icon: CheckCircle2, labelKey: "caseGraded", tone: "bg-emerald-soft text-emerald" },
-  attendance_low: { icon: CalendarCheck2, labelKey: "attendanceLow", tone: "bg-amber-soft text-amber" },
-};
 
 function sameLocalDay(dateStr: string, now: Date): boolean {
   const d = new Date(dateStr);
   return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate();
 }
 
-function hhmm(dateStr: string): string {
-  const d = new Date(dateStr);
-  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
-}
-
 /** Bugungi (hali tugamagan) darslar, aks holda birinchi kelgusi kunning darslari. */
-function pickSchedule(
-  schedule: ScheduleItem[],
-  now: Date
-): { mode: "today" | "next"; date: string; sessions: ScheduleItem[] } | null {
+function pickSchedule(schedule: ScheduleItem[], now: Date): DaySchedule | null {
   const todays = schedule.filter((s) => sameLocalDay(s.date, now));
-  const todaysUpcoming = todays.filter((s) => !s.isPast);
-  if (todaysUpcoming.length > 0) {
-    return { mode: "today", date: now.toISOString(), sessions: todays };
-  }
+  if (todays.some((s) => !s.isPast)) return { mode: "today", date: now.toISOString(), sessions: todays };
   const future = schedule
     .filter((s) => !s.isPast && new Date(s.date).getTime() > now.getTime() && !sameLocalDay(s.date, now))
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-  if (future.length > 0) {
-    const first = new Date(future[0].date);
-    const key = (d: Date) => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
-    const k = key(first);
-    const sessions = future.filter((s) => key(new Date(s.date)) === k);
-    return { mode: "next", date: future[0].date, sessions };
-  }
-  return null;
+  if (future.length === 0) return null;
+  const key = (d: Date) => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+  const k = key(new Date(future[0].date));
+  return { mode: "next", date: future[0].date, sessions: future.filter((s) => key(new Date(s.date)) === k) };
 }
 
-/** Harakat qatori — vazifa yoki topshiriq. */
-function ActionRow({
-  icon,
-  tone,
-  title,
-  sub,
-  right,
-  onClick,
-}: {
-  icon: LucideIcon;
-  tone: string;
-  title: string;
-  sub?: string;
-  right?: string;
-  onClick?: () => void;
-}) {
-  const Wrapper = onClick ? "button" : "div";
-  return (
-    <Wrapper
-      onClick={onClick}
-      className={cls("group flex w-full items-center gap-3 px-4 py-3.5 text-left transition-all duration-300", onClick && "hover:bg-surface-raised hover:pl-5")}
-    >
-      <div className={cls("flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-transform duration-300 group-hover:scale-110", tone)}>
-        <Icon icon={icon} size={16} />
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-body font-semibold text-ink transition-colors group-hover:text-brand-tint">{title}</p>
-        {sub && <p className="truncate text-note text-ink-faint">{sub}</p>}
-      </div>
-      {right && <span className="shrink-0 text-note font-semibold text-ink-soft">{right}</span>}
-      {onClick && <Icon icon={ArrowRight} size={16} className="shrink-0 text-ink-faint transition-transform duration-300 group-hover:translate-x-1" />}
-    </Wrapper>
-  );
+/** Kun vaqtiga qarab salom: tong (<12), kun (<18), kech. */
+function greetingKey(now: Date): "goodMorning" | "goodAfternoon" | "goodEvening" {
+  const h = now.getHours();
+  if (h < 12) return "goodMorning";
+  if (h < 18) return "goodAfternoon";
+  return "goodEvening";
 }
 
-const containerVariants: Variants = {
-  hidden: { opacity: 0 },
-  show: { opacity: 1, transition: { staggerChildren: 0.08 } },
-};
+function average(values: number[]): number | null {
+  return values.length ? Math.round(values.reduce((a, b) => a + b, 0) / values.length) : null;
+}
 
-const itemVariants: Variants = {
-  hidden: { opacity: 0, y: 15 },
-  show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } },
-};
-
+/**
+ * Talaba bosh sahifasi — "bugun nima qilaman" (2026-10 maket).
+ * Chapda: davom ettirish → ko'rsatkichlar + vazifalar → joriy kurslar.
+ * O'ngda: bugungi darslar va AI-tutor.
+ */
 export function StudentDashboard() {
   const { t } = useTranslation(undefined, { keyPrefix: "student" });
-  const { t: tt } = useTranslation(undefined, { keyPrefix: "tasks" });
   const { t: tp } = useTranslation(undefined, { keyPrefix: "period" });
   const locale = useLocale();
   const navigate = useNavigate();
@@ -149,7 +72,6 @@ export function StudentDashboard() {
   const tasksQ = useMyTasks();
   const scheduleQ = useMySchedule();
   const rankQ = useMyRank();
-  const activityQ = useMyActivity();
   const attendanceQ = useMyAttendance(undefined, {});
   const gradesQ = useMyGrades();
   const reviewQ = useReviewDue();
@@ -157,16 +79,10 @@ export function StudentDashboard() {
 
   const d = q.data;
   const p = profile.data;
-  const auto = tasksQ.data?.auto ?? [];
-  const assigned = tasksQ.data?.assigned ?? [];
-  const schedule = scheduleQ.data ?? [];
   const rank = rankQ.data;
-  const activity = activityQ.data ?? [];
+  const now = new Date();
 
-  const overallPct =
-    d && d.courses.length > 0
-      ? Math.round(d.courses.reduce((sum, c) => sum + c.progressPct, 0) / d.courses.length)
-      : 0;
+  const overallPct = average((d?.courses ?? []).map((c) => c.progressPct)) ?? 0;
   const newest = d?.courses[0];
   const currentCourses = (d?.courses ?? []).filter(
     (c) => newest && c.academicYear === newest.academicYear && c.semester === newest.semester
@@ -179,422 +95,127 @@ export function StudentDashboard() {
   const attCame = attRows.reduce((s, r) => s + r.present + r.late, 0);
   const attMissed = attRows.reduce((s, r) => s + r.absent, 0);
   const attPct = attMarked > 0 ? Math.round((attCame / attMarked) * 100) : null;
+  const attBars = (attendanceQ.data?.byMonth ?? []).filter((m) => m.marked > 0).map((m) => m.pct);
 
-  // Joriy semestr o'zlashtirishi.
-  const masteryCourses = (gradesQ.data?.courses ?? []).filter((c) => currentIds.has(c.courseId));
-  const masteryVals = masteryCourses.map((c) => c.avgQuiz).filter((v): v is number => v !== null);
-  const masteryAvg = masteryVals.length
-    ? Math.round(masteryVals.reduce((a, b) => a + b, 0) / masteryVals.length)
-    : null;
+  // Joriy semestr o'zlashtirishi (testlar o'rtachasi, kurs kesimida).
+  const masteryVals = (gradesQ.data?.courses ?? [])
+    .filter((c) => currentIds.has(c.courseId))
+    .map((c) => c.avgQuiz)
+    .filter((v): v is number => v !== null);
+  const masteryAvg = average(masteryVals);
 
-  const now = new Date();
-  const sched = pickSchedule(schedule, now);
-  const hasToday = !!d?.resume || auto.length > 0 || assigned.length > 0;
-  const today = formatDate(locale === "ru" ? "ru" : "uz", now, "long");
+  const resumeCourse = d?.resume ? d.courses.find((c) => c.id === d.resume!.courseId) : undefined;
+  const nextCourse = currentCourses.find((c) => c.nextTopicId !== null);
+  const tutorTopic = d?.resume
+    ? { id: d.resume.topicId, title: d.resume.topic }
+    : nextCourse?.nextTopicId
+      ? { id: nextCourse.nextTopicId, title: nextCourse.nextTopic ?? "" }
+      : null;
 
-  // Hero subtitle: guruh · semestr · o'quv yili · sana.
+  const lang = locale === "ru" ? "ru" : "uz";
   const ctx: string[] = [];
   if (p?.groupName) ctx.push(p.groupName);
   if (p?.semester) ctx.push(tp("semester", { n: p.semester }));
   if (p?.academicYear) ctx.push(p.academicYear);
-  const subtitle = ctx.length ? `${ctx.join(" · ")} · ${today}` : today;
+  ctx.push(formatDate(lang, now, "long"));
 
   return (
-    <div>
-      <AsyncSection
-        isLoading={q.isLoading}
-        isError={q.isError}
-        isEmpty={!!d && d.courses.length === 0}
-        emptyIcon={<Icon icon={GraduationCap} size={22} />}
-        emptyText={t("noCourses")}
-        onRetry={() => q.refetch()}
-      >
-        {d && (
-          <motion.div variants={containerVariants} initial="hidden" animate="show">
-            {/* Hero — salom + streak + kontekst + ko'rsatkichlar */}
-            <motion.div variants={itemVariants}>
-              <HeroCard
-                title={`${t("hello")}, ${d.fullName.split(" ")[0]}`}
-                subtitle={subtitle}
-                left={
-                  <div className="flex flex-wrap items-center gap-3">
-                    <button
-                      onClick={() => navigate("/app/courses")}
-                      title={t("overall")}
-                      className="rounded-full transition-transform hover:scale-105"
-                    >
-                      <ProgressRing value={overallPct} size={76} stroke={9} label={t("overall")} />
-                    </button>
-                    <div
-                      className={cls(
-                        "inline-flex items-center gap-1.5 rounded-pill px-3 py-1.5 text-body font-bold",
-                        d.streak.activeToday ? "bg-amber-soft text-amber" : "bg-surface-raised text-ink-faint"
-                      )}
-                      title={!d.streak.activeToday && d.streak.days > 0 ? t("streakPausedHint") : undefined}
-                    >
-                      <Icon icon={Flame} size={16} />
-                      {d.streak.days > 0 ? t("streakDays", { count: d.streak.days }) : t("streakStart")}
-                    </div>
-                  </div>
-                }
-              >
-                {/* ⛔ STAT DIETASI (§18): to'rt plitka ham menyuni takrorlardi
-                    (kurslar/davomat/baholar allaqachon chap menyuda). Endi bitta
-                    qator — asosiy ko'rsatkich halqada, qolgani matnda. */}
-                <p className="col-span-2 flex flex-wrap items-baseline gap-x-4 gap-y-1 text-note text-ink-soft sm:col-span-4">
-                  <span>
+    <AsyncSection
+      isLoading={q.isLoading}
+      isError={q.isError}
+      isEmpty={!!d && d.courses.length === 0}
+      emptyIcon={<Icon icon={GraduationCap} size={22} />}
+      emptyText={t("noCourses")}
+      emptyHint={t("adminWillAdd")}
+      onRetry={() => q.refetch()}
+    >
+      {d && (
+        <div className="space-y-3">
+          <PageHeader
+            className="mb-0"
+            title={`${t(greetingKey(now))}, ${d.fullName.split(" ")[0]}`}
+            subtitle={ctx.join(" · ")}
+            right={
+              <>
+                <HeaderChip
+                  tone={d.streak.activeToday ? "amber" : "plain"}
+                  icon={<Icon icon={Flame} size={15} />}
+                  title={!d.streak.activeToday && d.streak.days > 0 ? t("streakPausedHint") : undefined}
+                >
+                  {d.streak.days > 0 ? t("streakDays", { count: d.streak.days }) : t("streakStart")}
+                </HeaderChip>
+                {rank?.rank && (
+                  <HeaderChip icon={<Icon icon={Trophy} size={15} />} onClick={() => navigate("/app/grades")}>
+                    {t("summaryRank")}
                     <b className="font-data tabular-nums text-ink">
-                      {d.courses.reduce((s, c) => s + c.topicsCompleted, 0)}/
-                      {d.courses.reduce((s, c) => s + c.topicsTotal, 0)}
-                    </b>{" "}
-                    {t("summaryTopics").toLowerCase()}
-                  </span>
-                  {attPct !== null && (
-                    <span className={isLowAttendance(attPct) ? "font-bold text-rose" : undefined}>
-                      <b className="font-data tabular-nums">{attPct}%</b> {t("summaryAttendance").toLowerCase()}
-                    </span>
-                  )}
-                  {rank?.rank && (
-                    <span>
-                      <b className="font-data tabular-nums text-ink">
-                        {rank.rank}/{rank.total}
-                      </b>{" "}
-                      {t("summaryRank").toLowerCase()}
-                    </span>
-                  )}
-                </p>
-              </HeroCard>
-            </motion.div>
-
-            {/* Asosiy maydon: chapda ish, o'ngda kontekst */}
-            <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
-              <div className="min-w-0 space-y-4">
-                {/* FaceID davomat — vaqt oynasi ochiq dars bo'lsagina ko'rinadi */}
-                <motion.div variants={itemVariants}>
-                  <CheckInCard />
-                </motion.div>
-
-                {/* Davom ettirish */}
-                {d.resume && (
-                  <motion.div
-                    variants={itemVariants}
-                    className="relative overflow-hidden flex flex-wrap items-center gap-5 rounded-card border border-line bg-surface p-4 shadow-card transition-all duration-300 hover:-translate-y-1 hover:shadow-card-hover"
-                  >
-                    <div className="relative min-w-0 flex-1">
-                      <p className="text-micro font-bold text-ink-soft">{t("continueLabel")}</p>
-                      <h2 className="mt-1 truncate text-section font-bold leading-tight text-ink">{d.resume.topic}</h2>
-                      <p className="mt-0.5 truncate text-note text-ink-soft">{d.resume.subjectName}</p>
-                      <div className="mt-3 flex items-center gap-3">
-                        <span className="h-1.5 w-full max-w-[240px] overflow-hidden rounded-pill bg-line">
-                          <span
-                            className="block h-full rounded-pill bg-brand"
-                            style={{ width: `${Math.max(d.resume.pct, 3)}%` }}
-                          />
-                        </span>
-                        <span className="font-data text-micro font-bold tabular-nums text-ink">{d.resume.pct}%</span>
-                      </div>
-                    </div>
-                    <Link to={`/app/topics/${d.resume.topicId}`} className="relative shrink-0">
-                      <button className="flex items-center gap-2 rounded-control bg-brand px-5 py-3 text-note font-bold text-white transition-all duration-300 hover:scale-105 hover:bg-white">
-                        <Icon icon={PlayCircle} size={18} />
-                        {t("continue")}
-                      </button>
-                    </Link>
-                  </motion.div>
+                      {rank.rank}/{rank.total}
+                    </b>
+                  </HeaderChip>
                 )}
+              </>
+            }
+          />
 
-                {/* Bugungi / keyingi darslar */}
-                <motion.div variants={itemVariants}>
-                  <Card className="overflow-hidden p-0">
-                    <div className="flex items-center gap-2 border-b border-line px-4 py-2.5">
-                      <Icon icon={CalendarDays} size={15} className="text-ink-faint" />
-                      <p className="flex-1 text-note font-bold text-ink-soft">
-                        {sched?.mode === "next"
-                          ? `${t("nextLessons")} · ${formatDate(locale === "ru" ? "ru" : "uz", sched.date, "short")}`
-                          : t("todayLessons")}
-                      </p>
-                      <button
-                        onClick={() => navigate("/app/schedule")}
-                        className="text-note font-semibold text-brand-tint hover:underline"
-                      >
-                        {t("openSchedule")}
-                      </button>
-                    </div>
-                    {sched ? (
-                      <div className="divide-y divide-line">
-                        {sched.sessions.map((s) => (
-                          <button
-                            key={s.key}
-                            onClick={() => navigate("/app/schedule")}
-                            className={cls(
-                              "group flex w-full items-center gap-3 px-4 py-3.5 text-left transition-all duration-200 hover:bg-surface-raised hover:pl-5",
-                              s.isPast && "opacity-55"
-                            )}
-                          >
-                            <div className="w-12 shrink-0 text-center">
-                              <p className="text-body font-bold leading-none font-data tabular-nums text-brand-tint transition-transform group-hover:scale-110">{hhmm(s.date)}</p>
-                            </div>
-                            <div className="min-w-0 flex-1 border-l border-line pl-3">
-                              <p className="truncate text-body font-semibold text-ink">{s.title ?? s.courseName}</p>
-                              <p className="flex items-center gap-1.5 truncate text-note text-ink-faint">
-                                {s.courseName}
-                                {s.room && (
-                                  <span className="inline-flex items-center gap-0.5">
-                                    <Icon icon={DoorOpen} size={11} /> {s.room}
-                                  </span>
-                                )}
-                              </p>
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="px-4 py-5">
-                        <EmptyState icon={<Icon icon={CalendarDays} size={20} />} text={t("noLessonsWeek")} />
-                      </div>
-                    )}
-                  </Card>
-                </motion.div>
+          {/* FaceID davomat — vaqt oynasi ochiq dars bo'lsagina ko'rinadi */}
+          <CheckInCard />
 
-                {/* Bugun — vazifalar */}
-                <motion.div variants={itemVariants}>
-                  <Card className="overflow-hidden p-0">
-                    <div className="flex items-center gap-2 border-b border-line px-4 py-2.5">
-                      <Icon icon={ClipboardCheck} size={15} className="text-ink-faint" />
-                      <p className="flex-1 text-note font-bold text-ink-soft">{t("todayTitle")}</p>
-                      <button
-                        onClick={() => navigate("/app/tasks")}
-                        className="text-note font-semibold text-brand-tint hover:underline"
-                      >
-                        {t("seeAllCourses")}
-                      </button>
-                    </div>
-                    {hasToday ? (
-                      <div className="divide-y divide-line">
-                        {assigned.map((a) => (
-                          <ActionRow
-                            key={`as${a.id}`}
-                            icon={ClipboardCheck}
-                            tone="bg-violet-soft text-violet"
-                            title={a.title}
-                            sub={
-                              a.dueDate
-                                ? `${tt("dueShort")}: ${formatDate(locale === "ru" ? "ru" : "uz", a.dueDate, "short")}`
-                                : tt("fromTeacher")
-                            }
-                            right={done.isPending && done.variables === a.id ? "…" : tt("markDone")}
-                            onClick={() => done.mutate(a.id)}
-                          />
-                        ))}
-                        {auto.flatMap((task) => {
-                          const meta = AUTO_META[task.type];
-                          if (!meta) return [];
-                          const items = task.items ?? [];
-                          if (items.length === 0)
-                            return [
-                              <ActionRow
-                                key={task.type}
-                                icon={meta.icon}
-                                tone={meta.tone}
-                                title={tt(meta.labelKey)}
-                                sub={`${task.count}%`}
-                                onClick={() => navigate(task.link)}
-                              />,
-                            ];
-                          return items.map((it, i) => (
-                            <ActionRow
-                              key={`${task.type}-${i}`}
-                              icon={meta.icon}
-                              tone={meta.tone}
-                              title={`${tt(meta.labelKey)}: ${it.topicTitle}`}
-                              sub={it.courseName}
-                              right={it.value !== undefined && it.value !== null ? String(it.value) : undefined}
-                              onClick={() => navigate(it.link)}
-                            />
-                          ));
-                        })}
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-3 px-4 py-5">
-                        <Icon icon={Sparkles} size={20} className="text-emerald" />
-                        <p className="text-body font-semibold text-emerald">{tt("studentAllDone")}</p>
-                      </div>
-                    )}
-                  </Card>
-                </motion.div>
-
-                {/* O'zlashtirish tahlili — sukut bo'yicha YIG'ILGAN.
-                    Bosh sahifa kunlik ISH markazi: davom ettirish, bugungi
-                    darslar va vazifalar. Raqamlar (davomat/o'zlashtirish)
-                    harakat emas — kerak bo'lganda ochiladi (STAT DIETASI). */}
-                <motion.div variants={itemVariants}>
-                  <Disclosure label={t("analyticsTitle")} storageKey="meduni.student.homeAnalytics">
-                  {/* Davomat + o'zlashtirish */}
-                  <motion.div variants={itemVariants} className="grid gap-3 sm:grid-cols-2">
-                    {/* Davomat */}
-                    <button
-                      onClick={() => navigate("/app/attendance")}
-                      className="group flex flex-col rounded-card border border-line bg-surface p-6 text-left shadow-card transition-all duration-300 hover:-translate-y-1 hover:border-brand/30 hover:shadow-card-hover"
-                    >
-                      <div className="flex items-center gap-2">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-soft text-blue">
-                          <Icon icon={CalendarCheck2} size={16} />
-                        </div>
-                        <p className="text-note font-bold text-ink-soft">{t("semesterAttendance")}</p>
-                      </div>
-                      <div className="mt-3 flex items-end justify-between">
-                        <span className={cls("text-stat font-bold tabular-nums", isLowAttendance(attPct) ? "text-rose" : "text-ink")}>
-                          {attPct !== null ? `${attPct}%` : "—"}
-                        </span>
-                        {attMissed > 0 && (
-                          <span className="mb-1 rounded-pill bg-rose-soft px-2.5 py-0.5 text-note font-bold text-rose">
-                            {t("missedN", { count: attMissed })}
-                          </span>
-                        )}
-                      </div>
-                    </button>
-  
-                    {/* O'zlashtirish */}
-                    <button
-                      onClick={() => navigate("/app/grades")}
-                      className="group flex flex-col rounded-card border border-line bg-surface p-6 text-left shadow-card transition-all duration-300 hover:-translate-y-1 hover:border-brand/30 hover:shadow-card-hover"
-                    >
-                      <div className="flex items-center gap-2">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-soft text-brand-tint">
-                          <Icon icon={GraduationCap} size={16} />
-                        </div>
-                        <p className="text-note font-bold text-ink-soft">{t("mastery")}</p>
-                      </div>
-                      <div className="mt-3 flex items-center gap-4">
-                        <ProgressRing value={masteryAvg ?? 0} size={56} stroke={7} />
-                        <div className="min-w-0 flex-1 space-y-1.5">
-                          {masteryCourses.slice(0, 3).map((c) => (
-                            <BarRow key={c.courseId} label={c.subjectName} value={c.avgQuiz ?? 0} />
-                          ))}
-                          {masteryCourses.length === 0 && (
-                            <p className="text-note text-ink-faint">{t("avgQuizShort")}: —</p>
-                          )}
-                        </div>
-                      </div>
-                    </button>
-                  </motion.div>
-                  </Disclosure>
-                </motion.div>
-
-                {/* Kurslarga o'tish */}
-                <motion.div variants={itemVariants}>
-                  <button
-                    onClick={() => navigate("/app/courses")}
-                    className="flex w-full items-center justify-center gap-2 rounded-card bg-brand px-4 py-3.5 text-body font-bold text-white shadow-card transition-all hover:bg-brand-deep hover:shadow-card-hover"
-                  >
-                    <Icon icon={BookOpen} size={18} />
-                    {t("goToCourses")}
-                    <Icon icon={ArrowRight} size={16} />
-                  </button>
-                </motion.div>
-              </div>
-
-              {/* O'ng ustun — takrorlash, bildirishnoma, faollik */}
-              <aside className="min-w-0 space-y-4">
-                {/* Interval takrorlash — bugun takrorlash kerak bo'lgan kartalar */}
-                {reviewQ.data && reviewQ.data.total > 0 && (
-                  <motion.div variants={itemVariants}>
-                    <RailCard
-                      title={t("reviewDueTitle")}
-                      icon={Repeat}
-                      action={{ label: t("reviewOpen"), onClick: () => navigate("/app/grades?sub=takrorlash") }}
-                    >
-                      <div className="divide-y divide-line">
-                        {reviewQ.data.topics.slice(0, 5).map((tp) => (
-                          <button
-                            key={tp.topicId}
-                            onClick={() => navigate(`/app/grades?sub=takrorlash&topic=${tp.topicId}`)}
-                            className="group flex w-full items-center gap-3 px-4 py-3.5 text-left transition-all duration-200 hover:bg-surface-raised hover:pl-5"
-                          >
-                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-violet-soft text-violet transition-transform duration-300 group-hover:scale-110">
-                              <Icon icon={Sparkles} size={16} />
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <p className="truncate text-body font-semibold text-ink transition-colors group-hover:text-brand-tint">{tp.topicTitle}</p>
-                              <p className="truncate text-note text-ink-faint">{tp.subjectName}</p>
-                            </div>
-                            <span className="shrink-0 rounded-pill bg-violet-soft px-2 py-0.5 text-note font-bold font-data tabular-nums text-violet">
-                              {tp.dueCount}
-                            </span>
-                          </button>
-                        ))}
-                      </div>
-                    </RailCard>
-                  </motion.div>
-                )}
-
-                {d.notifications.length > 0 && (
-                  <motion.div variants={itemVariants}>
-                    <RailCard title={t("notifications")} icon={ClipboardCheck}>
-                      <div className="divide-y divide-line">
-                        {d.notifications.slice(0, 4).map((n) => (
-                          <button
-                            key={n.caseAttemptId}
-                            onClick={() => navigate(`/app/topics/${n.topicId}?tab=case`)}
-                            className="group flex w-full items-center gap-3 px-4 py-3.5 text-left transition-all duration-200 hover:bg-surface-raised hover:pl-5"
-                          >
-                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-soft text-emerald transition-transform duration-300 group-hover:scale-110">
-                              <Icon icon={ClipboardCheck} size={16} />
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <p className="truncate text-body font-semibold text-ink transition-colors group-hover:text-brand-tint">{t("caseGraded")}</p>
-                              <p className="truncate text-note text-ink-faint">{n.topic}</p>
-                            </div>
-                            {n.score !== null && <span className="shrink-0 text-body font-bold text-emerald">{n.score}</span>}
-                          </button>
-                        ))}
-                      </div>
-                    </RailCard>
-                  </motion.div>
-                )}
-
-                {activity.length > 0 && (
-                  <motion.div variants={itemVariants}>
-                    <RailCard title={t("recentActivity")} icon={Sparkles}>
-                      <div className="divide-y divide-line">
-                        {activity.slice(0, 5).map((a, i) => {
-                          const m = ACTIVITY_META[a.type];
-                          return (
-                            <button
-                              key={`${a.type}-${a.topicId}-${i}`}
-                              onClick={() => navigate(`/app/topics/${a.topicId}`)}
-                              className="group flex w-full items-center gap-3 px-4 py-3.5 text-left transition-all duration-200 hover:bg-surface-raised hover:pl-5"
-                            >
-                              <div className={cls("flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-transform duration-300 group-hover:scale-110", m.tone)}>
-                                <Icon icon={m.icon} size={14} />
-                              </div>
-                              <div className="min-w-0 flex-1">
-                                <p className="truncate text-note font-semibold text-ink transition-colors group-hover:text-brand-tint">{t(`activity.${a.type}`)}</p>
-                                <p className="truncate text-note text-ink-faint">{a.topic}</p>
-                              </div>
-                              {a.score !== null && (
-                                <span className="shrink-0 text-note font-bold font-data tabular-nums text-ink-soft">{a.score}%</span>
-                              )}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </RailCard>
-                  </motion.div>
-                )}
-              </aside>
+          <div className="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(0,1fr)_360px]">
+            <div className="min-w-0 xl:col-start-1 xl:row-start-1">
+              <HomeHero resume={d.resume} course={resumeCourse} overallPct={overallPct} />
             </div>
-          </motion.div>
-        )}
-      </AsyncSection>
 
-      {d && d.courses.length === 0 && (
-        <p className="mt-3 text-center text-body text-ink-faint">{t("adminWillAdd")}</p>
-      )}
+            <div className="min-w-0 xl:col-start-2 xl:row-span-2 xl:row-start-1">
+              <TodayCard
+                sched={pickSchedule(scheduleQ.data ?? [], now)}
+                isLoading={scheduleQ.isLoading}
+                isError={scheduleQ.isError}
+                onRetry={() => scheduleQ.refetch()}
+              />
+            </div>
 
-      {!d && !q.isLoading && !q.isError && (
-        <EmptyState icon={<Icon icon={ArrowRight} size={22} />} text={t("noCourses")} />
+            <div className="grid min-w-0 grid-cols-2 gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,2fr)] xl:col-start-1 xl:row-start-2">
+              <MetricTile
+                label={t("mastery")}
+                value={masteryAvg}
+                percent
+                sub={t("masterySub")}
+                tone="violet"
+                bars={masteryVals}
+                onClick={() => navigate("/app/grades")}
+              />
+              <MetricTile
+                label={t("semesterAttendance")}
+                value={attPct}
+                percent
+                sub={attMissed > 0 ? t("missedN", { count: attMissed }) : t("attendanceSub")}
+                tone={isLowAttendance(attPct) ? "rose" : "amber"}
+                bars={attBars}
+                onClick={() => navigate("/app/attendance")}
+              />
+              <HomeTasks
+                className="col-span-2 lg:col-span-1"
+                assigned={tasksQ.data?.assigned ?? []}
+                auto={tasksQ.data?.auto ?? []}
+                review={reviewQ.data?.topics ?? []}
+                notifications={d.notifications}
+                isLoading={tasksQ.isLoading}
+                isError={tasksQ.isError}
+                onRetry={() => tasksQ.refetch()}
+                onDone={(id) => done.mutate(id)}
+                doneId={done.isPending ? (done.variables ?? null) : null}
+              />
+            </div>
+
+            <div className="min-w-0 xl:col-start-1 xl:row-start-3">
+              <HomeCourses courses={currentCourses} />
+            </div>
+
+            <div className="min-w-0 xl:col-start-2 xl:row-start-3">
+              <TutorCard topic={tutorTopic} />
+            </div>
+          </div>
+        </div>
       )}
-    </div>
+    </AsyncSection>
   );
 }

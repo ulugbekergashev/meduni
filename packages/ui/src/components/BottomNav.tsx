@@ -80,12 +80,12 @@ export function BottomNav({ items, primaryCount = 4, moreLabel, moreExtra, LinkC
           <Link
             key={item.href}
             href={item.href}
-            className={cls(cell, item.active ? "text-brand-deep" : "text-ink-faint")}
+            className={cls(cell, item.active ? "text-ink" : "text-ink-faint")}
           >
             {item.active && (
               <motion.span
                 layoutId={reduce ? undefined : "bottomnav-active"}
-                className="absolute inset-x-3 top-0 h-[3px] rounded-b-pill bg-brand"
+                className="absolute inset-x-3 top-0 h-[3px] rounded-b-pill bg-ink"
               />
             )}
             <span className="relative shrink-0">
@@ -106,12 +106,12 @@ export function BottomNav({ items, primaryCount = 4, moreLabel, moreExtra, LinkC
             onClick={() => setMoreOpen(true)}
             aria-label={moreLabel}
             aria-expanded={moreOpen}
-            className={cls(cell, restActive ? "text-brand-deep" : "text-ink-faint")}
+            className={cls(cell, restActive ? "text-ink" : "text-ink-faint")}
           >
             {restActive && (
               <motion.span
                 layoutId={reduce ? undefined : "bottomnav-active"}
-                className="absolute inset-x-3 top-0 h-[3px] rounded-b-pill bg-brand"
+                className="absolute inset-x-3 top-0 h-[3px] rounded-b-pill bg-ink"
               />
             )}
             <span className="relative shrink-0">
@@ -133,7 +133,7 @@ export function BottomNav({ items, primaryCount = 4, moreLabel, moreExtra, LinkC
               className={cls(
                 "flex min-h-[52px] items-center gap-3 rounded-control px-3 text-body font-semibold transition-colors",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
-                item.active ? "bg-brand-soft text-brand-deep" : "text-ink hover:bg-bg"
+                item.active ? "bg-ink text-surface" : "text-ink hover:bg-bg"
               )}
             >
               <span className="shrink-0">{item.icon}</span>

@@ -106,7 +106,7 @@ export function MonthCalendar({
                   <span
                     className={cls(
                       "inline-flex h-6 min-w-6 items-center justify-center rounded-full px-1 text-note font-bold font-data tabular-nums",
-                      isToday ? "bg-brand text-white" : inMonth ? "text-ink" : "text-ink-faint"
+                      isToday ? "bg-ink text-surface" : inMonth ? "text-ink" : "text-ink-faint"
                     )}
                   >
                     {d.getDate()}

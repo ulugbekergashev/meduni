@@ -12,6 +12,8 @@ import { ArrowLeft,
   type LucideIcon,
 } from "lucide-react";
 import { Badge, Button, Card, Icon, Spinner, cls } from "@meduni/ui";
+import { PageHeader } from "../../../components/bento";
+import { BackLink } from "../BackLink";
 import { MaterialsSection } from "./MaterialsSection";
 import { DigestSection } from "./DigestSection";
 import { GenerateSection } from "./GenerateSection";
@@ -112,9 +114,7 @@ export function TopicConstructor() {
   if (detail.isError || !topic) {
     return (
       <div>
-        <button onClick={() => navigate("/teach")} className="inline-flex items-center gap-1.5 text-body font-medium text-brand-deep hover:underline">
-          <Icon icon={ArrowLeft} size={14} />{t("back")}
-        </button>
+        <BackLink onClick={() => navigate("/teach")}>{t("back")}</BackLink>
         <Card className="mt-4">
           <p className="py-6 text-center text-body text-rose">{tt("empty")}</p>
         </Card>
@@ -146,25 +146,25 @@ export function TopicConstructor() {
       <nav className="flex flex-wrap items-center gap-1.5 text-note text-ink-faint">
         <button
           onClick={() => navigate(topic.courseId ? `/teach/courses/${topic.courseId}/topics` : "/teach")}
-          className="font-semibold text-brand-deep hover:underline"
+          className="inline-flex items-center gap-1 font-semibold text-ink-soft hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
         >
+          <Icon icon={ArrowLeft} size={14} />
           {courseName ?? t("back")}
         </button>
         <span>/</span>
         <span className="min-w-0 truncate font-medium text-ink-soft">{topic.title}</span>
       </nav>
 
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-h1 font-bold text-ink">{topic.title}</h1>
-        </div>
-        <Badge tone={topic.status === "published" ? "emerald" : "slate"}>{tt(`status.${topic.status}`)}</Badge>
-      </div>
+      <PageHeader
+        className="mb-0 mt-2"
+        title={topic.title}
+        right={<Badge tone={topic.status === "published" ? "emerald" : "slate"}>{tt(`status.${topic.status}`)}</Badge>}
+      />
 
       {/* Sticky stepper — one glance at where you are; click an unlocked step to jump. */}
       {/* --header-h: doimiy header balandligi (tokens.css). Ilgari 57px qo'lda
           yozilgan edi va header 64px ga o'zgarganda 7px bo'shliq qolgandi. */}
-      <div className="sticky top-[var(--header-h)] z-20 mt-5 border-b border-line bg-bg py-3">
+      <div className="sticky top-[var(--header-h)] z-20 mt-3 border-b border-line bg-bg py-3">
         <div className="flex items-center gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {STEP_ORDER.map((key, i) => {
             const st = stateOf(key, available, done);
@@ -177,17 +177,17 @@ export function TopicConstructor() {
                   disabled={!clickable}
                   onClick={() => go(key)}
                   className={cls(
-                    "flex items-center gap-2 rounded-control px-2 py-1 transition-colors",
+                    "flex items-center gap-2 rounded-pill py-1 pl-1 pr-3 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
                     clickable ? "hover:bg-surface" : "cursor-not-allowed",
-                    isActive && "bg-surface ring-1 ring-brand/40"
+                    isActive && "bg-surface ring-1 ring-line-raised"
                   )}
                 >
                   <span
                     className={cls(
                       "flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-note font-bold",
-                      st === "done" && "bg-emerald text-white",
-                      st === "current" && (isActive ? "bg-brand text-white" : "border border-brand text-brand"),
-                      st === "locked" && "bg-bg text-ink-faint"
+                      st === "done" && "bg-emerald-soft text-emerald",
+                      st === "current" && (isActive ? "bg-ink text-surface" : "border border-ink text-ink"),
+                      st === "locked" && "bg-surface-raised text-ink-faint"
                     )}
                   >
                     {st === "done" ? <Icon icon={Check} size={15} /> : i + 1}

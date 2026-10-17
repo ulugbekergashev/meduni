@@ -3,7 +3,8 @@ import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
 import { startRegistration, browserSupportsWebAuthn } from "@simplewebauthn/browser";
 import { Loader2, ScanFace, Smartphone, Trash2 } from "lucide-react";
-import { Button, Card, Icon, Spinner, cls, useToast } from "@meduni/ui";
+import { Button, Icon, cls, useToast } from "@meduni/ui";
+import { BentoCard } from "../../components/bento";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { api, apiErrorMessage } from "../../lib/api";
 import { useLocale } from "../../lib/useLocale";
@@ -58,29 +59,35 @@ export function CheckinDevices() {
   }
 
   return (
-    <Card className="space-y-4">
-      <div className="flex items-center gap-2">
-        <Icon icon={ScanFace} size={18} className="text-brand-tint" />
-        <h2 className="text-section font-bold text-ink">{t("devicesTitle")}</h2>
-      </div>
-      <p className="-mt-1 text-note text-ink-faint">{t("devicesHint")}</p>
+    <BentoCard
+      title={
+        <span className="flex items-center gap-2">
+          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand-deep">
+            <Icon icon={ScanFace} size={14} />
+          </span>
+          {t("devicesTitle")}
+        </span>
+      }
+      count={devices.length}
+      isLoading={devicesQ.isLoading}
+      isError={devicesQ.isError}
+      onRetry={() => devicesQ.refetch()}
+      bodyClassName="space-y-3 px-4 pb-4"
+    >
+      <p className="text-note text-ink-soft">{t("devicesHint")}</p>
 
-      {devicesQ.isLoading ? (
-        <div className="flex justify-center py-4">
-          <Spinner size={22} />
-        </div>
-      ) : devices.length === 0 ? (
-        <p className="rounded-control border border-dashed border-line px-3 py-4 text-center text-note text-ink-faint">{t("noDevices")}</p>
+      {devices.length === 0 ? (
+        <p className="rounded-control border border-dashed border-line px-3 py-4 text-center text-note text-ink-soft">{t("noDevices")}</p>
       ) : (
         <div className="space-y-2">
           {devices.map((dv) => (
-            <div key={dv.id} className="flex items-center gap-3 rounded-control border border-line bg-surface px-3 py-2.5">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand-tint">
+            <div key={dv.id} className="flex items-center gap-3 rounded-control bg-surface-raised px-3 py-2.5">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface text-ink-2">
                 <Icon icon={Smartphone} size={16} />
               </div>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-body font-semibold text-ink">{dv.deviceName ?? t("deviceUnnamed")}</p>
-                <p className="truncate text-note text-ink-faint">
+                <p className="truncate text-micro text-ink-soft">
                   {dv.lastUsedAt
                     ? t("lastUsed", { date: formatDate(locale === "ru" ? "ru" : "uz", dv.lastUsedAt, "shortYear") })
                     : t("addedOn", { date: formatDate(locale === "ru" ? "ru" : "uz", dv.createdAt, "shortYear") })}
@@ -88,7 +95,8 @@ export function CheckinDevices() {
               </div>
               <button
                 onClick={() => setConfirmId(dv.id)}
-                className="shrink-0 rounded-control p-2 text-ink-faint transition-colors hover:bg-rose-soft hover:text-rose"
+                type="button"
+                className="shrink-0 rounded-full p-2 text-ink-soft transition-colors hover:bg-rose-soft hover:text-rose focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                 aria-label={t("removeDevice")}
               >
                 <Icon icon={Trash2} size={16} />
@@ -98,7 +106,7 @@ export function CheckinDevices() {
         </div>
       )}
 
-      <Button onClick={addDevice} disabled={adding} variant="soft" className={cls("w-full", adding && "opacity-80")}>
+      <Button onClick={addDevice} disabled={adding} className={cls("w-full", adding && "opacity-80")}>
         <Icon icon={adding ? Loader2 : ScanFace} size={16} className={adding ? "animate-spin" : undefined} />
         {t("addDevice")}
       </Button>
@@ -120,6 +128,6 @@ export function CheckinDevices() {
         }}
         onClose={() => setConfirmId(null)}
       />
-    </Card>
+    </BentoCard>
   );
 }

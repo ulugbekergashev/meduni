@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { BookOpen, Info, Plus, Search, Users2 } from "lucide-react";
 import { Button, ChipSelect, Icon, Input, Modal, Select, useToast } from "@meduni/ui";
 import { AsyncSection } from "../../components/AsyncSection";
+import { PageHeader } from "../../components/bento";
 import { Field } from "../../components/Field";
 import { apiErrorMessage } from "../../lib/api";
 import { useLocale } from "../../lib/useLocale";
@@ -85,7 +86,7 @@ function NewCourseModal({ onClose }: { onClose: () => void }) {
           )}
           {/* Inline yangi guruh yaratish */}
           {ngOpen ? (
-            <div className="mt-2 flex flex-wrap items-end gap-2 rounded-control border border-line bg-bg/40 p-2.5">
+            <div className="mt-2 flex flex-wrap items-end gap-2 rounded-control bg-surface-raised p-2.5">
               <div className="min-w-[130px] flex-1">
                 <Input value={ngName} onChange={(e) => setNgName(e.target.value)} placeholder={t("groupNamePlaceholder")} autoFocus />
               </div>
@@ -96,14 +97,14 @@ function NewCourseModal({ onClose }: { onClose: () => void }) {
               <Button type="button" size="sm" variant="ghost" onClick={() => setNgOpen(false)}>{tc("cancel")}</Button>
             </div>
           ) : (
-            <button type="button" onClick={() => setNgOpen(true)} className="mt-2 inline-flex items-center gap-1.5 text-note font-semibold text-brand-deep hover:underline">
+            <button type="button" onClick={() => setNgOpen(true)} className="mt-2 inline-flex items-center gap-1.5 text-note font-semibold text-brand-tint hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
               <Icon icon={Users2} size={14} /> {t("newGroup")}
             </button>
           )}
         </Field>
 
-        <div className="flex items-start gap-2 rounded-control border border-line bg-brand-soft/40 px-3 py-2.5 text-note text-ink-soft">
-          <Icon icon={Info} size={15} className="mt-0.5 shrink-0 text-brand-deep" />
+        <div className="flex items-start gap-2 rounded-control bg-brand-soft px-3 py-2.5 text-note text-ink-2">
+          <Icon icon={Info} size={15} className="mt-0.5 shrink-0 text-brand-tint" />
           <span>{t("programNote")}</span>
         </div>
 
@@ -158,27 +159,29 @@ export function TeachCoursesPage() {
 
   return (
     <div className="space-y-3 pb-8">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-h1 font-bold text-ink">{t("myCourses")}</h1>
-          <p className="mt-1 text-note text-ink-soft">{t("coursesSubtitle")}</p>
-        </div>
-        <Button icon={<Icon icon={Plus} size={16} />} onClick={() => setAddOpen(true)}>
-          {t("newCourse")}
-        </Button>
-      </div>
+      <PageHeader
+        className="mb-0"
+        title={t("myCourses")}
+        subtitle={t("coursesSubtitle")}
+        right={
+          <Button icon={<Icon icon={Plus} size={16} />} onClick={() => setAddOpen(true)}>
+            {t("newCourse")}
+          </Button>
+        }
+      />
 
       {addOpen && <NewCourseModal onClose={closeAdd} />}
 
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative min-w-[220px] flex-1">
-          <Icon icon={Search} size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-faint" />
+          <Icon icon={Search} size={15} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-faint" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={t("searchCourse")}
-            className="w-full rounded-control border border-line bg-surface py-2 pl-9 pr-3 text-note outline-none focus:border-brand focus:ring-[3px] focus:ring-brand/10"
+            aria-label={t("searchCourse")}
+            className="h-10 w-full rounded-pill border border-line bg-surface pl-10 pr-4 text-note text-ink outline-none transition-colors focus:border-brand"
           />
         </div>
         <PeriodFilter
@@ -196,7 +199,7 @@ export function TeachCoursesPage() {
         isLoading={list.isLoading}
         isError={list.isError}
         isEmpty={filtered.length === 0}
-        emptyIcon={<Icon icon={BookOpen} size={28} className="text-brand-soft" />}
+        emptyIcon={<Icon icon={BookOpen} size={24} />}
         emptyText={courses.length === 0 ? t("empty") : t("noMatch")}
         emptyHint={courses.length === 0 ? undefined : t("noMatchHint")}
         onRetry={() => list.refetch()}
@@ -207,7 +210,7 @@ export function TeachCoursesPage() {
             group={g}
             defaultOpen={i === 0 || !!year || !!semester || !!search.trim()}
             renderRows={(rows) => (
-              <ul className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {rows.map((c) => (
                   <li key={c.id}>
                     <CourseCard course={c} avgProgress={avg(c.id)} />

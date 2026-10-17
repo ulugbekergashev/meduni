@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { LogOut, Moon, Sun } from "lucide-react";
+import { ChevronRight, LogOut, Moon, Sun } from "lucide-react";
 import { BottomNav, Icon, SidebarLayout, type SidebarItem } from "@meduni/ui";
 import { useLogout, useMe } from "../lib/auth";
 import { getTheme, setTheme, type Theme } from "../lib/theme";
@@ -12,9 +12,9 @@ import { Avatar } from "./Avatar";
 import { SubNavPanel, SubNavProvider, useSubNavData } from "./SubNav";
 
 /** Adapter: SidebarLayout expects a component taking `href`; react-router's Link takes `to`. */
-function RouterLink({ href, className, children }: { href: string; className?: string; children: ReactNode }) {
+function RouterLink({ href, className, title, children }: { href: string; className?: string; title?: string; children: ReactNode }) {
   return (
-    <Link to={href} className={className}>
+    <Link to={href} className={className} title={title}>
       {children}
     </Link>
   );
@@ -31,7 +31,7 @@ function ThemeButton() {
         setLocal(next);
       }}
       aria-label="theme"
-      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-control border border-line text-ink-soft transition-colors hover:bg-bg hover:text-ink"
+      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-line bg-surface text-ink-soft transition-colors hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
     >
       <Icon icon={theme === "dark" ? Sun : Moon} size={15} />
     </button>
@@ -62,11 +62,34 @@ export interface RoleShellItem {
 /** Ikkinchi daraja (bo'lim paneli) sahifalardan keladi — shuning uchun qobiq
  *  provayder ichida turadi: sahifa `SubNav` bilan yozadi, `Inner` o'qiydi. */
 export function RoleShell(props: RoleShellProps) {
+  // Yig'ilgan holat shu yerda: provayder ham biladi — yig'ilganda ichki
+  // bo'limlar menyuda yo'q, sahifa o'z tasmasini desktopda ham chizadi.
+  const [collapsed, setCollapsed] = useState(() => readCollapsed());
+  const toggle = () =>
+    setCollapsed((c) => {
+      const next = !c;
+      try {
+        window.localStorage.setItem(COLLAPSE_KEY, next ? "collapsed" : "open");
+      } catch {}
+      return next;
+    });
   return (
-    <SubNavProvider>
-      <RoleShellInner {...props} />
+    <SubNavProvider inline={collapsed}>
+      <RoleShellInner {...props} collapsed={collapsed} onToggleCollapsed={toggle} />
     </SubNavProvider>
   );
+}
+
+// Yangi kalit (Dizayn v3): eski "meduni.navpanel" faqat bo'lim panelini
+// yig'ardi — u holatni butun menyuga ko'chirmaymiz.
+const COLLAPSE_KEY = "meduni.sidebar.v3";
+
+function readCollapsed(): boolean {
+  try {
+    return typeof window !== "undefined" && window.localStorage.getItem(COLLAPSE_KEY) === "collapsed";
+  } catch {
+    return false;
+  }
 }
 
 interface RoleShellProps {
@@ -101,7 +124,11 @@ function RoleShellInner({
   fullBleed = false,
   showTheme = true,
   primaryCount,
+  collapsed,
+  onToggleCollapsed,
 }: {
+  collapsed: boolean;
+  onToggleCollapsed: () => void;
   brand: string;
   items: RoleShellItem[];
   children: ReactNode;
@@ -174,7 +201,7 @@ function RoleShellInner({
       items={sidebarItems}
       headerSlot={headerSlot}
       fullBleed={fullBleed}
-      panel={subNav ? <SubNavPanel data={subNav} /> : undefined}
+      panel={subNav ? <SubNavPanel data={subNav} parentLabel={sidebarItems.find((i) => i.active)?.label} /> : undefined}
       LinkComponent={RouterLink}
       bottomNav={
         <BottomNav
@@ -185,33 +212,51 @@ function RoleShellInner({
           LinkComponent={RouterLink}
         />
       }
+      collapsed={collapsed}
+      onToggleCollapsed={onToggleCollapsed}
+      collapseLabel={t("collapse")}
+      expandLabel={t("expand")}
+      userCard={
+        <div className="flex items-center gap-1">
+          <Link
+            to={profileHref}
+            title={t("openProfile")}
+            className="flex min-w-0 flex-1 items-center gap-2.5 rounded-control p-1.5 transition-colors hover:bg-side-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+          >
+            <Avatar name={me?.full_name ?? ""} />
+            <span className="min-w-0 flex-1 leading-tight">
+              <span className="block truncate text-note font-semibold text-side-ink">{me?.full_name}</span>
+              <span className="block truncate text-micro text-side-soft">{me?.email}</span>
+            </span>
+            <Icon icon={ChevronRight} size={14} className="shrink-0 text-side-soft" />
+          </Link>
+          <button
+            onClick={doLogout}
+            aria-label={t("logout")}
+            title={t("logout")}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-side-soft transition-colors hover:bg-rose-soft hover:text-rose focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+          >
+            <Icon icon={LogOut} size={16} />
+          </button>
+        </div>
+      }
+      userCompact={
+        <Link to={profileHref} title={me?.full_name ?? t("openProfile")} className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
+          <Avatar name={me?.full_name ?? ""} />
+        </Link>
+      }
       rightSlot={
         <>
-          <span className="hidden whitespace-nowrap text-note font-medium text-ink-faint xl:block">{today}</span>
-          {/* Til/tema/chiqish mobilda "Yana" panelida — headerda joy tor. */}
+          <span className="hidden whitespace-nowrap text-note font-medium text-ink-soft xl:block">{today}</span>
+          {/* Til/tema mobilda "Yana" panelida — headerda joy tor. */}
           <span className="hidden lg:inline-flex">
             <LocaleSwitcher />
           </span>
           {showTheme && <span className="hidden lg:inline-flex"><ThemeButton /></span>}
-          {/* User bloki — avatar + ism, bosilsa profil/sozlamalar sahifasi */}
-          <Link
-            to={profileHref}
-            title={t("openProfile")}
-            className="flex min-w-0 items-center gap-2.5 rounded-control py-1 pr-0.5 transition-colors hover:bg-bg lg:ml-1 lg:border-l lg:border-line lg:pl-3 lg:pr-1.5"
-          >
-            <div className="hidden min-w-0 text-right leading-tight lg:block">
-              <p className="max-w-[150px] truncate text-note font-semibold text-ink">{me?.full_name}</p>
-              <p className="max-w-[150px] truncate text-micro text-ink-faint">{me?.email}</p>
-            </div>
+          {/* Mobilda menyu yo'q — profilga yo'l headerda qoladi. */}
+          <Link to={profileHref} title={t("openProfile")} className="rounded-full lg:hidden">
             <Avatar name={me?.full_name ?? ""} />
           </Link>
-          <button
-            onClick={doLogout}
-            aria-label="logout"
-            className="hidden h-8 w-8 shrink-0 items-center justify-center rounded-control text-ink-soft transition-colors hover:bg-rose-soft hover:text-rose lg:flex"
-          >
-            <Icon icon={LogOut} size={15} />
-          </button>
         </>
       }
     >

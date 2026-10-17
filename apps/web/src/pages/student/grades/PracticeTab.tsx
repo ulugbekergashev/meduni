@@ -16,7 +16,8 @@ import {
   User,
   X,
 } from "lucide-react";
-import { Card, EmptyState, Icon, ProgressRing, Spinner, cls } from "@meduni/ui";
+import { Button, EmptyState, Icon, ProgressRing, Spinner, cls } from "@meduni/ui";
+import { BentoCard } from "../../../components/bento";
 import { CardFace } from "../lesson/FlashcardsTab";
 import {
   usePatientPractice,
@@ -56,9 +57,9 @@ function ChoiceItem({
   return (
     <div>
       {title && (
-        <p className="mb-1 text-micro font-extrabold text-brand-tint">{title}</p>
+        <p className="mb-1 text-micro font-semibold text-brand-tint">{title}</p>
       )}
-      <p className="mb-4 text-section font-bold leading-snug text-ink">{prompt}</p>
+      <p className="mb-4 text-section font-semibold leading-snug text-ink">{prompt}</p>
       <div className="space-y-2">
         {options.map((o, i) => {
           const isPicked = picked === i;
@@ -74,16 +75,16 @@ function ChoiceItem({
                 revealed && isCorrect && "border-emerald bg-emerald-soft",
                 revealed && isPicked && !isCorrect && "border-rose bg-rose-soft",
                 revealed && !isPicked && !isCorrect && "border-line opacity-60",
-                !revealed && "border-line hover:bg-surface-raised"
+                !revealed && "border-line hover:border-line-raised hover:bg-surface-raised"
               )}
             >
               <span
                 className={cls(
-                  "flex h-7 w-7 shrink-0 items-center justify-center rounded-control text-note font-extrabold",
+                  "flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-note font-semibold",
                   revealed && isCorrect
-                    ? "bg-emerald text-white"
+                    ? "bg-emerald text-surface"
                     : revealed && isPicked
-                      ? "bg-rose text-white"
+                      ? "bg-rose text-surface"
                       : "bg-surface-raised text-ink-soft"
                 )}
               >
@@ -175,30 +176,32 @@ function PracticePlayer({ topicId, onExit }: { topicId: number; onExit: () => vo
       <div className="mx-auto flex max-w-[440px] flex-col items-center gap-4 py-6 text-center">
         <ProgressRing value={pct} size={120} stroke={12} tone={pct >= 70 ? "emerald" : "amber"} />
         <div>
-          <p className="text-section font-extrabold text-ink">{t("doneTitle")}</p>
+          <p className="text-section font-semibold text-ink">{t("doneTitle")}</p>
           {gradedTotal > 0 && (
             <p className="mt-1 text-body text-ink-soft">{t("doneHint", { n: correct, total: gradedTotal })}</p>
           )}
         </div>
         <div className="flex flex-wrap items-center justify-center gap-2">
-          <button
+          <Button
+            size="lg"
+            icon={<Icon icon={RotateCcw} size={16} />}
             onClick={() => {
               setI(0);
               setCorrect(0);
               setFinished(false);
             }}
-            className="inline-flex items-center gap-2 rounded-control bg-brand px-5 py-2.5 text-body font-bold text-white transition-colors hover:bg-brand-deep"
           >
-            <Icon icon={RotateCcw} size={16} />
             {t("again")}
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="ghost"
+            size="lg"
+            className="rounded-pill"
+            icon={<Icon icon={BookText} size={16} />}
             onClick={() => navigate(`/app/topics/${topicId}?view=konspekt`)}
-            className="inline-flex items-center gap-2 rounded-control border border-line px-5 py-2.5 text-body font-bold text-ink-soft transition-colors hover:bg-surface-raised hover:text-ink"
           >
-            <Icon icon={BookText} size={16} />
             {t("reread")}
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -209,16 +212,17 @@ function PracticePlayer({ topicId, onExit }: { topicId: number; onExit: () => vo
       {/* Shapka: orqaga + jarayon */}
       <div className="mb-4 flex items-center gap-3">
         <button
+          type="button"
           onClick={onExit}
-          className="inline-flex items-center gap-1.5 rounded-control px-2 py-1.5 text-note font-semibold text-brand-tint transition-colors hover:bg-surface-raised"
+          className="inline-flex items-center gap-1.5 rounded-pill px-2 py-1.5 text-note font-semibold text-brand-tint transition-colors hover:bg-surface-raised focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
         >
           <Icon icon={ArrowLeft} size={15} />
           {t("back")}
         </button>
-        <span className="text-note font-extrabold text-ink-dim">
+        <span className="text-note font-semibold tabular-nums text-ink-soft">
           {i + 1} / {items.length}
         </span>
-        <span className="min-w-0 flex-1 truncate text-right text-note font-bold text-ink-soft">
+        <span className="min-w-0 flex-1 truncate text-right text-note font-semibold text-ink-soft">
           {q.data.topicTitle}
         </span>
       </div>
@@ -228,7 +232,7 @@ function PracticePlayer({ topicId, onExit }: { topicId: number; onExit: () => vo
             key={n}
             className={cls(
               "h-1.5 flex-1 rounded-pill transition-colors",
-              n < i ? "bg-emerald" : n === i ? "bg-brand" : "bg-line-raised"
+              n < i ? "bg-ink" : n === i ? "bg-ink/40" : "bg-ink/10"
             )}
           />
         ))}
@@ -271,7 +275,7 @@ function PracticePlayer({ topicId, onExit }: { topicId: number; onExit: () => vo
           )}
           {item?.kind === "card" && (
             <div className="space-y-3">
-              <p className="text-micro font-extrabold text-violet">{t("kindCard")}</p>
+              <p className="text-micro font-semibold text-violet">{t("kindCard")}</p>
               <CardFace
                 card={{ key: `p${i}`, kind: "term", front: item.front, back: item.back, note: item.note, known: null }}
                 flipped={flipped}
@@ -284,14 +288,10 @@ function PracticePlayer({ topicId, onExit }: { topicId: number; onExit: () => vo
 
       {/* Keyingi tugma — javob berilgach (kartada doim) */}
       <div className="mt-4 flex justify-end">
-        <button
-          onClick={next}
-          disabled={item?.kind !== "card" && !answeredCurrent}
-          className="group inline-flex items-center gap-2 rounded-control bg-brand px-5 py-2.5 text-body font-bold text-white transition-colors hover:bg-brand-deep disabled:opacity-35"
-        >
+        <Button size="lg" onClick={next} disabled={item?.kind !== "card" && !answeredCurrent}>
           {i === items.length - 1 ? t("finish") : t("next")}
-          <Icon icon={ArrowRight} size={16} className="transition-transform group-hover:translate-x-0.5" />
-        </button>
+          <Icon icon={ArrowRight} size={16} />
+        </Button>
       </div>
     </div>
   );
@@ -316,142 +316,144 @@ export function PracticeTab() {
 
   if (activeTopic !== null) {
     return (
-      <Card className="p-5 sm:p-6">
+      <BentoCard bodyClassName="p-4 sm:p-6">
         <PracticePlayer topicId={activeTopic} onExit={() => setActiveTopic(null)} />
-      </Card>
+      </BentoCard>
     );
   }
 
   return (
-    <div className="space-y-4">
-      {/* Virtual bemor amaliyot markazi */}
-      <Card className="overflow-hidden p-0">
-        <div className="flex flex-wrap items-center gap-3 border-b border-line px-5 py-3.5">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-control bg-rose-soft text-rose">
-            <Icon icon={Stethoscope} size={17} />
+    <div className="space-y-3">
+      {/* Virtual bemor amaliyot markazi — sahifaning yagona pastel urg'usi */}
+      <BentoCard
+        tone="rose"
+        title={
+          <span className="flex items-center gap-2">
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-surface/70 text-rose">
+              <Icon icon={Stethoscope} size={14} />
+            </span>
+            {t("patientTitle")}
           </span>
-          <div className="min-w-0 flex-1">
-            <p className="text-body font-extrabold text-ink">{t("patientTitle")}</p>
-            <p className="text-note text-ink-faint">{t("patientHint")}</p>
-          </div>
-          {patients.length > 1 && (
-            <button
-              onClick={randomPatient}
-              className="inline-flex shrink-0 items-center gap-2 rounded-control bg-rose px-4 py-2 text-note font-extrabold text-white transition-opacity hover:opacity-90"
-            >
-              <Icon icon={Dices} size={16} />
-              {t("randomPatient")}
-            </button>
-          )}
-        </div>
-        {patientsQ.isLoading ? (
-          <div className="flex justify-center py-8">
-            <Spinner size={20} />
-          </div>
-        ) : patients.length === 0 ? (
-          <p className="px-5 py-5 text-note text-ink-faint">{t("patientEmpty")}</p>
+        }
+        count={patients.length}
+        right={
+          patients.length > 1 && (
+            <Button size="sm" icon={<Icon icon={Dices} size={14} />} onClick={randomPatient}>
+              <span className="hidden sm:inline">{t("randomPatient")}</span>
+            </Button>
+          )
+        }
+        isLoading={patientsQ.isLoading}
+        isError={patientsQ.isError}
+        onRetry={() => patientsQ.refetch()}
+        bodyClassName="px-3 pb-3"
+      >
+        <p className="mb-2 px-1 text-note text-ink-2">{t("patientHint")}</p>
+        {patients.length === 0 ? (
+          <p className="rounded-control bg-surface/70 px-3 py-3 text-note text-ink-soft">{t("patientEmpty")}</p>
         ) : (
-          <div className="grid gap-px bg-line sm:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
             {patients.map((p) => (
               <button
                 key={p.topicId}
+                type="button"
                 onClick={() => navigate(`/app/topics/${p.topicId}?view=patient`)}
-                className="group flex items-center gap-3 bg-surface px-4 py-3.5 text-left transition-colors hover:bg-surface-raised"
+                className="group flex min-w-0 items-center gap-3 rounded-control bg-surface px-3 py-3 text-left transition-colors hover:bg-surface-raised focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
               >
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-control bg-rose-soft text-rose">
-                  <Icon icon={User} size={18} />
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-rose-soft text-rose">
+                  <Icon icon={User} size={16} />
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="flex items-center gap-2 truncate text-body font-bold text-ink">
-                    {p.patientName || t("patientDefault")}
+                  <span className="flex items-center gap-2 text-body font-semibold text-ink">
+                    <span className="truncate">{p.patientName || t("patientDefault")}</span>
                     {p.generated && !p.patientName && (
                       <span className="shrink-0 rounded-pill bg-blue-soft px-1.5 py-0.5 text-micro font-semibold text-blue">
                         {t("patientFromDigest")}
                       </span>
                     )}
                   </span>
-                  <span className="block truncate text-note text-ink-faint">
+                  <span className="block truncate text-micro text-ink-soft">
                     {p.topicTitle} · {p.subjectName}
                   </span>
                 </span>
                 {p.finished ? (
-                  <span className="inline-flex shrink-0 items-center gap-1 rounded-pill bg-emerald-soft px-2 py-0.5 text-micro font-bold text-emerald">
+                  <span className="inline-flex shrink-0 items-center gap-1 rounded-pill border border-emerald/30 px-2 py-0.5 text-micro font-semibold text-emerald">
                     <Icon icon={Check} size={11} strokeWidth={3} />
                     {t("patientAgain")}
                   </span>
                 ) : (
-                  <Icon
-                    icon={ArrowRight}
-                    size={16}
-                    className="shrink-0 text-ink-dim transition-transform group-hover:translate-x-0.5"
-                  />
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-line text-ink-soft transition-colors group-hover:border-ink group-hover:bg-ink group-hover:text-surface">
+                    <Icon icon={ArrowRight} size={13} />
+                  </span>
                 )}
               </button>
             ))}
           </div>
         )}
-      </Card>
+      </BentoCard>
 
       {/* Xatolar ustida ishlash */}
-      <Card className="overflow-hidden p-0">
-        <div className="flex items-center gap-3 border-b border-line px-5 py-3.5">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-control bg-amber-soft text-amber">
-            <Icon icon={Dumbbell} size={17} />
+      <BentoCard
+        title={
+          <span className="flex items-center gap-2">
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-amber-soft text-amber">
+              <Icon icon={Dumbbell} size={14} />
+            </span>
+            {t("mistakesTitle")}
           </span>
-          <div className="min-w-0 flex-1">
-            <p className="text-body font-extrabold text-ink">{t("mistakesTitle")}</p>
-            <p className="text-note text-ink-faint">{t("mistakesHint")}</p>
-          </div>
-        </div>
-        {overviewQ.isLoading ? (
-          <div className="flex justify-center py-8">
-            <Spinner size={20} />
-          </div>
-        ) : topics.length === 0 ? (
-          <div className="px-5 py-6">
-            <EmptyState icon={<Icon icon={Sparkles} size={22} />} text={t("noMistakesAll")} hint={t("noMistakesAllHint")} />
-          </div>
+        }
+        count={topics.length}
+        isLoading={overviewQ.isLoading}
+        isError={overviewQ.isError}
+        onRetry={() => overviewQ.refetch()}
+        bodyClassName="px-2 pb-2"
+      >
+        <p className="mb-1 px-2 text-note text-ink-soft">{t("mistakesHint")}</p>
+        {topics.length === 0 ? (
+          <EmptyState icon={<Icon icon={Sparkles} size={22} />} text={t("noMistakesAll")} hint={t("noMistakesAllHint")} />
         ) : (
-          <div className="divide-y divide-line">
+          <ul className="divide-y divide-line-soft">
             {topics.map((tp) => (
-              <button
-                key={tp.topicId}
-                onClick={() => setActiveTopic(tp.topicId)}
-                className="group flex w-full flex-wrap items-center gap-3 px-5 py-3.5 text-left transition-colors hover:bg-surface-raised"
-              >
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-body font-bold text-ink group-hover:text-brand-tint">{tp.topicTitle}</p>
-                  <p className="truncate text-note text-ink-faint">{tp.subjectName}</p>
-                </div>
-                <div className="flex shrink-0 flex-wrap items-center gap-1.5">
-                  {tp.wrongQuiz > 0 && (
-                    <span className="inline-flex items-center gap-1 rounded-pill bg-blue-soft px-2 py-0.5 text-micro font-bold text-blue">
-                      <Icon icon={ClipboardList} size={11} />
-                      {t("nQuiz", { n: tp.wrongQuiz })}
-                    </span>
-                  )}
-                  {tp.wrongSteps > 0 && (
-                    <span className="inline-flex items-center gap-1 rounded-pill bg-rose-soft px-2 py-0.5 text-micro font-bold text-rose">
-                      <Icon icon={Stethoscope} size={11} />
-                      {t("nSteps", { n: tp.wrongSteps })}
-                    </span>
-                  )}
-                  {tp.unknownCards > 0 && (
-                    <span className="inline-flex items-center gap-1 rounded-pill bg-violet-soft px-2 py-0.5 text-micro font-bold text-violet">
-                      <Icon icon={Sparkles} size={11} />
-                      {t("nCards", { n: tp.unknownCards })}
-                    </span>
-                  )}
-                </div>
-                <span className="inline-flex shrink-0 items-center gap-1.5 rounded-control bg-brand px-3.5 py-2 text-note font-extrabold text-white transition-colors group-hover:bg-brand-deep">
-                  {t("start")}
-                  <Icon icon={ArrowRight} size={14} />
-                </span>
-              </button>
+              <li key={tp.topicId}>
+                <button
+                  type="button"
+                  onClick={() => setActiveTopic(tp.topicId)}
+                  className="group flex w-full flex-wrap items-center gap-x-3 gap-y-2 rounded-control px-2 py-3 text-left transition-colors hover:bg-surface-raised focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                >
+                  <span className="min-w-0 flex-1 basis-40">
+                    <span className="block truncate text-body font-semibold text-ink">{tp.topicTitle}</span>
+                    <span className="block truncate text-micro text-ink-soft">{tp.subjectName}</span>
+                  </span>
+                  <span className="flex shrink-0 flex-wrap items-center gap-1.5">
+                    {tp.wrongQuiz > 0 && (
+                      <span className="inline-flex items-center gap-1 rounded-pill bg-blue-soft px-2 py-0.5 text-micro font-semibold text-blue">
+                        <Icon icon={ClipboardList} size={11} />
+                        {t("nQuiz", { n: tp.wrongQuiz })}
+                      </span>
+                    )}
+                    {tp.wrongSteps > 0 && (
+                      <span className="inline-flex items-center gap-1 rounded-pill bg-rose-soft px-2 py-0.5 text-micro font-semibold text-rose">
+                        <Icon icon={Stethoscope} size={11} />
+                        {t("nSteps", { n: tp.wrongSteps })}
+                      </span>
+                    )}
+                    {tp.unknownCards > 0 && (
+                      <span className="inline-flex items-center gap-1 rounded-pill bg-violet-soft px-2 py-0.5 text-micro font-semibold text-violet">
+                        <Icon icon={Sparkles} size={11} />
+                        {t("nCards", { n: tp.unknownCards })}
+                      </span>
+                    )}
+                  </span>
+                  <span className="inline-flex h-[30px] shrink-0 items-center gap-1.5 rounded-pill bg-ink px-3 text-micro font-semibold text-surface transition-colors group-hover:bg-ink-2">
+                    {t("start")}
+                    <Icon icon={ArrowRight} size={13} />
+                  </span>
+                </button>
+              </li>
             ))}
-          </div>
+          </ul>
         )}
-      </Card>
+      </BentoCard>
     </div>
   );
 }

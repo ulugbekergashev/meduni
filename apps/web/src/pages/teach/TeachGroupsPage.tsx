@@ -1,9 +1,10 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ChevronRight, GraduationCap, Plus, Search, UserX, Users2 } from "lucide-react";
-import { Badge, Button, Card, Icon, Input, Modal, ProgressRing, Select, cls, useToast } from "@meduni/ui";
+import { ArrowUpRight, Plus, Search, UserX, Users2 } from "lucide-react";
+import { Button, Icon, Input, Modal, Select, cls, useToast } from "@meduni/ui";
 import { AsyncSection } from "../../components/AsyncSection";
+import { PageHeader } from "../../components/bento";
 import { Field } from "../../components/Field";
 import { apiErrorMessage } from "../../lib/api";
 import { useLocale } from "../../lib/useLocale";
@@ -52,7 +53,7 @@ function NewGroupModal({ onClose }: { onClose: () => void }) {
   );
 }
 
-/** Boy guruh kartasi — progress halqasi + davomat + orqada qolganlar + kurslar. */
+/** Guruh kartasi (Dizayn v3) — katta o'rtacha progress, davomat, talabalar, kurslar. */
 function GroupCard({ g, onClick }: { g: TeachGroup; onClick: () => void }) {
   const { t } = useTranslation(undefined, { keyPrefix: "groups" });
   const att = g.avgAttendance ?? null;
@@ -60,49 +61,54 @@ function GroupCard({ g, onClick }: { g: TeachGroup; onClick: () => void }) {
   const behind = g.behindCount ?? 0;
   const lowAtt = isLowAttendance(att);
   return (
-    <Card interactive onClick={onClick} className="flex flex-col gap-3 !p-0">
-      <div className="flex items-center gap-3 border-b border-line px-4 pt-4 pb-3">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-control bg-brand-soft text-brand-deep">
-          <Icon icon={Users2} size={20} />
-        </div>
-        <div className="min-w-0 flex-1">
-          <h3 className="truncate text-body font-bold text-ink">{g.name}</h3>
-          <p className="truncate text-micro text-ink-faint">{t("yearN", { n: g.yearOfStudy })} · {g.facultyName}</p>
-        </div>
-        {behind > 0 && <Badge tone="rose">{t("behindN", { n: behind })}</Badge>}
-      </div>
-
-      <div className="grid grid-cols-3 items-center gap-2 px-4">
-        <div className="flex flex-col items-center gap-1">
-          <ProgressRing value={progress} size={52} stroke={6} tone="brand" />
-          <span className="text-micro font-medium text-ink-soft">{t("mProgress")}</span>
-        </div>
-        <div className="flex flex-col items-center gap-1">
-          <span className={cls("text-section font-bold tabular-nums", lowAtt ? "text-rose" : "text-blue")}>{att === null ? "—" : `${att}%`}</span>
-          <span className="text-micro font-medium text-ink-soft">{t("mAttendance")}</span>
-        </div>
-        <div className="flex flex-col items-center gap-1">
-          <span className="text-section font-bold tabular-nums text-ink">{g.studentCount}</span>
-          <span className="text-micro font-medium text-ink-soft">{t("mStudents")}</span>
-        </div>
-      </div>
-
-      {g.courses.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 px-4">
-          {g.courses.slice(0, 4).map((c) => (
-            <span key={c.id} className="rounded-pill bg-bg px-2 py-0.5 text-micro text-ink-soft">{c.name}</span>
-          ))}
-          {g.courses.length > 4 && <span className="rounded-pill bg-bg px-2 py-0.5 text-micro text-ink-faint">+{g.courses.length - 4}</span>}
-        </div>
-      )}
-
-      <div className="mt-auto flex items-center justify-between border-t border-line px-4 py-2.5">
-        <span className="inline-flex items-center gap-1.5 text-micro font-medium text-ink-soft">
-          <Icon icon={GraduationCap} size={14} /> {t("studentsN", { n: g.studentCount })}
+    <button
+      type="button"
+      onClick={onClick}
+      className="group flex h-full w-full min-w-0 flex-col rounded-card border border-line bg-surface p-4 text-left transition-colors hover:border-ink-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+    >
+      <span className="flex items-start gap-3">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-soft text-blue">
+          <Icon icon={Users2} size={16} />
         </span>
-        <span className="inline-flex items-center gap-0.5 text-micro font-semibold text-brand-deep">{t("open")} <Icon icon={ChevronRight} size={13} /></span>
-      </div>
-    </Card>
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-section font-semibold text-ink">{g.name}</span>
+          <span className="block truncate text-micro text-ink-soft">{t("yearN", { n: g.yearOfStudy })} · {g.facultyName}</span>
+        </span>
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-line text-ink-soft transition-colors group-hover:border-ink group-hover:bg-ink group-hover:text-surface">
+          <Icon icon={ArrowUpRight} size={13} />
+        </span>
+      </span>
+
+      <span className="mt-4 flex items-end gap-4">
+        <span className="min-w-0">
+          <span className="block text-stat font-semibold tabular-nums text-ink">{progress}%</span>
+          <span className="block text-micro text-ink-soft">{t("mProgress")}</span>
+        </span>
+        <span className="min-w-0">
+          <span className={cls("block font-data text-body font-semibold tabular-nums", lowAtt ? "text-rose" : "text-ink")}>{att === null ? "—" : `${att}%`}</span>
+          <span className="block text-micro text-ink-soft">{t("mAttendance")}</span>
+        </span>
+        <span className="min-w-0">
+          <span className="block font-data text-body font-semibold tabular-nums text-ink">{g.studentCount}</span>
+          <span className="block text-micro text-ink-soft">{t("mStudents")}</span>
+        </span>
+      </span>
+      <span className="mt-2 block h-1.5 w-full overflow-hidden rounded-pill bg-line">
+        {progress > 0 && <span className="block h-full rounded-pill bg-brand" style={{ width: `${progress}%` }} />}
+      </span>
+
+      {(g.courses.length > 0 || behind > 0) && (
+        <span className="mt-3 flex flex-wrap gap-1.5">
+          {behind > 0 && (
+            <span className="rounded-pill bg-rose-soft px-2 py-0.5 text-micro font-semibold text-rose">{t("behindN", { n: behind })}</span>
+          )}
+          {g.courses.slice(0, 3).map((c) => (
+            <span key={c.id} className="rounded-pill bg-surface-raised px-2 py-0.5 text-micro font-semibold text-ink-2">{c.name}</span>
+          ))}
+          {g.courses.length > 3 && <span className="rounded-pill bg-surface-raised px-2 py-0.5 text-micro text-ink-soft">+{g.courses.length - 3}</span>}
+        </span>
+      )}
+    </button>
   );
 }
 
@@ -148,50 +154,55 @@ export function TeachGroupsPage() {
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-h1 font-bold text-ink">{t("title")}</h1>
-          <p className="mt-1 text-note text-ink-soft">
-            {groups.length > 0
-              ? t("summaryLine", { groups: summary.count, students: summary.students, pct: summary.avgProgress })
-              : t("subtitle")}
-          </p>
-        </div>
-        <Button icon={<Icon icon={Plus} size={16} />} onClick={() => setAddOpen(true)}>{tc("createGroupBtn")}</Button>
-      </div>
+      <PageHeader
+        className="mb-0"
+        title={t("title")}
+        subtitle={
+          groups.length > 0
+            ? t("summaryLine", { groups: summary.count, students: summary.students, pct: summary.avgProgress })
+            : t("subtitle")
+        }
+        right={<Button icon={<Icon icon={Plus} size={16} />} onClick={() => setAddOpen(true)}>{tc("createGroupBtn")}</Button>}
+      />
 
       {addOpen && <NewGroupModal onClose={() => setAddOpen(false)} />}
 
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative min-w-[220px] flex-1">
-          <Icon icon={Search} size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-faint" />
+          <Icon icon={Search} size={15} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-faint" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={t("searchPlaceholder")}
-            className="w-full rounded-control border border-line bg-surface py-2 pl-9 pr-3 text-note outline-none focus:border-brand focus:ring-[3px] focus:ring-brand/10"
+            aria-label={t("searchPlaceholder")}
+            className="h-10 w-full rounded-pill border border-line bg-surface pl-10 pr-4 text-note text-ink outline-none transition-colors focus:border-brand"
           />
         </div>
-        <Select value={sort} onChange={(e) => setSort(e.target.value as SortKey)} className="w-auto">
+        <select
+          value={sort}
+          onChange={(e) => setSort(e.target.value as SortKey)}
+          aria-label={t("sortName")}
+          className="h-10 rounded-pill border border-line bg-surface px-3 text-note text-ink outline-none focus:border-brand"
+        >
           <option value="name">{t("sortName")}</option>
           <option value="progress">{t("sortProgress")}</option>
           <option value="attendance">{t("sortAttendance")}</option>
           <option value="behind">{t("sortBehind")}</option>
-        </Select>
+        </select>
         {summary.behind > 0 && (
           <button
+            type="button"
+            aria-pressed={onlyBehind}
             onClick={() => setOnlyBehind((v) => !v)}
             className={cls(
-              "inline-flex items-center gap-1.5 rounded-pill border px-3 py-1.5 text-note font-semibold transition-all",
-              onlyBehind
-                ? "border-rose bg-rose-soft text-rose"
-                : "border-line bg-surface text-ink-soft hover:bg-bg hover:text-ink"
+              "inline-flex h-10 items-center gap-1.5 rounded-pill px-4 text-note font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
+              onlyBehind ? "bg-ink text-surface" : "bg-rose-soft text-rose hover:brightness-95"
             )}
           >
             <Icon icon={UserX} size={14} />
             {t("sBehind")}
-            <span className="rounded-pill px-1.5 text-micro font-data tabular-nums text-rose">{summary.behind}</span>
+            <span className="font-data text-micro tabular-nums">{summary.behind}</span>
           </button>
         )}
         <span className="text-note font-semibold text-ink-soft">{tc("totalN", { n: filtered.length })}</span>

@@ -1,14 +1,15 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, Building2, ChevronRight, Landmark, Pencil, Plus, Trash2, Users } from "lucide-react";
-import { Button, Card, Icon, Spinner } from "@meduni/ui";
+import { Landmark, Pencil, Plus, Trash2, Users } from "lucide-react";
+import { Button, EmptyState, Icon, Spinner } from "@meduni/ui";
+import { BentoCard, BentoRow, PageHeader } from "../../../components/bento";
 import { useMe } from "../../../lib/auth";
 import { PasswordModal } from "../users/PasswordModal";
+import { BackLink, IconAction } from "../components";
 import {
   AdminCard,
   AppointModal,
-  CountChip,
   EntityDeleteDialog,
   EntityFormModal,
   useStructureTree,
@@ -44,149 +45,135 @@ export function FacultyPage() {
   const f = tree.data?.find((x) => x.id === facultyId);
   if (!f) {
     return (
-      <div>
-        <button onClick={() => navigate("/admin/staff")} className="flex items-center gap-1 text-note font-medium text-brand-deep hover:underline">
-          <Icon icon={ArrowLeft} size={15} /> {t("title")}
-        </button>
-        <Card className="mt-4"><p className="py-6 text-center text-note text-rose">{t("notFound")}</p></Card>
+      <div className="space-y-3">
+        <BackLink label={t("title")} onClick={() => navigate("/admin/staff")} />
+        <EmptyState icon={<Icon icon={Landmark} size={22} />} text={t("notFound")} />
       </div>
     );
   }
 
+  const teacherCount = f.departments.reduce((s, d) => s + d.teacherCount, 0);
+  const studentCount = f.groups.reduce((s, g) => s + g.studentCount, 0);
+
   return (
-    <div>
-      {/* Back to the university hub — only meaningful for the superadmin */}
-      {canFaculty && (
-        <button onClick={() => navigate("/admin/staff")} className="flex items-center gap-1 text-note font-medium text-brand-deep hover:underline">
-          <Icon icon={ArrowLeft} size={15} /> {t("title")}
-        </button>
-      )}
-
-      {/* Header */}
-      <div className="mt-3 flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <p className="flex items-center gap-1.5 text-micro font-bold text-brand">
-            <Icon icon={Building2} size={13} /> {t("faculty")}
-          </p>
-          <h1 className="mt-0.5 text-h1 font-bold text-ink">{f.name}</h1>
-          <div className="mt-1.5 flex flex-wrap gap-1.5">
-            <CountChip>{t("nDepts", { n: f.departments.length })}</CountChip>
-            <CountChip>{t("nGroups", { n: f.groups.length })}</CountChip>
-            <CountChip>{t("nTeachers", { n: f.departments.reduce((s, d) => s + d.teacherCount, 0) })}</CountChip>
-            <CountChip>{t("nStudents", { n: f.groups.reduce((s, g) => s + g.studentCount, 0) })}</CountChip>
-          </div>
-        </div>
-        {canFaculty && (
-          <div className="flex gap-2">
-            <Button variant="ghost" size="sm" icon={<Icon icon={Pencil} size={15} />} onClick={() => setModal({ kind: "faculty", editing: { id: f.id, name: f.name, parentId: 0 } })}>
-              {tc("edit")}
-            </Button>
-            <Button variant="ghost" size="sm" icon={<Icon icon={Trash2} size={15} />} onClick={() => setDel({ kind: "faculty", id: f.id, name: f.name, goUp: true })}>
-              {tc("delete")}
-            </Button>
-          </div>
-        )}
-      </div>
-
-      {/* Dean card */}
-      <div className="mt-5">
-        <AdminCard
-          admin={f.admins[0] ?? null}
-          roleLabel={t("deanLabel")}
-          canManage={canFaculty}
-          onAppoint={() => setAppointing(true)}
-          onReveal={setRevealPassword}
+    <div className="space-y-3">
+      <div>
+        {/* Back to the university hub — only meaningful for the superadmin */}
+        {canFaculty && <BackLink label={t("title")} onClick={() => navigate("/admin/staff")} />}
+        <PageHeader
+          className="mb-0"
+          title={f.name}
+          subtitle={[
+            t("faculty"),
+            t("nDepts", { n: f.departments.length }),
+            t("nGroups", { n: f.groups.length }),
+            t("nTeachers", { n: teacherCount }),
+            t("nStudents", { n: studentCount }),
+          ].join(" · ")}
+          right={
+            canFaculty && (
+              <>
+                <Button variant="ghost" size="sm" icon={<Icon icon={Pencil} size={15} />} onClick={() => setModal({ kind: "faculty", editing: { id: f.id, name: f.name, parentId: 0 } })}>
+                  {tc("edit")}
+                </Button>
+                <Button variant="ghost" size="sm" icon={<Icon icon={Trash2} size={15} />} onClick={() => setDel({ kind: "faculty", id: f.id, name: f.name, goUp: true })}>
+                  {tc("delete")}
+                </Button>
+              </>
+            )
+          }
         />
       </div>
 
-      <div className="mt-4 grid gap-4 lg:grid-cols-2">
+      {/* Dean card */}
+      <AdminCard
+        admin={f.admins[0] ?? null}
+        roleLabel={t("deanLabel")}
+        canManage={canFaculty}
+        onAppoint={() => setAppointing(true)}
+        onReveal={setRevealPassword}
+      />
+
+      <div className="grid gap-3 lg:grid-cols-2">
         {/* Departments */}
-        <Card className="!p-0">
-          <div className="flex items-center justify-between gap-2 border-b border-line px-5 py-3.5">
-            <h2 className="inline-flex items-center gap-2 text-section font-bold text-ink">
-              <Icon icon={Landmark} size={17} className="text-amber" /> {t("departmentsSection")}
-            </h2>
-            {canDeptGroup && (
-              <Button size="sm" variant="soft" icon={<Icon icon={Plus} size={14} />} onClick={() => setModal({ kind: "department", parentId: f.id })}>
+        <BentoCard
+          title={t("departmentsSection")}
+          count={f.departments.length}
+          right={
+            canDeptGroup && (
+              <Button size="sm" variant="ghost" icon={<Icon icon={Plus} size={14} />} onClick={() => setModal({ kind: "department", parentId: f.id })}>
                 {tc("add")}
               </Button>
-            )}
-          </div>
-          <div>
-            {f.departments.map((d) => (
-              <button
-                key={d.id}
-                onClick={() => navigate(`/admin/staff/d/${d.id}`)}
-                className="flex w-full items-center gap-3 border-b border-line px-5 py-3.5 text-left transition-colors last:border-0 hover:bg-bg"
-              >
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-control bg-amber-soft text-amber">
-                  <Icon icon={Landmark} size={16} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-body font-semibold text-ink">{d.name}</p>
-                  <p className="truncate text-note text-ink-faint">
-                    {d.admins[0] ? `${d.admins[0].fullName} · ` : ""}
-                    {t("nCourses", { n: d.courses.length })} · {t("nTeachers", { n: d.teacherCount })}
-                  </p>
-                </div>
-                <Icon icon={ChevronRight} size={16} className="shrink-0 text-ink-faint" />
-              </button>
-            ))}
-            {f.departments.length === 0 && (
-              <p className="px-5 py-6 text-center text-note text-ink-faint">{t("noDeptsInFaculty")}</p>
-            )}
-          </div>
-        </Card>
+            )
+          }
+          bodyClassName="px-2 pb-3"
+        >
+          {f.departments.length === 0 ? (
+            <div className="px-2 py-2">
+              <EmptyState icon={<Icon icon={Landmark} size={20} />} text={t("noDeptsInFaculty")} />
+            </div>
+          ) : (
+            <ul className="space-y-1">
+              {f.departments.map((d) => (
+                <li key={d.id}>
+                  <BentoRow
+                    icon={Landmark}
+                    iconTone="bg-amber-soft text-amber"
+                    title={d.name}
+                    sub={`${d.admins[0] ? `${d.admins[0].fullName} · ` : ""}${t("nCourses", { n: d.courses.length })} · ${t("nTeachers", { n: d.teacherCount })}`}
+                    onClick={() => navigate(`/admin/staff/d/${d.id}`)}
+                  />
+                </li>
+              ))}
+            </ul>
+          )}
+        </BentoCard>
 
         {/* Groups */}
-        <Card className="!p-0">
-          <div className="flex items-center justify-between gap-2 border-b border-line px-5 py-3.5">
-            <h2 className="inline-flex items-center gap-2 text-section font-bold text-ink">
-              <Icon icon={Users} size={17} className="text-violet" /> {t("groupsSection")}
-            </h2>
-            {canDeptGroup && (
-              <Button size="sm" variant="soft" icon={<Icon icon={Plus} size={14} />} onClick={() => setModal({ kind: "group", parentId: f.id })}>
+        <BentoCard
+          title={t("groupsSection")}
+          count={f.groups.length}
+          right={
+            canDeptGroup && (
+              <Button size="sm" variant="ghost" icon={<Icon icon={Plus} size={14} />} onClick={() => setModal({ kind: "group", parentId: f.id })}>
                 {tc("add")}
               </Button>
-            )}
-          </div>
-          <div>
-            {f.groups.map((g) => (
-              <div key={g.id} className="group flex items-center gap-3 border-b border-line px-5 py-3 last:border-0">
-                <button onClick={() => navigate(`/admin/groups/${g.id}`)} className="flex min-w-0 flex-1 items-center gap-2 text-left" title={t("openGroup")}>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-body font-semibold text-ink">{g.name}</p>
-                    <p className="text-note text-ink-faint">
-                      {t("nthYear", { n: g.yearOfStudy })} · {t("nStudents", { n: g.studentCount })}
-                    </p>
-                  </div>
-                  <Icon icon={ChevronRight} size={15} className="shrink-0 text-ink-faint" />
-                </button>
-                {canDeptGroup && (
-                  <div className="flex shrink-0 items-center gap-0.5">
-                    <button
-                      onClick={() => setModal({ kind: "group", editing: { id: g.id, name: g.name, yearOfStudy: g.yearOfStudy, parentId: f.id } })}
-                      className="rounded-control p-1.5 text-ink-faint transition-colors hover:bg-brand-soft hover:text-brand-deep"
-                      aria-label={tc("edit")}
-                    >
-                      <Icon icon={Pencil} size={15} />
-                    </button>
-                    <button
-                      onClick={() => setDel({ kind: "group", id: g.id, name: g.name })}
-                      className="rounded-control p-1.5 text-ink-faint transition-colors hover:bg-rose-soft hover:text-rose"
-                      aria-label={tc("delete")}
-                    >
-                      <Icon icon={Trash2} size={15} />
-                    </button>
-                  </div>
-                )}
-              </div>
-            ))}
-            {f.groups.length === 0 && (
-              <p className="px-5 py-6 text-center text-note text-ink-faint">{t("noGroupsInFaculty")}</p>
-            )}
-          </div>
-        </Card>
+            )
+          }
+          bodyClassName="px-2 pb-3"
+        >
+          {f.groups.length === 0 ? (
+            <div className="px-2 py-2">
+              <EmptyState icon={<Icon icon={Users} size={20} />} text={t("noGroupsInFaculty")} />
+            </div>
+          ) : (
+            <ul className="space-y-1">
+              {f.groups.map((g) => (
+                <li key={g.id}>
+                  <BentoRow
+                    icon={Users}
+                    iconTone="bg-violet-soft text-violet"
+                    title={g.name}
+                    sub={`${t("nthYear", { n: g.yearOfStudy })} · ${t("nStudents", { n: g.studentCount })}`}
+                    onClick={() => navigate(`/admin/groups/${g.id}`)}
+                    trailing={
+                      canDeptGroup && (
+                        <span className="flex shrink-0 items-center">
+                          <IconAction
+                            icon={Pencil}
+                            label={tc("edit")}
+                            onClick={() => setModal({ kind: "group", editing: { id: g.id, name: g.name, yearOfStudy: g.yearOfStudy, parentId: f.id } })}
+                          />
+                          <IconAction icon={Trash2} label={tc("delete")} tone="rose" onClick={() => setDel({ kind: "group", id: g.id, name: g.name })} />
+                        </span>
+                      )
+                    }
+                  />
+                </li>
+              ))}
+            </ul>
+          )}
+        </BentoCard>
       </div>
 
       {modal && (

@@ -11,6 +11,8 @@ import { apiErrorMessage } from "../../../lib/api";
 import { useList } from "../../../lib/crud";
 import { useLocale } from "../../../lib/useLocale";
 import { PeriodFilter } from "../../../components/PeriodGroups";
+import { PageHeader } from "../../../components/bento";
+import { IconAction, TableCard } from "../components";
 import { useDebounced } from "../../../lib/useDebounced";
 import { useCoursePeriods, useCourses, useCreateCourse, useDeleteCourse, useTeachers, type CourseRow } from "./api";
 
@@ -114,31 +116,35 @@ export function CoursesPage() {
 
   const rows = list.data ?? [];
 
+  const filtered = !!(debouncedSearch || year || semesterFilter || departmentFilter);
+
   return (
-    <div>
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-h1 font-bold text-ink">{t("title")}</h1>
-          <p className="mt-1 text-note text-ink-soft">{t("subtitle")}</p>
-        </div>
-        {ready ? (
-          <Button
-            icon={<Icon icon={Plus} size={16} />}
-            onClick={() => {
-              setFormError(null);
-              setAddOpen(true);
-            }}
-          >
-            {t("create")}
-          </Button>
-        ) : (
-          <div className="space-y-0.5 text-right text-note">
-            {departmentOptions.length === 0 && <p className="text-amber">{t("noDepartments")}</p>}
-            {teacherOptions.length === 0 && <p className="text-amber">{t("noTeachers")}</p>}
-            {groupOptions.length === 0 && <p className="text-amber">{t("noGroups")}</p>}
-          </div>
-        )}
-      </div>
+    <div className="space-y-3">
+      <PageHeader
+        className="mb-0"
+        title={t("title")}
+        subtitle={t("subtitle")}
+        right={
+          ready ? (
+            <Button
+              size="lg"
+              icon={<Icon icon={Plus} size={16} />}
+              onClick={() => {
+                setFormError(null);
+                setAddOpen(true);
+              }}
+            >
+              {t("create")}
+            </Button>
+          ) : (
+            <div className="space-y-0.5 rounded-control bg-amber-soft px-3 py-2 text-note text-amber">
+              {departmentOptions.length === 0 && <p>{t("noDepartments")}</p>}
+              {teacherOptions.length === 0 && <p>{t("noTeachers")}</p>}
+              {groupOptions.length === 0 && <p>{t("noGroups")}</p>}
+            </div>
+          )
+        }
+      />
 
       {/* Create modal */}
       <Modal open={addOpen} onClose={() => setAddOpen(false)} title={t("create")} className="max-w-2xl">
@@ -209,47 +215,42 @@ export function CoursesPage() {
       </Modal>
 
       {/* Filtrlar — kurslar semestrlar bo'ylab ko'payadi, kerakligini tez topish uchun */}
-      <div className="mt-3 flex flex-wrap items-center gap-2">
-        <div className="relative min-w-[200px] flex-1">
-          <Icon icon={Search} size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-faint" />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder={t("searchPlaceholder")}
-            className="w-full rounded-control border border-line bg-surface py-2 pl-9 pr-3 text-note outline-none focus:border-brand"
-          />
-        </div>
-        <PeriodFilter
-          years={periods.data?.years ?? []}
-          semesters={periods.data?.semesters ?? []}
-          year={year}
-          semester={semesterFilter}
-          onYear={setYear}
-          onSemester={setSemesterFilter}
-        />
-        <select
-          value={departmentFilter}
-          onChange={(e) => setDepartmentFilter(e.target.value)}
-          className="rounded-control border border-line bg-surface px-2.5 py-2 text-note text-ink outline-none focus:border-brand"
-        >
-          <option value="">{t("allDepartments")}</option>
-          {departmentOptions.map((d) => (
-            <option key={d.id} value={d.id}>
-              {d.name}
-            </option>
-          ))}
-        </select>
-        <span className="text-note font-semibold text-ink-soft">{t("totalN", { n: rows.length })}</span>
-      </div>
-
-      {/* Table */}
-      <div className="mt-4">
+      <TableCard
+        toolbar={
+          <>
+            <div className="relative min-w-0 flex-1 basis-56">
+              <Icon icon={Search} size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-faint" />
+              <Input className="pl-9" value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t("searchPlaceholder")} />
+            </div>
+            <PeriodFilter
+              years={periods.data?.years ?? []}
+              semesters={periods.data?.semesters ?? []}
+              year={year}
+              semester={semesterFilter}
+              onYear={setYear}
+              onSemester={setSemesterFilter}
+            />
+            <div className="w-full sm:w-56">
+              <Select value={departmentFilter} onChange={(e) => setDepartmentFilter(e.target.value)}>
+                <option value="">{t("allDepartments")}</option>
+                {departmentOptions.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.name}
+                  </option>
+                ))}
+              </Select>
+            </div>
+          </>
+        }
+        footer={rows.length > 0 ? <span className="text-note text-ink-soft">{t("totalN", { n: rows.length })}</span> : undefined}
+      >
+        <div className={rows.length === 0 ? "p-3" : undefined}>
         <AsyncSection
           isLoading={list.isLoading}
           isError={list.isError}
           isEmpty={rows.length === 0}
           emptyIcon={<Icon icon={GraduationCap} size={22} />}
-          emptyText={list.data && list.data.length === 0 && (debouncedSearch || year || semesterFilter || departmentFilter) ? t("noMatch") : t("empty")}
+          emptyText={list.data && list.data.length === 0 && filtered ? t("noMatch") : t("empty")}
           onRetry={() => list.refetch()}
         >
           <DataTable
@@ -270,21 +271,22 @@ export function CoursesPage() {
               return (
               <Fragment key={c.id}>
               {newPeriod && (
-                <tr className="bg-bg">
-                  <td colSpan={7} className="px-4 py-1.5 text-note font-bold uppercase tracking-wide text-ink-soft">
+                <tr className="bg-surface-raised">
+                  <td colSpan={7} className="px-4 py-1.5 text-micro font-semibold uppercase tracking-wider text-ink-soft">
                     {c.academicYear} · {t("semesterN", { n: c.semester })}
                   </td>
                 </tr>
               )}
-              <tr className="border-b border-line last:border-0">
+              <tr className="border-b border-line transition-colors last:border-0 hover:bg-surface-raised">
                 <td className="px-4 py-3">
                   <button
+                    type="button"
                     onClick={() => navigate(`/admin/courses/${c.id}`)}
-                    className="font-medium text-brand-deep hover:underline"
+                    className="rounded-control text-left font-semibold text-ink hover:text-brand-tint hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                   >
                     {c.name}
                   </button>
-                  <p className="text-micro text-ink-faint">{c.departmentName}</p>
+                  <p className="text-micro text-ink-soft">{c.departmentName}</p>
                 </td>
                 <td className="px-4 py-3 text-ink-soft">{c.teacherName}</td>
                 <td className="px-4 py-3 text-ink-soft">{c.semester}</td>
@@ -303,16 +305,15 @@ export function CoursesPage() {
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex justify-end">
-                    <button
+                    <IconAction
+                      icon={Trash2}
+                      label="delete"
+                      tone="rose"
                       onClick={() => {
                         setDeleteError(null);
                         setDeleting(c);
                       }}
-                      className="rounded-control p-1.5 text-ink-soft transition-colors hover:bg-rose-soft hover:text-rose"
-                      aria-label="delete"
-                    >
-                      <Icon icon={Trash2} size={16} />
-                    </button>
+                    />
                   </div>
                 </td>
               </tr>
@@ -321,7 +322,8 @@ export function CoursesPage() {
             })}
           </DataTable>
         </AsyncSection>
-      </div>
+        </div>
+      </TableCard>
 
       <ConfirmDialog
         open={!!deleting}

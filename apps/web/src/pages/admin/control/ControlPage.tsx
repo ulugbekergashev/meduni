@@ -1,8 +1,10 @@
 import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ShieldCheck } from "lucide-react";
-import { Button, Card, Icon, Input, Modal, Select, Toggle, cls, useToast } from "@meduni/ui";
+import { BookX, ShieldAlert, ShieldCheck, Unlock } from "lucide-react";
+import { Button, Icon, Input, Modal, Select, Toggle, cls, useToast } from "@meduni/ui";
+import { BentoCard, BentoRow, PageHeader } from "../../../components/bento";
+import { StatusBanner, TableCard } from "../components";
 import { AsyncSection } from "../../../components/AsyncSection";
 import { DataTable } from "../../../components/DataTable";
 import { Disclosure } from "../../../components/Disclosure";
@@ -20,6 +22,7 @@ import { useControlReport, usePolicies, useSavePolicy, type PolicyRow } from "..
 export function ControlPage() {
   const { t } = useTranslation(undefined, { keyPrefix: "control" });
   const locale = useLocale();
+  const navigate = useNavigate();
   const { show } = useToast();
   const report = useControlReport();
   const policies = usePolicies();
@@ -90,16 +93,19 @@ export function ControlPage() {
     { key: "requirePresence", label: t("f.presence"), hint: t("h.presence") },
   ];
 
+  const deviations = totals
+    ? [
+        { key: "manual", n: totals.manualUnlocksLast30d, text: t("s.manual").toLowerCase(), tone: "rose" as const },
+        { key: "bare", n: totals.topicsWithoutAssessment, text: t("s.bare").toLowerCase(), tone: "amber" as const },
+        { key: "below", n: totals.coursesBelowPolicy, text: t("s.below").toLowerCase(), tone: "amber" as const },
+        { key: "seqOff", n: totals.coursesSequentialOff, text: t("s.seqOff").toLowerCase(), tone: "rose" as const },
+      ].filter((x) => x.n > 0)
+    : [];
+  const hasTeachers = (d?.byTeacher.length ?? 0) > 0;
+
   return (
     <div className="space-y-3">
-      <div>
-        <h1 className="text-h1 font-extrabold text-ink">{t("title")}</h1>
-        <p className="mt-1 max-w-[70ch] text-note text-ink-dim">{t("subtitle")}</p>
-      </div>
-
-      {/* SPRAVKA ARIZALARI — dekanat ishi: "Sababli"ni o'qituvchi emas, dekanat
-          qo'yadi, aks holda 25 % koridori ma'nosini yo'qotadi (F3). */}
-      <ExcuseInbox />
+      <PageHeader className="mb-0" title={t("title")} />
 
       <AsyncSection
         isLoading={report.isLoading}
@@ -108,129 +114,148 @@ export function ControlPage() {
         emptyText={t("noPolicies")}
         onRetry={() => report.refetch()}
       >
-        {totals && (
+        {totals && d && (
           <div className="space-y-3">
-            {/* ⛔ STAT DIETASI: to'rt karta o'rniga BITTA qator. Rahbariyatga
-                kerak bo'lgan narsa — "chetlashish bormi va qanaqasi", raqamlar
-                galereyasi emas. Nol bo'lsa — tinch yashil qator. */}
-            {(() => {
-              const items = [
-                { n: totals.manualUnlocksLast30d, label: t("s.manual"), tone: "text-rose" },
-                { n: totals.topicsWithoutAssessment, label: t("s.bare"), tone: "text-amber" },
-                { n: totals.coursesBelowPolicy, label: t("s.below"), tone: "text-amber" },
-                { n: totals.coursesSequentialOff, label: t("s.seqOff"), tone: "text-rose" },
-              ].filter((x) => x.n > 0);
-              const clean = items.length === 0;
-              return (
-                <div
-                  className={cls(
-                    "flex flex-wrap items-baseline gap-x-4 gap-y-1 rounded-card border px-4 py-3",
-                    clean ? "border-emerald/30 bg-emerald-soft" : "border-line bg-surface"
-                  )}
-                >
-                  <span className={cls("text-section font-extrabold", clean ? "text-emerald" : "text-ink")}>
-                    {clean ? t("noDeviations") : t("deviations", { n: items.reduce((a, x) => a + x.n, 0) })}
-                  </span>
-                  {items.map((x) => (
-                    <span key={x.label} className="text-note text-ink-soft">
-                      <b className={cls("font-data tabular-nums", x.tone)}>{x.n}</b> {x.label.toLowerCase()}
-                    </span>
-                  ))}
-                </div>
-              );
-            })()}
+            {/* ⛔ STAT DIETASI: to'rt karta o'rniga BITTA yuza. Rahbariyatga
+                kerak bo'lgan narsa — "chetlashish bormi va qanaqasi". */}
+            <StatusBanner
+              tone={deviations.length === 0 ? "emerald" : "amber"}
+              headline={
+                deviations.length === 0
+                  ? t("noDeviations")
+                  : t("deviations", { n: deviations.reduce((a, x) => a + x.n, 0) })
+              }
+              items={deviations}
+              hint={t("subtitle")}
+            />
 
-            {d.byTeacher.length > 0 && (
-              <Card className="p-0">
-                <p className="border-b border-line px-4 py-3 text-section font-extrabold text-ink">{t("byTeacher")}</p>
-                <DataTable
-                  hideOnMobile={[2]}
-                  headers={[t("th.teacher"), t("th.dept"), t("th.manual"), t("th.bare"), t("th.below")]}
-                >
-                  {d.byTeacher.map((r) => (
-                    <tr key={r.teacherId} className="border-b border-line last:border-0 hover:bg-bg/60">
-                      <td className="px-4 py-3">
-                        <Link to={`/admin/users/${r.teacherId}`} className="font-bold text-brand-tint hover:underline">
-                          {r.teacherName}
-                        </Link>
-                      </td>
-                      <td className="px-4 py-3 text-ink-soft">{r.departmentName}</td>
-                      <td className={cls("px-4 py-3 font-bold font-data tabular-nums", r.manualUnlocks > 0 ? "text-rose" : "text-ink-dim")}>
-                        {r.manualUnlocks}
-                      </td>
-                      <td className={cls("px-4 py-3 font-bold font-data tabular-nums", r.topicsWithoutAssessment > 0 ? "text-amber" : "text-ink-dim")}>
-                        {r.topicsWithoutAssessment}
-                      </td>
-                      <td className={cls("px-4 py-3 font-bold font-data tabular-nums", r.coursesBelowPolicy > 0 ? "text-amber" : "text-ink-dim")}>
-                        {r.coursesBelowPolicy}
-                      </td>
-                    </tr>
-                  ))}
-                </DataTable>
-              </Card>
-            )}
-
-            {d.topicsWithoutAssessment.length > 0 && (
-              <Disclosure label={t("bareTitle")} count={d.topicsWithoutAssessment.length} storageKey="meduni.control.bare">
-                <div className="divide-y divide-line">
-                  {d.topicsWithoutAssessment.map((x) => (
-                    <div key={x.topicId} className="flex flex-wrap items-baseline gap-x-2 py-2 text-note">
-                      <Link to={`/admin/courses/${x.courseId}`} className="font-bold text-ink hover:underline">
-                        {x.title}
-                      </Link>
-                      <span className="text-ink-dim">{x.courseName}</span>
-                      <span className="ml-auto text-micro text-ink-faint">{x.teacherName}</span>
-                    </div>
-                  ))}
-                </div>
-              </Disclosure>
-            )}
-
-            {d.integrityAlerts.length > 0 && (
-              <Disclosure label={t("integrityTitle")} count={d.integrityAlerts.length} storageKey="meduni.control.integrity">
-                <p className="pb-2 text-micro leading-relaxed text-ink-dim">{t("integrityHint")}</p>
-                <div className="divide-y divide-line">
-                  {d.integrityAlerts.map((a) => (
-                    <div key={a.attemptId} className="flex flex-wrap items-baseline gap-x-2 py-2 text-note">
-                      <span className="font-bold text-ink">{a.studentName}</span>
-                      <span className="text-ink-dim">{a.topicTitle}</span>
-                      <span className="font-data tabular-nums text-ink-soft">{a.scorePct}%</span>
-                      <span className="ml-auto flex flex-wrap gap-1">
-                        {a.flags.map((f) => (
-                          <Chip key={f} label={t(`flag.${f}`)} tone="rose" />
-                        ))}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </Disclosure>
-            )}
-
-            <Disclosure label={t("recentTitle")} count={d.recentUnlocks.length} storageKey="meduni.control.recent">
-              {d.recentUnlocks.length === 0 ? (
-                <p className="py-2 text-note text-ink-dim">{t("noUnlocks")}</p>
-              ) : (
-                <div className="divide-y divide-line">
-                  {d.recentUnlocks.map((u, i) => (
-                    <div key={i} className="py-2 text-note">
-                      <div className="flex flex-wrap items-baseline gap-x-2">
-                        <span className="font-bold text-ink">{u.studentName}</span>
-                        <span className="text-ink-dim">{u.topicTitle}</span>
-                        <span className="ml-auto text-micro text-ink-faint">
-                          {formatDate(locale, u.at, "short")} · {u.teacherName}
-                        </span>
-                      </div>
-                      <p className="text-micro text-ink-soft">
-                        <span className={cls("font-bold", u.reason ? "text-amber" : "text-rose")}>
-                          {u.reason ? t(`reason.${u.reason}`) : t("reason.none")}
-                        </span>
-                        {u.note && <span className="text-ink-dim"> — {u.note}</span>}
-                      </p>
-                    </div>
-                  ))}
-                </div>
+            <div className={cls("grid grid-cols-1 items-start gap-3", hasTeachers && "xl:grid-cols-[minmax(0,1fr)_minmax(0,440px)]")}>
+              {hasTeachers && (
+                <TableCard title={t("byTeacher")} count={d.byTeacher.length}>
+                  <DataTable
+                    hideOnMobile={[2]}
+                    headers={[t("th.teacher"), t("th.dept"), t("th.manual"), t("th.bare"), t("th.below")]}
+                  >
+                    {d.byTeacher.map((r) => (
+                      <tr key={r.teacherId} className="border-b border-line last:border-0 hover:bg-surface-raised">
+                        <td className="px-4 py-3">
+                          <Link to={`/admin/users/${r.teacherId}`} className="font-semibold text-brand-tint hover:underline">
+                            {r.teacherName}
+                          </Link>
+                        </td>
+                        <td className="px-4 py-3 text-ink-soft">{r.departmentName}</td>
+                        <td className={cls("px-4 py-3 font-data font-semibold tabular-nums", r.manualUnlocks > 0 ? "text-rose" : "text-ink-faint")}>
+                          {r.manualUnlocks}
+                        </td>
+                        <td className={cls("px-4 py-3 font-data font-semibold tabular-nums", r.topicsWithoutAssessment > 0 ? "text-amber" : "text-ink-faint")}>
+                          {r.topicsWithoutAssessment}
+                        </td>
+                        <td className={cls("px-4 py-3 font-data font-semibold tabular-nums", r.coursesBelowPolicy > 0 ? "text-amber" : "text-ink-faint")}>
+                          {r.coursesBelowPolicy}
+                        </td>
+                      </tr>
+                    ))}
+                  </DataTable>
+                </TableCard>
               )}
-            </Disclosure>
+
+              {/* SPRAVKA ARIZALARI — dekanat ishi: "Sababli"ni o'qituvchi emas, dekanat
+                  qo'yadi, aks holda 25 % koridori ma'nosini yo'qotadi (F3). */}
+              <ExcuseInbox />
+            </div>
+
+            <BentoCard bodyClassName="divide-y divide-line px-4 pb-1">
+              {d.topicsWithoutAssessment.length > 0 && (
+                <Disclosure
+                  className="pb-3"
+                  label={t("bareTitle", { n: d.topicsWithoutAssessment.length })}
+                  storageKey="meduni.control.bare"
+                >
+                  <ul className="space-y-0.5">
+                    {d.topicsWithoutAssessment.map((x) => (
+                      <li key={x.topicId}>
+                        <BentoRow
+                          icon={BookX}
+                          iconTone="bg-amber-soft text-amber"
+                          title={x.title}
+                          sub={`${x.courseName} · ${x.teacherName}`}
+                          onClick={() => navigate(`/admin/courses/${x.courseId}`)}
+                        />
+                      </li>
+                    ))}
+                  </ul>
+                </Disclosure>
+              )}
+
+              {d.integrityAlerts.length > 0 && (
+                <Disclosure
+                  className="py-3"
+                  label={t("integrityTitle")}
+                  count={d.integrityAlerts.length}
+                  storageKey="meduni.control.integrity"
+                >
+                  <p className="pb-2 text-micro leading-relaxed text-ink-soft">{t("integrityHint")}</p>
+                  <ul className="space-y-0.5">
+                    {d.integrityAlerts.map((a) => (
+                      <li key={a.attemptId}>
+                        <BentoRow
+                          className="flex-wrap"
+                          icon={ShieldAlert}
+                          iconTone="bg-rose-soft text-rose"
+                          title={a.studentName}
+                          sub={a.topicTitle}
+                          right={`${a.scorePct}%`}
+                          trailing={
+                            <span className="flex flex-wrap justify-end gap-1 pr-2">
+                              {a.flags.map((f) => (
+                                <Chip key={f} label={t(`flag.${f}`)} tone="rose" />
+                              ))}
+                            </span>
+                          }
+                        />
+                      </li>
+                    ))}
+                  </ul>
+                </Disclosure>
+              )}
+
+              <Disclosure
+                className="py-3"
+                label={t("recentTitle")}
+                count={d.recentUnlocks.length}
+                storageKey="meduni.control.recent"
+              >
+                {d.recentUnlocks.length === 0 ? (
+                  <p className="py-2 text-note text-ink-soft">{t("noUnlocks")}</p>
+                ) : (
+                  <ul className="space-y-0.5">
+                    {d.recentUnlocks.map((u, i) => (
+                      <li key={i}>
+                        <BentoRow
+                          icon={Unlock}
+                          iconTone={u.reason ? "bg-amber-soft text-amber" : "bg-rose-soft text-rose"}
+                          title={
+                            <>
+                              {u.studentName}
+                              <span className="font-normal text-ink-soft"> · {u.topicTitle}</span>
+                            </>
+                          }
+                          sub={
+                            <>
+                              <span className={cls("font-semibold", u.reason ? "text-amber" : "text-rose")}>
+                                {u.reason ? t(`reason.${u.reason}`) : t("reason.none")}
+                              </span>
+                              {u.note && <span> — {u.note}</span>}
+                              <span> · {formatDate(locale, u.at, "short")} · {u.teacherName}</span>
+                            </>
+                          }
+                        />
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </Disclosure>
+            </BentoCard>
           </div>
         )}
       </AsyncSection>
@@ -244,24 +269,74 @@ export function ControlPage() {
         emptyText={t("noPolicies")}
         onRetry={() => policies.refetch()}
       >
-        <Card className="p-0">
-          <div className="flex flex-wrap items-center gap-2 border-b border-line px-4 py-3">
-            <Icon icon={ShieldCheck} size={16} className="text-brand-tint" />
-            <p className="text-section font-extrabold text-ink">{t("policyTitle")}</p>
-            <p className="w-full text-micro text-ink-dim sm:w-auto sm:flex-1">{t("policyHint")}</p>
-          </div>
+        <TableCard
+          title={
+            <span className="inline-flex items-center gap-2">
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-soft text-brand-tint">
+                <Icon icon={ShieldCheck} size={15} />
+              </span>
+              {t("policyTitle")}
+            </span>
+          }
+          footer={
+            <div className="flex flex-wrap items-end gap-2">
+              <label className="min-w-40 flex-1">
+                <span className="mb-1 block text-micro font-semibold text-ink-soft">{t("addLevel")}</span>
+                <Select
+                  value={newLevel}
+                  onChange={(e) => {
+                    setNewLevel(e.target.value as "FACULTY" | "DEPARTMENT");
+                    setNewScope("");
+                  }}
+                >
+                  <option value="DEPARTMENT">{t("level.DEPARTMENT")}</option>
+                  <option value="FACULTY">{t("level.FACULTY")}</option>
+                </Select>
+              </label>
+              <label className="min-w-48 flex-1">
+                <span className="mb-1 block text-micro font-semibold text-ink-soft">{t("addScope")}</span>
+                <Select value={newScope} onChange={(e) => setNewScope(e.target.value)}>
+                  <option value="">—</option>
+                  {scopeOptions.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </Select>
+              </label>
+              <Button
+                size="md"
+                disabled={!newScope}
+                onClick={() => {
+                  const base = policies.data?.policies.find((p) => p.level === "UNIVERSITY");
+                  if (!base) return;
+                  openEdit({
+                    ...base,
+                    id: 0,
+                    level: newLevel,
+                    scopeId: Number(newScope),
+                    scopeName: scopeOptions.find((o) => String(o.value) === newScope)?.label ?? null,
+                  });
+                }}
+              >
+                {t("addBtn")}
+              </Button>
+            </div>
+          }
+        >
+          <p className="px-4 py-2 text-micro text-ink-soft">{t("policyHint")}</p>
           <DataTable
             hideOnMobile={[4]}
             headers={[t("th.level"), t("th.pass"), t("th.attempts"), t("th.strict"), t("th.updated"), ""]}
           >
             {(policies.data?.policies ?? []).map((p) => (
-              <tr key={p.id} className="border-b border-line last:border-0 hover:bg-bg/60">
-                <td className="px-4 py-3 font-bold text-ink">
+              <tr key={p.id} className="border-b border-line last:border-0 hover:bg-surface-raised">
+                <td className="px-4 py-3 font-semibold text-ink">
                   {t(`level.${p.level}`)}
-                  {p.scopeName && <span className="font-medium text-ink-dim"> · {p.scopeName}</span>}
+                  {p.scopeName && <span className="font-normal text-ink-soft"> · {p.scopeName}</span>}
                 </td>
-                <td className="px-4 py-3 font-data tabular-nums text-ink-soft">{p.minQuizPassedPct}%</td>
-                <td className="px-4 py-3 font-data tabular-nums text-ink-soft">
+                <td className="px-4 py-3 font-data tabular-nums text-ink-2">{p.minQuizPassedPct}%</td>
+                <td className="px-4 py-3 font-data tabular-nums text-ink-2">
                   {p.minQuizAttempts}–{p.maxQuizAttempts} · {p.minAttemptGapHours}
                   {t("hoursShort")}
                 </td>
@@ -273,7 +348,7 @@ export function ControlPage() {
                     {!p.allowManualUnlock && <Chip label={t("c.noManual")} tone="rose" />}
                   </span>
                 </td>
-                <td className="px-4 py-3 text-micro text-ink-faint">
+                <td className="px-4 py-3 text-micro text-ink-soft">
                   {p.updatedBy ?? "—"} · {formatDate(locale, p.updatedAt, "short")}
                 </td>
                 <td className="px-4 py-3 text-right">
@@ -284,50 +359,7 @@ export function ControlPage() {
               </tr>
             ))}
           </DataTable>
-          <div className="flex flex-wrap items-end gap-2 border-t border-line px-4 py-3">
-            <label className="min-w-[160px] flex-1">
-              <span className="mb-1 block text-micro font-bold text-ink-soft">{t("addLevel")}</span>
-              <Select
-                value={newLevel}
-                onChange={(e) => {
-                  setNewLevel(e.target.value as "FACULTY" | "DEPARTMENT");
-                  setNewScope("");
-                }}
-              >
-                <option value="DEPARTMENT">{t("level.DEPARTMENT")}</option>
-                <option value="FACULTY">{t("level.FACULTY")}</option>
-              </Select>
-            </label>
-            <label className="min-w-[200px] flex-1">
-              <span className="mb-1 block text-micro font-bold text-ink-soft">{t("addScope")}</span>
-              <Select value={newScope} onChange={(e) => setNewScope(e.target.value)}>
-                <option value="">—</option>
-                {scopeOptions.map((o) => (
-                  <option key={o.value} value={o.value}>
-                    {o.label}
-                  </option>
-                ))}
-              </Select>
-            </label>
-            <Button
-              size="md"
-              disabled={!newScope}
-              onClick={() => {
-                const base = policies.data?.policies.find((p) => p.level === "UNIVERSITY");
-                if (!base) return;
-                openEdit({
-                  ...base,
-                  id: 0,
-                  level: newLevel,
-                  scopeId: Number(newScope),
-                  scopeName: scopeOptions.find((o) => String(o.value) === newScope)?.label ?? null,
-                });
-              }}
-            >
-              {t("addBtn")}
-            </Button>
-          </div>
-        </Card>
+        </TableCard>
       </AsyncSection>
 
       <Modal open={!!edit} onClose={() => !save.isPending && setEdit(null)} title={t("editTitle")}>
@@ -382,7 +414,7 @@ function Chip({ label, tone = "brand" }: { label: string; tone?: "brand" | "rose
   return (
     <span
       className={cls(
-        "rounded-pill px-2 py-0.5 text-micro font-bold",
+        "rounded-pill px-2 py-0.5 text-micro font-semibold",
         tone === "rose" ? "bg-rose-soft text-rose" : "bg-brand-soft text-brand-tint"
       )}
     >

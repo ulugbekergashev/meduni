@@ -35,10 +35,15 @@ export function ChatPanel({
   topicId,
   locked = false,
   onClose,
+  initialQuestion = null,
+  onInitialSent,
 }: {
   topicId: number;
   locked?: boolean;
   onClose?: () => void;
+  /** Tashqaridan kelgan savol (bosh sahifa tutor kartasi) — bir marta yuboriladi. */
+  initialQuestion?: string | null;
+  onInitialSent?: () => void;
 }) {
   const { t } = useTranslation(undefined, { keyPrefix: "lesson" });
   const locale = useLocale();
@@ -63,6 +68,16 @@ export function ChatPanel({
     send.mutate(clean);
     setDraft("");
   };
+
+  // Tarix yuklangach bir marta yuboriladi; ref — StrictMode'da ikki marta ketmasin.
+  const initialSent = useRef(false);
+  useEffect(() => {
+    if (!initialQuestion || initialSent.current || locked || chat.isLoading) return;
+    initialSent.current = true;
+    submit(initialQuestion);
+    onInitialSent?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- faqat savol va yuklanish holatiga qarab
+  }, [initialQuestion, locked, chat.isLoading]);
 
   const errMsg = send.isError ? apiErrorMessage(send.error, locale === "ru" ? "ru" : "uz") : null;
   const suggestions = [t("chatSuggest1"), t("chatSuggest2")];

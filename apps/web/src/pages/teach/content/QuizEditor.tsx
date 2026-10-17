@@ -39,13 +39,13 @@ export function QuizEditor({ content }: { content: ContentFull }) {
     <div>
       <button
         onClick={() => navigate(`/teach/topics/${content.topicId}`)}
-        className="inline-flex items-center gap-1.5 text-note font-medium text-brand-deep hover:underline"
+        className="inline-flex items-center gap-1.5 rounded-pill text-note font-semibold text-ink-soft transition-colors hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
       >
         <Icon icon={ArrowLeft} size={14} />{t("back")}
       </button>
 
       <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-h1 font-bold text-ink">{t("title")}</h1>
+        <h1 className="text-h1 font-semibold text-ink">{t("title")}</h1>
         <div className="flex items-center gap-3">
           <label className="flex items-center gap-2 text-note text-ink-soft">
             {t("passThreshold")}
@@ -148,7 +148,7 @@ export function QuizEditor({ content }: { content: ContentFull }) {
 
       <button
         onClick={() => setQuestions((qs) => [...qs, emptyQuestion()])}
-        className="mt-4 inline-flex items-center gap-1 text-note font-medium text-brand-deep hover:underline"
+        className="mt-4 inline-flex items-center gap-1 text-note font-semibold text-brand-tint hover:underline"
       >
         <Icon icon={Plus} size={15} /> {t("addQuestion")}
       </button>

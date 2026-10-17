@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { GraduationCap, Plus, Users2, X } from "lucide-react";
-import { Button, Card, Icon, Modal, Spinner, useToast } from "@meduni/ui";
-import { AsyncSection } from "../../../components/AsyncSection";
+import { Plus, Users2, X } from "lucide-react";
+import { Button, EmptyState, Icon, Modal, Spinner, useToast } from "@meduni/ui";
+import { BentoCard, BentoRow } from "../../../components/bento";
 import { ConfirmDialog } from "../../../components/ConfirmDialog";
 import { apiErrorMessage } from "../../../lib/api";
 import { useLocale } from "../../../lib/useLocale";
@@ -22,6 +22,7 @@ export function CourseGroupsTab() {
   const courseId = Number(id);
   const { t } = useTranslation(undefined, { keyPrefix: "courseGroups" });
   const { t: tc } = useTranslation(undefined, { keyPrefix: "common" });
+  const { t: tt } = useTranslation(undefined, { keyPrefix: "teach" });
   const locale = useLocale();
   const navigate = useNavigate();
   const { show } = useToast();
@@ -48,62 +49,59 @@ export function CourseGroupsTab() {
 
   return (
     <div>
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-        <p className="text-note text-ink-soft">{t("subtitleManage")}</p>
-        <Button size="sm" icon={<Icon icon={Plus} size={15} />} onClick={() => setAddOpen(true)}>
-          {t("attachBtn")}
-        </Button>
-      </div>
-
-      {q.isLoading ? (
-        <div className="flex min-h-[30vh] items-center justify-center"><Spinner size={24} /></div>
-      ) : (
-        <AsyncSection
-          isLoading={false}
-          isError={q.isError}
-          isEmpty={groups.length === 0}
-          emptyIcon={<Icon icon={Users2} size={22} />}
-          emptyText={t("emptyManage")}
-          onRetry={() => q.refetch()}
-        >
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {groups.map((g) => (
-              <Card key={g.groupId} className="group relative flex flex-col gap-3">
-                <button
-                  onClick={() => { setDetachError(null); setDetaching(g); }}
-                  className="absolute right-2.5 top-2.5 z-10 rounded-control p-1.5 text-ink-faint opacity-0 transition-all hover:bg-rose-soft hover:text-rose focus-visible:opacity-100 group-hover:opacity-100"
-                  aria-label={t("detach")}
-                  title={t("detach")}
-                >
-                  <Icon icon={X} size={15} />
-                </button>
-                <button onClick={() => navigate(`/teach/groups/${g.groupId}`)} className="flex flex-col gap-3 text-left">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <h3 className="text-body font-bold text-ink">{g.name}</h3>
-                      <p className="truncate text-note text-ink-faint">
-                        {t("yearN", { n: g.yearOfStudy })} · {g.facultyName}
-                      </p>
-                    </div>
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand-deep">
-                      <Icon icon={Users2} size={18} />
-                    </div>
-                  </div>
-                  <div className="mt-auto space-y-1.5">
-                    <div className="flex items-center justify-between text-note text-ink-soft">
-                      <span className="inline-flex items-center gap-1.5"><Icon icon={GraduationCap} size={14} /> {t("studentsN", { n: g.studentCount })}</span>
-                      <span className="font-semibold text-ink">{g.avgProgress}%</span>
-                    </div>
-                    <div className="h-1.5 w-full overflow-hidden rounded-pill bg-bg">
-                      <div className="h-full rounded-pill bg-brand transition-all" style={{ width: `${Math.max(g.avgProgress, 2)}%` }} />
-                    </div>
-                  </div>
-                </button>
-              </Card>
-            ))}
+      <BentoCard
+        title={tt("tabs.groups")}
+        count={groups.length}
+        isLoading={q.isLoading}
+        isError={q.isError}
+        onRetry={() => q.refetch()}
+        bodyClassName="px-2 pb-3"
+        right={
+          <Button size="sm" icon={<Icon icon={Plus} size={15} />} onClick={() => setAddOpen(true)}>
+            {t("attachBtn")}
+          </Button>
+        }
+      >
+        <p className="mb-2 px-2 text-note text-ink-soft">{t("subtitleManage")}</p>
+        {groups.length === 0 ? (
+          <div className="flex items-center justify-center px-2 py-4">
+            <EmptyState icon={<Icon icon={Users2} size={20} />} text={t("emptyManage")} />
           </div>
-        </AsyncSection>
-      )}
+        ) : (
+          <ul className="space-y-0.5">
+            {groups.map((g) => (
+              <li key={g.groupId}>
+                <BentoRow
+                  icon={Users2}
+                  iconTone="bg-blue-soft text-blue"
+                  title={g.name}
+                  sub={`${t("yearN", { n: g.yearOfStudy })} · ${g.facultyName} · ${t("studentsN", { n: g.studentCount })}`}
+                  right={
+                    <span className="flex items-center gap-2">
+                      <span className="hidden h-1.5 w-24 overflow-hidden rounded-pill bg-line sm:block">
+                        {g.avgProgress > 0 && <span className="block h-full rounded-pill bg-brand" style={{ width: `${g.avgProgress}%` }} />}
+                      </span>
+                      {g.avgProgress}%
+                    </span>
+                  }
+                  onClick={() => navigate(`/teach/groups/${g.groupId}`)}
+                  trailing={
+                    <button
+                      type="button"
+                      onClick={() => { setDetachError(null); setDetaching(g); }}
+                      className="shrink-0 rounded-pill p-1.5 text-ink-faint transition-colors hover:bg-rose-soft hover:text-rose focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                      aria-label={t("detach")}
+                      title={t("detach")}
+                    >
+                      <Icon icon={X} size={15} />
+                    </button>
+                  }
+                />
+              </li>
+            ))}
+          </ul>
+        )}
+      </BentoCard>
 
       {addOpen && <AttachModal courseId={courseId} onClose={() => setAddOpen(false)} />}
 

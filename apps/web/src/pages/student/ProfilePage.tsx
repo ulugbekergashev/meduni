@@ -8,14 +8,16 @@ import {
   CalendarRange,
   GraduationCap,
   Hash,
-  Languages,
+  KeyRound,
   LogOut,
   Mail,
   Phone,
   Users,
   type LucideIcon,
 } from "lucide-react";
-import { Badge, Button, Card, Icon, Spinner, cls, useToast } from "@meduni/ui";
+import { Button, Icon, useToast } from "@meduni/ui";
+import { BentoCard, PageHeader } from "../../components/bento";
+import { PillTabs, SoftChip } from "./parts/bento";
 import { ApiError } from "../../lib/api";
 import { useLocale } from "../../lib/useLocale";
 import { useLogout } from "../../lib/auth";
@@ -25,24 +27,18 @@ import { CheckinDevices } from "./CheckinDevices";
 /** Ma'lumotnoma qatori: ikonka + yorliq + qiymat. */
 function InfoRow({ icon, label, value }: { icon: LucideIcon; label: string; value: string }) {
   return (
-    <div className="flex items-center gap-3 border-b border-line py-2.5 last:border-0">
-      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-control bg-surface-raised text-ink-soft">
+    <div className="flex items-center gap-3 border-b border-line-soft px-2 py-2.5 last:border-0">
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface-raised text-ink-2">
         <Icon icon={icon} size={15} />
-      </div>
-      <span className="w-32 shrink-0 text-note text-ink-faint">{label}</span>
-      <span className="min-w-0 flex-1 truncate text-body font-medium text-ink">{value}</span>
+      </span>
+      <span className="w-28 shrink-0 text-note text-ink-soft sm:w-32">{label}</span>
+      <span className="min-w-0 flex-1 truncate text-body font-semibold text-ink">{value}</span>
     </div>
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <Card>
-      <h2 className="mb-1 text-section font-bold text-ink">{title}</h2>
-      <div>{children}</div>
-    </Card>
-  );
-}
+const inputCls =
+  "h-10 w-full rounded-control border border-line bg-surface-raised px-3 text-body text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-brand focus:bg-surface";
 
 /** Talaba profili — ma'lumotnoma (kim, qayerda o'qiydi) + hisob sozlamalari.
  *  O'quv ko'rsatkichlari (davomat %, progress, reyting) ATAYIN bu yerda emas —
@@ -96,54 +92,51 @@ export function ProfilePage() {
     );
   };
 
-  if (q.isLoading) {
-    return (
-      <div className="flex min-h-[40vh] items-center justify-center">
-        <Spinner size={26} />
-      </div>
-    );
-  }
 
   const initials =
     (p?.fullName ?? "").split(" ").filter(Boolean).slice(0, 2).map((s) => s[0]?.toUpperCase()).join("") || "?";
 
-  return (
-    <div className="mx-auto max-w-5xl">
-      <h1 className="text-h1 font-bold text-ink">{t("title")}</h1>
-      <p className="mt-1 text-body text-ink-soft">{t("subtitle")}</p>
+  const doLogout = () => logout.mutate(undefined, { onSuccess: () => navigate("/login", { replace: true }) });
 
-      {q.isError || !p ? (
-        <Card className="mt-4">
-          <p className="py-6 text-center text-body text-rose">{t("loadError")}</p>
-        </Card>
+  return (
+    <div className="space-y-3">
+      <PageHeader
+        className="mb-0"
+        title={t("title")}
+        subtitle={t("subtitle")}
+        right={
+          <Button variant="ghost" size="sm" className="h-9 rounded-pill" icon={<Icon icon={LogOut} size={14} />} onClick={doLogout}>
+            {t("logout")}
+          </Button>
+        }
+      />
+
+      {q.isLoading || q.isError || !p ? (
+        <BentoCard isLoading={q.isLoading} isError={!q.isLoading} onRetry={() => q.refetch()} />
       ) : (
-        <div className="mt-5 space-y-4">
-          {/* Identity — kim */}
-          <Card className="flex flex-wrap items-center gap-5">
-            <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-card bg-brand-soft text-stat font-bold text-brand-tint">
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+          {/* Identity — kim (sahifaning yagona pastel yuzasi) */}
+          <section className="flex flex-wrap items-center gap-4 rounded-card bg-brand-soft p-5 lg:col-span-2">
+            <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-ink text-stat font-semibold text-surface">
               {initials}
-            </div>
+            </span>
             <div className="min-w-0 flex-1">
-              <h2 className="truncate text-section font-bold text-ink">{p.fullName}</h2>
-              <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-body text-ink-soft">
-                {p.facultyName && <span>{p.facultyName}</span>}
-                {p.groupName && (
-                  <>
-                    <span className="text-ink-faint">·</span>
-                    <span>{p.groupName}</span>
-                  </>
-                )}
+              <h2 className="truncate text-h1 font-semibold text-ink">{p.fullName}</h2>
+              <p className="mt-0.5 truncate text-note text-ink-2">
+                {[p.facultyName, p.groupName].filter(Boolean).join(" · ")}
               </p>
               <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                <Badge tone={p.isActive ? "emerald" : "slate"}>{p.isActive ? t("activeBadge") : t("inactiveBadge")}</Badge>
-                <Badge tone="brand">{t("studentBadge")}</Badge>
-                <span className="rounded-pill bg-surface-raised px-2 py-0.5 text-note font-semibold text-ink-soft">ID: {p.id}</span>
+                <SoftChip text={p.isActive ? "text-emerald" : "text-ink-soft"}>
+                  {p.isActive ? t("activeBadge") : t("inactiveBadge")}
+                </SoftChip>
+                <SoftChip>{t("studentBadge")}</SoftChip>
+                <SoftChip className="tabular-nums">ID {p.id}</SoftChip>
               </div>
             </div>
-          </Card>
+          </section>
 
           {/* O'quv ma'lumotlari — qayerda o'qiydi */}
-          <Section title={t("academicInfo")}>
+          <BentoCard title={t("academicInfo")} bodyClassName="px-2 pb-2">
             <InfoRow icon={Building2} label={t("faculty")} value={p.facultyName ?? "—"} />
             <InfoRow icon={Users} label={t("group")} value={p.groupName ?? "—"} />
             <InfoRow
@@ -154,98 +147,88 @@ export function ProfilePage() {
             <InfoRow
               icon={CalendarRange}
               label={t("currentPeriod")}
-              value={
-                p.academicYear
-                  ? `${p.academicYear} · ${tp("semester", { n: p.semester ?? 0 })}`
-                  : "—"
-              }
+              value={p.academicYear ? `${p.academicYear} · ${tp("semester", { n: p.semester ?? 0 })}` : "—"}
             />
             <InfoRow icon={BookOpen} label={t("activeCourses")} value={String(p.coursesCount)} />
-          </Section>
+          </BentoCard>
 
           {/* Aloqa — o'zgartirish adminda */}
-          <Section title={t("contactInfo")}>
+          <BentoCard title={t("contactInfo")} bodyClassName="px-2 pb-3">
             <InfoRow icon={Mail} label={t("email")} value={p.email} />
             <InfoRow icon={Phone} label={t("phone")} value={p.phone ?? "—"} />
             <InfoRow icon={Hash} label={t("idLabel")} value={`#${p.id}`} />
-            <InfoRow icon={Languages} label={t("language")} value={locale === "ru" ? "Русский" : "O‘zbek (lotin)"} />
-          </Section>
-          <p className="-mt-2 px-1 text-note text-ink-faint">{t("adminNote")}</p>
+            <p className="mt-2 px-2 text-micro text-ink-soft">{t("adminNote")}</p>
+          </BentoCard>
 
           {/* Sozlamalar — foydalanuvchi o'zi o'zgartiradi */}
-          <Card className="space-y-5">
-            <h2 className="text-section font-bold text-ink">{t("settings")}</h2>
-
+          <BentoCard title={t("settings")} bodyClassName="space-y-4 px-4 pb-4">
             <div>
               <p className="mb-1.5 text-note font-semibold text-ink-soft">{t("language")}</p>
-              <div className="flex overflow-hidden rounded-control border border-line">
-                {(["uz", "ru"] as const).map((l) => (
-                  <button
-                    key={l}
-                    onClick={() => pickLocale(l)}
-                    disabled={setLocale.isPending}
-                    className={cls(
-                      "flex-1 px-3 py-2 text-body font-semibold transition-colors",
-                      locale === l ? "bg-brand-soft text-brand-tint" : "text-ink-soft hover:bg-surface-raised"
-                    )}
-                  >
-                    {l === "uz" ? "O‘zbek (lotin)" : "Русский"}
-                  </button>
-                ))}
-              </div>
+              <PillTabs<"uz" | "ru">
+                label={t("language")}
+                value={locale === "ru" ? "ru" : "uz"}
+                onChange={pickLocale}
+                items={[
+                  { key: "uz", label: "O‘zbek (lotin)" },
+                  { key: "ru", label: "Русский" },
+                ]}
+              />
             </div>
 
-            {/* Tema tanlash yo'q — talaba tomoni faqat qorong'i (dizayn qarori). */}
+            {/* Tema tanlash yo'q — u shapkadagi tugmada. */}
 
             <div className="space-y-2">
-              <p className="text-note font-semibold text-ink-soft">{t("changePassword")}</p>
+              <p className="flex items-center gap-1.5 text-note font-semibold text-ink-soft">
+                <Icon icon={KeyRound} size={14} />
+                {t("changePassword")}
+              </p>
               <input
                 type="password"
+                autoComplete="current-password"
                 value={oldPassword}
                 onChange={(e) => {
                   setOld(e.target.value);
                   setPwErr(null);
                 }}
                 placeholder={t("oldPassword")}
-                className="w-full rounded-control border border-line px-3 py-2 text-body outline-none focus:border-brand"
+                aria-label={t("oldPassword")}
+                className={inputCls}
               />
-              <input
-                type="password"
-                value={newPassword}
-                onChange={(e) => {
-                  setNew(e.target.value);
-                  setPwErr(null);
-                }}
-                placeholder={t("newPassword")}
-                className="w-full rounded-control border border-line px-3 py-2 text-body outline-none focus:border-brand"
-              />
-              <input
-                type="password"
-                value={confirm}
-                onChange={(e) => {
-                  setConfirm(e.target.value);
-                  setPwErr(null);
-                }}
-                placeholder={t("confirmPassword")}
-                className="w-full rounded-control border border-line px-3 py-2 text-body outline-none focus:border-brand"
-              />
+              <div className="grid gap-2 sm:grid-cols-2">
+                <input
+                  type="password"
+                  autoComplete="new-password"
+                  value={newPassword}
+                  onChange={(e) => {
+                    setNew(e.target.value);
+                    setPwErr(null);
+                  }}
+                  placeholder={t("newPassword")}
+                  aria-label={t("newPassword")}
+                  className={inputCls}
+                />
+                <input
+                  type="password"
+                  autoComplete="new-password"
+                  value={confirm}
+                  onChange={(e) => {
+                    setConfirm(e.target.value);
+                    setPwErr(null);
+                  }}
+                  placeholder={t("confirmPassword")}
+                  aria-label={t("confirmPassword")}
+                  className={inputCls}
+                />
+              </div>
               {pwErr && <p className="text-note font-medium text-rose">{pwErr}</p>}
               <Button onClick={submitPw} disabled={changePw.isPending || !oldPassword || !newPassword || !confirm}>
                 {t("save")}
               </Button>
             </div>
-          </Card>
+          </BentoCard>
 
           {/* FaceID davomat qurilmalari */}
           <CheckinDevices />
-
-          <Button
-            variant="ghost"
-            className="w-full"
-            onClick={() => logout.mutate(undefined, { onSuccess: () => navigate("/login", { replace: true }) })}
-          >
-            <Icon icon={LogOut} size={16} /> {t("logout")}
-          </Button>
         </div>
       )}
     </div>

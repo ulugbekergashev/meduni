@@ -126,7 +126,7 @@ export function VideoTab({
   return (
     <div className="mx-auto max-w-5xl space-y-3">
       {/* Kino rejimi (Theater mode) uslubidagi media player */}
-      <div className="relative overflow-hidden rounded-[16px] bg-black shadow-2xl ring-1 ring-black/5">
+      <div className="relative overflow-hidden rounded-card bg-black shadow-2xl ring-1 ring-black/5">
         <video
           ref={ref}
           src={src}
@@ -160,7 +160,7 @@ export function VideoTab({
               onClick={playVideo}
               className="group flex flex-col items-center gap-4 transition-transform hover:scale-105 active:scale-95"
             >
-              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-brand text-white shadow-[0_0_40px_rgba(0,184,148,0.5)] transition-all group-hover:bg-brand-deep group-hover:shadow-[0_0_60px_rgba(0,184,148,0.7)]">
+              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-ink text-surface transition-colors group-hover:bg-ink-2">
                 <svg className="ml-2 h-10 w-10 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
               </div>
               <span className="rounded-full border border-white/20 bg-black/40 px-5 py-2 text-body font-bold text-white shadow-sm">

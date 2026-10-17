@@ -132,7 +132,7 @@ export function PodcastTab({ topicId, data }: { topicId: number; data: LessonPod
                 key={r}
                 onClick={() => setRate(r)}
                 className={cls(
-                  "rounded-[6px] px-2 py-1 text-micro font-extrabold font-data tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
+                  "rounded-pill px-2 py-1 text-micro font-extrabold font-data tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
                   speed === r ? "bg-brand-soft text-brand-tint" : "text-ink-dim hover:text-ink"
                 )}
               >

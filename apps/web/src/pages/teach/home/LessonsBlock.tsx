@@ -1,22 +1,18 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { CalendarDays, ChevronLeft, ChevronRight, ClipboardCheck, DoorClosed, Search, Users2 } from "lucide-react";
-import { Button, Card, Icon, Select, Spinner, cls } from "@meduni/ui";
-import { AsyncSection } from "../../../components/AsyncSection";
+import { CalendarDays, ChevronLeft, ChevronRight, ClipboardCheck, DoorClosed, Search, Users2, X } from "lucide-react";
+import { Button, EmptyState, Icon, Segmented, Select, Spinner, cls } from "@meduni/ui";
+import { BentoCard, RetryLine } from "../../../components/bento";
 import { MonthCalendar, type CalEntry } from "../../../components/MonthCalendar";
 import { formatDate } from "../../../lib/date";
 import { useLocale } from "../../../lib/useLocale";
 import { RollCallModal } from "../course/attendance/RollCallModal";
 import { useTeacherLessons, useTeachGroups, type DerivedLesson } from "../api";
 
-// "Darslarim" ALOHIDA SAHIFA emas — bosh sahifadagi blok (2026-08-03,
-// buyurtmachi: "vazifalar va darslarimni ham bugun ichida bo'lsin, bu tablarni
-// yo'qot"). Sukut bo'yicha faqat BUGUNGI darslar ko'rinadi; hafta/oy shu
-// blokning o'zida ochiladi — sahifa almashmaydi, kontekst yo'qolmaydi.
-//
-// ⚠️ Filtrlar (qidiruv, guruh, "yo'qlama kutmoqda") faqat hafta/oy rejimida
-// chiziladi: bugungi 1-3 ta darsni filtrlashning ma'nosi yo'q va ular bosh
-// sahifani boshqaruvga to'ldirib yuborardi.
+// "Darslarim" ALOHIDA SAHIFA emas — bosh sahifadagi blok (2026-08-03).
+// Dizayn v3 (2026-10): BUGUNGI darslar endi o'ng ustundagi `TodayLessonsCard`da;
+// bu blok faqat HAFTA / OY jadvali — "Jadval" bosilganda (yoki eski
+// `/teach/schedule` deep-linkidan) ochiladi, sahifa almashmaydi.
 
 const WEEKDAYS_SHORT_UZ = ["Du", "Se", "Ch", "Pa", "Ju", "Sh", "Ya"];
 const WEEKDAYS_SHORT_RU = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
@@ -24,7 +20,7 @@ const CAL_WD_UZ = ["Dush", "Sesh", "Chor", "Pay", "Juma", "Shan", "Yak"];
 const CAL_WD_RU = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
 const MONTHS_UZ = ["Yanvar", "Fevral", "Mart", "Aprel", "May", "Iyun", "Iyul", "Avgust", "Sentabr", "Oktabr", "Noyabr", "Dekabr"];
 
-export type LessonMode = "today" | "week" | "month";
+export type LessonMode = "week" | "month";
 
 export function dayKey(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -39,63 +35,50 @@ function statusBorder(s: DerivedLesson["status"]): string {
   return s === "FULL" ? "border-l-emerald" : s === "PARTIAL" ? "border-l-amber" : "border-l-brand";
 }
 function statusCount(s: DerivedLesson["status"]): string {
-  return s === "FULL" ? "text-emerald" : s === "PARTIAL" ? "text-amber" : "text-ink-faint";
+  return s === "FULL" ? "text-emerald" : s === "PARTIAL" ? "text-amber" : "text-ink-soft";
 }
 function calTone(s: DerivedLesson["status"]): CalEntry["tone"] {
   return s === "FULL" ? "emerald" : s === "PARTIAL" ? "amber" : "brand";
 }
 
+const navBtn =
+  "rounded-pill p-2 text-ink-soft transition-colors hover:bg-surface-raised hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand";
+
 /** Bitta katakdagi dars kartasi — bosilsa yo'qlama ochiladi. */
 function LessonCell({ l, onMark }: { l: DerivedLesson; onMark: () => void }) {
   return (
     <button
+      type="button"
       onClick={onMark}
       className={cls(
-        "group flex w-full flex-col gap-0.5 rounded-control border-l-4 bg-surface px-2.5 py-2 text-left transition-all hover:-translate-y-0.5 hover:shadow-card-hover focus-visible:ring-2 focus-visible:ring-brand",
+        "group flex w-full flex-col gap-0.5 rounded-control border border-l-4 border-line bg-surface px-2.5 py-2 text-left transition-colors hover:border-ink-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
         statusBorder(l.status)
       )}
     >
-      <p className="truncate text-micro font-bold text-ink">{l.courseName}</p>
+      <p className="truncate text-micro font-semibold text-ink">{l.courseName}</p>
       <div className="flex flex-wrap items-center gap-x-2 text-micro text-ink-soft">
         {l.groupName && <span className="inline-flex items-center gap-1"><Icon icon={Users2} size={11} /> {l.groupName}</span>}
         {l.room && <span className="inline-flex items-center gap-1"><Icon icon={DoorClosed} size={11} /> {l.room}</span>}
       </div>
       <div className="mt-0.5 flex items-center justify-between">
-        <span className={cls("text-micro font-semibold font-data tabular-nums", statusCount(l.status))}>{l.markedCount}/{l.rosterSize}</span>
-        <Icon icon={ClipboardCheck} size={13} className="text-ink-faint opacity-0 transition-opacity group-hover:text-brand-deep group-hover:opacity-100" />
+        <span className={cls("font-data text-micro font-semibold tabular-nums", statusCount(l.status))}>{l.markedCount}/{l.rosterSize}</span>
+        <Icon icon={ClipboardCheck} size={13} className="text-ink-faint opacity-0 transition-opacity group-hover:text-brand-tint group-hover:opacity-100" />
       </div>
     </button>
   );
 }
 
-/** Bugungi dars qatori — eng ko'p ishlatiladigan ko'rinish (yo'qlama bir bosishda). */
-function TodayRow({ l, onMark, markLabel }: { l: DerivedLesson; onMark: () => void; markLabel: string }) {
-  return (
-    <Card className="flex items-center gap-3">
-      <div
-        className={cls(
-          "flex h-10 w-10 shrink-0 items-center justify-center rounded-control",
-          l.status === "FULL" ? "bg-emerald-soft text-emerald" : l.status === "PARTIAL" ? "bg-amber-soft text-amber" : "bg-brand-soft text-brand-deep"
-        )}
-      >
-        <Icon icon={CalendarDays} size={18} />
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-note font-bold text-ink">{l.startTime} · {l.courseName}</p>
-        <p className="truncate text-micro text-ink-soft">
-          {l.groupName ? `${l.groupName} · ` : ""}{l.room ? `${l.room} · ` : ""}{l.markedCount}/{l.rosterSize}
-        </p>
-      </div>
-      <Button size="sm" variant={l.status === "FULL" ? "ghost" : "primary"} icon={<Icon icon={ClipboardCheck} size={15} />} onClick={onMark}>
-        {markLabel}
-      </Button>
-    </Card>
-  );
-}
-
-export function LessonsBlock({ mode, onMode }: { mode: LessonMode; onMode: (m: LessonMode) => void }) {
+export function LessonsBlock({
+  mode,
+  onMode,
+  onClose,
+}: {
+  mode: LessonMode;
+  onMode: (m: LessonMode) => void;
+  onClose?: () => void;
+}) {
   const { t } = useTranslation(undefined, { keyPrefix: "teachSchedule" });
-  const { t: tt } = useTranslation(undefined, { keyPrefix: "teach" });
+  const { t: tc } = useTranslation(undefined, { keyPrefix: "common" });
   const locale = useLocale();
   const ru = locale === "ru";
   const dayShort = ru ? WEEKDAYS_SHORT_RU : WEEKDAYS_SHORT_UZ;
@@ -125,13 +108,7 @@ export function LessonsBlock({ mode, onMode }: { mode: LessonMode; onMode: (m: L
     return { from: dayKey(start), to: dayKey(end) };
   }, [monthDate]);
 
-  const range =
-    mode === "today"
-      ? { from: todayKey, to: todayKey }
-      : mode === "week"
-        ? { from: dayKey(weekDays[0]), to: dayKey(weekDays[6]) }
-        : monthRange;
-
+  const range = mode === "week" ? { from: dayKey(weekDays[0]), to: dayKey(weekDays[6]) } : monthRange;
   const q = useTeacherLessons({ from: range.from, to: range.to, search: search.trim() || undefined });
 
   const lessonsAll = useMemo(() => {
@@ -175,120 +152,102 @@ export function LessonsBlock({ mode, onMode }: { mode: LessonMode; onMode: (m: L
 
   const selectedLessons = selectedDay ? [...(byDay.get(selectedDay) ?? [])].sort((a, b) => a.startTime.localeCompare(b.startTime)) : [];
   const times = useMemo(() => Array.from(new Set(lessons.map((l) => l.startTime))).sort(), [lessons]);
-  const todayLessons = useMemo(() => [...lessons].sort((a, b) => a.startTime.localeCompare(b.startTime)), [lessons]);
 
   const pending = lessonsAll.filter((l) => l.status !== "FULL").length;
   const monthLabel = ru
     ? monthDate.toLocaleDateString("ru-RU", { month: "long", year: "numeric" })
     : `${MONTHS_UZ[monthDate.getMonth()]} ${monthDate.getFullYear()}`;
   const weekLabel = `${formatDate(ru ? "ru" : "uz", weekDays[0], "short")} – ${formatDate(ru ? "ru" : "uz", weekDays[6], "short")}`;
+  const isCurrentMonth = monthDate.getFullYear() === now.getFullYear() && monthDate.getMonth() === now.getMonth();
   const shiftMonth = (dir: -1 | 1) => {
     setSelectedDay(null);
     setMonthDate((d) => new Date(d.getFullYear(), d.getMonth() + dir, 1));
   };
-  const isCurrentMonth =
-    monthDate.getFullYear() === now.getFullYear() && monthDate.getMonth() === now.getMonth();
 
   return (
-    <section className="space-y-2.5">
-      {/* Sarlavha + rejim almashtirgichi (Bugun / Hafta / Oy) */}
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-section font-bold text-ink">
-          {mode === "today" ? tt("todayLessons") : t("title")}
-          {lessonsAll.length > 0 && <span className="ml-2 text-note font-semibold text-ink-faint">{lessonsAll.length}</span>}
-        </h2>
-        <div className="inline-flex gap-1 rounded-control border border-line bg-surface p-1">
-          {(["today", "week", "month"] as const).map((v) => (
-            <button
-              key={v}
-              type="button"
-              aria-pressed={mode === v}
-              onClick={mode === v ? undefined : () => onMode(v)}
-              className={cls(
-                "rounded-[8px] px-3 py-1 text-note font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
-                mode === v ? "bg-brand-soft text-brand-deep cursor-default" : "text-ink-soft hover:bg-bg hover:text-ink"
-              )}
-            >
-              {v === "today" ? t("today") : v === "week" ? t("viewWeek") : t("viewMonth")}
+    <BentoCard
+      title={t("title")}
+      count={lessonsAll.length}
+      right={
+        <span className="flex items-center gap-1.5">
+          <Segmented
+            size="sm"
+            value={mode}
+            onChange={onMode}
+            aria-label={t("title")}
+            options={[
+              { key: "week", label: t("viewWeek") },
+              { key: "month", label: t("viewMonth") },
+            ]}
+          />
+          {onClose && (
+            <button type="button" onClick={onClose} className={navBtn} aria-label={tc("collapse")}>
+              <Icon icon={X} size={16} />
             </button>
-          ))}
+          )}
+        </span>
+      }
+    >
+      {/* Boshqaruv: qidiruv, guruh, "yo'qlama kutmoqda" filtri, davr navigatsiyasi */}
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <div className="relative min-w-[180px] flex-1">
+          <Icon icon={Search} size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-faint" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={t("searchPlaceholder")}
+            aria-label={t("searchPlaceholder")}
+            className="h-9 w-full rounded-control border border-line-raised bg-surface-raised pl-9 pr-3 text-note text-ink outline-none transition-colors focus:border-brand focus:bg-surface"
+          />
         </div>
+        <Select value={groupId === "" ? "" : String(groupId)} onChange={(e) => setGroupId(e.target.value ? Number(e.target.value) : "")} className="w-auto min-w-[140px]">
+          <option value="">{t("allGroups")}</option>
+          {groups.map((g) => (
+            <option key={g.id} value={g.id}>{g.name}</option>
+          ))}
+        </Select>
+        {pending > 0 && (
+          <button
+            type="button"
+            aria-pressed={onlyPending}
+            onClick={() => setOnlyPending((v) => !v)}
+            className={cls(
+              "inline-flex items-center gap-1 rounded-pill px-3 py-1.5 text-note font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
+              onlyPending ? "bg-ink text-surface" : "bg-amber-soft text-amber hover:brightness-95"
+            )}
+          >
+            <Icon icon={ClipboardCheck} size={13} />
+            {t("statPending")}: <span className="font-data tabular-nums">{pending}</span>
+          </button>
+        )}
+        {mode === "week" ? (
+          <div className="flex items-center gap-1">
+            <button type="button" onClick={() => setWeekOffset((w) => w - 1)} className={navBtn} aria-label="prev"><Icon icon={ChevronLeft} size={18} /></button>
+            <span className="min-w-[140px] text-center text-note font-semibold text-ink">{weekLabel}</span>
+            <button type="button" onClick={() => setWeekOffset((w) => w + 1)} className={navBtn} aria-label="next"><Icon icon={ChevronRight} size={18} /></button>
+            {weekOffset !== 0 && <Button size="sm" variant="ghost" onClick={() => setWeekOffset(0)}>{t("today")}</Button>}
+          </div>
+        ) : (
+          <div className="flex items-center gap-1">
+            <button type="button" onClick={() => shiftMonth(-1)} className={navBtn} aria-label="prev"><Icon icon={ChevronLeft} size={18} /></button>
+            <span className="min-w-[140px] text-center text-note font-semibold capitalize text-ink">{monthLabel}</span>
+            <button type="button" onClick={() => shiftMonth(1)} className={navBtn} aria-label="next"><Icon icon={ChevronRight} size={18} /></button>
+            {/* ⚠️ "Bugun" faqat joriy oydan chiqib ketganda — hafta ko'rinishidagi
+                `weekOffset !== 0` qoidasi bilan bir xil (joriy oyda u hech narsa qilmasdi). */}
+            {!isCurrentMonth && (
+              <Button size="sm" variant="ghost" onClick={() => { setMonthDate(new Date(now.getFullYear(), now.getMonth(), 1)); setSelectedDay(null); }}>{t("today")}</Button>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* Boshqaruv — FAQAT hafta/oy rejimida (bugungi 2 ta darsga filtr kerak emas) */}
-      {mode !== "today" && (
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="relative min-w-[180px] flex-1">
-            <Icon icon={Search} size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-faint" />
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder={t("searchPlaceholder")}
-              className="w-full rounded-control border border-line bg-surface py-2 pl-9 pr-3 text-note outline-none focus:border-brand focus:ring-[3px] focus:ring-brand/10"
-            />
-          </div>
-          <Select value={groupId === "" ? "" : String(groupId)} onChange={(e) => setGroupId(e.target.value ? Number(e.target.value) : "")} className="w-auto min-w-[140px]">
-            <option value="">{t("allGroups")}</option>
-            {groups.map((g) => (
-              <option key={g.id} value={g.id}>{g.name}</option>
-            ))}
-          </Select>
-          {pending > 0 && (
-            <button
-              onClick={() => setOnlyPending((v) => !v)}
-              className={cls(
-                "inline-flex items-center gap-1 rounded-pill border px-2.5 py-1.5 text-note font-semibold transition-all",
-                onlyPending ? "border-amber bg-amber-soft text-amber" : "border-line text-amber hover:bg-amber-soft"
-              )}
-            >
-              <Icon icon={ClipboardCheck} size={13} />
-              {t("statPending")}: {pending}
-            </button>
-          )}
-          {mode === "week" ? (
-            <div className="flex items-center gap-1">
-              <button onClick={() => setWeekOffset((w) => w - 1)} className="rounded-control p-2 text-ink-soft hover:bg-bg" aria-label="prev"><Icon icon={ChevronLeft} size={18} /></button>
-              <span className="min-w-[140px] text-center text-note font-semibold text-ink">{weekLabel}</span>
-              <button onClick={() => setWeekOffset((w) => w + 1)} className="rounded-control p-2 text-ink-soft hover:bg-bg" aria-label="next"><Icon icon={ChevronRight} size={18} /></button>
-              {weekOffset !== 0 && <Button size="sm" variant="ghost" onClick={() => setWeekOffset(0)}>{t("today")}</Button>}
-            </div>
-          ) : (
-            <div className="flex items-center gap-1">
-              <button onClick={() => shiftMonth(-1)} className="rounded-control p-2 text-ink-soft hover:bg-bg" aria-label="prev"><Icon icon={ChevronLeft} size={18} /></button>
-              <span className="min-w-[140px] text-center text-note font-semibold capitalize text-ink">{monthLabel}</span>
-              <button onClick={() => shiftMonth(1)} className="rounded-control p-2 text-ink-soft hover:bg-bg" aria-label="next"><Icon icon={ChevronRight} size={18} /></button>
-              {/* ⚠️ "Bugun" faqat joriy oydan chiqib ketganda chiziladi —
-                  hafta ko'rinishidagi bilan bir xil qoida (yuqoridagi
-                  `weekOffset !== 0`). Ilgari u doim turardi va joriy oyda
-                  bosilganda hech narsa qilmasdi. */}
-              {!isCurrentMonth && (
-                <Button size="sm" variant="ghost" onClick={() => { setMonthDate(new Date(now.getFullYear(), now.getMonth(), 1)); setSelectedDay(null); }}>{t("today")}</Button>
-              )}
-            </div>
-          )}
-        </div>
-      )}
-
       {q.isLoading ? (
-        <div className="flex h-32 items-center justify-center"><Spinner size={22} /></div>
-      ) : mode === "today" ? (
-        <AsyncSection
-          isLoading={false}
-          isError={q.isError}
-          isEmpty={todayLessons.length === 0}
-          emptyIcon={<Icon icon={CalendarDays} size={24} />}
-          emptyText={tt("noTodayLessons")}
-          onRetry={() => q.refetch()}
-        >
-          <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
-            {todayLessons.map((l) => (
-              <TodayRow key={l.slotId + l.dayKey} l={l} onMark={() => setRoll(l)} markLabel={tt("markAttendance")} />
-            ))}
-          </div>
-        </AsyncSection>
+        <div className="flex h-32 items-center justify-center"><Spinner size={20} /></div>
+      ) : q.isError ? (
+        <RetryLine onRetry={() => q.refetch()} />
       ) : mode === "month" ? (
-        <>
-          <Card className="!p-0 overflow-hidden">
+        <div className="space-y-3">
+          <div className="overflow-hidden rounded-control border border-line">
             <MonthCalendar
               monthDate={monthDate}
               weekdayNames={ru ? CAL_WD_RU : CAL_WD_UZ}
@@ -296,29 +255,29 @@ export function LessonsBlock({ mode, onMode }: { mode: LessonMode; onMode: (m: L
               selectedKey={selectedDay}
               onSelectDay={(k) => setSelectedDay((cur) => (cur === k ? null : k))}
             />
-          </Card>
+          </div>
           {selectedDay && (
-            <Card className="!p-0 overflow-hidden">
-              <div className="flex items-center gap-2 bg-bg px-4 py-2.5">
+            <div className="overflow-hidden rounded-control border border-line">
+              <div className="flex items-center gap-2 bg-surface-raised px-4 py-2.5">
                 <Icon icon={CalendarDays} size={15} className="text-ink-soft" />
-                <span className="text-note font-bold text-ink">{formatDate(ru ? "ru" : "uz", new Date(selectedDay), "long")}</span>
-                <span className="ml-auto text-micro text-ink-faint">{t("nLessons", { n: selectedLessons.length })}</span>
+                <span className="text-note font-semibold text-ink">{formatDate(ru ? "ru" : "uz", new Date(selectedDay), "long")}</span>
+                <span className="ml-auto text-micro text-ink-soft">{t("nLessons", { n: selectedLessons.length })}</span>
               </div>
               {selectedLessons.length === 0 ? (
-                <p className="px-4 py-6 text-center text-note text-ink-faint">{t("noneThisDay")}</p>
+                <p className="px-4 py-6 text-center text-note text-ink-soft">{t("noneThisDay")}</p>
               ) : (
                 <div className="divide-y divide-line">
                   {selectedLessons.map((l) => (
                     <div key={l.slotId + l.dayKey} className={cls("flex flex-wrap items-center gap-3 border-l-4 bg-surface px-4 py-2.5", statusBorder(l.status))}>
-                      <span className="w-12 shrink-0 text-note font-bold font-data tabular-nums text-ink">{l.startTime}</span>
+                      <span className="w-12 shrink-0 font-data text-note font-semibold tabular-nums text-ink">{l.startTime}</span>
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-note font-bold text-ink">{l.courseName}</p>
+                        <p className="truncate text-note font-semibold text-ink">{l.courseName}</p>
                         <p className="mt-0.5 flex flex-wrap items-center gap-x-3 text-micro text-ink-soft">
                           {l.groupName && <span className="inline-flex items-center gap-1"><Icon icon={Users2} size={11} /> {l.groupName}</span>}
                           {l.room && <span className="inline-flex items-center gap-1"><Icon icon={DoorClosed} size={11} /> {l.room}</span>}
                         </p>
                       </div>
-                      <span className={cls("shrink-0 text-micro font-semibold font-data tabular-nums", statusCount(l.status))}>{l.markedCount}/{l.rosterSize}</span>
+                      <span className={cls("shrink-0 font-data text-micro font-semibold tabular-nums", statusCount(l.status))}>{l.markedCount}/{l.rosterSize}</span>
                       <Button size="sm" variant={l.status === "FULL" ? "ghost" : "primary"} icon={<Icon icon={ClipboardCheck} size={15} />} onClick={() => setRoll(l)}>
                         {l.status === "UNMARKED" ? t("mark") : t("edit")}
                       </Button>
@@ -326,21 +285,17 @@ export function LessonsBlock({ mode, onMode }: { mode: LessonMode; onMode: (m: L
                   ))}
                 </div>
               )}
-            </Card>
+            </div>
           )}
-        </>
+        </div>
       ) : lessons.length === 0 ? (
-        <AsyncSection
-          isLoading={false}
-          isError={q.isError}
-          isEmpty
-          emptyIcon={<Icon icon={CalendarDays} size={22} />}
-          emptyText={filtered ? t("noMatch") : t("noneThisWeek")}
-          emptyHint={filtered ? undefined : t("noneHint")}
-          onRetry={() => q.refetch()}
-        >
-          <div />
-        </AsyncSection>
+        <div className="flex items-center justify-center py-4">
+          <EmptyState
+            icon={<Icon icon={CalendarDays} size={20} />}
+            text={filtered ? t("noMatch") : t("noneThisWeek")}
+            hint={filtered ? undefined : t("noneHint")}
+          />
+        </div>
       ) : (
         <>
           {/* MOBIL: kun-agenda (to'r 860px talab qiladi) */}
@@ -351,37 +306,37 @@ export function LessonsBlock({ mode, onMode }: { mode: LessonMode; onMode: (m: L
               if (dayLessons.length === 0) return null;
               const isToday = dk === todayKey;
               return (
-                <Card key={dk} className="!p-0 overflow-hidden">
-                  <div className={cls("flex items-center gap-2 border-b border-line px-3 py-2", isToday ? "bg-brand-soft" : "bg-bg")}>
-                    <span className={cls("text-note font-bold", isToday ? "text-brand-deep" : "text-ink-soft")}>{dayShort[di]}</span>
-                    <span className={cls("text-body font-extrabold font-data tabular-nums", isToday ? "text-brand-deep" : "text-ink")}>{d.getDate()}</span>
-                    {isToday && <span className="rounded-pill bg-brand px-2 py-0.5 text-micro font-bold text-white">{t("today")}</span>}
+                <div key={dk} className="overflow-hidden rounded-control border border-line">
+                  <div className={cls("flex items-center gap-2 border-b border-line px-3 py-2", isToday ? "bg-brand-soft" : "bg-surface-raised")}>
+                    <span className={cls("text-note font-semibold", isToday ? "text-brand-deep" : "text-ink-soft")}>{dayShort[di]}</span>
+                    <span className={cls("font-data text-body font-semibold tabular-nums", isToday ? "text-brand-deep" : "text-ink")}>{d.getDate()}</span>
+                    {isToday && <span className="rounded-pill bg-ink px-2 py-0.5 text-micro font-semibold text-surface">{t("today")}</span>}
                   </div>
                   <div className="space-y-2 p-2">
                     {dayLessons.map(({ time, l }) => (
                       <div key={l.slotId + l.dayKey} className="flex items-start gap-2">
-                        <span className="w-12 shrink-0 pt-1 text-note font-bold font-data tabular-nums text-ink-soft">{time}</span>
+                        <span className="w-12 shrink-0 pt-1 font-data text-note font-semibold tabular-nums text-ink-soft">{time}</span>
                         <div className="min-w-0 flex-1"><LessonCell l={l} onMark={() => setRoll(l)} /></div>
                       </div>
                     ))}
                   </div>
-                </Card>
+                </div>
               );
             })}
           </div>
 
           {/* DESKTOP: haftalik to'r */}
-          <Card className="!p-0 overflow-x-auto hidden lg:block">
+          <div className="hidden overflow-x-auto rounded-control border border-line lg:block">
             <div className="min-w-[860px]">
               <div className="grid gap-px border-b border-line bg-line" style={{ gridTemplateColumns: "60px repeat(7, minmax(0, 1fr))" }}>
-                <div className="bg-bg" />
+                <div className="bg-surface-raised" />
                 {weekDays.map((d, i) => {
                   const isToday = dayKey(d) === todayKey;
                   return (
-                    <div key={i} className={cls("flex flex-col items-center py-2", isToday ? "bg-brand-soft" : "bg-bg")}>
-                      <span className={cls("text-micro font-bold", isToday ? "text-brand-deep" : "text-ink")}>{dayShort[i]}</span>
-                      <span className="text-micro text-ink-faint">{d.getDate()}</span>
-                      {isToday && <span className="mt-0.5 rounded-pill bg-brand px-1.5 text-micro font-bold text-white">{t("today")}</span>}
+                    <div key={i} className={cls("flex flex-col items-center py-2", isToday ? "bg-brand-soft" : "bg-surface-raised")}>
+                      <span className={cls("text-micro font-semibold", isToday ? "text-brand-deep" : "text-ink")}>{dayShort[i]}</span>
+                      <span className="text-micro text-ink-soft">{d.getDate()}</span>
+                      {isToday && <span className="mt-0.5 rounded-pill bg-ink px-1.5 text-micro font-semibold text-surface">{t("today")}</span>}
                     </div>
                   );
                 })}
@@ -389,7 +344,7 @@ export function LessonsBlock({ mode, onMode }: { mode: LessonMode; onMode: (m: L
               <div className="grid gap-px bg-line">
                 {times.map((time) => (
                   <div key={time} className="grid gap-px" style={{ gridTemplateColumns: "60px repeat(7, minmax(0, 1fr))" }}>
-                    <div className="flex items-start justify-center bg-surface pt-2 text-micro font-bold font-data tabular-nums text-ink-soft">{time}</div>
+                    <div className="flex items-start justify-center bg-surface pt-2 font-data text-micro font-semibold tabular-nums text-ink-soft">{time}</div>
                     {weekDays.map((d, i) => {
                       const list = cellMap.get(`${dayKey(d)}|${time}`) ?? [];
                       const isToday = dayKey(d) === todayKey;
@@ -403,9 +358,9 @@ export function LessonsBlock({ mode, onMode }: { mode: LessonMode; onMode: (m: L
                 ))}
               </div>
             </div>
-          </Card>
+          </div>
 
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-1 text-micro text-ink-soft">
+          <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 px-1 text-micro text-ink-soft">
             <span className="inline-flex items-center gap-1.5"><span className="h-3 w-1 rounded-full bg-brand" /> {t("legendUnmarked")}</span>
             <span className="inline-flex items-center gap-1.5"><span className="h-3 w-1 rounded-full bg-amber" /> {t("legendPartial")}</span>
             <span className="inline-flex items-center gap-1.5"><span className="h-3 w-1 rounded-full bg-emerald" /> {t("legendFull")}</span>
@@ -423,6 +378,6 @@ export function LessonsBlock({ mode, onMode }: { mode: LessonMode; onMode: (m: L
           onClose={() => setRoll(null)}
         />
       )}
-    </section>
+    </BentoCard>
   );
 }

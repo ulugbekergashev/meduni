@@ -1,9 +1,10 @@
 import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { AlertTriangle, Download, GraduationCap, LayoutGrid, List, ListPlus, Search, TrendingUp, Unlock, Users } from "lucide-react";
-import { Badge, Button, Card, Icon, Modal, Spinner, StatCard, cls, useToast } from "@meduni/ui";
+import { AlertTriangle, Download, LayoutGrid, List, ListPlus, Search, Unlock, Users } from "lucide-react";
+import { Badge, Button, Card, Icon, Modal, Segmented, Spinner, cls, useToast } from "@meduni/ui";
 import { AsyncSection } from "../../../components/AsyncSection";
+import { MetricTile } from "../../../components/bento";
 import { MistakesMap } from "./MistakesMap";
 import { QuickTaskModal } from "../../../components/QuickTaskModal";
 import {
@@ -134,10 +135,10 @@ function StudentModal({ student, topics, courseId, onClose, onAssign }: { studen
         <span className="text-ink-soft">{t("avgTest")}: <span className="font-bold text-ink">{student.avgQuizScore ?? "—"}%</span></span>
         <LastActive iso={student.lastActiveAt} />
         <div className="ml-auto flex items-center gap-3">
-          <button onClick={onAssign} className="inline-flex items-center gap-1 font-semibold text-brand-deep hover:underline">
+          <button onClick={onAssign} className="inline-flex items-center gap-1 font-semibold text-brand-tint hover:underline">
             <Icon icon={ListPlus} size={14} /> {t("assignTask")}
           </button>
-          <button onClick={() => navigate(`/teach/students/${student.id}`)} className="font-semibold text-brand-deep hover:underline">
+          <button onClick={() => navigate(`/teach/students/${student.id}`)} className="font-semibold text-brand-tint hover:underline">
             {t("openProfile")} →
           </button>
         </div>
@@ -276,16 +277,20 @@ function Heatmap({ data, students, onPick }: { data: CourseProgress; students: P
 function ListView({ students, onPick }: { students: ProgressStudent[]; onPick: (s: ProgressStudent) => void }) {
   const { t } = useTranslation(undefined, { keyPrefix: "progress" });
   return (
-    <div className="space-y-2">
+    // Bitta kartochka + qatorlar (har talaba alohida suzuvchi quti emas — ZICHLIK).
+    <div className="divide-y divide-line-soft rounded-card border border-line bg-surface">
       {students.map((s) => (
-        <Card key={s.id} className={cls("flex flex-wrap items-center gap-4", s.behind && "border-rose/40")}>
+        <div key={s.id} className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
           <div className="min-w-[140px] flex-1">
-            <p className={cls("text-note font-semibold", s.behind ? "text-rose" : "text-ink")}>{s.fullName}</p>
+            <p className={cls("inline-flex items-center gap-1.5 text-body font-semibold", s.behind ? "text-rose" : "text-ink")}>
+              {s.behind && <Icon icon={AlertTriangle} size={14} />}
+              {s.fullName}
+            </p>
             <div className="mt-1 flex items-center gap-2">
-              <div className="h-1.5 w-28 overflow-hidden rounded-pill bg-bg">
-                <div className="h-full rounded-pill bg-brand" style={{ width: `${Math.max(s.overallPct, 2)}%` }} />
+              <div className="h-1.5 w-28 overflow-hidden rounded-pill bg-line">
+                {s.overallPct > 0 && <div className="h-full rounded-pill bg-brand" style={{ width: `${s.overallPct}%` }} />}
               </div>
-              <span className="text-micro font-semibold text-ink-soft">{s.overallPct}%</span>
+              <span className="font-data text-micro font-semibold tabular-nums text-ink-soft">{s.overallPct}%</span>
             </div>
           </div>
           <div className="text-micro text-ink-soft">
@@ -300,7 +305,7 @@ function ListView({ students, onPick }: { students: ProgressStudent[]; onPick: (
           <Button variant="ghost" size="sm" onClick={() => onPick(s)}>
             {t("details")}
           </Button>
-        </Card>
+        </div>
       ))}
     </div>
   );
@@ -366,47 +371,56 @@ export function ProgressTab() {
               {/* Hammasi FILTR — shuning uchun qator qoladi (STAT DIETASI).
                   "O'rtacha %" kartasi olib tashlandi: u filtr emas edi, qiymati
                   esa quyidagi guruh-o'rtacha qatorida allaqachon bor. */}
-              <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4">
-                <StatCard compact icon={Users} label={t("statTotal")} value={data.stats.total} selected={filter === "all"} onClick={() => setFilter("all")} />
-                <StatCard compact icon={TrendingUp} label={t("statActive")} value={data.stats.active} selected={filter === "active"} onClick={() => setFilter("active")} />
-                <StatCard compact icon={AlertTriangle} label={t("statBehind")} value={data.stats.behind} tone="bad" selected={filter === "behind"} onClick={() => setFilter("behind")} />
-                <StatCard compact icon={GraduationCap} label={t("statCompleted")} value={data.stats.completed} tone="good" selected={filter === "completed"} onClick={() => setFilter("completed")} />
+              <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+                <MetricTile size="stat" label={t("statTotal")} value={data.stats.total} sub={`${t("statAvg")}: ${data.stats.avgProgress}%`} selected={filter === "all"} onClick={() => setFilter("all")} />
+                <MetricTile size="stat" label={t("statActive")} value={data.stats.active} selected={filter === "active"} onClick={() => setFilter("active")} />
+                <MetricTile size="stat" label={t("statBehind")} value={data.stats.behind} tone={data.stats.behind > 0 ? "rose" : "plain"} valueTone={data.stats.behind > 0 ? "rose" : "ink"} selected={filter === "behind"} onClick={() => setFilter("behind")} />
+                <MetricTile size="stat" label={t("statCompleted")} value={data.stats.completed} valueTone={data.stats.completed > 0 ? "emerald" : "ink"} selected={filter === "completed"} onClick={() => setFilter("completed")} />
               </div>
-              <p className="mt-2 text-note text-ink-soft">{t("statAvg")}: <span className="font-bold font-data tabular-nums text-ink">{data.stats.avgProgress}%</span></p>
 
               {/* Filter bar */}
-              <div className="mt-5 flex flex-wrap items-center gap-2">
-                <div className="relative flex-1 min-w-[180px]">
-                  <Icon icon={Search} size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-faint" />
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <div className="relative min-w-[180px] flex-1">
+                  <Icon icon={Search} size={15} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-faint" />
                   <input
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     placeholder={t("searchStudent")}
-                    className="w-full rounded-control border border-line bg-surface py-2 pl-9 pr-3 text-note outline-none focus:border-brand"
+                    aria-label={t("searchStudent")}
+                    className="h-10 w-full rounded-pill border border-line bg-surface pl-10 pr-4 text-note text-ink outline-none transition-colors focus:border-brand"
                   />
                 </div>
-                <select value={sort} onChange={(e) => setSort(e.target.value as "progress" | "name")} className="rounded-control border border-line bg-surface px-2 py-2 text-note outline-none focus:border-brand">
+                <select
+                  value={sort}
+                  onChange={(e) => setSort(e.target.value as "progress" | "name")}
+                  aria-label={t("sortProgress")}
+                  className="h-10 rounded-pill border border-line bg-surface px-3 text-note text-ink outline-none focus:border-brand"
+                >
                   <option value="progress">{t("sortProgress")}</option>
                   <option value="name">{t("sortName")}</option>
                 </select>
-                <div className="flex overflow-hidden rounded-control border border-line">
-                  <button onClick={() => pickView("heatmap")} className={cls("flex items-center gap-1 px-3 py-2 text-note font-medium", view === "heatmap" ? "bg-brand-soft text-brand-deep" : "text-ink-soft hover:bg-bg")}>
-                    <Icon icon={LayoutGrid} size={15} /> {t("heatmap")}
-                  </button>
-                  <button onClick={() => pickView("list")} className={cls("flex items-center gap-1 px-3 py-2 text-note font-medium", view === "list" ? "bg-brand-soft text-brand-deep" : "text-ink-soft hover:bg-bg")}>
-                    <Icon icon={List} size={15} /> {t("list")}
-                  </button>
-                  <button onClick={() => pickView("mistakes")} className={cls("flex items-center gap-1 px-3 py-2 text-note font-medium", view === "mistakes" ? "bg-brand-soft text-brand-deep" : "text-ink-soft hover:bg-bg")}>
-                    <Icon icon={AlertTriangle} size={15} /> {t("mistakesView")}
-                  </button>
+                <div className="max-w-full overflow-x-auto">
+                  <Segmented
+                    value={view}
+                    onChange={pickView}
+                    aria-label={t("list")}
+                    options={[
+                      { key: "list", label: <><Icon icon={List} size={14} /> {t("list")}</> },
+                      { key: "heatmap", label: <><Icon icon={LayoutGrid} size={14} /> {t("heatmap")}</> },
+                      { key: "mistakes", label: <><Icon icon={AlertTriangle} size={14} /> {t("mistakesView")}</> },
+                    ]}
+                  />
                 </div>
-                <a href={`${API_URL}/api/v1/teach/courses/${courseId}/progress/export?view=${view}`} className="inline-flex items-center gap-1.5 rounded-control border border-line px-3 py-2 text-note font-medium text-ink-soft transition-colors hover:bg-bg">
+                <a
+                  href={`${API_URL}/api/v1/teach/courses/${courseId}/progress/export?view=${view}`}
+                  className="inline-flex h-9 items-center gap-1.5 rounded-pill border border-line-raised px-4 text-note font-semibold text-ink transition-colors hover:bg-surface-raised focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                >
                   <Icon icon={Download} size={15} /> Excel
                 </a>
               </div>
 
               {/* View */}
-              <div className="mt-4">
+              <div className="mt-3">
                 {view === "mistakes" ? (
                   // Alohida tab emas, SHU bo'limning uchinchi ko'rinishi: ekranda
                   // baribir bitta analitika moduli turadi (§18 "kabina" saboqi).

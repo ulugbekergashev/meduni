@@ -1,40 +1,35 @@
 import { useTranslation } from "react-i18next";
-import { Trophy } from "lucide-react";
 import { cls } from "@meduni/ui";
-import { RailCard } from "../../components/HeroStats";
+import { BentoCard } from "../../components/bento";
 import { useMyProfile, useMyRank, type LeaderboardRow } from "./api";
 
 function Row({ row }: { row: LeaderboardRow }) {
   const { t } = useTranslation(undefined, { keyPrefix: "leaderboard" });
   return (
-    <div
+    <li
       className={cls(
-        "group flex items-center gap-3 border-t border-line-soft px-4 py-2.5 transition-colors first:border-t-0 hover:bg-surface-raised",
-        row.isMe && "bg-brand-soft"
+        "flex items-center gap-3 rounded-control px-2 py-2 transition-colors",
+        row.isMe ? "bg-brand-soft" : "hover:bg-surface-raised"
       )}
     >
-      <div
+      <span
         className={cls(
-          "flex h-7 w-7 shrink-0 items-center justify-center rounded-full font-data text-micro font-bold tabular-nums",
+          "flex h-7 w-7 shrink-0 items-center justify-center rounded-full font-data text-micro font-semibold tabular-nums",
           // Medal ranglari o'rniga tinch chip: ekranda 10 ta yaltiroq doira shovqin
-          // (§4 "tugadi holati yorqin rang emas"). Birinchi uchtasi brend chipida.
-          row.rank <= 3 ? "bg-brand-soft text-brand-deep" : "bg-surface-raised text-ink-faint"
+          // (§4 "tugadi holati yorqin rang emas"). Birinchi uchtasi qora chipda.
+          row.rank <= 3 ? "bg-ink text-surface" : "bg-surface-raised text-ink-soft"
         )}
       >
         {row.rank}
-      </div>
-      <p className="min-w-0 flex-1 truncate text-note text-ink">
+      </span>
+      <p className="min-w-0 flex-1 truncate text-note font-semibold text-ink">
         {row.fullName}
         {row.isMe && (
-          <span className="ml-2 rounded-pill bg-brand px-2 py-0.5 text-micro font-bold text-white">
-            {t("you")}
-          </span>
+          <span className="ml-2 rounded-pill bg-brand px-2 py-0.5 text-micro font-semibold text-surface">{t("you")}</span>
         )}
       </p>
-      <span className="shrink-0 font-data text-micro tabular-nums text-ink-faint">
-        {t("completedN", { count: row.completed })}
-      </span>
-    </div>
+      <span className="shrink-0 text-micro tabular-nums text-ink-soft">{t("completedN", { count: row.completed })}</span>
+    </li>
   );
 }
 
@@ -46,19 +41,22 @@ export function LeaderboardCard() {
   const profile = useMyProfile();
   const data = q.data;
 
+  if (q.isError) return <BentoCard title={t("title")} isError onRetry={() => q.refetch()} />;
   if (!data || data.rank === null || data.top.length === 0) return null;
 
   const meInTop = data.top.some((r) => r.isMe);
 
   return (
-    <RailCard title={t("title")} icon={Trophy}>
-      <div className="divide-y divide-line">
+    <BentoCard title={t("title")} meta={`${data.rank}/${data.total}`} bodyClassName="px-2 pb-2">
+      <ul className="space-y-0.5">
         {data.top.map((r) => (
           <Row key={r.rank} row={r} />
         ))}
         {!meInTop && (
           <>
-            <div className="px-4 py-1 text-center text-ink-faint">···</div>
+            <li className="px-4 py-1 text-center text-ink-faint" aria-hidden>
+              ···
+            </li>
             <Row
               row={{
                 rank: data.rank,
@@ -69,7 +67,7 @@ export function LeaderboardCard() {
             />
           </>
         )}
-      </div>
-    </RailCard>
+      </ul>
+    </BentoCard>
   );
 }

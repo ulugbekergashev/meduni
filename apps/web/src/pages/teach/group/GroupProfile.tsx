@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, ArrowRight, BookOpen, CalendarDays, ChevronLeft, ChevronRight, ChevronRight as Chev, ClipboardCheck, DoorClosed, GraduationCap, ListPlus, Settings2, UserRoundPlus, UserX, Users2 } from "lucide-react";
-import { Badge, Button, Card, EmptyState, Icon, Input, Modal, ProgressBar, ProgressRing, Select, Spinner, cls, useToast } from "@meduni/ui";
+import { ArrowRight, BookOpen, CalendarDays, ChevronLeft, ChevronRight, ChevronRight as Chev, ClipboardCheck, DoorClosed, ListPlus, Settings2, UserRoundPlus, UserX, Users2 } from "lucide-react";
+import { Badge, Button, Card, EmptyState, Icon, Input, Modal, ProgressBar, ProgressRing, Segmented, Select, Spinner, cls, useToast } from "@meduni/ui";
 import { AsyncSection } from "../../../components/AsyncSection";
+import { HeaderChip, MetricTile, PageHeader } from "../../../components/bento";
+import { BackLink } from "../BackLink";
 import { SubNav } from "../../../components/SubNav";
 import { MonthCalendar, type CalEntry } from "../../../components/MonthCalendar";
 import { QuickTaskModal } from "../../../components/QuickTaskModal";
@@ -47,26 +49,30 @@ function mondayOf(base: Date, off: number): Date {
 }
 
 /* ---------------- Group metrics ---------------- */
-function GroupStats({ group }: { group: TeachGroup }) {
+/** Guruh ko'rsatkichlari — har biri tegishli bo'limni ochadi (STAT DIETASI: faqat o'tish). */
+function GroupStats({ group, onTab }: { group: TeachGroup; onTab: (k: TabKey) => void }) {
   const { t } = useTranslation(undefined, { keyPrefix: "groupProfile" });
+  const lowAtt = isLowAttendance(group.avgAttendance);
   return (
-    <div className="mt-5 grid grid-cols-2 gap-2.5 lg:grid-cols-4">
-      <Card className="flex items-center gap-3">
-        <ProgressRing value={group.avgProgress} size={62} stroke={7} tone="brand" />
-        <span className="text-note font-medium text-ink-soft">{t("avgProgress")}</span>
-      </Card>
-      <Card className="flex items-center gap-3">
-        <ProgressRing value={group.avgAttendance ?? 0} size={62} stroke={7} tone="blue" />
-        <span className="text-note font-medium text-ink-soft">{t("avgAttendance")}</span>
-      </Card>
-      <Card className={cls("flex flex-col justify-center", group.behindCount > 0 && "border-rose/30 bg-rose-soft")}>
-        <span className={cls("text-stat font-bold leading-none tabular-nums", group.behindCount > 0 ? "text-rose" : "text-ink")}>{group.behindCount}</span>
-        <span className="mt-1 text-note font-medium text-ink-soft">{t("behindCount")}</span>
-      </Card>
-      <Card className="flex flex-col justify-center">
-        <span className="text-stat font-bold leading-none tabular-nums text-ink">{group.studentCount}</span>
-        <span className="mt-1 text-note font-medium text-ink-soft">{t("studentsCount")}</span>
-      </Card>
+    <div className="mt-3 grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <MetricTile size="stat" label={t("avgProgress")} value={group.avgProgress} percent onClick={() => onTab("courses")} />
+      <MetricTile
+        size="stat"
+        label={t("avgAttendance")}
+        value={group.avgAttendance}
+        percent
+        valueTone={lowAtt ? "rose" : "ink"}
+        onClick={() => onTab("davomat")}
+      />
+      <MetricTile
+        size="stat"
+        label={t("behindCount")}
+        value={group.behindCount}
+        tone={group.behindCount > 0 ? "rose" : "plain"}
+        valueTone={group.behindCount > 0 ? "rose" : "ink"}
+        onClick={() => onTab("students")}
+      />
+      <MetricTile size="stat" label={t("studentsCount")} value={group.studentCount} onClick={() => onTab("students")} />
     </div>
   );
 }
@@ -78,10 +84,10 @@ function StudentRow({ s, onClick, onAssign, tRel }: { s: GroupStudent; onClick: 
   const lowAtt = isLowAttendance(s.attendancePct);
   return (
     <div className="flex w-full items-center gap-3 px-4 py-3 transition-colors hover:bg-bg">
-      <span className={cls("flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-note font-bold font-data tabular-nums", s.rank <= 3 ? "bg-brand-soft text-brand-deep" : "bg-bg text-ink-faint")} title={t("rankHint")}>
+      <span className={cls("flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-note font-bold font-data tabular-nums", s.rank <= 3 ? "bg-ink text-surface" : "bg-surface-raised text-ink-soft")} title={t("rankHint")}>
         {s.rank}
       </span>
-      <button onClick={onClick} className="flex min-w-0 flex-1 items-center gap-3 text-left">
+      <button type="button" onClick={onClick} className="flex min-w-0 flex-1 items-center gap-3 rounded-control text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-soft text-note font-bold text-brand-deep">{initials}</div>
         <div className="min-w-0 flex-[2]">
           <div className="flex items-center gap-2">
@@ -105,7 +111,7 @@ function StudentRow({ s, onClick, onAssign, tRel }: { s: GroupStudent; onClick: 
           <p className={cls("text-note font-bold font-data tabular-nums", lowAtt ? "text-rose" : "text-ink")}>{s.attendancePct === null ? "—" : `${s.attendancePct}%`}</p>
         </div>
       </button>
-      <button onClick={onAssign} title={t("assignToStudent")} aria-label={t("assignToStudent")} className="shrink-0 rounded-control p-1.5 text-ink-soft transition-colors hover:bg-brand-soft hover:text-brand-deep">
+      <button type="button" onClick={onAssign} title={t("assignToStudent")} aria-label={t("assignToStudent")} className="shrink-0 rounded-pill p-1.5 text-ink-soft transition-colors hover:bg-brand-soft hover:text-brand-deep focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
         <Icon icon={ListPlus} size={16} />
       </button>
       <Icon icon={Chev} size={16} className="shrink-0 text-ink-faint" />
@@ -152,24 +158,24 @@ function StudentsTab({ group }: { group: TeachGroup }) {
   if (group.students.length === 0)
     return <EmptyState icon={<Icon icon={UserRoundPlus} size={26} />} text={t("noStudents")} hint={t("noStudentsHint")} />;
 
-  const FILTERS: { key: FilterKey; label: string; count?: number; tone: string }[] = [
-    { key: "all", label: t("filterAll"), count: group.students.length, tone: "bg-brand-soft text-brand-deep" },
-    { key: "behind", label: t("behind"), count: behindCount, tone: "bg-rose-soft text-rose" },
-    { key: "lowAtt", label: t("filterLowAtt"), count: lowAttCount, tone: "bg-amber-soft text-amber" },
-  ];
-
   return (
     <>
-      <div className="mb-2.5 flex flex-wrap items-center gap-2">
-        <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t("searchStudent")} className="w-full sm:w-52" />
-        <div className="inline-flex gap-1 rounded-control border border-line bg-surface p-1">
-          {FILTERS.map((f) => (
-            <button key={f.key} onClick={() => setFilter(f.key)} className={cls("inline-flex items-center gap-1.5 whitespace-nowrap rounded-[8px] px-3 py-1.5 text-micro font-semibold transition-all", filter === f.key ? f.tone : "text-ink-soft hover:bg-bg")}>
-              {f.label}{f.count !== undefined && <span className="font-data tabular-nums opacity-70">{f.count}</span>}
-            </button>
-          ))}
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t("searchStudent")} aria-label={t("searchStudent")} className="w-full sm:w-52" />
+        <div className="max-w-full overflow-x-auto">
+          <Segmented
+            size="sm"
+            value={filter}
+            onChange={setFilter}
+            aria-label={t("filterAll")}
+            options={[
+              { key: "all", label: t("filterAll"), count: group.students.length },
+              { key: "behind", label: t("behind"), count: behindCount },
+              { key: "lowAtt", label: t("filterLowAtt"), count: lowAttCount },
+            ]}
+          />
         </div>
-        <Select value={sort} onChange={(e) => setSort(e.target.value as SortKey)} className="w-auto">
+        <Select value={sort} onChange={(e) => setSort(e.target.value as SortKey)} className="!w-auto">
           <option value="rank">{t("sortRank")}</option>
           <option value="progress">{t("sortProgress")}</option>
           <option value="attendance">{t("sortAttendance")}</option>
@@ -263,13 +269,16 @@ function TimetableTab({ group }: { group: TeachGroup }) {
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="inline-flex gap-1 rounded-control border border-line bg-surface p-1">
-          {(["week", "month"] as const).map((v) => (
-            <button key={v} onClick={() => setView(v)} className={cls("rounded-[8px] px-3.5 py-1.5 text-micro font-semibold transition-all", view === v ? "bg-brand-soft text-brand-deep" : "text-ink-soft hover:bg-bg hover:text-ink")}>
-              {t(v === "week" ? "viewWeek" : "viewMonth")}
-            </button>
-          ))}
-        </div>
+        <Segmented
+          size="sm"
+          value={view}
+          onChange={setView}
+          aria-label={t("viewWeek")}
+          options={[
+            { key: "week", label: t("viewWeek") },
+            { key: "month", label: t("viewMonth") },
+          ]}
+        />
         {view === "week" ? (
           <div className="flex items-center gap-1">
             <button onClick={() => setWeekOffset((w) => w - 1)} className="rounded-control p-2 text-ink-soft hover:bg-bg" aria-label="prev"><Icon icon={ChevronLeft} size={18} /></button>
@@ -282,7 +291,9 @@ function TimetableTab({ group }: { group: TeachGroup }) {
             <button onClick={() => shiftMonth(-1)} className="rounded-control p-2 text-ink-soft hover:bg-bg" aria-label="prev"><Icon icon={ChevronLeft} size={18} /></button>
             <span className="min-w-[150px] text-center text-note font-semibold capitalize text-ink">{monthLabel}</span>
             <button onClick={() => shiftMonth(1)} className="rounded-control p-2 text-ink-soft hover:bg-bg" aria-label="next"><Icon icon={ChevronRight} size={18} /></button>
-            <Button size="sm" variant="ghost" onClick={() => { setMonthDate(new Date(now.getFullYear(), now.getMonth(), 1)); setSelectedDay(null); }}>{t("today")}</Button>
+            {(monthDate.getFullYear() !== now.getFullYear() || monthDate.getMonth() !== now.getMonth()) && (
+              <Button size="sm" variant="ghost" onClick={() => { setMonthDate(new Date(now.getFullYear(), now.getMonth(), 1)); setSelectedDay(null); }}>{t("today")}</Button>
+            )}
           </div>
         )}
         <Button size="sm" variant="soft" icon={<Icon icon={Settings2} size={15} />} onClick={() => setSetup(true)} className="ml-auto">{t("setupTimetable")}</Button>
@@ -328,7 +339,7 @@ function TimetableTab({ group }: { group: TeachGroup }) {
                 <div className={cls("flex items-center gap-2 px-4 py-2", isToday ? "bg-brand-soft" : "bg-bg")}>
                   <span className={cls("text-note font-bold", isToday ? "text-brand-deep" : "text-ink")}>{dayNames[i]}</span>
                   <span className="text-micro text-ink-faint">{formatDate(ru ? "ru" : "uz", d, "short")}</span>
-                  {isToday && <span className="rounded-pill bg-brand px-2 py-0.5 text-micro font-bold text-white">{t("today")}</span>}
+                  {isToday && <span className="rounded-pill bg-ink px-2 py-0.5 text-micro font-semibold text-surface">{t("today")}</span>}
                 </div>
                 <div className="divide-y divide-line">{list.map((l) => <LessonDetailRow key={l.slotId + l.dayKey} l={l} t={t} onMark={() => setRoll(l)} />)}</div>
               </Card>
@@ -417,7 +428,7 @@ function TimetableSetupModal({ group, onClose }: { group: TeachGroup; onClose: (
             <div key={n} className="flex flex-1 items-center gap-2">
               <span className={cls(
                 "flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-micro font-bold",
-                step === n ? "bg-brand text-white" : step > n ? "bg-emerald text-white" : "bg-bg text-ink-faint"
+                step === n ? "bg-ink text-surface" : step > n ? "bg-emerald-soft text-emerald" : "bg-surface-raised text-ink-soft"
               )}>{n}</span>
               <span className={cls("text-note font-semibold", step === n ? "text-ink" : "text-ink-faint")}>
                 {t(n === 1 ? "cycleStep1" : "cycleStep2")}
@@ -443,7 +454,7 @@ function TimetableSetupModal({ group, onClose }: { group: TeachGroup; onClose: (
             <Field label={t("cycleStart")}><Input type="date" value={cycleStart} onChange={(e) => setCycleStart(e.target.value)} /></Field>
             <Field label={t("cycleEnd")}><Input type="date" value={cycleEnd} onChange={(e) => setCycleEnd(e.target.value)} /></Field>
           </div>
-          {weeks > 0 && <p className="mt-1 text-note font-semibold text-brand-deep">≈ {t("cycleWeeks", { n: weeks })}</p>}
+          {weeks > 0 && <p className="mt-1 text-note font-semibold text-brand-tint">≈ {t("cycleWeeks", { n: weeks })}</p>}
         </div>
         </>
         )}
@@ -453,7 +464,7 @@ function TimetableSetupModal({ group, onClose }: { group: TeachGroup; onClose: (
           <p className="mb-1.5 text-note font-bold text-ink">{t("cycleDays")}</p>
           <div className="space-y-1.5">
             {dayNames.map((dn, i) => (
-              <div key={i} className={cls("flex flex-wrap items-center gap-2 rounded-control border px-3 py-2 transition-colors", days[i].on ? "border-brand/40 bg-brand-soft/30" : "border-line")}>
+              <div key={i} className={cls("flex flex-wrap items-center gap-2 rounded-control border px-3 py-2 transition-colors", days[i].on ? "border-transparent bg-brand-soft" : "border-line")}>
                 <label className="flex w-28 shrink-0 cursor-pointer items-center gap-2 text-note font-semibold text-ink">
                   <input type="checkbox" checked={days[i].on} onChange={(e) => setDay(i, { on: e.target.checked })} />
                   {dn}
@@ -503,7 +514,7 @@ function CourseReportCard({ c, onView, focus = false }: { c: GroupCourseReport; 
 
   return (
     <div ref={ref}>
-    <Card className={cls("flex flex-col gap-3", focus && "!border-brand ring-1 ring-brand")}>
+    <Card className={cls("flex h-full flex-col gap-3", focus && "!border-ink ring-1 ring-ink")}>
       <div className="flex items-start gap-3">
         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-control bg-brand-soft text-brand-deep"><Icon icon={BookOpen} size={20} /></span>
         <div className="min-w-0 flex-1">
@@ -563,12 +574,7 @@ function CoursesTab({ group, focusCourseId }: { group: TeachGroup; focusCourseId
       </div>
       <div className="grid gap-3 md:grid-cols-2">
         {report.map((c) => (
-          <CourseReportCard
-            key={c.id}
-            c={c}
-            focus={focusCourseId === c.id}
-            onView={() => navigate(`/teach/courses/${c.id}`)}
-          />
+          <CourseReportCard key={c.id} c={c} focus={focusCourseId === c.id} onView={() => navigate(`/teach/courses/${c.id}`)} />
         ))}
       </div>
     </div>
@@ -588,16 +594,13 @@ export function GroupProfile() {
 
   const raw = params.get("tab") as TabKey | null;
   const tab: TabKey = raw === "students" || raw === "courses" || raw === "davomat" ? raw : "timetable";
+  const setTab = (k: TabKey) => setParams({ tab: k }, { replace: true });
   /**
    * Shapkadagi kurs chipi — AYNAN o'sha kursga.
-   *
-   * ⚠️ Ilgari har chip bir xil `setTab("courses")` chaqirardi: chipda kurs
-   * nomi turardi, `title` esa "hisobotni ochish" derdi — foydalanuvchi SHU
-   * kurs hisobotini kutardi, lekin butun ro'yxat ochilardi. Va agar tab
-   * allaqachon "courses" bo'lsa, klik umuman hech narsa qilmasdi.
+   * ⚠️ Har chip bir xil `setTab("courses")` chaqirsa: chipda kurs nomi turadi,
+   * foydalanuvchi SHU kurs hisobotini kutadi, lekin butun ro'yxat ochilardi.
    */
-  const openCourseReport = (courseId: number) =>
-    setParams({ tab: "courses", course: String(courseId) }, { replace: true });
+  const openCourseReport = (courseId: number) => setParams({ tab: "courses", course: String(courseId) }, { replace: true });
   const focusCourseId = Number(params.get("course")) || null;
 
   const TABS: { key: TabKey; icon: typeof Users2 }[] = [
@@ -609,9 +612,7 @@ export function GroupProfile() {
 
   return (
     <div>
-      <button onClick={() => navigate("/teach/groups")} className="mb-3 flex items-center gap-1 text-note font-medium text-brand-deep hover:underline">
-        <Icon icon={ArrowLeft} size={15} /> {t("back")}
-      </button>
+      <BackLink onClick={() => navigate("/teach/groups")}>{t("back")}</BackLink>
 
       {q.isLoading ? (
         <div className="flex min-h-[40vh] items-center justify-center"><Spinner size={26} /></div>
@@ -619,44 +620,29 @@ export function GroupProfile() {
         <AsyncSection isLoading={false} isError={q.isError} isEmpty={false} emptyText="" onRetry={() => q.refetch()}>
           {group && (
             <>
-              <div className="flex flex-wrap items-center gap-4">
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand-deep">
-                  <Icon icon={Users2} size={26} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h1 className="text-h1 font-bold text-ink">{group.name}</h1>
-                  <p className="flex flex-wrap items-center gap-x-2 text-note text-ink-soft">
-                    <span>{t("yearN", { n: group.yearOfStudy })}</span>
-                    <span>·</span>
-                    <span>{group.facultyName}</span>
-                    <span>·</span>
-                    <span className="inline-flex items-center gap-1"><Icon icon={GraduationCap} size={14} /> {t("studentsN", { n: group.studentCount })}</span>
-                  </p>
-                </div>
-                {/* Kurs chiplari — bosilsa "Kurslar" tabidagi AYNAN SHU kurs
-                    hisoboti yoritiladi (kursga o'tkazmaydi; o'tish uchun
-                    kartochkadagi alohida tugma bor). */}
-                <div className="flex flex-wrap gap-1.5">
-                  {group.courses.map((c) => (
-                    <button
+              <PageHeader
+                className="mb-0 mt-2"
+                title={group.name}
+                subtitle={`${t("yearN", { n: group.yearOfStudy })} · ${group.facultyName} · ${t("studentsN", { n: group.studentCount })}`}
+                right={
+                  /* Kurs chiplari — bosilsa "Kurslar" tabidagi AYNAN SHU kurs
+                     hisoboti yoritiladi (kursga o'tkazmaydi; o'tish uchun
+                     kartochkadagi alohida tugma bor). */
+                  group.courses.map((c) => (
+                    <HeaderChip
                       key={c.id}
-                      type="button"
-                      onClick={() => openCourseReport(c.id)}
+                      tone={tab === "courses" && focusCourseId === c.id ? "brand" : "plain"}
+                      icon={<Icon icon={BookOpen} size={14} />}
                       title={t("openReport")}
-                      className={cls(
-                        "rounded-pill px-2.5 py-1 text-note font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
-                        tab === "courses" && focusCourseId === c.id
-                          ? "bg-brand text-white"
-                          : "bg-brand-soft text-brand-deep hover:bg-brand/10"
-                      )}
+                      onClick={() => openCourseReport(c.id)}
                     >
                       {c.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
+                    </HeaderChip>
+                  ))
+                }
+              />
 
-              <GroupStats group={group} />
+              <GroupStats group={group} onTab={setTab} />
 
               {/* SIKL PASPORTI — guruh kafedrada blok bo'lib o'qiyotgan bo'lsa.
                   Semestr kursida hech narsa chizilmaydi. */}
@@ -678,7 +664,7 @@ export function GroupProfile() {
                 />
               </div>
 
-              <div className="mt-5">
+              <div className="mt-3">
                 {tab === "timetable" ? <TimetableTab group={group} /> : tab === "davomat" ? <AttendanceMatrix group={group} /> : tab === "courses" ? <CoursesTab group={group} focusCourseId={focusCourseId} /> : <StudentsTab group={group} />}
               </div>
             </>

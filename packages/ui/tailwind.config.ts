@@ -89,6 +89,8 @@ const sharedConfig: Partial<Config> = {
       fontSize: {
         h1: ["26px", { lineHeight: "1.2", letterSpacing: "-0.02em" }],
         stat: ["28px", { lineHeight: "1.1", letterSpacing: "-0.02em" }],
+        /** Sahifadagi YAGONA bosh raqam (talaba bosh sahifasi heroi). */
+        display: ["44px", { lineHeight: "1", letterSpacing: "-0.03em" }],
         section: ["16px", { lineHeight: "1.35", letterSpacing: "-0.01em" }],
         body: ["14px", { lineHeight: "1.55" }],
         note: ["13px", { lineHeight: "1.5" }],
@@ -135,6 +137,7 @@ const sharedConfig: Partial<Config> = {
       spacing: {
         header: "var(--header-h)",
         rail: "var(--rail-w)",
+        sidebar: "var(--sidebar-w)",
       },
     },
   },

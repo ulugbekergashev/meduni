@@ -2,14 +2,16 @@ import { useMemo, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
-  AlertTriangle, ArrowLeft, BookOpen, Check, ClipboardList, GraduationCap, ListPlus,
+  AlertTriangle, BookOpen, Check, ClipboardList, GraduationCap, ListPlus,
   Lock, LockOpen, MessageCircle, Stethoscope, Users, X,
 } from "lucide-react";
 import {
   Avatar, Badge, Button, Card, Icon, Input, Num, ProgressBar, Spinner, StackedBar,
-  StatCard, cls, useToast, type BadgeTone,
+  cls, useToast, type BadgeTone,
 } from "@meduni/ui";
 import { AsyncSection } from "../../components/AsyncSection";
+import { MetricTile } from "../../components/bento";
+import { BackLink } from "./BackLink";
 import { SubNav } from "../../components/SubNav";
 import { QuickTaskModal, type QuickTaskPrefill } from "../../components/QuickTaskModal";
 import { formatDate } from "../../lib/date";
@@ -82,7 +84,7 @@ function AttentionList({ items, onGrade, onUnlock, onAssign, unlockPending }: {
     <div className="divide-y divide-line">
       {items.map((a) => (
         <div key={`${a.kind}-${a.courseId}-${a.topic.id}`} className="flex flex-wrap items-center gap-2 py-2.5">
-          <span className={cls("flex h-8 w-8 shrink-0 items-center justify-center rounded-control", a.kind === "grade" ? "bg-rose-soft text-rose" : "bg-slate-100 text-ink-soft")}>
+          <span className={cls("flex h-8 w-8 shrink-0 items-center justify-center rounded-control", a.kind === "grade" ? "bg-rose-soft text-rose" : "bg-surface-raised text-ink-soft")}>
             <Icon icon={a.kind === "grade" ? Stethoscope : Lock} size={15} />
           </span>
           <div className="min-w-0 flex-1">
@@ -271,7 +273,8 @@ export function StudentDetailPage() {
   const studentId = Number(id);
   const { t } = useTranslation(undefined, { keyPrefix: "studentDetail" });
   const navigate = useNavigate();
-  const [params] = useSearchParams();
+  const [params, setParams] = useSearchParams();
+  const goTab = (k: TabKey) => setParams({ tab: k }, { replace: true });
   const q = useStudentDetail(studentId);
   const d = q.data;
 
@@ -325,9 +328,9 @@ export function StudentDetailPage() {
 
   return (
     <div className="pb-8">
-      <button onClick={() => navigate("/teach/groups")} className="mb-3 inline-flex items-center gap-1.5 text-note font-medium text-brand-deep transition-colors hover:text-brand">
-        <Icon icon={ArrowLeft} size={15} /> {t("back")}
-      </button>
+      <div className="mb-2">
+        <BackLink onClick={() => navigate("/teach/groups")}>{t("back")}</BackLink>
+      </div>
 
       {q.isLoading ? (
         <div className="flex min-h-[40vh] items-center justify-center"><Spinner size={28} className="text-brand" /></div>
@@ -374,33 +377,40 @@ export function StudentDetailPage() {
                   takrori emas), shuning uchun STAT DIETASI bo'yicha qoladi.
                   Rang faqat yomon xabarda: davomat 75% dan past, qulfda
                   qolgan mavzular, baholanmagan keys. */}
-              <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4">
-                <StatCard
+              <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+                <MetricTile
+                  size="stat"
                   label={t("overallShort")}
                   value={overall}
-                  unit="%"
-                  bar={overall}
-                  barTone={overall < 40 ? "bad" : overall < 70 ? "warn" : "good"}
-                  barCaption={t("topicsCompletedN", { done: completedTotal, total: topicsTotal })}
+                  percent
+                  tone="brand"
+                  sub={t("topicsCompletedN", { done: completedTotal, total: topicsTotal })}
+                  onClick={() => goTab("courses")}
                 />
-                <StatCard
+                <MetricTile
+                  size="stat"
                   label={t("attendance")}
-                  value={attPct !== null ? attPct : "—"}
-                  unit={attPct !== null ? "%" : undefined}
-                  tone={isLowAttendance(attPct) ? "bad" : undefined}
+                  value={attPct}
+                  percent
+                  valueTone={isLowAttendance(attPct) ? "rose" : "ink"}
                   sub={t("attHint")}
+                  onClick={() => goTab("journal")}
                 />
-                <StatCard
+                <MetricTile
+                  size="stat"
                   label={t("lockedTopics")}
                   value={lockedCount}
-                  tone={lockedCount > 0 ? "bad" : undefined}
+                  valueTone={lockedCount > 0 ? "rose" : "ink"}
                   sub={t("lockedTopicsHint")}
+                  onClick={() => goTab("courses")}
                 />
-                <StatCard
+                <MetricTile
+                  size="stat"
                   label={t("attentionShort")}
                   value={attention.length}
-                  accent={attention.length > 0}
+                  tone={attention.length > 0 ? "amber" : "plain"}
                   sub={attention.length > 0 ? t("gradeN", { n: attention.length }) : t("noAttentionShort")}
+                  onClick={() => goTab("overview")}
                 />
               </div>
 

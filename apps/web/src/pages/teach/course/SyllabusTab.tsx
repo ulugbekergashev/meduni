@@ -15,7 +15,7 @@ function EditableList({ items, onChange, accent, placeholder, addLabel }: { item
           <button onClick={() => onChange(items.filter((_, j) => j !== i))} className="rounded-control p-1.5 text-ink-faint hover:bg-rose-soft hover:text-rose"><Icon icon={Trash2} size={15} /></button>
         </div>
       ))}
-      <button onClick={() => onChange([...items, ""])} className="inline-flex items-center gap-1 text-note font-medium text-brand-deep hover:underline">
+      <button onClick={() => onChange([...items, ""])} className="inline-flex items-center gap-1 text-note font-semibold text-brand-tint hover:underline">
         <Icon icon={Plus} size={14} /> {addLabel}
       </button>
     </div>

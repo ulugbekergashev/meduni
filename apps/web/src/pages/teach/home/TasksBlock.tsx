@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { CheckCircle2, ChevronDown, ChevronRight, Plus } from "lucide-react";
-import { Button, Card, Icon, MiniBars, cls, useToast } from "@meduni/ui";
-import { AsyncSection } from "../../../components/AsyncSection";
+import { Button, EmptyState, Icon, MiniBars, Segmented, useToast } from "@meduni/ui";
+import { BentoCard } from "../../../components/bento";
 import { ConfirmDialog } from "../../../components/ConfirmDialog";
 import { QuickTaskModal } from "../../../components/QuickTaskModal";
 import { monthShortLabel } from "../../../lib/date";
@@ -14,15 +14,10 @@ import { useDeleteMyTask, useTaskBoard, type TeacherTaskItem } from "../api";
 /**
  * Vazifalar — ALOHIDA SAHIFA emas, bosh sahifadagi blok (2026-08-03).
  *
- * ⚠️ TAKROR BO'LMASLIGI (buyurtmachi: "prosta qoyib qoymasdan, vazifalar bor
- * ham shekilli uje?"): bosh sahifada allaqachon "bugun bajarish kerak" ro'yxati
- * bor edi. Shuning uchun to'liq bort uni PASTGA QO'SHMAYDI — o'sha ro'yxatning
- * O'ZINI almashtiradi. Yig'ilgan holatda 5 ta eng shoshilinch qator, ochilganda
- * — filtrlar + hammasi + oylik grafik. Bitta fakt bitta joyda (§4).
- *
- * Holat kartalari (4 ta StatCard) ham OLIB TASHLANDI: bosh sahifada ular
- * beshinchi raqamlar to'plami bo'lib qolardi. O'rniga — chiplar, ular ham
- * filtr, ham hisob.
+ * ⚠️ TAKROR BO'LMASLIGI: to'liq bort "bugun bajarish kerak" ro'yxatini
+ * PASTGA QO'SHMAYDI — o'sha ro'yxatning O'ZINI almashtiradi. Yig'ilgan holatda
+ * 5 ta eng shoshilinch qator, ochilganda — filtrlar + hammasi + oylik grafik.
+ * Bitta fakt bitta joyda (§4). Dizayn v3: bitta `BentoCard`.
  */
 
 type Status = "todo" | "overdue" | "waiting" | "done";
@@ -43,7 +38,26 @@ function matchesStatus(item: TeacherTaskItem, s: Status): boolean {
   }
 }
 
-export function TasksBlock({ expanded, onExpand }: { expanded: boolean; onExpand: (v: boolean) => void }) {
+/** Eng shoshilinch ochiq vazifalar — muddati o'tganlar birinchi, keyin eng eskisi. */
+export function urgentTasks(items: TeacherTaskItem[], limit = MAX_COLLAPSED): TeacherTaskItem[] {
+  return items
+    .filter((i) => i.status !== "done")
+    .sort((a, b) => {
+      if ((a.status === "overdue") !== (b.status === "overdue")) return a.status === "overdue" ? -1 : 1;
+      return (a.sinceIso ?? "").localeCompare(b.sinceIso ?? "");
+    })
+    .slice(0, limit);
+}
+
+export function TasksBlock({
+  expanded,
+  onExpand,
+  className,
+}: {
+  expanded: boolean;
+  onExpand: (v: boolean) => void;
+  className?: string;
+}) {
   const { t } = useTranslation(undefined, { keyPrefix: "tasks" });
   const { t: ta } = useTranslation(undefined, { keyPrefix: "teachAssign" });
   const { t: tc } = useTranslation(undefined, { keyPrefix: "common" });
@@ -60,18 +74,7 @@ export function TasksBlock({ expanded, onExpand }: { expanded: boolean; onExpand
   const [deleting, setDeleting] = useState<TeacherTaskItem | null>(null);
   const [rollCall, setRollCall] = useState<RollCallTarget | null>(null);
 
-  /** Yig'ilgan holat — eng shoshilinch 5 ta (muddati o'tganlar birinchi). */
-  const urgent = useMemo(() => {
-    const open = (board?.items ?? []).filter((i) => i.status !== "done");
-    return [...open]
-      .sort((a, b) => {
-        if ((a.status === "overdue") !== (b.status === "overdue")) return a.status === "overdue" ? -1 : 1;
-        return (a.sinceIso ?? "").localeCompare(b.sinceIso ?? "");
-      })
-      .slice(0, MAX_COLLAPSED);
-  }, [board]);
-
-  /** Ochilgan holat — holat × manba kesimi. */
+  const urgent = useMemo(() => urgentTasks(board?.items ?? []), [board]);
   const visible = useMemo(
     () => (board?.items ?? []).filter((i) => matchesStatus(i, status) && (source === "all" || i.source === source)),
     [board, status, source]
@@ -82,111 +85,112 @@ export function TasksBlock({ expanded, onExpand }: { expanded: boolean; onExpand
   const cnt = board?.counts;
   const openCount = st?.toDo ?? 0;
 
-  const statusChips: { key: Status; label: string; value?: number; tone: string }[] = [
-    { key: "todo", label: t("statToDo"), value: st?.toDo, tone: "border-brand bg-brand-soft text-brand-deep" },
-    { key: "overdue", label: t("statOverdue"), value: st?.overdue, tone: "border-rose bg-rose-soft text-rose" },
-    { key: "waiting", label: t("statWaiting"), value: st?.waiting, tone: "border-blue bg-blue-soft text-blue" },
-    { key: "done", label: t("statDoneMonths", { n: 6 }), value: st?.done, tone: "border-emerald bg-emerald-soft text-emerald" },
-  ];
-
-  const sourceChips: { key: Source; label: string; count?: number }[] = [
-    { key: "all", label: t("filterAll"), count: cnt?.all },
-    { key: "kafedra", label: t("filterKafedra"), count: cnt?.kafedra },
-    { key: "students", label: t("filterStudents"), count: cnt?.students },
-  ];
+  const emptyText =
+    expanded && status === "done" ? t("noDoneYet") : expanded && source !== "all" ? t("noMatchFilter") : tt("allDone");
 
   return (
-    <section className="space-y-2.5">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-section font-bold text-ink">
-          {tt("todoTitle")}
-          {openCount > 0 && <span className="ml-2 text-note font-semibold text-ink-faint">{openCount}</span>}
-        </h2>
-        <div className="flex items-center gap-2">
-          <Button size="sm" variant="ghost" icon={<Icon icon={Plus} size={15} />} onClick={() => setAssignOpen(true)}>
-            {ta("newBtn")}
-          </Button>
-          <button
-            onClick={() => onExpand(!expanded)}
-            className="inline-flex items-center gap-1 rounded-control border border-line px-2.5 py-1.5 text-note font-semibold text-ink-soft transition-colors hover:bg-bg hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
-          >
-            <Icon icon={expanded ? ChevronDown : ChevronRight} size={14} />
-            {expanded ? tc("collapse") : t("showAll")}
-          </button>
-        </div>
-      </div>
-
-      {/* Filtrlar — FAQAT ochilganda (yig'ilganda ular ortiqcha boshqaruv) */}
-      {expanded && (
-        <div className="space-y-2">
-          <div className="flex flex-wrap items-center gap-2">
-            {statusChips.map((c) => (
-              <button
-                key={c.key}
-                onClick={() => setStatus(c.key)}
-                className={cls(
-                  "inline-flex items-center gap-1.5 rounded-pill border px-3 py-1.5 text-note font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
-                  status === c.key ? c.tone : "border-line bg-surface text-ink-soft hover:bg-bg hover:text-ink"
-                )}
-              >
-                {c.label}
-                <span className="font-data tabular-nums text-micro opacity-70">{q.isLoading ? "—" : c.value ?? 0}</span>
-              </button>
-            ))}
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-micro font-semibold text-ink-faint">{t("sourceLabel")}:</span>
-            {sourceChips.map((c) => (
-              <button
-                key={c.key}
-                onClick={() => setSource(c.key)}
-                className={cls(
-                  "inline-flex items-center gap-1.5 rounded-pill border px-3 py-1 text-micro font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
-                  source === c.key ? "border-brand bg-brand-soft text-brand-deep" : "border-line bg-surface text-ink-soft hover:bg-bg hover:text-ink"
-                )}
-              >
-                {c.label}
-                {c.count !== undefined && <span className="font-data tabular-nums opacity-70">{c.count}</span>}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <AsyncSection
+    <>
+      <BentoCard
+        className={className}
+        title={tt("todoTitle")}
+        count={openCount}
         isLoading={q.isLoading}
         isError={q.isError}
-        isEmpty={rows.length === 0}
-        emptyIcon={<Icon icon={CheckCircle2} size={24} />}
-        emptyText={expanded && status === "done" ? t("noDoneYet") : expanded && source !== "all" ? t("noMatchFilter") : tt("allDone")}
         onRetry={() => q.refetch()}
+        bodyClassName="px-2 pb-3"
+        right={
+          <span className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="ghost"
+              icon={<Icon icon={Plus} size={14} />}
+              onClick={() => setAssignOpen(true)}
+              aria-label={ta("newBtn")}
+            >
+              <span className="hidden sm:inline">{ta("newBtn")}</span>
+            </Button>
+            <button
+              type="button"
+              onClick={() => onExpand(!expanded)}
+              aria-expanded={expanded}
+              className="inline-flex items-center gap-1 text-note font-semibold text-brand-tint hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+            >
+              {expanded ? tc("collapse") : t("showAll")}
+              <Icon icon={expanded ? ChevronDown : ChevronRight} size={14} />
+            </button>
+          </span>
+        }
       >
-        <Card className="divide-y divide-line overflow-hidden p-0">
-          {rows.map((item) => (
-            <TaskItemRow key={item.id} item={item} onRollCall={setRollCall} onDelete={expanded ? setDeleting : undefined} />
-          ))}
-          {/* Yig'ilgan holatda: qolganini ochish + keys navbatiga o'tish */}
-          {!expanded && (
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-2.5">
-              <button onClick={() => onExpand(true)} className="inline-flex items-center gap-0.5 text-note font-semibold text-brand-deep hover:text-brand">
-                {tt("todoAll", { n: openCount })} <Icon icon={ChevronRight} size={14} />
-              </button>
+        {/* Filtrlar — FAQAT ochilganda (yig'ilganda ular ortiqcha boshqaruv) */}
+        {expanded && (
+          <div className="mb-2 flex flex-wrap items-center gap-2 px-2">
+            <div className="max-w-full overflow-x-auto">
+              <Segmented
+                size="sm"
+                value={status}
+                onChange={setStatus}
+                aria-label={tt("todoTitle")}
+                options={[
+                  { key: "todo", label: t("statToDo"), count: st?.toDo ?? 0 },
+                  { key: "overdue", label: t("statOverdue"), count: st?.overdue ?? 0 },
+                  { key: "waiting", label: t("statWaiting"), count: st?.waiting ?? 0 },
+                  { key: "done", label: t("statDoneMonths", { n: 6 }), count: st?.done ?? 0 },
+                ]}
+              />
             </div>
-          )}
-        </Card>
-      </AsyncSection>
+            <div className="flex max-w-full items-center gap-2 overflow-x-auto">
+              <span className="shrink-0 text-micro font-semibold text-ink-soft">{t("sourceLabel")}:</span>
+              <Segmented
+                size="sm"
+                value={source}
+                onChange={setSource}
+                aria-label={t("sourceLabel")}
+                options={[
+                  { key: "all", label: t("filterAll"), count: cnt?.all },
+                  { key: "kafedra", label: t("filterKafedra"), count: cnt?.kafedra },
+                  { key: "students", label: t("filterStudents"), count: cnt?.students },
+                ]}
+              />
+            </div>
+          </div>
+        )}
 
-      {/* Oylik bajarilgan vazifalar — faqat ochilganda (statistika, kundalik ish emas) */}
-      {expanded && board && board.months.some((m) => m.count > 0) && (
-        <Card>
-          <p className="mb-3 text-note text-ink-faint">{t("historyDoneLastMonths", { n: 6 })}</p>
-          <MiniBars
-            tone={status === "done" ? "emerald" : "brand"}
-            height={80}
-            data={board.months.map((m) => ({ label: monthShortLabel(locale, m.key), value: m.count }))}
-          />
-        </Card>
-      )}
+        {rows.length === 0 ? (
+          <div className="flex flex-1 items-center justify-center px-2 py-4">
+            <EmptyState icon={<Icon icon={CheckCircle2} size={20} />} text={emptyText} />
+          </div>
+        ) : (
+          <ul className="space-y-0.5">
+            {rows.map((item) => (
+              <li key={item.id}>
+                <TaskItemRow item={item} onRollCall={setRollCall} onDelete={expanded ? setDeleting : undefined} />
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {!expanded && openCount > rows.length && (
+          <button
+            type="button"
+            onClick={() => onExpand(true)}
+            className="mx-2 mt-1 inline-flex items-center gap-0.5 self-start text-note font-semibold text-brand-tint hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+          >
+            {tt("todoAll", { n: openCount })} <Icon icon={ChevronRight} size={14} />
+          </button>
+        )}
+
+        {/* Oylik bajarilgan vazifalar — faqat ochilganda (statistika, kundalik ish emas) */}
+        {expanded && board && board.months.some((m) => m.count > 0) && (
+          <div className="mx-2 mt-3 rounded-control bg-surface-raised p-3">
+            <p className="mb-2 text-micro text-ink-soft">{t("historyDoneLastMonths", { n: 6 })}</p>
+            <MiniBars
+              tone={status === "done" ? "emerald" : "brand"}
+              height={72}
+              data={board.months.map((m) => ({ label: monthShortLabel(locale, m.key), value: m.count }))}
+            />
+          </div>
+        )}
+      </BentoCard>
 
       <QuickTaskModal open={assignOpen} onClose={() => setAssignOpen(false)} />
 
@@ -217,6 +221,6 @@ export function TasksBlock({ expanded, onExpand }: { expanded: boolean; onExpand
         }
         onClose={() => setDeleting(null)}
       />
-    </section>
+    </>
   );
 }

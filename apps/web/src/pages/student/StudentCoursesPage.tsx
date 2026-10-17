@@ -1,99 +1,89 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { motion, type Variants } from "framer-motion";
-import { BookOpen, CheckCircle2, ChevronRight, PlayCircle, RotateCcw, Search, Users } from "lucide-react";
-import { Card, Icon, ProgressBar, ProgressRing, cls } from "@meduni/ui";
-import { HeroCard, HeroTile } from "../../components/HeroStats";
+import { ArrowRight, BookOpen, CheckCircle2, PlayCircle, RotateCcw, Search, TrendingUp, Users } from "lucide-react";
+import { Button, Icon, cls } from "@meduni/ui";
+import { BentoCard, HeaderChip, MetricTile, PageHeader } from "../../components/bento";
 import { Disclosure } from "../../components/Disclosure";
 import { AsyncSection } from "../../components/AsyncSection";
 import { PeriodFilter, PeriodSection, groupByPeriod, usePeriodOptions } from "../../components/PeriodGroups";
+import { Line, SearchField } from "./parts/bento";
 import { useMyCourses, type CourseSummary } from "./api";
 
-const containerVariants: Variants = {
-  hidden: { opacity: 0 },
-  show: { opacity: 1, transition: { staggerChildren: 0.08 } },
-};
-
-const itemVariants: Variants = {
-  hidden: { opacity: 0, y: 15 },
-  show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } },
-};
-
+/**
+ * Kurs qatori. Qatorning o'zi — kursga o'tish tugmasi; "Davom" esa YONIDA
+ * alohida tugma (ichma-ich `<button>` yo'q).
+ */
 function CourseRow({ course }: { course: CourseSummary }) {
   const { t } = useTranslation(undefined, { keyPrefix: "studentCourses" });
   const navigate = useNavigate();
   const done = course.topicsTotal > 0 && course.topicsCompleted === course.topicsTotal;
 
   return (
-    <div
-      onClick={() => navigate(`/app/courses/${course.id}`)}
-      className="group flex cursor-pointer items-center gap-5 px-5 py-4 transition-all duration-300 hover:bg-surface-raised hover:pl-6"
-    >
-      <div
-        className={cls(
-          "flex h-12 w-12 shrink-0 items-center justify-center rounded-full transition-transform duration-300 group-hover:scale-110",
-          done ? "bg-emerald-soft text-emerald" : "bg-brand-soft text-brand-tint"
-        )}
+    <li className="flex min-w-0 items-center gap-2 rounded-control px-2 transition-colors hover:bg-surface-raised">
+      <button
+        type="button"
+        onClick={() => navigate(`/app/courses/${course.id}`)}
+        className="group flex min-w-0 flex-1 items-center gap-3 rounded-control py-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
       >
-        <Icon icon={done ? CheckCircle2 : BookOpen} size={22} />
-      </div>
-
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-body font-bold text-ink">{course.subjectName}</p>
-        <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 truncate text-note text-ink-faint">
-          <span className="truncate">{course.teacherName}</span>
-          <span className="text-line">·</span>
-          <span className="whitespace-nowrap">
-            {course.topicsCompleted}/{course.topicsTotal} {t("topics")}
-          </span>
-          {course.groupName && (
-            <>
-              <span className="text-line">·</span>
-              <span className="inline-flex items-center gap-0.5 whitespace-nowrap">
-                <Icon icon={Users} size={11} /> {course.groupName}
-              </span>
-            </>
+        <span
+          className={cls(
+            "flex h-10 w-10 shrink-0 items-center justify-center rounded-full",
+            done ? "bg-emerald-soft text-emerald" : "bg-brand-soft text-brand-deep"
           )}
-        </p>
-        <div className="mt-2 max-w-[400px]">
-          <ProgressBar value={course.progressPct} tone={done ? "emerald" : "brand"} />
-        </div>
-      </div>
-
-      <div className="flex shrink-0 flex-col items-end gap-1.5 sm:flex-row sm:items-center sm:gap-3">
-        <span className={cls("text-section font-bold tabular-nums", done ? "text-emerald" : "text-brand-tint")}>
+        >
+          <Icon icon={done ? CheckCircle2 : BookOpen} size={18} />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-body font-semibold text-ink">{course.subjectName}</span>
+          <span className="mt-0.5 flex min-w-0 items-center gap-1.5 text-micro text-ink-soft">
+            <span className="truncate">{course.teacherName}</span>
+            <span aria-hidden>·</span>
+            <span className="shrink-0 tabular-nums">
+              {course.topicsCompleted}/{course.topicsTotal} {t("topics")}
+            </span>
+            {course.groupName && (
+              <span className="hidden shrink-0 items-center gap-1 sm:inline-flex">
+                <span aria-hidden>·</span>
+                <Icon icon={Users} size={11} />
+                {course.groupName}
+              </span>
+            )}
+          </span>
+          <Line value={course.progressPct} tone={done ? "emerald" : "brand"} className="mt-2 max-w-sm" />
+        </span>
+        <span className={cls("shrink-0 text-section font-semibold tabular-nums", done ? "text-emerald" : "text-ink")}>
           {course.progressPct}%
         </span>
-        {course.nextTopicId ? (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              navigate(`/app/topics/${course.nextTopicId}`);
-            }}
-            className="inline-flex items-center gap-2 rounded-control border border-brand/20 bg-brand-soft/50 px-4 py-2 text-body font-bold text-brand-tint transition-all duration-300 hover:border-brand/40 hover:bg-brand-soft hover:scale-105"
-          >
-            <Icon icon={PlayCircle} size={16} />
-            <span className="hidden sm:inline">{t("continueShort")}</span>
-          </button>
-        ) : done ? (
-          <span title={t("allDone")} className="">
-            <Icon icon={CheckCircle2} size={22} className="text-emerald" />
-          </span>
-        ) : null}
-        <Icon icon={ChevronRight} size={20} className="text-ink-faint transition-transform duration-300 group-hover:translate-x-1" />
-      </div>
-    </div>
+        <span className="hidden h-7 w-7 shrink-0 items-center justify-center rounded-full border border-line text-ink-soft transition-colors group-hover:border-ink group-hover:bg-ink group-hover:text-surface sm:flex">
+          <Icon icon={ArrowRight} size={13} />
+        </span>
+      </button>
+      {course.nextTopicId && (
+        <Button
+          size="sm"
+          icon={<Icon icon={PlayCircle} size={14} />}
+          onClick={() => navigate(`/app/topics/${course.nextTopicId}`)}
+          aria-label={t("continueShort")}
+          title={course.nextTopic ?? undefined}
+          className="shrink-0"
+        >
+          <span className="hidden sm:inline">{t("continueShort")}</span>
+        </Button>
+      )}
+    </li>
   );
 }
 
-function CourseList({ rows }: { rows: CourseSummary[] }) {
+function CourseList({ rows, title }: { rows: CourseSummary[]; title?: string }) {
   return (
-    <Card className="divide-y divide-line overflow-hidden p-0">
-      {rows.map((c) => (
-        <CourseRow key={c.id} course={c} />
-      ))}
-    </Card>
+    <BentoCard title={title} count={title ? rows.length : undefined} bodyClassName="px-2 pb-2">
+      <ul className="divide-y divide-line-soft">
+        {rows.map((c) => (
+          <CourseRow key={c.id} course={c} />
+        ))}
+      </ul>
+    </BentoCard>
   );
 }
 
@@ -101,6 +91,7 @@ function CourseList({ rows }: { rows: CourseSummary[] }) {
  *  sukut bo'yicha joriy semestr filtri bilan. */
 export function StudentCoursesPage() {
   const { t } = useTranslation(undefined, { keyPrefix: "studentCourses" });
+  const { t: tp } = useTranslation(undefined, { keyPrefix: "period" });
   const q = useMyCourses();
   const courses = useMemo(() => q.data ?? [], [q.data]);
 
@@ -131,23 +122,6 @@ export function StudentCoursesPage() {
     setYear(newest.academicYear);
     setSemester(String(newest.semester));
   };
-  /**
-   * "Joriy semestr" kartochkasi — TOGGLE.
-   *
-   * ⚠️ Ilgari u faqat `backToCurrent()` chaqirardi, sahifa esa allaqachon
-   * joriy semestrda ochilardi (yuqoridagi `useEffect`) — ya'ni birinchi
-   * bosish HECH NARSA qilmasdi, lekin kartochka bosiladigandek turardi.
-   * Endi: faol bo'lsa filtrni tozalaydi (barcha davrlar), aks holda qaytaradi.
-   */
-  const toggleCurrent = () => {
-    touched.current = true;
-    if (isCurrentDefault) {
-      setYear("");
-      setSemester("");
-      return;
-    }
-    backToCurrent();
-  };
 
   const filtered = useMemo(() => {
     const needle = search.trim().toLowerCase();
@@ -176,95 +150,94 @@ export function StudentCoursesPage() {
   const topicsTotal = courses.reduce((a, c) => a + c.topicsTotal, 0);
 
   return (
-    <motion.div variants={containerVariants} initial="hidden" animate="show" className="space-y-4">
-      <motion.div variants={itemVariants}>
-        <HeroCard
-          title={t("title")}
-          subtitle={t("summaryLine", { all: courses.length, done: doneCourses, topicsDone, topicsTotal })}
-          left={
-            <div className="flex items-center gap-4">
-              <ProgressRing value={avgProgress} size={64} stroke={8} tone="brand" />
-              <span className="text-note font-bold text-ink-soft">{t("avgProgress")}</span>
-            </div>
-          }
-        >
-          {/* STAT DIETASI: faqat FILTR vazifasini bajaradigan tile qoladi;
-              qolgan uch raqam sarlavha ostidagi xulosa qatoriga tushdi. */}
-          <HeroTile
-            icon={PlayCircle}
-            value={String(currentCount)}
-            label={t("statCurrent")}
-            tone="bg-blue-soft text-blue"
-            selected={newest ? isCurrentDefault : undefined}
-            onClick={newest ? toggleCurrent : undefined}
-          />
-        </HeroCard>
-      </motion.div>
+    <div className="space-y-3">
+      <PageHeader
+        className="mb-0"
+        title={t("title")}
+        subtitle={t("summaryLine", { all: courses.length, done: doneCourses, topicsDone, topicsTotal })}
+        right={
+          courses.length > 0 && (
+            <HeaderChip icon={<Icon icon={TrendingUp} size={15} />}>
+              {t("avgProgress")}
+              <b className="font-data tabular-nums text-ink">{avgProgress}%</b>
+            </HeaderChip>
+          )
+        }
+      />
 
-      <motion.div variants={itemVariants} className="sticky top-4 z-10 flex flex-wrap items-center gap-3 rounded-2xl bg-surface px-5 py-4 border border-white/50">
-        <div className="relative min-w-[240px] flex-1">
-          <Icon icon={Search} size={18} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-ink-faint" />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder={t("searchPlaceholder")}
-            className="w-full rounded-control border border-line bg-surface/60 py-3 pl-11 pr-4 text-body font-medium outline-none transition-all focus:border-brand focus:ring-4 focus:ring-brand/10 hover:border-line-raised hover:bg-surface/90"
-          />
-        </div>
-        {/* Davr filtri — sukut bo'yicha joriy semestr ochiladi, ya'ni bu
-            boshqaruv kamdan-kam kerak. Yig'ib qo'yildi (faol filtr soni bilan). */}
-        <Disclosure
-          label={t("periodFilter")}
-          count={(year ? 1 : 0) + (semester ? 1 : 0)}
-          storageKey="meduni.student.coursesPeriod"
-        >
-          <div className="flex items-center gap-2 rounded-control border border-line bg-surface p-1.5">
-            <PeriodFilter
-              years={options.years}
-              semesters={options.semesters}
-              year={year}
-              semester={semester}
-              onYear={onYear}
-              onSemester={onSemester}
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-[220px_minmax(0,1fr)]">
+        {/* STAT DIETASI: yagona tile — u FILTR (joriy semestrga qaytaradi). */}
+        <MetricTile
+          size="stat"
+          tone="brand"
+          label={t("currentSemesterTile")}
+          value={currentCount}
+          sub={newest ? `${newest.academicYear} · ${tp("semester", { n: newest.semester })}` : undefined}
+          selected={isCurrentDefault}
+          onClick={newest ? backToCurrent : undefined}
+        />
+
+        <BentoCard bodyClassName="flex flex-col justify-center gap-2 p-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <SearchField
+              className="min-w-[200px] flex-1"
+              value={search}
+              onChange={setSearch}
+              placeholder={t("searchPlaceholder")}
+              icon={<Icon icon={Search} size={16} />}
             />
+            {!isCurrentDefault && newest && (
+              <Button variant="ghost" size="sm" className="rounded-pill" icon={<Icon icon={RotateCcw} size={14} />} onClick={backToCurrent}>
+                {t("backToCurrent")}
+              </Button>
+            )}
+            <span className="ml-auto shrink-0 rounded-pill bg-surface-raised px-2.5 py-1 text-micro font-semibold tabular-nums text-ink-soft">
+              {t("totalN", { n: filtered.length })}
+            </span>
           </div>
-        </Disclosure>
-        {!isCurrentDefault && newest && (
-          <button
-            onClick={backToCurrent}
-            className="inline-flex items-center gap-2 rounded-control border border-line bg-surface/60 px-4 py-2.5 text-body font-semibold text-brand-tint transition-all hover:border-brand-soft hover:bg-brand-soft"
+          {/* Davr filtri — sukut bo'yicha joriy semestr ochiladi, ya'ni bu
+              boshqaruv kamdan-kam kerak. Yig'ib qo'yildi (faol filtr soni bilan). */}
+          <Disclosure
+            label={t("periodFilter")}
+            count={(year ? 1 : 0) + (semester ? 1 : 0)}
+            storageKey="meduni.student.coursesPeriod"
           >
-            <Icon icon={RotateCcw} size={16} />
-            {t("backToCurrent")}
-          </button>
-        )}
-        <span className="ml-auto text-body font-bold text-ink-soft">{t("totalN", { n: filtered.length })}</span>
-      </motion.div>
-
-      <motion.div variants={itemVariants}>
-        <AsyncSection
-          isLoading={q.isLoading}
-          isError={q.isError}
-          isEmpty={filtered.length === 0}
-          emptyIcon={<Icon icon={BookOpen} size={22} />}
-          emptyText={courses.length === 0 ? t("empty") : t("noMatch")}
-          emptyHint={courses.length === 0 ? t("emptyHint") : undefined}
-          onRetry={() => q.refetch()}
-        >
-          {specificPeriod ? (
-            <CourseList rows={filtered} />
-          ) : (
-            groups.map((g, i) => (
-              <PeriodSection
-                key={g.year}
-                group={g}
-                defaultOpen={i === 0 || filtering}
-                renderRows={(rows) => <CourseList rows={rows} />}
+            <div className="flex flex-wrap items-center gap-2">
+              <PeriodFilter
+                years={options.years}
+                semesters={options.semesters}
+                year={year}
+                semester={semester}
+                onYear={onYear}
+                onSemester={onSemester}
               />
-            ))
-          )}
-        </AsyncSection>
-      </motion.div>
-    </motion.div>
+            </div>
+          </Disclosure>
+        </BentoCard>
+      </div>
+
+      <AsyncSection
+        isLoading={q.isLoading}
+        isError={q.isError}
+        isEmpty={filtered.length === 0}
+        emptyIcon={<Icon icon={BookOpen} size={22} />}
+        emptyText={courses.length === 0 ? t("empty") : t("noMatch")}
+        emptyHint={courses.length === 0 ? t("emptyHint") : undefined}
+        onRetry={() => q.refetch()}
+      >
+        {specificPeriod ? (
+          <CourseList rows={filtered} title={`${year} · ${tp("semester", { n: Number(semester) })}`} />
+        ) : (
+          groups.map((g, i) => (
+            <PeriodSection
+              key={g.year}
+              group={g}
+              defaultOpen={i === 0 || filtering}
+              renderRows={(rows) => <CourseList rows={rows} />}
+            />
+          ))
+        )}
+      </AsyncSection>
+    </div>
   );
 }

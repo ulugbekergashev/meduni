@@ -308,7 +308,7 @@ export function CaseTab({ topicId, data }: { topicId: number; data: CaseTabData 
         <button
           onClick={() => setConfirm(true)}
           disabled={!canSubmit || submit.isPending}
-          className="flex w-full items-center justify-center gap-2 rounded-control bg-brand px-4 py-2.5 text-body font-extrabold text-white transition-colors hover:bg-brand-deep disabled:opacity-40"
+          className="flex w-full items-center justify-center gap-2 rounded-pill bg-ink px-4 py-2.5 text-body font-semibold text-surface transition-colors hover:bg-ink-2 disabled:opacity-40"
         >
           {t("submitCase")}
         </button>

@@ -1,13 +1,15 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, ArrowRight, BookOpen, CalendarDays, ChevronLeft, ChevronRight, ChevronRight as Chev, DoorClosed, GraduationCap, UserRoundPlus, Users2, UserX } from "lucide-react";
-import { Badge, Button, Card, EmptyState, Icon, ProgressBar, ProgressRing, Spinner, cls } from "@meduni/ui";
+import { ArrowRight, BookOpen, CalendarDays, ChevronLeft, ChevronRight, DoorClosed, UserRoundPlus, UserX } from "lucide-react";
+import { Badge, Button, EmptyState, Icon, ProgressBar, Spinner, cls } from "@meduni/ui";
+import { BentoCard, HeaderChip, MetricTile, PageHeader } from "../../../components/bento";
 import { AsyncSection } from "../../../components/AsyncSection";
 import { MonthCalendar, type CalEntry } from "../../../components/MonthCalendar";
 import { formatDate } from "../../../lib/date";
 import { useLocale } from "../../../lib/useLocale";
 import { isLowAttendance } from "../../../lib/attendance";
+import { BackLink, PillTabs } from "../components";
 import { useAdminGroup, useAdminGroupLessons, type AdminGroup, type AdminGroupCourse, type AdminGroupLesson, type AdminGroupStudent } from "../api";
 
 type TabKey = "students" | "courses" | "timetable";
@@ -28,27 +30,32 @@ function calTone(s: AdminGroupLesson["status"]): CalEntry["tone"] {
   return s === "FULL" ? "emerald" : s === "PARTIAL" ? "amber" : "brand";
 }
 
-/* ---------------- Stats ---------------- */
-function GroupStats({ g }: { g: AdminGroup }) {
+const navBtn =
+  "rounded-full p-2 text-ink-soft transition-colors hover:bg-surface-raised hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand";
+
+/* ---------------- Ko'rsatkichlar ----------------
+   ⛔ STAT DIETASI: har kartochka tegishli tabni ochadi (o'tish), talabalar soni —
+   shapkadagi MATN. */
+function GroupStats({ g, onTab }: { g: AdminGroup; onTab: (k: TabKey) => void }) {
   const { t } = useTranslation(undefined, { keyPrefix: "adminGroup" });
   return (
-    <div className="mt-5 grid grid-cols-2 gap-2.5 lg:grid-cols-4">
-      <Card className="flex items-center gap-3">
-        <ProgressRing value={g.avgProgress} size={62} stroke={7} tone="brand" />
-        <span className="text-note font-medium text-ink-soft">{t("avgProgress")}</span>
-      </Card>
-      <Card className="flex items-center gap-3">
-        <ProgressRing value={g.avgAttendance ?? 0} size={62} stroke={7} tone="blue" />
-        <span className="text-note font-medium text-ink-soft">{t("avgAttendance")}</span>
-      </Card>
-      <Card className={cls("flex flex-col justify-center", g.behindCount > 0 && "border-rose/30 bg-rose-soft")}>
-        <span className={cls("text-stat font-bold leading-none tabular-nums", g.behindCount > 0 ? "text-rose" : "text-ink")}>{g.behindCount}</span>
-        <span className="mt-1 text-note font-medium text-ink-soft">{t("behindCount")}</span>
-      </Card>
-      <Card className="flex flex-col justify-center">
-        <span className="text-stat font-bold leading-none tabular-nums text-ink">{g.studentCount}</span>
-        <span className="mt-1 text-note font-medium text-ink-soft">{t("studentsCount")}</span>
-      </Card>
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <MetricTile size="stat" label={t("avgProgress")} value={g.avgProgress} percent tone="violet" onClick={() => onTab("students")} />
+      <MetricTile
+        size="stat"
+        label={t("avgAttendance")}
+        value={g.avgAttendance}
+        percent
+        tone={isLowAttendance(g.avgAttendance) ? "rose" : "amber"}
+        onClick={() => onTab("timetable")}
+      />
+      <MetricTile
+        size="stat"
+        label={t("behindCount")}
+        value={g.behindCount}
+        valueTone={g.behindCount > 0 ? "rose" : "ink"}
+        onClick={() => onTab("students")}
+      />
     </div>
   );
 }
@@ -61,11 +68,15 @@ function StudentsTab({ g }: { g: AdminGroup }) {
     return <EmptyState icon={<Icon icon={UserRoundPlus} size={26} />} text={t("noStudents")} hint={t("noStudentsHint")} />;
   const rows = [...g.students].sort((a, b) => a.rank - b.rank);
   return (
-    <Card className="divide-y divide-line p-0">
-      {rows.map((s) => (
-        <StudentRow key={s.id} s={s} onClick={() => navigate(`/admin/users/${s.id}`)} />
-      ))}
-    </Card>
+    <BentoCard title={t("tabs.students")} count={rows.length} bodyClassName="px-2 pb-3">
+      <ul className="space-y-0.5">
+        {rows.map((s) => (
+          <li key={s.id}>
+            <StudentRow s={s} onClick={() => navigate(`/admin/users/${s.id}`)} />
+          </li>
+        ))}
+      </ul>
+    </BentoCard>
   );
 }
 function StudentRow({ s, onClick }: { s: AdminGroupStudent; onClick: () => void }) {
@@ -73,31 +84,35 @@ function StudentRow({ s, onClick }: { s: AdminGroupStudent; onClick: () => void 
   const initials = s.fullName.split(" ").filter(Boolean).slice(0, 2).map((x) => x[0]?.toUpperCase()).join("");
   const lowAtt = isLowAttendance(s.attendancePct);
   return (
-    <button onClick={onClick} className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-bg">
-      <span className={cls("flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-note font-bold font-data tabular-nums", s.rank <= 3 ? "bg-brand-soft text-brand-deep" : "bg-bg text-ink-faint")}>{s.rank}</span>
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-soft text-note font-bold text-brand-deep">{initials}</div>
-      <div className="min-w-0 flex-[2]">
-        <div className="flex items-center gap-2">
-          <p className="truncate text-body font-medium text-ink">{s.fullName}</p>
+    <button
+      type="button"
+      onClick={onClick}
+      className="group flex w-full items-center gap-3 rounded-control px-2 py-2 text-left transition-colors hover:bg-surface-raised focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+    >
+      <span className={cls("flex h-7 w-7 shrink-0 items-center justify-center rounded-full font-data text-micro font-semibold tabular-nums", s.rank <= 3 ? "bg-ink text-surface" : "bg-surface-raised text-ink-soft")}>{s.rank}</span>
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-soft text-micro font-semibold text-brand-deep">{initials}</span>
+      <span className="min-w-0 flex-[2]">
+        <span className="flex items-center gap-2">
+          <span className="truncate text-body font-semibold text-ink">{s.fullName}</span>
           {s.behind && <Badge tone="rose">{t("behind")}</Badge>}
-        </div>
-        <p className="truncate text-note text-ink-faint">{s.email}</p>
-      </div>
-      <div className="hidden min-w-0 flex-1 sm:block">
-        <div className="flex items-center gap-2">
-          <ProgressBar value={s.overallPct} className="flex-1" />
-          <span className="w-9 shrink-0 text-right text-note font-semibold font-data tabular-nums text-ink-soft">{s.overallPct}%</span>
-        </div>
-      </div>
-      <div className="hidden w-14 shrink-0 text-right sm:block">
-        <span className="text-note text-ink-faint">{t("quiz")}</span>
-        <p className="text-note font-bold font-data tabular-nums text-ink">{s.avgQuizScore === null ? "—" : `${s.avgQuizScore}%`}</p>
-      </div>
-      <div className="w-14 shrink-0 text-right">
-        <span className="text-note text-ink-faint">{t("att")}</span>
-        <p className={cls("text-note font-bold font-data tabular-nums", lowAtt ? "text-rose" : "text-ink")}>{s.attendancePct === null ? "—" : `${s.attendancePct}%`}</p>
-      </div>
-      <Icon icon={Chev} size={16} className="shrink-0 text-ink-faint" />
+        </span>
+        <span className="block truncate text-micro text-ink-soft">{s.email}</span>
+      </span>
+      <span className="hidden min-w-0 flex-1 items-center gap-2 sm:flex">
+        <ProgressBar value={s.overallPct} className="flex-1" />
+        <span className="w-9 shrink-0 text-right font-data text-note font-semibold tabular-nums text-ink-2">{s.overallPct}%</span>
+      </span>
+      <span className="hidden w-14 shrink-0 text-right sm:block">
+        <span className="block text-micro text-ink-soft">{t("quiz")}</span>
+        <span className="font-data text-note font-semibold tabular-nums text-ink">{s.avgQuizScore === null ? "—" : `${s.avgQuizScore}%`}</span>
+      </span>
+      <span className="w-14 shrink-0 text-right">
+        <span className="block text-micro text-ink-soft">{t("att")}</span>
+        <span className={cls("font-data text-note font-semibold tabular-nums", lowAtt ? "text-rose" : "text-ink")}>{s.attendancePct === null ? "—" : `${s.attendancePct}%`}</span>
+      </span>
+      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-line text-ink-soft transition-colors group-hover:border-ink group-hover:bg-ink group-hover:text-surface">
+        <Icon icon={ArrowRight} size={13} />
+      </span>
     </button>
   );
 }
@@ -109,7 +124,7 @@ function CoursesTab({ g }: { g: AdminGroup }) {
   if (g.courseReport.length === 0)
     return <EmptyState icon={<Icon icon={BookOpen} size={26} />} text={t("noCourses")} hint={t("noCoursesHint")} />;
   return (
-    <div className="grid gap-3 md:grid-cols-2">
+    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
       {g.courseReport.map((c) => (
         <CourseCard key={c.id} c={c} onView={() => navigate(`/admin/courses/${c.id}`)} />
       ))}
@@ -119,12 +134,12 @@ function CoursesTab({ g }: { g: AdminGroup }) {
 function CourseCard({ c, onView }: { c: AdminGroupCourse; onView: () => void }) {
   const { t } = useTranslation(undefined, { keyPrefix: "adminGroup" });
   return (
-    <Card className="flex flex-col gap-3">
+    <section className="flex flex-col gap-3 rounded-card border border-line bg-surface p-4">
       <div className="flex items-start gap-3">
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-control bg-brand-soft text-brand-deep"><Icon icon={BookOpen} size={20} /></span>
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand-tint"><Icon icon={BookOpen} size={18} /></span>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-body font-bold text-ink">{c.name}</p>
-          <p className="mt-0.5 truncate text-note text-ink-faint">{c.teacherName} · {t("topicsN", { n: c.topicsTotal })} · {t("studentsN", { n: c.studentCount })}</p>
+          <p className="truncate text-section font-semibold text-ink">{c.name}</p>
+          <p className="mt-0.5 truncate text-micro text-ink-soft">{c.teacherName} · {t("topicsN", { n: c.topicsTotal })} · {t("studentsN", { n: c.studentCount })}</p>
         </div>
         {c.behindCount > 0 && (
           <span className="inline-flex shrink-0 items-center gap-1 rounded-pill bg-rose-soft px-2 py-0.5 text-micro font-semibold text-rose"><Icon icon={UserX} size={12} /> {c.behindCount}</span>
@@ -135,8 +150,8 @@ function CourseCard({ c, onView }: { c: AdminGroupCourse; onView: () => void }) 
         <Metric label={t("att")} value={c.attendancePct === null ? "—" : `${c.attendancePct}%`} pct={c.attendancePct ?? 0} tone="blue" />
         <Metric label={t("quiz")} value={c.avgQuizScore === null ? "—" : `${c.avgQuizScore}%`} pct={c.avgQuizScore ?? 0} tone="violet" />
       </div>
-      <Button variant="soft" size="sm" icon={<Icon icon={ArrowRight} size={15} />} onClick={onView} className="self-start">{t("openCourse")}</Button>
-    </Card>
+      <Button variant="ghost" size="sm" icon={<Icon icon={ArrowRight} size={15} />} onClick={onView} className="mt-auto self-start">{t("openCourse")}</Button>
+    </section>
   );
 }
 function Metric({ label, value, pct, tone }: { label: string; value: string; pct: number; tone: "brand" | "blue" | "violet" }) {
@@ -144,7 +159,7 @@ function Metric({ label, value, pct, tone }: { label: string; value: string; pct
     <div>
       <div className="flex items-center justify-between text-note">
         <span className="text-ink-soft">{label}</span>
-        <span className="font-bold font-data tabular-nums text-ink">{value}</span>
+        <span className="font-data font-semibold tabular-nums text-ink">{value}</span>
       </div>
       <ProgressBar value={pct} tone={tone} className="mt-1" />
     </div>
@@ -197,25 +212,26 @@ function TimetableTab({ g }: { g: AdminGroup }) {
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="inline-flex gap-1 rounded-control border border-line bg-surface p-1">
-          {(["week", "month"] as const).map((v) => (
-            <button key={v} onClick={() => setView(v)} className={cls("rounded-[8px] px-3.5 py-1.5 text-micro font-semibold transition-all", view === v ? "bg-brand-soft text-brand-deep" : "text-ink-soft hover:bg-bg hover:text-ink")}>
-              {t(v === "week" ? "viewWeek" : "viewMonth")}
-            </button>
-          ))}
-        </div>
+        <PillTabs
+          value={view}
+          onChange={setView}
+          options={[
+            { key: "week", label: t("viewWeek") },
+            { key: "month", label: t("viewMonth") },
+          ]}
+        />
         {view === "week" ? (
           <div className="flex items-center gap-1">
-            <button onClick={() => setWeekOffset((w) => w - 1)} className="rounded-control p-2 text-ink-soft hover:bg-bg" aria-label="prev"><Icon icon={ChevronLeft} size={18} /></button>
-            <span className="min-w-[150px] text-center text-note font-semibold text-ink">{weekLabel}</span>
-            <button onClick={() => setWeekOffset((w) => w + 1)} className="rounded-control p-2 text-ink-soft hover:bg-bg" aria-label="next"><Icon icon={ChevronRight} size={18} /></button>
+            <button type="button" onClick={() => setWeekOffset((w) => w - 1)} className={navBtn} aria-label="prev"><Icon icon={ChevronLeft} size={18} /></button>
+            <span className="min-w-36 text-center text-note font-semibold text-ink">{weekLabel}</span>
+            <button type="button" onClick={() => setWeekOffset((w) => w + 1)} className={navBtn} aria-label="next"><Icon icon={ChevronRight} size={18} /></button>
             {weekOffset !== 0 && <Button size="sm" variant="ghost" onClick={() => setWeekOffset(0)}>{t("today")}</Button>}
           </div>
         ) : (
           <div className="flex items-center gap-1">
-            <button onClick={() => shiftMonth(-1)} className="rounded-control p-2 text-ink-soft hover:bg-bg" aria-label="prev"><Icon icon={ChevronLeft} size={18} /></button>
-            <span className="min-w-[150px] text-center text-note font-semibold capitalize text-ink">{monthLabel}</span>
-            <button onClick={() => shiftMonth(1)} className="rounded-control p-2 text-ink-soft hover:bg-bg" aria-label="next"><Icon icon={ChevronRight} size={18} /></button>
+            <button type="button" onClick={() => shiftMonth(-1)} className={navBtn} aria-label="prev"><Icon icon={ChevronLeft} size={18} /></button>
+            <span className="min-w-36 text-center text-note font-semibold capitalize text-ink">{monthLabel}</span>
+            <button type="button" onClick={() => shiftMonth(1)} className={navBtn} aria-label="next"><Icon icon={ChevronRight} size={18} /></button>
             <Button size="sm" variant="ghost" onClick={() => { setMonthDate(new Date(now.getFullYear(), now.getMonth(), 1)); setSelectedDay(null); }}>{t("today")}</Button>
           </div>
         )}
@@ -223,30 +239,30 @@ function TimetableTab({ g }: { g: AdminGroup }) {
 
       {q.isLoading ? (
         <div className="flex h-40 items-center justify-center"><Spinner size={22} /></div>
+      ) : q.isError ? (
+        <AsyncSection isLoading={false} isError isEmpty={false} emptyText="" onRetry={() => q.refetch()}>{null}</AsyncSection>
       ) : lessons.length === 0 ? (
         <EmptyState icon={<Icon icon={CalendarDays} size={26} />} text={t("noTimetable")} hint={t("noTimetableHint")} />
       ) : view === "month" ? (
         <>
-          <Card className="!p-0 overflow-hidden">
+          <section className="overflow-hidden rounded-card border border-line bg-surface">
             <MonthCalendar monthDate={monthDate} weekdayNames={ru ? CAL_WD_RU : CAL_WD_UZ} entriesByDay={entriesByDay} selectedKey={selectedDay} onSelectDay={(k) => setSelectedDay((cur) => (cur === k ? null : k))} />
-          </Card>
+          </section>
           {selectedDay && (
-            <Card className="!p-0 overflow-hidden">
-              <div className="flex items-center gap-2 bg-bg px-4 py-2"><Icon icon={CalendarDays} size={14} className="text-ink-soft" /><span className="text-note font-bold text-ink">{formatDate(ru ? "ru" : "uz", new Date(selectedDay), "long")}</span></div>
-              {selectedLessons.length === 0 ? <p className="px-4 py-5 text-center text-note text-ink-faint">{t("noneThisDay")}</p> : <div className="divide-y divide-line">{selectedLessons.map((l) => <LessonRow key={l.slotId + l.dayKey} l={l} t={t} />)}</div>}
-            </Card>
+            <DayCard title={formatDate(ru ? "ru" : "uz", new Date(selectedDay), "long")}>
+              {selectedLessons.length === 0 ? <p className="px-4 py-5 text-center text-note text-ink-soft">{t("noneThisDay")}</p> : selectedLessons.map((l) => <LessonRow key={l.slotId + l.dayKey} l={l} t={t} />)}
+            </DayCard>
           )}
         </>
       ) : (
-        <div className="space-y-2.5">
+        <div className="space-y-3">
           {weekDays.map((d) => {
             const list = [...(byDay.get(dayKey(d)) ?? [])].sort((a, b) => a.startTime.localeCompare(b.startTime));
             if (list.length === 0) return null;
             return (
-              <Card key={dayKey(d)} className="!p-0 overflow-hidden">
-                <div className="bg-bg px-4 py-2 text-note font-bold text-ink">{formatDate(ru ? "ru" : "uz", d, "long")}</div>
-                <div className="divide-y divide-line">{list.map((l) => <LessonRow key={l.slotId + l.dayKey} l={l} t={t} />)}</div>
-              </Card>
+              <DayCard key={dayKey(d)} title={formatDate(ru ? "ru" : "uz", d, "long")}>
+                {list.map((l) => <LessonRow key={l.slotId + l.dayKey} l={l} t={t} />)}
+              </DayCard>
             );
           })}
         </div>
@@ -254,18 +270,32 @@ function TimetableTab({ g }: { g: AdminGroup }) {
     </div>
   );
 }
-function statusBorder(s: AdminGroupLesson["status"]): string {
-  return s === "FULL" ? "border-l-emerald" : s === "PARTIAL" ? "border-l-amber" : "border-l-brand";
+function DayCard({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <section className="overflow-hidden rounded-card border border-line bg-surface">
+      <header className="flex items-center gap-2 px-4 pb-1 pt-3">
+        <Icon icon={CalendarDays} size={14} className="text-ink-soft" />
+        <span className="text-note font-semibold text-ink">{title}</span>
+      </header>
+      <div className="divide-y divide-line-soft px-2 pb-2">{children}</div>
+    </section>
+  );
+}
+function statusDot(s: AdminGroupLesson["status"]): string {
+  return s === "FULL" ? "bg-emerald" : s === "PARTIAL" ? "bg-amber" : "bg-brand";
 }
 function LessonRow({ l, t }: { l: AdminGroupLesson; t: (k: string) => string }) {
   return (
-    <div className={cls("flex flex-wrap items-center gap-3 border-l-4 px-4 py-2.5", statusBorder(l.status))}>
-      <span className="w-12 shrink-0 text-note font-bold font-data tabular-nums text-ink">{l.startTime}</span>
+    <div className="flex flex-wrap items-center gap-3 px-2 py-2.5">
+      <span className="w-14 shrink-0 rounded-control bg-surface-raised py-1.5 text-center font-data text-note font-semibold tabular-nums text-ink">{l.startTime}</span>
       <div className="min-w-0 flex-1">
         <p className="truncate text-note font-semibold text-ink">{l.courseName}</p>
-        {l.room && <p className="flex items-center gap-1 text-micro text-ink-faint"><Icon icon={DoorClosed} size={11} /> {l.room}</p>}
+        {l.room && <p className="flex items-center gap-1 text-micro text-ink-soft"><Icon icon={DoorClosed} size={11} /> {l.room}</p>}
       </div>
-      <span className="shrink-0 text-micro font-data tabular-nums text-ink-faint">{l.markedCount}/{l.rosterSize} · {t(`status.${l.status}`)}</span>
+      <span className="inline-flex shrink-0 items-center gap-1.5 font-data text-micro tabular-nums text-ink-soft">
+        <span className={cls("h-2 w-2 rounded-full", statusDot(l.status))} />
+        {l.markedCount}/{l.rosterSize} · <span className="font-sans">{t(`status.${l.status}`)}</span>
+      </span>
     </div>
   );
 }
@@ -284,54 +314,40 @@ export function AdminGroupProfile() {
   const tab: TabKey = raw === "courses" || raw === "timetable" ? raw : "students";
   const setTab = (k: TabKey) => setParams({ tab: k }, { replace: true });
 
-  const TABS: { key: TabKey; icon: typeof Users2 }[] = [
-    { key: "students", icon: Users2 },
-    { key: "courses", icon: BookOpen },
-    { key: "timetable", icon: CalendarDays },
-  ];
-
   return (
-    <div>
-      <button onClick={() => navigate("/admin/students")} className="mb-3 flex items-center gap-1 text-note font-medium text-brand-deep hover:underline">
-        <Icon icon={ArrowLeft} size={15} /> {t("back")}
-      </button>
+    <div className="space-y-3">
+      <div>
+        <BackLink label={t("back")} onClick={() => navigate("/admin/students")} />
+        {g && (
+          <PageHeader
+            className="mb-0"
+            title={g.name}
+            subtitle={[t("yearN", { n: g.yearOfStudy }), g.facultyName, t("studentsN", { n: g.studentCount })].join(" · ")}
+            right={g.courses.map((c) => (
+              <HeaderChip key={c.id} tone="brand" icon={<Icon icon={BookOpen} size={14} />} onClick={() => setTab("courses")} title={t("openReport")}>
+                {c.name}
+              </HeaderChip>
+            ))}
+          />
+        )}
+      </div>
 
       {q.isLoading ? (
         <div className="flex min-h-[40vh] items-center justify-center"><Spinner size={26} /></div>
       ) : (
         <AsyncSection isLoading={false} isError={q.isError} isEmpty={false} emptyText="" onRetry={() => q.refetch()}>
           {g && (
-            <>
-              <div className="flex flex-wrap items-center gap-4">
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand-deep"><Icon icon={Users2} size={26} /></div>
-                <div className="min-w-0 flex-1">
-                  <h1 className="text-h1 font-bold text-ink">{g.name}</h1>
-                  <p className="flex flex-wrap items-center gap-x-2 text-note text-ink-soft">
-                    <span>{t("yearN", { n: g.yearOfStudy })}</span><span>·</span><span>{g.facultyName}</span><span>·</span>
-                    <span className="inline-flex items-center gap-1"><Icon icon={GraduationCap} size={14} /> {t("studentsN", { n: g.studentCount })}</span>
-                  </p>
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {g.courses.map((c) => (
-                    <button key={c.id} onClick={() => setTab("courses")} title={t("openReport")} className="rounded-pill bg-brand-soft px-2.5 py-1 text-note font-semibold text-brand-deep transition-colors hover:bg-brand/10">{c.name}</button>
-                  ))}
-                </div>
-              </div>
+            <div className="space-y-3">
+              <GroupStats g={g} onTab={setTab} />
 
-              <GroupStats g={g} />
+              <PillTabs
+                value={tab}
+                onChange={setTab}
+                options={(["students", "courses", "timetable"] as const).map((k) => ({ key: k, label: t(`tabs.${k}`) }))}
+              />
 
-              <div className="mt-3 inline-flex max-w-full gap-1 overflow-x-auto rounded-control border border-line bg-surface p-1 shadow-card">
-                {TABS.map((x) => (
-                  <button key={x.key} onClick={() => setTab(x.key)} className={cls("flex shrink-0 items-center gap-2 whitespace-nowrap rounded-[8px] px-4 py-2 text-body font-semibold transition-all", tab === x.key ? "bg-brand-soft text-brand-deep" : "text-ink-soft hover:bg-bg hover:text-ink")}>
-                    <Icon icon={x.icon} size={16} />{t(`tabs.${x.key}`)}
-                  </button>
-                ))}
-              </div>
-
-              <div className="mt-5">
-                {tab === "students" ? <StudentsTab g={g} /> : tab === "courses" ? <CoursesTab g={g} /> : <TimetableTab g={g} />}
-              </div>
-            </>
+              {tab === "students" ? <StudentsTab g={g} /> : tab === "courses" ? <CoursesTab g={g} /> : <TimetableTab g={g} />}
+            </div>
           )}
         </AsyncSection>
       )}

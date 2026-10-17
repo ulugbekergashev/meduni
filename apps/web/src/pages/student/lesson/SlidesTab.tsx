@@ -139,7 +139,7 @@ export function SlidesTab({ topicId, data }: { topicId: number; data: SlidesTabD
               key={String(o)}
               onClick={() => setMode(o)}
               className={cls(
-                "inline-flex items-center gap-1.5 rounded-[6px] px-2.5 py-1 text-micro font-extrabold transition-colors",
+                "inline-flex items-center gap-1.5 rounded-pill px-2.5 py-1 text-micro font-extrabold transition-colors",
                 outline === o ? "bg-brand-soft text-brand-tint" : "text-ink-dim hover:text-ink"
               )}
             >

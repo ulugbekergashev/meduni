@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { CheckCircle2, ClipboardCheck, FileText, Send } from "lucide-react";
-import { Button, Card, Icon, Num, Select, Spinner, cls, useToast } from "@meduni/ui";
+import { CheckCircle2, Plus, Send } from "lucide-react";
+import { Button, Icon, Num, Select, cls, useToast } from "@meduni/ui";
+import { BentoCard } from "../../components/bento";
 import { apiErrorMessage } from "../../lib/api";
 import { useLocale } from "../../lib/useLocale";
 import { formatDate } from "../../lib/date";
@@ -42,10 +43,10 @@ function MakeupRow({ m, first }: { m: Makeup; first: boolean }) {
   const open = m.status === "REQUIRED" || m.status === "REJECTED";
 
   return (
-    <div className={cls("flex flex-wrap items-center gap-2 px-5 py-3", !first && "border-t border-line-soft")}>
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-note text-ink">{m.topicTitle ?? m.courseName}</p>
-        <p className="truncate text-micro text-ink-faint">
+    <div className={cls("flex flex-wrap items-center gap-2 px-2 py-2.5", !first && "border-t border-line-soft")}>
+      <div className="min-w-0 flex-1 basis-40">
+        <p className="truncate text-note font-semibold text-ink">{m.topicTitle ?? m.courseName}</p>
+        <p className="truncate text-micro text-ink-soft">
           {m.topicTitle ? `${m.courseName} · ` : ""}
           <Num>{formatDate(locale, m.date, "short")}</Num>
           {" · "}
@@ -56,14 +57,14 @@ function MakeupRow({ m, first }: { m: Makeup; first: boolean }) {
       </div>
       <div className="flex shrink-0 flex-col items-end gap-1">
         <span className={cls("rounded-pill px-2 py-0.5 text-micro font-semibold", MK_TONE[m.status])}>{t(`mk${m.status}`)}</span>
-        <span className={cls("text-micro", m.overdue ? "text-rose" : "text-ink-faint")}>
+        <span className={cls("text-micro", m.overdue ? "font-semibold text-rose" : "text-ink-soft")}>
           {m.overdue ? t("mkOverdue") : t("mkDue", { d: formatDate(locale, m.dueAt, "short") })}
         </span>
       </div>
       {open && (
         <div className="flex shrink-0 gap-1.5">
           {m.kind === "DIGITAL" && m.topicId && (
-            <Button size="sm" variant="soft" onClick={() => navigate(`/app/topics/${m.topicId}`)}>
+            <Button size="sm" variant="ghost" className="rounded-pill" onClick={() => navigate(`/app/topics/${m.topicId}`)}>
               {t("mkOpenTopic")}
             </Button>
           )}
@@ -85,22 +86,19 @@ export function MakeupList() {
   const { t } = useTranslation(undefined, { keyPrefix: "attendanceMe" });
   const q = useMyMakeups();
   const rows = (q.data ?? []).filter((m) => m.status !== "ACCEPTED" && m.status !== "WAIVED");
+  if (q.isError) return <BentoCard title={t("debtsTitle")} isError onRetry={() => q.refetch()} />;
   if (q.isLoading) return null;
   if (rows.length === 0) return null;
   const sorted = [...rows].sort((a, b) => Number(b.overdue) - Number(a.overdue) || a.dueAt.localeCompare(b.dueAt));
+  const overdue = sorted.some((m) => m.overdue);
   return (
-    <Card className="p-0">
-      <div className="flex items-center gap-2 border-b border-line px-5 py-3.5">
-        <Icon icon={ClipboardCheck} size={15} className="text-ink-faint" />
-        <p className="text-note font-bold text-ink-soft">{t("debtsTitle")}</p>
-        <span className="ml-auto text-micro text-ink-faint">
-          <Num>{sorted.length}</Num>
-        </span>
+    <BentoCard title={t("debtsTitle")} count={sorted.length} tone={overdue ? "rose" : "amber"} bodyClassName="px-2 pb-2">
+      <div className="rounded-control bg-surface px-1">
+        {sorted.map((m, i) => (
+          <MakeupRow key={m.id} m={m} first={i === 0} />
+        ))}
       </div>
-      {sorted.map((m, i) => (
-        <MakeupRow key={m.id} m={m} first={i === 0} />
-      ))}
-    </Card>
+    </BentoCard>
   );
 }
 
@@ -125,42 +123,43 @@ export function ExcuseList() {
   const rows = q.data ?? [];
 
   return (
-    <Card className="p-0">
-      <div className="flex items-center gap-2 border-b border-line px-5 py-3.5">
-        <Icon icon={FileText} size={15} className="text-ink-faint" />
-        <p className="text-note font-bold text-ink-soft">{t("excusesTitle")}</p>
-        {!open && (
-          <button
-            onClick={() => setOpen(true)}
-            className="ml-auto rounded-control text-micro font-semibold text-brand-tint transition-colors hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
-          >
-            {t("excuseNew")}
-          </button>
-        )}
-      </div>
-
+    <BentoCard
+      title={t("excusesTitle")}
+      count={rows.length}
+      right={
+        !open && (
+          <Button size="sm" variant="ghost" className="rounded-pill" icon={<Icon icon={Plus} size={13} />} onClick={() => setOpen(true)}>
+            {t("excuseNew").replace(/^\+\s*/, "")}
+          </Button>
+        )
+      }
+      isError={q.isError}
+      onRetry={() => q.refetch()}
+      isLoading={q.isLoading}
+      bodyClassName="px-2 pb-2"
+    >
       {open && (
-        <div className="grid gap-2 border-b border-line-soft px-5 py-3 sm:grid-cols-2">
+        <div className="mb-2 grid gap-2 rounded-control bg-surface-raised p-3 sm:grid-cols-2">
           <label className="flex flex-col gap-1">
-            <span className="text-micro text-ink-faint">{t("excuseFrom")}</span>
+            <span className="text-micro text-ink-soft">{t("excuseFrom")}</span>
             <input
               type="date"
               value={form.fromDate}
               onChange={(e) => setForm((f) => ({ ...f, fromDate: e.target.value }))}
-              className="rounded-control border border-line bg-surface px-3 py-1.5 text-note outline-none focus:border-brand"
+              className="h-9 rounded-control border border-line bg-surface px-3 text-note text-ink outline-none focus:border-brand"
             />
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-micro text-ink-faint">{t("excuseTo")}</span>
+            <span className="text-micro text-ink-soft">{t("excuseTo")}</span>
             <input
               type="date"
               value={form.toDate}
               onChange={(e) => setForm((f) => ({ ...f, toDate: e.target.value }))}
-              className="rounded-control border border-line bg-surface px-3 py-1.5 text-note outline-none focus:border-brand"
+              className="h-9 rounded-control border border-line bg-surface px-3 text-note text-ink outline-none focus:border-brand"
             />
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-micro text-ink-faint">{t("excuseReason")}</span>
+            <span className="text-micro text-ink-soft">{t("excuseReason")}</span>
             <Select value={form.reason} onChange={(e) => setForm((f) => ({ ...f, reason: e.target.value as AbsenceReason }))}>
               {REASONS.map((r) => (
                 <option key={r} value={r}>
@@ -170,16 +169,17 @@ export function ExcuseList() {
             </Select>
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-micro text-ink-faint">{t("excuseNote")}</span>
+            <span className="text-micro text-ink-soft">{t("excuseNote")}</span>
             <input
               value={form.note}
               onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))}
-              className="rounded-control border border-line bg-surface px-3 py-1.5 text-note outline-none focus:border-brand"
+              className="h-9 rounded-control border border-line bg-surface px-3 text-note text-ink outline-none focus:border-brand"
             />
           </label>
           <div className="flex gap-2 sm:col-span-2">
             <Button
               size="sm"
+              icon={<Icon icon={Send} size={14} />}
               disabled={create.isPending}
               onClick={() =>
                 create.mutate(form, {
@@ -191,26 +191,22 @@ export function ExcuseList() {
                 })
               }
             >
-              <Icon icon={Send} size={14} /> {t("excuseSend")}
+              {t("excuseSend")}
             </Button>
-            <Button size="sm" variant="ghost" onClick={() => setOpen(false)}>
+            <Button size="sm" variant="ghost" className="rounded-pill" onClick={() => setOpen(false)}>
               {t("excuseCancel")}
             </Button>
           </div>
         </div>
       )}
 
-      {q.isLoading ? (
-        <div className="flex justify-center py-6">
-          <Spinner size={20} />
-        </div>
-      ) : rows.length === 0 ? (
-        !open && <p className="px-5 py-4 text-micro text-ink-faint">{t("debtsEmpty")}</p>
+      {rows.length === 0 ? (
+        !open && <p className="px-2 py-2 text-note text-ink-soft">{t("excusesEmpty")}</p>
       ) : (
         rows.map((r, i) => (
-          <div key={r.id} className={cls("flex flex-wrap items-center gap-2 px-5 py-3", i > 0 && "border-t border-line-soft")}>
+          <div key={r.id} className={cls("flex flex-wrap items-center gap-2 px-2 py-2.5", i > 0 && "border-t border-line-soft")}>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-note text-ink">
+              <p className="truncate text-note font-semibold text-ink">
                 <Num>{formatDate(locale, r.fromDate, "short")}</Num>
                 {r.fromDate !== r.toDate && (
                   <>
@@ -221,7 +217,7 @@ export function ExcuseList() {
                 {" · "}
                 {t(`reason${r.reason}`)}
               </p>
-              <p className="truncate text-micro text-ink-faint">
+              <p className="truncate text-micro text-ink-soft">
                 {t("excuseCovers", { n: r.affected })}
                 {r.reviewComment ? ` · ${r.reviewComment}` : r.note ? ` · ${r.note}` : ""}
                 {r.reviewedByName ? ` · ${r.reviewedByName}` : ""}
@@ -234,6 +230,6 @@ export function ExcuseList() {
           </div>
         ))
       )}
-    </Card>
+    </BentoCard>
   );
 }

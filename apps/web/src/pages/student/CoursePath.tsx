@@ -1,8 +1,8 @@
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { motion, type Variants } from "framer-motion";
 import {
   ArrowLeft,
+  ArrowRight,
   CheckCircle2,
   ClipboardList,
   FileText,
@@ -13,9 +13,11 @@ import {
   Stethoscope,
   Video,
 } from "lucide-react";
-import { Badge, Card, Icon, Spinner, cls, useToast } from "@meduni/ui";
+import { Button, Icon, Spinner, cls, useToast } from "@meduni/ui";
+import { BentoCard } from "../../components/bento";
 import { AsyncSection } from "../../components/AsyncSection";
 import { useLocale } from "../../lib/useLocale";
+import { Line, SoftChip, TopicTrack } from "./parts/bento";
 import { useMyCourse, type StudentTopic, type TopicElements } from "./api";
 
 /** Element chipi — bosilsa mavzuning o'sha tabiga to'g'ridan o'tadi. */
@@ -33,27 +35,20 @@ function Chip({
   onClick?: () => void;
 }) {
   const cn = cls(
-    "inline-flex items-center gap-1 rounded-pill px-2 py-0.5 text-note font-medium transition-colors",
-    done ? "bg-emerald-soft text-emerald" : "bg-surface-raised text-ink-faint",
-    onClick && (done ? "hover:bg-emerald hover:text-white" : "hover:bg-brand-soft hover:text-brand-tint")
+    "inline-flex items-center gap-1 rounded-pill border px-2 py-0.5 text-micro font-semibold transition-colors",
+    done ? "border-emerald/30 text-emerald" : "border-line text-ink-soft",
+    onClick && "hover:border-ink hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
   );
   const inner = (
     <>
-      <Icon icon={done ? CheckCircle2 : icon} size={13} />
+      <Icon icon={done ? CheckCircle2 : icon} size={12} />
       {label}
-      {hint && <span className="font-bold">{hint}</span>}
+      {hint && <span className="tabular-nums">{hint}</span>}
     </>
   );
   if (!onClick) return <span className={cn}>{inner}</span>;
   return (
-    <button
-      type="button"
-      onClick={(e) => {
-        e.stopPropagation(); // karta bosilishini ushlab qolmasin
-        onClick();
-      }}
-      className={cn}
-    >
+    <button type="button" onClick={onClick} className={cn}>
       {inner}
     </button>
   );
@@ -77,13 +72,14 @@ function ElementChips({ topic }: { topic: StudentTopic }) {
   return <div className="flex flex-wrap gap-1.5">{chips}</div>;
 }
 
+/** Yo'l nuqtasi — tugagan = kontur emerald belgi (§4: to'ldirilgan yashil emas). */
 function Dot({ state }: { state: StudentTopic["state"] }) {
   return (
     <span
       className={cls(
-        "z-10 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 bg-surface",
+        "z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 bg-surface",
         state === "COMPLETED" && "border-emerald text-emerald",
-        (state === "AVAILABLE" || state === "IN_PROGRESS") && "border-brand text-brand",
+        (state === "AVAILABLE" || state === "IN_PROGRESS") && "border-ink text-ink",
         state === "LOCKED" && "border-line text-ink-faint"
       )}
     >
@@ -92,95 +88,96 @@ function Dot({ state }: { state: StudentTopic["state"] }) {
       ) : state === "LOCKED" ? (
         <Icon icon={Lock} size={12} />
       ) : (
-        <span className="h-2 w-2 rounded-full bg-brand" />
+        <span className="h-2 w-2 rounded-full bg-ink" />
       )}
     </span>
   );
 }
 
-const containerVariants: Variants = {
-  hidden: { opacity: 0 },
-  show: { opacity: 1, transition: { staggerChildren: 0.1 } }
-};
-
-const itemVariants: Variants = {
-  hidden: { opacity: 0, y: 20 },
-  show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
-};
-
-function TopicCard({ topic, last }: { topic: StudentTopic; last: boolean }) {
+function TopicItem({ topic, last }: { topic: StudentTopic; last: boolean }) {
   const { t } = useTranslation(undefined, { keyPrefix: "student" });
   const locale = useLocale();
   const { show } = useToast();
-  const title = topic.title;
+  const navigate = useNavigate();
   const current = topic.state === "AVAILABLE" || topic.state === "IN_PROGRESS";
+  const locked = topic.state === "LOCKED";
+  const reason = topic.reason ? (locale === "ru" ? topic.reason.ru : topic.reason.uz) : null;
 
   return (
-    <motion.li variants={itemVariants} className="relative flex gap-3">
-      <div className="flex flex-col items-center">
+    <li className="relative flex gap-3">
+      <div className="flex flex-col items-center pt-3">
         <Dot state={topic.state} />
-        {!last && <span className="w-0.5 flex-1 bg-line" />}
+        {!last && <span className="mt-1 w-0.5 flex-1 bg-line" />}
       </div>
 
-      <div className="flex-1 pb-5">
-        <Card
-          className={cls(
-            "flex flex-col gap-3",
-            current && "border-brand",
-            topic.state === "LOCKED" && "opacity-80"
-          )}
-        >
-          <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0">
-              <p className="text-note font-bold text-ink-faint">
-                {t("topic")} {topic.orderIndex}
-              </p>
-              <h3 className={cls("mt-0.5 text-section font-bold", topic.state === "LOCKED" ? "text-ink-soft" : "text-ink")}>{title}</h3>
-            </div>
-            {topic.state === "COMPLETED" && <Badge tone="emerald">{t("statusDone")}</Badge>}
-            {current && <Badge tone="brand">{t("statusCurrent")}</Badge>}
-          </div>
-
-          {topic.state !== "LOCKED" && <ElementChips topic={topic} />}
-
-          {current && (
-            <>
-              <div>
-                <div className="h-2 w-full overflow-hidden rounded-pill bg-surface-raised">
-                  <div className="h-full rounded-pill bg-brand transition-all" style={{ width: `${Math.max(topic.pct, 2)}%` }} />
-                </div>
-                <p className="mt-1 text-note text-ink-soft">{topic.pct}% {t("done")}</p>
-              </div>
-              <Link to={`/app/topics/${topic.id}`}>
-                <button className="flex w-full items-center justify-center gap-2 rounded-control bg-brand px-4 py-2.5 text-body font-bold text-white transition-all hover:bg-brand-deep">
-                  <Icon icon={PlayCircle} size={18} />
-                  {t("continue")}
-                </button>
+      <div className={cls("mb-2 min-w-0 flex-1 rounded-control p-3", current && "bg-brand-soft")}>
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <p className="text-micro font-semibold tabular-nums text-ink-soft">
+              {t("topic")} {topic.orderIndex}
+            </p>
+            {locked ? (
+              <h3 className="mt-0.5 text-section font-semibold text-ink-soft">{topic.title}</h3>
+            ) : (
+              <Link
+                to={`/app/topics/${topic.id}`}
+                className="mt-0.5 block rounded-control text-section font-semibold text-ink hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+              >
+                {topic.title}
               </Link>
-            </>
-          )}
-
+            )}
+          </div>
           {topic.state === "COMPLETED" && (
-            <Link to={`/app/topics/${topic.id}`} className="self-start">
-              <button className="flex items-center gap-1.5 rounded-control border border-line px-3 py-1.5 text-body font-semibold text-ink-soft transition-all hover:bg-surface-raised">
-                <Icon icon={RotateCcw} size={14} />
-                {t("review")}
-              </button>
-            </Link>
+            <span className="shrink-0 rounded-pill border border-emerald/30 px-2 py-0.5 text-micro font-semibold text-emerald">
+              {t("statusDone")}
+            </span>
           )}
+          {current && (
+            <span className="shrink-0 rounded-pill bg-ink px-2 py-0.5 text-micro font-semibold text-surface">
+              {t("statusCurrent")}
+            </span>
+          )}
+        </div>
 
-          {topic.state === "LOCKED" && topic.reason && (
-            <button
-              onClick={() => show(locale === "ru" ? topic.reason!.ru : topic.reason!.uz)}
-              className="flex items-start gap-2 rounded-control bg-amber-soft px-3 py-2 text-left text-note font-medium text-amber"
-            >
-              <Icon icon={Lock} size={14} className="mt-0.5 shrink-0" />
-              {locale === "ru" ? topic.reason.ru : topic.reason.uz}
-            </button>
-          )}
-        </Card>
+        {!locked && (
+          <div className="mt-2">
+            <ElementChips topic={topic} />
+          </div>
+        )}
+
+        {current && (
+          <div className="mt-3 flex items-center gap-3">
+            <Line value={topic.pct} track="bg-surface" className="max-w-md flex-1" />
+            <span className="shrink-0 text-micro font-semibold tabular-nums text-ink-2">
+              {topic.pct}% {t("done")}
+            </span>
+          </div>
+        )}
+
+        {topic.state === "COMPLETED" && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="mt-2 rounded-pill"
+            icon={<Icon icon={RotateCcw} size={13} />}
+            onClick={() => navigate(`/app/topics/${topic.id}`)}
+          >
+            {t("review")}
+          </Button>
+        )}
+
+        {locked && reason && (
+          <button
+            type="button"
+            onClick={() => show(reason)}
+            className="mt-2 flex items-start gap-2 rounded-control bg-amber-soft px-3 py-2 text-left text-note font-medium text-amber focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+          >
+            <Icon icon={Lock} size={14} className="mt-0.5 shrink-0" />
+            {reason}
+          </button>
+        )}
       </div>
-    </motion.li>
+    </li>
   );
 }
 
@@ -195,8 +192,13 @@ export function CoursePath() {
   const allDone = !!c && c.topicsTotal > 0 && c.topicsCompleted === c.topicsTotal;
 
   return (
-    <div className="mx-auto max-w-4xl">
-      <button onClick={() => navigate("/app")} className="mb-3 flex items-center gap-1 text-body font-medium text-brand-tint hover:underline">
+    <div>
+      {/* Yorliq "Kurslarga qaytish" — shuning uchun /app/courses ga (ilgari /app edi). */}
+      <button
+        type="button"
+        onClick={() => navigate("/app/courses")}
+        className="mb-3 inline-flex items-center gap-1 rounded-control text-note font-semibold text-brand-tint hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+      >
         <Icon icon={ArrowLeft} size={15} />
         {t("back")}
       </button>
@@ -216,50 +218,53 @@ export function CoursePath() {
           {c && (() => {
             const current = c.topics.find((tp) => tp.state === "IN_PROGRESS") ?? c.topics.find((tp) => tp.state === "AVAILABLE");
             return (
-            <>
-              {/* Course header — davr + progress + davom ettirish */}
-              <div className="rounded-card border border-line bg-surface p-4">
-                <div className="flex flex-wrap items-center gap-1.5 text-note font-semibold">
-                  <span className="rounded-pill bg-surface-raised text-ink-soft px-2 py-0.5">{c.academicYear}</span>
-                  <span className="rounded-pill bg-surface-raised text-ink-soft px-2 py-0.5">{tp2("semester", { n: c.semester })}</span>
-                  {c.groupName && <span className="rounded-pill bg-surface-raised text-ink-soft px-2 py-0.5">{c.groupName}</span>}
-                </div>
-                <h1 className="mt-2 text-h1 font-bold leading-tight">{c.subjectName}</h1>
-                <p className="mt-0.5 text-body text-ink-soft">{c.teacherName}</p>
-                <div className="mt-4">
-                  <div className="h-2 w-full overflow-hidden rounded-pill bg-line">
-                    <div className="h-full rounded-pill bg-brand transition-all" style={{ width: `${Math.max(c.progressPct, 2)}%` }} />
-                  </div>
-                  <div className="mt-1.5 flex items-center justify-between gap-3">
-                    <p className="text-note text-ink-soft">
-                      {c.progressPct}% {t("done")} · {c.topicsCompleted}/{c.topicsTotal} {t("topics")}
+              <div className="space-y-3">
+                {/* Kurs shapkasi — sahifaning yagona pastel yuzasi */}
+                <section className="flex flex-col gap-4 rounded-card bg-brand-soft p-5 sm:flex-row sm:items-stretch">
+                  <div className="flex min-w-0 flex-1 flex-col">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <SoftChip>{c.academicYear}</SoftChip>
+                      <SoftChip>{tp2("semester", { n: c.semester })}</SoftChip>
+                      {c.groupName && <SoftChip>{c.groupName}</SoftChip>}
+                    </div>
+                    <h1 className="mt-3 truncate text-h1 font-semibold text-ink">{c.subjectName}</h1>
+                    <p className="mt-0.5 truncate text-note text-ink-2">
+                      {c.teacherName} · {t("topicsOfCourse", { done: c.topicsCompleted, total: c.topicsTotal })}
                     </p>
-                    {current && (
-                      <Link to={`/app/topics/${current.id}`}>
-                        <button className="flex items-center gap-1.5 rounded-control bg-brand px-3 py-1.5 text-note font-bold text-white transition-colors hover:bg-brand-hover">
-                          <Icon icon={PlayCircle} size={15} />
+                    <div className="mt-auto pt-4">
+                      <div className="mb-4 max-w-md">
+                        <TopicTrack done={c.topicsCompleted} total={c.topicsTotal} />
+                      </div>
+                      {current && (
+                        <Button size="lg" onClick={() => navigate(`/app/topics/${current.id}`)} title={current.title}>
+                          <Icon icon={PlayCircle} size={16} />
                           {t("continue")}
-                        </button>
-                      </Link>
-                    )}
+                          <Icon icon={ArrowRight} size={16} />
+                        </Button>
+                      )}
+                    </div>
                   </div>
-                </div>
+                  <div className="flex shrink-0 flex-row items-end justify-between gap-2 border-t border-ink/10 pt-3 sm:flex-col sm:items-end sm:justify-start sm:border-0 sm:pt-0 sm:text-right">
+                    <p className="text-display font-semibold tabular-nums text-ink">{c.progressPct}%</p>
+                    <p className="text-micro text-ink-2">{t("overallProgress")}</p>
+                  </div>
+                </section>
+
+                {allDone && (
+                  <div className="flex items-center gap-3 rounded-card bg-emerald-soft p-4 text-emerald">
+                    <Icon icon={PartyPopper} size={20} />
+                    <p className="text-body font-semibold">{t("allDone")}</p>
+                  </div>
+                )}
+
+                <BentoCard title={t("pathTitle")} count={c.topics.length} bodyClassName="px-3 pb-2">
+                  <ol>
+                    {c.topics.map((topic, i) => (
+                      <TopicItem key={topic.id} topic={topic} last={i === c.topics.length - 1} />
+                    ))}
+                  </ol>
+                </BentoCard>
               </div>
-
-              {allDone && (
-                <div className="mt-4 flex items-center gap-3 rounded-card bg-emerald-soft p-4 text-emerald">
-                  <Icon icon={PartyPopper} size={20} />
-                  <p className="text-body font-bold">{t("allDone")}</p>
-                </div>
-              )}
-
-              {/* Topic path */}
-              <motion.ol variants={containerVariants} initial="hidden" animate="show" className="mt-3">
-                {c.topics.map((topic, i) => (
-                  <TopicCard key={topic.id} topic={topic} last={i === c.topics.length - 1} />
-                ))}
-              </motion.ol>
-            </>
             );
           })()}
         </AsyncSection>

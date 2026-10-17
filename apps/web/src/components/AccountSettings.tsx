@@ -3,8 +3,12 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Building2, LogOut, Mail, Phone, Users } from "lucide-react";
-import { Button, Card, Icon, Spinner, cls, useToast } from "@meduni/ui";
+import { Button, Icon, Segmented, Spinner, cls, useToast } from "@meduni/ui";
+import { BentoCard, PageHeader } from "./bento";
 import { ApiError, api } from "../lib/api";
+
+const inputCls =
+  "h-10 w-full rounded-control border border-line-raised bg-surface-raised px-3 text-note text-ink outline-none transition-colors focus:border-brand focus:bg-surface";
 import { useLocale } from "../lib/useLocale";
 import { useLogout } from "../lib/auth";
 import { ThemeToggle } from "./ThemeToggle";
@@ -57,7 +61,7 @@ export function AccountSettings() {
   const [pwErr, setPwErr] = useState<string | null>(null);
 
   const pickLocale = (l: "uz" | "ru") => {
-    if (l === locale) return;
+    if (l === locale || setLocaleM.isPending) return;
     setLocaleM.mutate(l, {
       onSuccess: () => {
         i18n.changeLanguage(l);
@@ -86,62 +90,67 @@ export function AccountSettings() {
   const context = a?.contextType ? a.context : null;
 
   return (
-    <div className="mx-auto max-w-md space-y-4">
-      <h1 className="text-h1 font-bold text-ink">{t("title")}</h1>
+    <div className="space-y-3 pb-8">
+      <PageHeader className="mb-0" title={t("title")} subtitle={a ? a.email : undefined} />
 
       {q.isError || !a ? (
-        <Card><p className="py-6 text-center text-note text-rose">{t("loadError")}</p></Card>
+        <BentoCard isError onRetry={() => q.refetch()} />
       ) : (
-        <>
-          {/* Personal info (read-only) */}
-          <Card>
+        // Dizayn v3: markazdagi tor ustun o'rniga ikki ustunli bento (§4 ZICHLIK).
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+          {/* Shaxsiy ma'lumot (faqat o'qish) — sahifadagi yagona pastel urg'u */}
+          <BentoCard tone="brand" className="lg:row-span-2 lg:self-start" bodyClassName="flex flex-col px-5 pb-5">
             <div className="flex items-center gap-3">
-              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-brand-soft text-section font-bold text-brand-deep">{initials}</div>
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-surface text-section font-semibold text-brand-deep">{initials}</div>
               <div className="min-w-0">
-                <p className="truncate text-body font-bold text-ink">{a.fullName}</p>
+                <p className="truncate text-section font-semibold text-ink">{a.fullName}</p>
                 <span className={cls("mt-0.5 inline-block rounded-pill px-2 py-0.5 text-micro font-semibold", roleTone[a.role])}>{t(`role.${a.role}`)}</span>
               </div>
             </div>
-            <div className="mt-3 border-t border-line pt-2">
+            <div className="mt-4 rounded-control bg-surface/70 px-3 py-1">
               {context && <Row icon={a.contextType === "department" ? Building2 : Users} label={t(a.contextType === "department" ? "department" : "group")} value={context} />}
               <Row icon={Mail} label={t("email")} value={a.email} />
               {a.phone && <Row icon={Phone} label={t("phone")} value={a.phone} />}
             </div>
-            <p className="mt-2 text-micro text-ink-faint">{t("adminNote")}</p>
-          </Card>
-
-          {/* Settings */}
-          <Card className="space-y-5">
-            <h2 className="text-section font-bold text-ink">{t("interface")}</h2>
-
-            <div>
-              <p className="mb-1.5 text-note font-semibold text-ink-soft">{t("language")}</p>
-              <div className="flex overflow-hidden rounded-control border border-line">
-                {(["uz", "ru"] as const).map((l) => (
-                  <button key={l} onClick={() => pickLocale(l)} disabled={setLocaleM.isPending} className={cls("flex-1 px-3 py-2 text-note font-semibold transition-colors", locale === l ? "bg-brand-soft text-brand-deep" : "text-ink-soft hover:bg-bg")}>
-                    {l === "uz" ? "O‘zbek (lotin)" : "Русский"}
-                  </button>
-                ))}
-              </div>
-              <p className="mt-1 text-micro text-ink-faint">{t("languageHint")}</p>
+            <p className="mt-2 text-micro text-ink-2">{t("adminNote")}</p>
+            <div className="pt-4">
+              <Button variant="ghost" className="rounded-pill bg-surface" onClick={() => logout.mutate(undefined, { onSuccess: () => navigate("/login", { replace: true }) })}>
+                <Icon icon={LogOut} size={16} /> {t("logout")}
+              </Button>
             </div>
+          </BentoCard>
 
-            <ThemeToggle />
+          {/* Interfeys */}
+          <BentoCard title={t("interface")}>
+            <div className="space-y-4">
+              <div>
+                <p className="mb-1.5 text-note font-semibold text-ink-soft">{t("language")}</p>
+                <Segmented
+                  value={locale === "ru" ? "ru" : "uz"}
+                  onChange={pickLocale}
+                  aria-label={t("language")}
+                  options={[
+                    { key: "uz", label: "O‘zbek (lotin)" },
+                    { key: "ru", label: "Русский" },
+                  ]}
+                />
+                <p className="mt-1 text-micro text-ink-soft">{t("languageHint")}</p>
+              </div>
+              <ThemeToggle />
+            </div>
+          </BentoCard>
 
-            <div className="space-y-2 border-t border-line pt-4">
-              <p className="text-note font-semibold text-ink-soft">{t("changePassword")}</p>
-              <input type="password" value={oldPassword} onChange={(e) => { setOld(e.target.value); setPwErr(null); }} placeholder={t("oldPassword")} className="w-full rounded-control border border-line px-3 py-2 text-note outline-none focus:border-brand" />
-              <input type="password" value={newPassword} onChange={(e) => { setNew(e.target.value); setPwErr(null); }} placeholder={t("newPassword")} className="w-full rounded-control border border-line px-3 py-2 text-note outline-none focus:border-brand" />
-              <input type="password" value={confirm} onChange={(e) => { setConfirm(e.target.value); setPwErr(null); }} placeholder={t("confirmPassword")} className="w-full rounded-control border border-line px-3 py-2 text-note outline-none focus:border-brand" />
+          {/* Parol */}
+          <BentoCard title={t("changePassword")}>
+            <div className="space-y-2">
+              <input type="password" autoComplete="current-password" aria-label={t("oldPassword")} value={oldPassword} onChange={(e) => { setOld(e.target.value); setPwErr(null); }} placeholder={t("oldPassword")} className={inputCls} />
+              <input type="password" autoComplete="new-password" aria-label={t("newPassword")} value={newPassword} onChange={(e) => { setNew(e.target.value); setPwErr(null); }} placeholder={t("newPassword")} className={inputCls} />
+              <input type="password" autoComplete="new-password" aria-label={t("confirmPassword")} value={confirm} onChange={(e) => { setConfirm(e.target.value); setPwErr(null); }} placeholder={t("confirmPassword")} className={inputCls} />
               {pwErr && <p className="text-note font-medium text-rose">{pwErr}</p>}
               <Button onClick={submitPw} disabled={changePw.isPending || !oldPassword || !newPassword || !confirm}>{t("save")}</Button>
             </div>
-          </Card>
-
-          <Button variant="ghost" className="w-full" onClick={() => logout.mutate(undefined, { onSuccess: () => navigate("/login", { replace: true }) })}>
-            <Icon icon={LogOut} size={16} /> {t("logout")}
-          </Button>
-        </>
+          </BentoCard>
+        </div>
       )}
     </div>
   );

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ArrowLeft, Sparkles, X } from "lucide-react";
@@ -91,8 +91,11 @@ export function LessonPage() {
   /** Mobilda (lg dan kichik) 3 ustun sig'maydi: kontent yolg'iz qoladi, rail va
    *  chat esa pastdan chiqadigan `Sheet`da ochiladi. Desktop tartibi o'zgarmaydi. */
   const compact = useMediaQuery(COMPACT_QUERY);
-  /** Mobil chat paneli HAR DOIM yopiq boshlanadi. */
-  const [mobileChat, setMobileChat] = useState(false);
+  /** Bosh sahifadagi AI-tutor kartasidan kelgan savol (`?ask=`) — chat ochiladi
+   *  va savol bir marta o'zi yuboriladi. */
+  const [pendingAsk, setPendingAsk] = useState<string | null>(() => params.get("ask"));
+  /** Mobil chat paneli yopiq boshlanadi — savol bilan kelinmagan bo'lsa. */
+  const [mobileChat, setMobileChat] = useState(() => !!params.get("ask"));
 
   // 2026-08-01: chap ustun (rail) o'rniga tepadagi tasma — bo'limlar ro'yxati va
   // manbalar TUGMA ortida turadi va faqat so'ralganda ochiladi (kontent sahna).
@@ -100,8 +103,17 @@ export function LessonPage() {
   const [sourcesOpen, setSourcesOpen] = useState(false);
   // Chat default YOPIQ (foydalanuvchi: "chat ko'rinmasin, fokus markazda").
   const [chatOpen, setChatOpen] = useState(
-    () => typeof window !== "undefined" && window.localStorage.getItem(CHAT_KEY) === "open"
+    () =>
+      !!params.get("ask") ||
+      (typeof window !== "undefined" && window.localStorage.getItem(CHAT_KEY) === "open")
   );
+  // `ask` URL'da qolmasin: sahifa yangilansa savol qayta yuborilmasin.
+  useEffect(() => {
+    if (!params.has("ask")) return;
+    const next = new URLSearchParams(params);
+    next.delete("ask");
+    setParams(next, { replace: true });
+  }, [params, setParams]);
   const toggleChat = () => {
     if (compact) return setMobileChat((o) => !o);
     setChatOpen((o) => {
@@ -128,7 +140,7 @@ export function LessonPage() {
         <p className="text-body font-semibold text-ink">{msg ?? t("lockedBack")}</p>
         <button
           onClick={() => navigate(-1)}
-          className="mt-3 inline-flex items-center gap-1.5 rounded-control bg-brand px-4 py-2 text-body font-bold text-white transition-colors hover:bg-brand-deep"
+          className="mt-3 inline-flex items-center gap-1.5 rounded-pill bg-ink px-4 py-2 text-body font-semibold text-surface transition-colors hover:bg-ink-2"
         >
           <Icon icon={ArrowLeft} size={15} />
           {t("lockedBack")}
@@ -210,20 +222,19 @@ export function LessonPage() {
           bosqichlar bari. Endi: mavzu (chapda) + bosqichlar + % + AI-tutor
           (o'ngda). Kontentga ~48px joy qo'shildi. */}
       <div className="relative flex shrink-0 flex-wrap items-center gap-x-2 gap-y-1 border-b border-line bg-surface py-1.5 pl-3 pr-2">
-        <span className="absolute inset-y-0 left-0 w-[3px] bg-gradient-to-b from-brand to-violet" aria-hidden />
         <button
           onClick={() => navigate(`/app/courses/${lesson.courseId}`)}
           title={lesson.subjectName}
-          className="inline-flex shrink-0 items-center gap-1 rounded-pill px-1.5 py-1 text-note font-bold text-brand-tint transition-colors hover:bg-brand-soft"
+          className="inline-flex shrink-0 items-center gap-1 rounded-pill border border-line px-2 py-1 text-note font-semibold text-ink-2 transition-colors hover:border-ink hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
         >
           <Icon icon={ArrowLeft} size={14} />
           {/* Fan nomi tor ekranda o'rin egallamasin — orqaga tugmasi qoladi. */}
           <span className="hidden max-w-[160px] truncate xl:inline">{lesson.subjectName}</span>
         </button>
-        <span className="hidden shrink-0 rounded-pill bg-brand-soft px-2 py-0.5 text-micro font-bold text-brand-tint sm:inline">
+        <span className="hidden shrink-0 rounded-pill bg-surface-raised px-2 py-0.5 text-micro font-semibold tabular-nums text-ink-2 sm:inline">
           {t("topic")} {lesson.orderIndex}
         </span>
-        <h1 className="min-w-0 flex-1 truncate text-body font-extrabold tracking-tight text-ink">{lesson.title}</h1>
+        <h1 className="min-w-0 flex-1 truncate text-section font-semibold text-ink">{lesson.title}</h1>
 
         {/* Boshqaruv guruhi. Mobilda (390px) sarlavha bilan bir qatorga sig'maydi
             va sarlavha nolgacha siqilardi — shuning uchun u yerda IKKINCHI
@@ -243,8 +254,8 @@ export function LessonPage() {
               className={cls(
                 "inline-flex shrink-0 items-center gap-1.5 rounded-pill px-2.5 py-1.5 font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
                 chatActive
-                  ? "bg-brand-soft text-brand-tint ring-1 ring-brand/30"
-                  : "border border-brand/30 bg-gradient-to-r from-brand/15 to-violet/15 text-brand-tint hover:from-brand/25 hover:to-violet/25"
+                  ? "bg-ink text-surface"
+                  : "bg-violet-soft text-violet hover:brightness-95"
               )}
             >
               <Icon icon={chatActive ? X : Sparkles} size={16} />
@@ -362,7 +373,13 @@ export function LessonPage() {
           {/* AI-tutor — YOPIQ bo'lsa umuman yo'q (fokus markazda); ochilsa keng panel.
               Test paytida qulf. Mobilda bu ustun emas, pastdagi Sheet. */}
           <div className="order-2 flex min-h-0 flex-col overflow-hidden lg:order-3">
-            {!compact && chatOpen && <ChatPanel topicId={topicId} locked={quizRunning} onClose={toggleChat} />}
+            {!compact && chatOpen && <ChatPanel
+                topicId={topicId}
+                locked={quizRunning}
+                onClose={toggleChat}
+                initialQuestion={pendingAsk}
+                onInitialSent={() => setPendingAsk(null)}
+              />}
           </div>
         </div>
       )}
@@ -381,7 +398,13 @@ export function LessonPage() {
             disableDrag
           >
             <div className="flex h-[calc(85dvh-72px)] flex-col">
-              <ChatPanel topicId={topicId} locked={quizRunning} onClose={() => setMobileChat(false)} />
+              <ChatPanel
+                topicId={topicId}
+                locked={quizRunning}
+                onClose={() => setMobileChat(false)}
+                initialQuestion={pendingAsk}
+                onInitialSent={() => setPendingAsk(null)}
+              />
             </div>
           </Sheet>
         </>

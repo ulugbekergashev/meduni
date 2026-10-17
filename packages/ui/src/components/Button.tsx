@@ -15,8 +15,13 @@ type Size = "sm" | "md" | "lg";
  * mavzuda `brand-deep` YORUG' matn rangiga aylangani uchun bu variant
  * `brand-hover` tokenidan foydalanadi (ikkala mavzuda ham oq matn o'qiladi).
  */
+/*
+ * Dizayn v3 «Pastel bento» (2026-10): asosiy amal — QORA pill (maketdagi
+ * "Davom ettirish"). Indigo endi aksent: havola, faol chip, progress.
+ * Qorong'u mavzuda `ink` yorug' — tugma oq fon + to'q matnga aylanadi.
+ */
 const variantClass: Record<Variant, string> = {
-  primary: "bg-brand text-white hover:bg-brand-hover",
+  primary: "rounded-pill bg-ink text-surface hover:bg-ink-2",
   deep: "bg-brand-hover text-white hover:bg-brand",
   ghost: "border border-line-raised bg-transparent text-ink hover:bg-surface-raised",
   soft: "bg-brand-soft text-brand-deep hover:bg-brand/15",

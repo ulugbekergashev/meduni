@@ -1,121 +1,129 @@
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { motion, type Variants } from "framer-motion";
-import {
-  AlertTriangle,
-  CheckCircle2,
-  ChevronRight,
-  ClipboardCheck,
-  FileClock,
-  Sparkles,
-  Users,
-} from "lucide-react";
-import { Card, Donut, Icon, LegendRow, MiniBars, Spinner, cls } from "@meduni/ui";
+import { AlertTriangle, ClipboardCheck, FileClock, Sparkles } from "lucide-react";
+import { Donut, Icon, LegendRow, MiniBars } from "@meduni/ui";
+import { BentoCard, BentoRow, PageHeader } from "../../components/bento";
+import { AsyncSection } from "../../components/AsyncSection";
 import { useMe } from "../../lib/auth";
 import { useLocale } from "../../lib/useLocale";
 import { formatDate } from "../../lib/date";
-import { useAdminStats } from "./api";
+import { useAdminStats, useControlReport } from "./api";
 import { useUserStats } from "./users/api";
+import { AdminHero, controlIssues } from "./home/AdminHero";
 
-const containerVariants: Variants = {
-  hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: { staggerChildren: 0.08 }
-  }
-};
-
-const itemVariants: Variants = {
-  hidden: { opacity: 0, y: 15 },
-  show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
-};
-
-function AttentionCard({
-  icon,
-  value,
-  label,
-  tone,
-  onClick,
-}: {
-  icon: typeof Users;
-  value: number;
-  label: string;
-  tone: "amber" | "blue" | "rose";
-  onClick?: () => void;
-}) {
-  const toneCls = {
-    amber: "bg-amber-soft text-amber",
-    blue: "bg-blue-soft text-blue",
-    rose: "bg-rose-soft text-rose",
-  }[tone];
-  return (
-    <Card
-      interactive={!!onClick}
-      onClick={onClick}
-      className={cls("flex items-center gap-3 !p-4", value === 0 && "opacity-60")}
-    >
-      <div className={cls("flex h-10 w-10 shrink-0 items-center justify-center rounded-full", toneCls)}>
-        <Icon icon={icon} size={18} />
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="text-section font-bold leading-none tabular-nums text-ink">{value}</p>
-        <p className="mt-1 truncate text-note text-ink-soft">{label}</p>
-      </div>
-      {onClick && <Icon icon={ChevronRight} size={16} className="shrink-0 text-ink-faint" />}
-    </Card>
-  );
-}
-
+/**
+ * Admin bosh sahifasi — Dizayn v3 bento (2026-10).
+ * Yuqorida: "biror narsa noto'g'rimi?" (nazorat chetlashishlari + kutilayotgan ishlar)
+ * va diqqat talab qiladigan qatorlar; ostida faollik, tarkib va AI sarfi.
+ * ⛔ STAT DIETASI: talaba/o'qituvchi/kurs sonlari menyuni takrorlaydi — shapkada MATN.
+ */
 export function AdminDashboard() {
   const { t } = useTranslation(undefined, { keyPrefix: "adminHome" });
+  const { t: tc } = useTranslation(undefined, { keyPrefix: "control" });
   const { data: me } = useMe();
   const navigate = useNavigate();
   const locale = useLocale();
+  const lang = locale === "ru" ? "ru" : "uz";
   const q = useAdminStats();
   const roles = useUserStats();
+  const control = useControlReport();
   const s = q.data;
   const r = roles.data;
-  const today = formatDate(locale === "ru" ? "ru" : "uz", new Date(), "long");
-
-  if (q.isLoading) return <div className="flex min-h-[40vh] items-center justify-center"><Spinner size={26} /></div>;
 
   const admins = r ? r.deptAdmins + r.facultyAdmins + r.superAdmins : 0;
-  const allClear =
-    s && s.attention.casesToReview === 0 && s.attention.contentToApprove === 0 && s.attention.departmentsOverQuota === 0;
+  const pending = s ? s.attention.casesToReview + s.attention.contentToApprove + s.attention.departmentsOverQuota : 0;
+
+  const summary = s
+    ? [
+        formatDate(lang, new Date(), "long"),
+        `${s.counts.students} ${t("students").toLowerCase()}`,
+        `${s.counts.teachers} ${t("teachers").toLowerCase()}`,
+        `${s.counts.courses} ${t("courses").toLowerCase()} (${t("publishedIn", { count: s.counts.publishedTopics })})`,
+      ].join(" · ")
+    : formatDate(lang, new Date(), "long");
+
+  const attention = s
+    ? [
+        { key: "cases", icon: ClipboardCheck, tone: "bg-amber-soft text-amber", n: s.attention.casesToReview, label: t("casesToReview") },
+        { key: "content", icon: FileClock, tone: "bg-blue-soft text-blue", n: s.attention.contentToApprove, label: t("contentToApprove") },
+        {
+          key: "quota",
+          icon: AlertTriangle,
+          tone: "bg-rose-soft text-rose",
+          n: s.attention.departmentsOverQuota,
+          label: t("overQuota"),
+          onClick: () => navigate("/admin/ai"),
+        },
+      ]
+    : [];
 
   return (
-    <motion.div variants={containerVariants} initial="hidden" animate="show">
-      <motion.div variants={itemVariants}>
-        <h1 className="text-h1 font-bold tracking-tight text-ink">{t("hello")}, {me?.full_name?.split(" ")[0]}</h1>
-        <p className="mt-1 text-body text-ink-faint">{today}</p>
-      </motion.div>
+    <div className="space-y-3">
+      <PageHeader className="mb-0" title={`${t("hello")}, ${me?.full_name?.split(" ")[0] ?? ""}`} subtitle={summary} />
 
-      {s && (
-        <>
-          {/* ⛔ STAT DIETASI: bu to'rt raqam menyuni takrorlardi (kartalar
-              /admin/users va /admin/courses ga olib borardi, filtr emas edi).
-              Endi — bitta matn qatori. Kerak bo'lsa nav orqali o'tiladi. */}
-          <motion.p variants={itemVariants} className="mt-3 flex flex-wrap items-baseline gap-x-4 gap-y-1 text-note text-ink-soft">
-            <span>
-              <b className="font-data tabular-nums text-ink">{s.counts.students}</b> {t("students").toLowerCase()}
-            </span>
-            <span>
-              <b className="font-data tabular-nums text-ink">{s.counts.teachers}</b> {t("teachers").toLowerCase()}
-            </span>
-            <span>
-              <b className="font-data tabular-nums text-ink">{s.counts.courses}</b> {t("courses").toLowerCase()}
-            </span>
-            <span className="text-ink-dim">{t("publishedIn", { count: s.counts.publishedTopics })}</span>
-          </motion.p>
+      <AsyncSection isLoading={q.isLoading} isError={q.isError} isEmpty={false} emptyText="" onRetry={() => q.refetch()}>
+        {s && (
+          <div className="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(0,1fr)_360px]">
+            <div className="min-w-0">
+              <AdminHero
+                issues={controlIssues(control.data?.totals, tc)}
+                pending={pending}
+                controlLoading={control.isLoading}
+                controlError={control.isError}
+                onRetryControl={() => control.refetch()}
+              />
+            </div>
 
-          {/* Composition + activity timeline - Bento Box */}
-          <motion.div variants={itemVariants} className="mt-4 grid gap-4 lg:grid-cols-5">
-            <Card className="lg:col-span-2 relative overflow-hidden flex flex-col justify-between">
-              <h2 className="text-section font-bold tracking-tight text-ink">{t("composition")}</h2>
-              <div className="mt-3 flex items-center justify-center gap-3 flex-1">
+            <BentoCard title={t("attention")} count={pending} bodyClassName="px-2 pb-3">
+              <ul className="space-y-1">
+                {attention.map((a) => (
+                  <li key={a.key}>
+                    <BentoRow
+                      icon={a.icon}
+                      iconTone={a.tone}
+                      title={a.label}
+                      right={a.n}
+                      muted={a.n === 0}
+                      onClick={a.onClick}
+                    />
+                  </li>
+                ))}
+              </ul>
+            </BentoCard>
+
+            <BentoCard title={t("timeline14")} meta={t("timeline14Hint")}>
+              <div className="flex min-h-32 flex-1 flex-col justify-end">
+                {s.activitySeries.some((d) => d.activeStudents > 0) ? (
+                  <MiniBars
+                    height={110}
+                    tone="blue"
+                    data={s.activitySeries.map((d) => ({
+                      label: d.day,
+                      value: d.activeStudents,
+                      tip: `${formatDate(lang, d.day, "short")} · ${d.activeStudents} ${t("activeShort")} · ${d.contentPublished} ${t("publishedShort")}`,
+                    }))}
+                  />
+                ) : (
+                  <p className="flex flex-1 items-center justify-center text-note text-ink-soft">{t("timelineEmpty")}</p>
+                )}
+              </div>
+              <div className="mt-3 flex flex-wrap gap-x-6 gap-y-1 border-t border-line pt-3 text-note text-ink-soft">
+                <span className="flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full bg-blue" />
+                  <b className="font-data tabular-nums text-ink">{s.activity.activeStudentsLast7Days}</b> {t("activeStudents")}
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full bg-brand" />
+                  <b className="font-data tabular-nums text-ink">{s.activity.contentLast7Days}</b> {t("contentCreated")}
+                </span>
+              </div>
+            </BentoCard>
+
+            <BentoCard title={t("composition")} isLoading={roles.isLoading} isError={roles.isError} onRetry={() => roles.refetch()}>
+              <div className="flex flex-1 items-center justify-center gap-4">
                 <Donut
-                  size={140}
-                  stroke={16}
+                  size={128}
+                  stroke={14}
                   centerValue={r ? r.total : "—"}
                   centerLabel={t("compositionTotal")}
                   segments={[
@@ -124,90 +132,47 @@ export function AdminDashboard() {
                     { value: admins, tone: "amber" },
                   ]}
                 />
-                <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-2.5">
                   <LegendRow tone="blue" label={t("students")} value={r?.students ?? "—"} />
                   <LegendRow tone="violet" label={t("teachers")} value={r?.teachers ?? "—"} />
                   <LegendRow tone="amber" label={t("admins")} value={r ? admins : "—"} />
                 </div>
               </div>
-            </Card>
+            </BentoCard>
 
-            <Card className="lg:col-span-3 flex flex-col">
-              <div className="flex items-baseline justify-between gap-2">
-                <h2 className="text-section font-bold tracking-tight text-ink">{t("timeline14")}</h2>
-                <span className="text-note font-medium text-ink-faint bg-bg px-2 py-0.5 rounded-pill">{t("timeline14Hint")}</span>
-              </div>
-              <div className="mt-3 flex-1 flex flex-col justify-end">
-                {s.activitySeries.some((d) => d.activeStudents > 0) ? (
-                  <MiniBars
-                    height={110}
-                    tone="blue"
-                    data={s.activitySeries.map((d) => ({
-                      label: d.day,
-                      value: d.activeStudents,
-                      tip: `${formatDate(locale === "ru" ? "ru" : "uz", d.day, "short")} · ${d.activeStudents} ${t("activeShort")} · ${d.contentPublished} ${t("publishedShort")}`,
-                    }))}
-                  />
-                ) : (
-                  <div className="flex flex-1 items-center justify-center">
-                    <p className="text-note text-ink-faint">{t("timelineEmpty")}</p>
-                  </div>
-                )}
-              </div>
-              <div className="mt-5 flex flex-wrap gap-x-6 gap-y-2 border-t border-line pt-4 text-note text-ink-soft">
-                <span className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-blue"></div><b className="text-ink font-bold">{s.activity.activeStudentsLast7Days}</b> {t("activeStudents")}</span>
-                <span className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-brand"></div><b className="text-ink font-bold">{s.activity.contentLast7Days}</b> {t("contentCreated")}</span>
-              </div>
-            </Card>
-          </motion.div>
-
-          {/* Attention */}
-          <motion.section variants={itemVariants} className="mt-3">
-            <h2 className="mb-4 text-section font-bold tracking-tight text-ink">{t("attention")}</h2>
-            {allClear ? (
-              <Card className="flex items-center gap-3 border-emerald/30 bg-emerald/5">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-soft text-emerald">
-                  <Icon icon={CheckCircle2} size={20} />
-                </div>
-                <p className="text-body font-bold text-emerald">{t("allClear")}</p>
-              </Card>
-            ) : (
-              <div className="grid gap-4 sm:grid-cols-3">
-                <AttentionCard icon={ClipboardCheck} value={s.attention.casesToReview} label={t("casesToReview")} tone="amber" />
-                <AttentionCard icon={FileClock} value={s.attention.contentToApprove} label={t("contentToApprove")} tone="blue" />
-                <AttentionCard icon={AlertTriangle} value={s.attention.departmentsOverQuota} label={t("overQuota")} tone="rose" onClick={() => navigate("/admin/ai")} />
-              </div>
-            )}
-          </motion.section>
-
-          {/* AI spend */}
-          <motion.section variants={itemVariants} className="mt-4">
-            <button onClick={() => navigate("/admin/ai")} className="block w-full text-left outline-none group">
-              <div className="relative overflow-hidden rounded-card bg-surface p-4 border border-line transition-colors group-hover:border-line-raised">
-                {/* Subtle gradient background effect */}
-                <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-3">
-                  <div>
-                    <div className="flex items-center gap-2 text-brand font-bold mb-2">
-                      <Icon icon={Sparkles} size={18} />
-                      <p className="text-note">{t("aiThisMonth")}</p>
-                    </div>
-                    <p className="text-note text-ink-soft">{t("aiHint")}</p>
-                  </div>
-                  
-                  <div className="flex flex-wrap items-center gap-x-8 gap-y-4 md:border-l md:border-line md:pl-8">
-                    <div><p className="text-stat font-bold tracking-tight text-ink">{s.aiThisMonth.tokens.toLocaleString()}</p><p className="text-note font-medium text-ink-faint">{t("tokens")}</p></div>
-                    <div><p className="text-stat font-bold tracking-tight text-ink">{s.aiThisMonth.images}</p><p className="text-note font-medium text-ink-faint">{t("images")}</p></div>
-                    <div><p className="text-stat font-bold tracking-tight text-ink">${s.aiThisMonth.cost.toFixed(2)}</p><p className="text-note font-medium text-ink-faint">{t("cost")}</p></div>
-                    <div className="hidden sm:flex h-10 w-10 items-center justify-center rounded-full bg-bg text-ink-soft group-hover:bg-brand-soft group-hover:text-brand transition-colors">
-                      <Icon icon={ChevronRight} size={18} />
-                    </div>
-                  </div>
+            <BentoCard
+              className="xl:col-span-2"
+              title={
+                <span className="inline-flex items-center gap-2">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-violet-soft text-violet">
+                    <Icon icon={Sparkles} size={15} />
+                  </span>
+                  {t("aiThisMonth")}
+                </span>
+              }
+              action={{ label: t("aiDetails"), onClick: () => navigate("/admin/ai") }}
+            >
+              <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+                <p className="text-note text-ink-soft">{t("aiHint")}</p>
+                <div className="flex flex-wrap gap-x-8 gap-y-2">
+                  <AiFigure value={s.aiThisMonth.tokens.toLocaleString()} label={t("tokens")} />
+                  <AiFigure value={String(s.aiThisMonth.images)} label={t("images")} />
+                  <AiFigure value={`$${s.aiThisMonth.cost.toFixed(2)}`} label={t("cost")} />
                 </div>
               </div>
-            </button>
-          </motion.section>
-        </>
-      )}
-    </motion.div>
+            </BentoCard>
+          </div>
+        )}
+      </AsyncSection>
+    </div>
+  );
+}
+
+function AiFigure({ value, label }: { value: string; label: string }) {
+  return (
+    <div>
+      <p className="text-stat font-semibold tabular-nums text-ink">{value}</p>
+      <p className="text-micro text-ink-soft">{label}</p>
+    </div>
   );
 }

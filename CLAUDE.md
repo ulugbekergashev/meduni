@@ -3135,3 +3135,51 @@ kafedra mudiri (yoki fakultet-admin / superadmin) kafedra sahifasida kiritadi.
 - Birlik biriktirilmagan fakultet/kafedra admini Xodimlar sahifasida cheksiz spinner
   o'rniga sababni ko'radi (`StructurePage`). Demo `fakultet.admin@`/`kafedra.admin@`
   productionda hech narsaga bog'lanmagan.
+
+---
+
+## 29. TALABA BOSH SAHIFASI — pastel bento maket (2026-10-17, buyurtmachi maketi)
+
+`StudentDashboard.tsx` buyurtmachi bergan rasm bo'yicha qayta qurildi; qismlar
+`pages/student/home/` da: `HomeHero` (davom ettirish — `bg-brand-soft`, mavzu
+segmentli chizig'i, qora pill tugma, katta %), `TodayCard` (bugungi darslar —
+Hozir/O'tdi/Kutilmoqda; juftlik 80 daq), `MetricTile` (pastel o'zlashtirish/
+davomat + mini-ustunlar; 2 tadan kam qiymatda ustun chizilmaydi), `HomeTasks`
+(topshiriq + takrorlash + avto vazifa + kelgan baho BITTA ro'yxatda),
+`HomeCourses` (joriy semestr, ≤4), `TutorCard`. Salom kun vaqtiga qarab.
+Shrift tokeni `text-display` (44px) qo'shildi — sahifadagi yagona bosh raqam uchun.
+- **AI-tutor kartasi** → `/app/topics/:id?view=konspekt&ask=…`: `LessonPage` chatni
+  ochadi, `ChatPanel.initialQuestion` savolni BIR marta yuboradi, `ask` URL'dan
+  o'chiriladi (yangilansa qayta ketmaydi). `view=konspekt` shart — overview fokus
+  rejimida chat umuman render bo'lmaydi.
+- ⚠️ `apps/web/tailwind.config.ts` preset'ni endi NISBIY yo'ldan oladi: bu
+  mashinada `node_modules/@meduni/ui` workspace havolasi emas, eskirgan NUSXA edi —
+  `packages/ui/tailwind.config.ts` dagi yangi tokenlar dev'da jimgina chiqmasdi.
+- ⚠️ `.env` dagi Supabase loyihasi endi yo'q (`tenant not found`). Mahalliy
+  tekshiruv: `DATABASE_URL=postgresql://meduni:meduni@localhost:5432/meduni` bilan
+  API (mahalliy bazaga yetishmagan 10 migratsiya `migrate deploy` bilan qo'llandi).
+
+### Dizayn v3 «Pastel bento» — BUTUN ilova (2026-10-17, buyurtmachi maketi)
+
+Reja: `.claude/plans/dizayn-v3-pastel-2026-10.md`. Uchala rol, barcha sahifa.
+- **Qobiq** (`SidebarLayout` + `RoleShell`): YOZUVLI menyu (`--sidebar-w` 248px),
+  faol band — QORA pill (`bg-ink text-surface`, `layoutId`), ichki bo'limlar
+  (`SubNav`) faol band OSTIDA ichma-ich (alohida 248px ustun EMAS); pastda
+  foydalanuvchi kartasi + chiqish; yig'ilsa 76px ikonka reyi (`meduni.sidebar.v3`)
+  va u holda `SubNav` tasmasi desktopda ham chiziladi (`SubNavProvider inline`).
+  Header fon bilan qo'shiladi (60px, `--header-h`). Brend "Nom · Rol" — rol 2-qatorda.
+- **Tokenlar:** `--radius-card` 16, `--radius-control` 10, `text-display` 44px.
+  `Button primary` = QORA pill; indigo endi faqat aksent (havola, progress, chip).
+  `Segmented`, `LocaleSwitcher`, `ThemeToggle`, `BottomNav` faol holati — qora.
+- **KIT** `apps/web/src/components/bento/`: `PageHeader` + `HeaderChip`,
+  `BentoCard` (sarlavha/son/meta/amal + 4 holat), `BentoRow` (ro'yxat qatori,
+  ichma-ich tugmasiz — `trailing` yonda), `MetricTile` (pastel, `selected`=filtr).
+  YANGI SAHIFA SHU KIT BILAN quriladi; namuna — `StudentDashboard`.
+  Rolga xos yordamchilar: `pages/admin/components/` (TableCard, StatusBanner,
+  PillTabs), `pages/student/parts/bento.tsx`, `pages/teach/BackLink.tsx`.
+- ⛔ **`Modal`/`Sheet` endi `createPortal(document.body)`** — ilgari `space-y-*`
+  ichida turgan HAR modal overlay'i 12px pastga surilib, tepada tasma qolardi.
+- ⚠️ **Login** — chapda forma, o'ngda pastel bento (oqim + 3 imkoniyat).
+- ⚠️ Commit qilinmagan eski o'zgarishlar (`StatCard`, `TaskItemRow`,
+  `LessonsBlock`, `GroupProfile` …) HEAD'dagi tuzatishlarni qaytarib yuborgan
+  edi — o'qituvchi sahifalarida tiklandi; `StatCard` (packages/ui) hali eski.

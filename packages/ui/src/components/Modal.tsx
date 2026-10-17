@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { cls } from "../cls";
 import { MOBILE_QUERY, useMediaQuery } from "../useMediaQuery";
@@ -44,7 +45,10 @@ export function Modal({ open, onClose, title, children, className, forceCentered
 
   if (!open) return null;
 
-  return (
+  // Portal — ota konteynerning `space-y-*`/transform qoidalari fixed qatlamga
+  // ta'sir qilmasin (space-y-3 ichida overlay 12px pastga surilib, tepada
+  // yorug' tasma qolardi).
+  return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(15,23,42,.5)] p-4"
       onClick={onClose}
@@ -74,6 +78,7 @@ export function Modal({ open, onClose, title, children, className, forceCentered
         </div>
         {children}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

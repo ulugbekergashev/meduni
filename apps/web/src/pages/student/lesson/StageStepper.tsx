@@ -18,11 +18,11 @@ function activeStageKey(view: LessonView): StageKey | null {
 function Marker({ n, state, active }: { n: number; state: StageInfo["state"]; active: boolean }) {
   const reduce = useReducedMotion();
   const base =
-    "flex h-6 w-6 shrink-0 items-center justify-center rounded-pill text-micro font-extrabold font-data tabular-nums";
+    "flex h-6 w-6 shrink-0 items-center justify-center rounded-pill text-micro font-semibold font-data tabular-nums";
 
   const inner =
     state === "done" ? (
-      <span className={cls(base, "bg-emerald text-white")}>
+      <span className={cls(base, active ? "bg-surface text-emerald" : "border border-emerald/50 text-emerald")}>
         <Icon icon={Check} size={11} strokeWidth={3.5} />
       </span>
     ) : state === "failed" ? (
@@ -38,7 +38,7 @@ function Marker({ n, state, active }: { n: number; state: StageInfo["state"]; ac
         <Icon icon={Lock} size={9} />
       </span>
     ) : (
-      <span className={cls(base, active ? "bg-brand text-white" : "bg-surface-raised text-ink-soft")}>{n}</span>
+      <span className={cls(base, active ? "bg-surface text-ink" : "bg-surface-raised text-ink-soft")}>{n}</span>
     );
 
   // Holat o'zgarganda (masalan test topshirilgach ✓ tug'ilganda) mikro-pop.
@@ -116,7 +116,7 @@ export function StageStepper({
             <div key={st.key} className="flex shrink-0 items-center">
               {/* Bosqichlararo ulagich — "trek" hissi (tugagan qism brand) */}
               {i > 0 && (
-                <span className={cls("mx-0.5 h-[2px] w-2.5 shrink-0 rounded-full sm:w-4", done || active ? "bg-brand/40" : "bg-line")} />
+                <span className={cls("mx-0.5 h-[2px] w-2.5 shrink-0 rounded-full sm:w-4", done || active ? "bg-ink/40" : "bg-line")} />
               )}
               <button
                 onClick={clickable ? () => onSelect(st.key) : undefined}
@@ -128,14 +128,14 @@ export function StageStepper({
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
                   clickable && !active && "hover:bg-surface-raised",
                   !clickable && "cursor-default opacity-55",
-                  active && reduce && "bg-brand-soft"
+                  active && reduce && "bg-ink"
                 )}
               >
                 {/* Faol chip fondan fonga "suzib" o'tadi — bosqich almashuvi seziladi */}
                 {active && !reduce && (
                   <motion.span
                     layoutId="stage-active"
-                    className="absolute inset-0 rounded-pill bg-brand-soft ring-1 ring-brand/25"
+                    className="absolute inset-0 rounded-pill bg-ink"
                     transition={{ type: "spring", stiffness: 500, damping: 42 }}
                   />
                 )}
@@ -143,7 +143,7 @@ export function StageStepper({
                   <Marker n={i + 1} state={st.state} active={active} />
                   {/* Nom FAQAT faol bosqichda (va tor ekranda umuman yo'q) */}
                   {active && (
-                    <span className="hidden whitespace-nowrap pr-1 text-note font-bold text-brand-tint sm:inline">{label}</span>
+                    <span className="hidden whitespace-nowrap pr-1.5 text-note font-semibold text-surface sm:inline">{label}</span>
                   )}
                 </span>
               </button>
@@ -159,7 +159,7 @@ export function StageStepper({
         className={cls(
           "flex shrink-0 items-center gap-1.5 rounded-pill border border-line px-2 py-1 transition-colors hover:bg-surface-raised",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
-          view === "overview" && "border-brand/40 bg-brand-soft"
+          view === "overview" && "border-ink"
         )}
       >
         <span className="grid place-items-center">

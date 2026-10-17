@@ -28,7 +28,7 @@ function EditableList({ items, onChange }: { items: string[]; onChange: (next: s
       ))}
       <button
         onClick={() => onChange([...items, ""])}
-        className="inline-flex items-center gap-1 text-note font-medium text-brand-deep hover:underline"
+        className="inline-flex items-center gap-1 text-note font-semibold text-brand-tint hover:underline"
       >
         <Icon icon={Plus} size={13} /> {t("addItem")}
       </button>
@@ -66,7 +66,7 @@ function TermsTable({ terms, onChange }: { terms: Term[]; onChange: (next: Term[
       ))}
       <button
         onClick={() => onChange([...terms, { ru: "", uz: "", lat: "" }])}
-        className="inline-flex items-center gap-1 text-note font-medium text-brand-deep hover:underline"
+        className="inline-flex items-center gap-1 text-note font-semibold text-brand-tint hover:underline"
       >
         <Icon icon={Plus} size={13} /> {t("addRow")}
       </button>
@@ -94,7 +94,7 @@ function CheckpointCard({
         <span className="truncate text-note font-semibold text-ink-soft">{title}</span>
         <button
           onClick={() => onChange({ question: "", options: ["", "", "", ""], correctIndex: 0, explanation: "" })}
-          className="inline-flex shrink-0 items-center gap-1 text-note font-medium text-brand-deep hover:underline"
+          className="inline-flex shrink-0 items-center gap-1 text-note font-semibold text-brand-tint hover:underline"
         >
           <Icon icon={Plus} size={13} /> {t("checkpointAdd")}
         </button>
@@ -154,7 +154,7 @@ function CheckpointCard({
         {cp.options.length < 6 && (
           <button
             onClick={() => set({ options: [...cp.options, ""] })}
-            className="inline-flex items-center gap-1 text-note font-medium text-brand-deep hover:underline"
+            className="inline-flex items-center gap-1 text-note font-semibold text-brand-tint hover:underline"
           >
             <Icon icon={Plus} size={13} /> {t("checkpointOption")}
           </button>

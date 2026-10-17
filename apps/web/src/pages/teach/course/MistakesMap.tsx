@@ -212,7 +212,7 @@ function TopicBlock({ tp, onAssign }: { tp: MistakeTopic; onAssign: (prefill: Qu
               title: t("assignTitle", { topic: tp.title }),
             })
           }
-          className="inline-flex shrink-0 items-center gap-1.5 rounded-control bg-brand px-3.5 py-2 text-note font-extrabold text-white transition-colors hover:bg-brand-deep"
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-pill bg-ink px-4 py-2 text-note font-semibold text-surface transition-colors hover:bg-ink-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
         >
           <Icon icon={Send} size={14} />
           {t("assignBtn")}

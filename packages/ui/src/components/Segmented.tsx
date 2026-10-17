@@ -38,7 +38,7 @@ export function Segmented<T extends string>({
       role="tablist"
       aria-label={rest["aria-label"]}
       className={cls(
-        "inline-flex shrink-0 items-center gap-1 rounded-control border border-line bg-surface-raised p-1",
+        "inline-flex shrink-0 items-center gap-1 rounded-pill border border-line bg-surface p-1",
         className
       )}
     >
@@ -51,14 +51,14 @@ export function Segmented<T extends string>({
             aria-selected={on}
             onClick={() => onChange(o.key)}
             className={cls(
-              "inline-flex items-center gap-1.5 whitespace-nowrap rounded-[6px] font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
+              "inline-flex items-center gap-1.5 whitespace-nowrap rounded-pill font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
               size === "sm" ? "px-2.5 py-1 text-micro" : "px-3.5 py-1.5 text-note",
-              on ? "bg-brand text-white" : "text-ink-soft hover:text-ink"
+              on ? "bg-ink text-surface" : "text-ink-soft hover:text-ink"
             )}
           >
             {o.label}
             {o.count !== undefined && (
-              <span className={cls("font-data tabular-nums text-micro", on ? "text-white/75" : "text-ink-faint")}>
+              <span className={cls("font-data tabular-nums text-micro", on ? "text-surface/70" : "text-ink-faint")}>
                 {o.count}
               </span>
             )}

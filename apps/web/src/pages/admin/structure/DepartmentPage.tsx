@@ -1,19 +1,20 @@
 import { useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, BookMarked, Eye, GraduationCap, KeyRound, Landmark, Pencil, Plus, Trash2 } from "lucide-react";
+import { BookMarked, Eye, GraduationCap, KeyRound, Landmark, Pencil, Plus, Trash2 } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Button, Card, Icon, Spinner, Toggle, useToast } from "@meduni/ui";
+import { Button, EmptyState, Icon, Spinner, Toggle, useToast } from "@meduni/ui";
+import { BentoCard, BentoRow, PageHeader } from "../../../components/bento";
 import { Avatar } from "../../../components/Avatar";
 import { ConfirmDialog } from "../../../components/ConfirmDialog";
 import { api } from "../../../lib/api";
 import { useMe } from "../../../lib/auth";
 import { PasswordModal } from "../users/PasswordModal";
+import { BackLink, IconAction } from "../components";
 import { DeptAiKeyCard } from "./DeptAiKeyCard";
 import {
   AdminCard,
   AppointModal,
-  CountChip,
   EntityDeleteDialog,
   EntityFormModal,
   useDeptTeachers,
@@ -26,7 +27,7 @@ import {
 type ModalReq = { kind: EntityKind; parentId?: number; editing?: EntityEditing };
 type DeleteReq = { kind: EntityKind; id: number; name: string; goUp?: boolean };
 
-/** Department detail: head (mudir), teachers and subjects — the kafedra's whole staff. */
+/** Department detail: head (mudir), AI key, teachers and courses — the kafedra's whole staff. */
 export function DepartmentPage() {
   const { id } = useParams();
   const deptId = Number(id);
@@ -68,11 +69,9 @@ export function DepartmentPage() {
   const d = f?.departments.find((x) => x.id === deptId);
   if (!f || !d) {
     return (
-      <div>
-        <button onClick={() => navigate("/admin/staff")} className="flex items-center gap-1 text-note font-medium text-brand-deep hover:underline">
-          <Icon icon={ArrowLeft} size={15} /> {t("title")}
-        </button>
-        <Card className="mt-4"><p className="py-6 text-center text-note text-rose">{t("notFound")}</p></Card>
+      <div className="space-y-3">
+        <BackLink label={t("title")} onClick={() => navigate("/admin/staff")} />
+        <EmptyState icon={<Icon icon={Landmark} size={22} />} text={t("notFound")} />
       </div>
     );
   }
@@ -80,40 +79,31 @@ export function DepartmentPage() {
   const teacherRows = teachers.data?.items ?? [];
 
   return (
-    <div>
-      {/* Up to the faculty — hidden for the dept admin (this page IS their home) */}
-      {canDept && (
-        <button onClick={() => navigate(`/admin/staff/f/${f.id}`)} className="flex items-center gap-1 text-note font-medium text-brand-deep hover:underline">
-          <Icon icon={ArrowLeft} size={15} /> {f.name}
-        </button>
-      )}
-
-      {/* Header */}
-      <div className="mt-3 flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <p className="flex items-center gap-1.5 text-micro font-bold text-amber">
-            <Icon icon={Landmark} size={13} /> {t("department")}
-          </p>
-          <h1 className="mt-0.5 text-h1 font-bold text-ink">{d.name}</h1>
-          <div className="mt-1.5 flex flex-wrap gap-1.5">
-            <CountChip>{t("nCourses", { n: d.courses.length })}</CountChip>
-            <CountChip>{t("nTeachers", { n: d.teacherCount })}</CountChip>
-          </div>
-        </div>
-        {canDept && (
-          <div className="flex gap-2">
-            <Button variant="ghost" size="sm" icon={<Icon icon={Pencil} size={15} />} onClick={() => setModal({ kind: "department", editing: { id: d.id, name: d.name, parentId: f.id } })}>
-              {tc("edit")}
-            </Button>
-            <Button variant="ghost" size="sm" icon={<Icon icon={Trash2} size={15} />} onClick={() => setDel({ kind: "department", id: d.id, name: d.name, goUp: true })}>
-              {tc("delete")}
-            </Button>
-          </div>
-        )}
+    <div className="space-y-3">
+      <div>
+        {/* Up to the faculty — hidden for the dept admin (this page IS their home) */}
+        {canDept && <BackLink label={f.name} onClick={() => navigate(`/admin/staff/f/${f.id}`)} />}
+        <PageHeader
+          className="mb-0"
+          title={d.name}
+          subtitle={[t("department"), t("nCourses", { n: d.courses.length }), t("nTeachers", { n: d.teacherCount })].join(" · ")}
+          right={
+            canDept && (
+              <>
+                <Button variant="ghost" size="sm" icon={<Icon icon={Pencil} size={15} />} onClick={() => setModal({ kind: "department", editing: { id: d.id, name: d.name, parentId: f.id } })}>
+                  {tc("edit")}
+                </Button>
+                <Button variant="ghost" size="sm" icon={<Icon icon={Trash2} size={15} />} onClick={() => setDel({ kind: "department", id: d.id, name: d.name, goUp: true })}>
+                  {tc("delete")}
+                </Button>
+              </>
+            )
+          }
+        />
       </div>
 
-      {/* Head (mudir) card */}
-      <div className="mt-5">
+      {/* Mudir + kafedraning O'Z Gemini kaliti (AI shu kalit bilan ishlaydi) */}
+      <div className="grid gap-3 lg:grid-cols-2">
         <AdminCard
           admin={d.admins[0] ?? null}
           roleLabel={t("headLabel")}
@@ -121,99 +111,96 @@ export function DepartmentPage() {
           onAppoint={() => setAppointing("DEPT_ADMIN")}
           onReveal={setRevealPassword}
         />
-      </div>
-
-      {/* Kafedraning O'Z Gemini kaliti — AI shu kalit bilan ishlaydi */}
-      <div className="mt-4">
         <DeptAiKeyCard deptId={d.id} canManage={canStaff} />
       </div>
 
-      <div className="mt-4 grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-3 lg:grid-cols-2">
         {/* Teachers */}
-        <Card className="!p-0">
-          <div className="flex items-center justify-between gap-2 border-b border-line px-5 py-3.5">
-            <h2 className="inline-flex items-center gap-2 text-section font-bold text-ink">
-              <Icon icon={GraduationCap} size={17} className="text-violet" /> {ts("teachersSection")}
-            </h2>
-            {canStaff && (
-              <Button size="sm" variant="soft" icon={<Icon icon={Plus} size={14} />} onClick={() => setAppointing("TEACHER")}>
+        <BentoCard
+          title={ts("teachersSection")}
+          count={teacherRows.length}
+          right={
+            canStaff && (
+              <Button size="sm" variant="ghost" icon={<Icon icon={Plus} size={14} />} onClick={() => setAppointing("TEACHER")}>
                 {tc("add")}
               </Button>
-            )}
-          </div>
-          <div>
-            {teachers.isLoading ? (
-              <div className="flex h-24 items-center justify-center"><Spinner size={20} /></div>
-            ) : teacherRows.length === 0 ? (
-              <p className="px-5 py-6 text-center text-note text-ink-faint">{ts("noTeachers")}</p>
-            ) : (
-              teacherRows.map((u) => (
-                <div key={u.id} className="flex items-center gap-3 border-b border-line px-5 py-3 last:border-0">
-                  <Avatar name={u.fullName} />
-                  <div className="min-w-0 flex-1">
-                    <Link to={`/admin/users/${u.id}`} className="block truncate text-body font-semibold text-ink hover:underline">
-                      {u.fullName}
-                    </Link>
-                    <p className="truncate text-note text-ink-faint">
-                      {u.position ? `${u.position} · ` : ""}{u.email}
-                    </p>
-                  </div>
-                  {canStaff && (
-                    <div className="flex shrink-0 items-center gap-1.5">
-                      <Toggle
-                        checked={u.isActive}
-                        disabled={toggleTeacher.isPending}
-                        aria-label="active"
-                        onChange={() => toggleTeacher.mutate(u.id)}
-                      />
-                      <button onClick={() => setResetTarget(u)} className="rounded-control p-1.5 text-ink-faint transition-colors hover:bg-amber-soft hover:text-amber" aria-label={ts("resetPw")}>
-                        <Icon icon={KeyRound} size={15} />
-                      </button>
-                      <button onClick={() => navigate(`/admin/users/${u.id}`)} className="rounded-control p-1.5 text-ink-faint transition-colors hover:bg-blue-soft hover:text-blue" aria-label={ts("profile")}>
-                        <Icon icon={Eye} size={15} />
-                      </button>
-                    </div>
-                  )}
-                </div>
-              ))
-            )}
-          </div>
-        </Card>
+            )
+          }
+          isLoading={teachers.isLoading}
+          isError={teachers.isError}
+          onRetry={() => teachers.refetch()}
+          bodyClassName="px-2 pb-3"
+        >
+          {teacherRows.length === 0 ? (
+            <div className="px-2 py-2">
+              <EmptyState icon={<Icon icon={GraduationCap} size={20} />} text={ts("noTeachers")} />
+            </div>
+          ) : (
+            <ul className="space-y-1">
+              {teacherRows.map((u) => (
+                <li key={u.id}>
+                  <BentoRow
+                    lead={<Avatar name={u.fullName} />}
+                    title={u.fullName}
+                    sub={`${u.position ? `${u.position} · ` : ""}${u.email}`}
+                    muted={!u.isActive}
+                    onClick={() => navigate(`/admin/users/${u.id}`)}
+                    arrow={!canStaff}
+                    trailing={
+                      canStaff && (
+                        <span className="flex shrink-0 items-center gap-0.5 pr-1">
+                          <Toggle
+                            checked={u.isActive}
+                            disabled={toggleTeacher.isPending}
+                            aria-label="active"
+                            onChange={() => toggleTeacher.mutate(u.id)}
+                          />
+                          <IconAction icon={KeyRound} label={ts("resetPw")} tone="amber" onClick={() => setResetTarget(u)} />
+                          <IconAction icon={Eye} label={ts("profile")} tone="blue" onClick={() => navigate(`/admin/users/${u.id}`)} />
+                        </span>
+                      )
+                    }
+                  />
+                </li>
+              ))}
+            </ul>
+          )}
+        </BentoCard>
 
         {/* Kurslar — fan/kurs birlashdi. To'liq boshqaruv (o'qituvchi/guruh/semestr)
             "Kurslar" modulida; bu yerda ro'yxat + o'sha modulga o'tish. */}
-        <Card className="!p-0">
-          <div className="flex items-center justify-between gap-2 border-b border-line px-5 py-3.5">
-            <h2 className="inline-flex items-center gap-2 text-section font-bold text-ink">
-              <Icon icon={GraduationCap} size={17} className="text-blue" /> {t("coursesSection")}
-            </h2>
-            {canStaff && (
-              <Button size="sm" variant="soft" icon={<Icon icon={Plus} size={14} />} onClick={() => navigate("/admin/courses")}>
+        <BentoCard
+          title={t("coursesSection")}
+          count={d.courses.length}
+          right={
+            canStaff && (
+              <Button size="sm" variant="ghost" icon={<Icon icon={Plus} size={14} />} onClick={() => navigate("/admin/courses")}>
                 {tc("add")}
               </Button>
-            )}
-          </div>
-          <div>
-            {d.courses.map((c) => (
-              <Link
-                key={c.id}
-                to={`/admin/courses/${c.id}`}
-                className="group flex items-center gap-3 border-b border-line px-5 py-3.5 transition-colors last:border-0 hover:bg-bg"
-              >
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-control bg-blue-soft text-blue">
-                  <Icon icon={BookMarked} size={16} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-body font-semibold text-ink group-hover:text-brand-deep">{c.name}</p>
-                  {c.description && <p className="truncate text-note text-ink-faint">{c.description}</p>}
-                </div>
-              </Link>
-            ))}
-            {d.courses.length === 0 && (
-              <p className="px-5 py-6 text-center text-note text-ink-faint">{t("noCoursesInDept")}</p>
-            )}
-          </div>
-        </Card>
+            )
+          }
+          bodyClassName="px-2 pb-3"
+        >
+          {d.courses.length === 0 ? (
+            <div className="px-2 py-2">
+              <EmptyState icon={<Icon icon={BookMarked} size={20} />} text={t("noCoursesInDept")} />
+            </div>
+          ) : (
+            <ul className="space-y-1">
+              {d.courses.map((c) => (
+                <li key={c.id}>
+                  <BentoRow
+                    icon={BookMarked}
+                    iconTone="bg-blue-soft text-blue"
+                    title={c.name}
+                    sub={c.description ?? undefined}
+                    onClick={() => navigate(`/admin/courses/${c.id}`)}
+                  />
+                </li>
+              ))}
+            </ul>
+          )}
+        </BentoCard>
       </div>
 
       {/* Modals */}

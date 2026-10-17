@@ -1,14 +1,17 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, BookOpen, CalendarDays, ClipboardCheck, DoorClosed, Download, GraduationCap, Users } from "lucide-react";
-import { Badge, Button, Card, ChipSelect, Icon, LegendRow, Spinner, StackedBar, cls, useToast } from "@meduni/ui";
+import { CalendarDays, ClipboardCheck, DoorClosed, Download, Users } from "lucide-react";
+import { Badge, Button, ChipSelect, EmptyState, Icon, LegendRow, Spinner, StackedBar, cls, useToast } from "@meduni/ui";
+import { BentoCard, PageHeader } from "../../../components/bento";
+import { AsyncSection } from "../../../components/AsyncSection";
 import { Avatar } from "../../../components/Avatar";
 import { DataTable } from "../../../components/DataTable";
 import { API_URL, apiErrorMessage } from "../../../lib/api";
 import { useList } from "../../../lib/crud";
 import { useLocale } from "../../../lib/useLocale";
 import { isLowAttendance } from "../../../lib/attendance";
+import { BackLink, TableCard } from "../components";
 import { useCourse, useUpdateCourse } from "./api";
 
 interface GroupLite {
@@ -18,20 +21,6 @@ interface GroupLite {
 
 const WEEKDAYS_UZ = ["Dushanba", "Seshanba", "Chorshanba", "Payshanba", "Juma", "Shanba", "Yakshanba"];
 const WEEKDAYS_RU = ["Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье"];
-
-function StatItem({ icon, label, value }: { icon: React.ReactNode; label: string; value: string | number }) {
-  return (
-    <div className="flex items-center gap-3 rounded-card border border-line bg-surface px-4 py-3">
-      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-soft text-brand-deep">
-        {icon}
-      </div>
-      <div>
-        <p className="text-note text-ink-faint">{label}</p>
-        <p className="text-body font-bold text-ink">{value}</p>
-      </div>
-    </div>
-  );
-}
 
 export function CourseDetail() {
   const { id } = useParams();
@@ -54,6 +43,8 @@ export function CourseDetail() {
     if (course.data) setSelectedGroups(course.data.groups.map((g) => g.id));
   }, [course.data]);
 
+  const back = <BackLink label={t("detail.back")} onClick={() => navigate("/admin/courses")} />;
+
   if (course.isLoading) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
@@ -63,11 +54,11 @@ export function CourseDetail() {
   }
   if (course.isError || !course.data) {
     return (
-      <div>
-        <button onClick={() => navigate("/admin/courses")} className="inline-flex items-center gap-1.5 text-note text-brand-deep hover:underline">
-          <Icon icon={ArrowLeft} size={14} />{t("detail.back")}
-        </button>
-        <p className="mt-4 text-note text-rose">{tc("loadError")}</p>
+      <div className="space-y-3">
+        {back}
+        <AsyncSection isLoading={false} isError isEmpty={false} emptyText="" onRetry={() => course.refetch()}>
+          {null}
+        </AsyncSection>
       </div>
     );
   }
@@ -76,6 +67,8 @@ export function CourseDetail() {
   const groupOptions = groups.data ?? [];
   const currentIds = c.groups.map((g) => g.id).sort().join(",");
   const dirty = selectedGroups.slice().sort().join(",") !== currentIds;
+  const att = c.attendanceSummary;
+  const hasSchedule = c.schedule.some((g) => g.slots.length > 0);
 
   const saveGroups = () => {
     setError(null);
@@ -92,102 +85,126 @@ export function CourseDetail() {
     setSelectedGroups((prev) => (prev.includes(gid) ? prev.filter((g) => g !== gid) : [...prev, gid]));
 
   return (
-    <div>
-      <button onClick={() => navigate("/admin/courses")} className="inline-flex items-center gap-1.5 text-note font-medium text-brand-deep hover:underline">
-        <Icon icon={ArrowLeft} size={14} />{t("detail.back")}
-      </button>
-
-      <h1 className="mt-3 text-h1 font-bold text-ink">
-        {c.name}
-      </h1>
-      <p className="mt-1 text-note text-ink-soft">
-        {c.departmentName} ·{" "}
-        <button onClick={() => navigate(`/admin/users/${c.teacherId}`)} className="font-medium text-brand-deep hover:underline">
-          {c.teacherName}
-        </button>{" "}
-        · {t("semester")} {c.semester} · {c.academicYear}
-      </p>
-
-      {/* Stat tiles */}
-      <div className="mt-3 grid gap-3 sm:grid-cols-3">
-        <StatItem icon={<Icon icon={Users} size={18} />} label={t("students")} value={c.studentCount} />
-        <StatItem icon={<Icon icon={GraduationCap} size={18} />} label={t("groups")} value={c.groups.length} />
-        <StatItem icon={<Icon icon={BookOpen} size={18} />} label={t("detail.topicCount")} value={c.topicCount} />
+    <div className="space-y-3">
+      <div>
+        {back}
+        {/* ⛔ STAT DIETASI: talaba/guruh/mavzu sonlari harakat bermaydi — shapkada MATN. */}
+        <PageHeader
+          className="mb-0"
+          title={c.name}
+          subtitle={
+            <>
+              {c.departmentName} ·{" "}
+              <button
+                type="button"
+                onClick={() => navigate(`/admin/users/${c.teacherId}`)}
+                className="rounded-control font-semibold text-brand-tint hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+              >
+                {c.teacherName}
+              </button>{" "}
+              · {t("semester")} {c.semester} · {c.academicYear} · {c.studentCount} {t("students").toLowerCase()} · {c.topicCount}{" "}
+              {t("topics").toLowerCase()}
+            </>
+          }
+        />
       </div>
 
-      {/* Manage groups */}
-      <Card className="mt-3">
-        <h2 className="mb-4 text-section font-bold text-ink">{t("detail.manageGroups")}</h2>
-        <ChipSelect
-          options={groupOptions.map((g) => ({ id: g.id, label: g.name }))}
-          selected={selectedGroups}
-          onToggle={toggleGroup}
-        />
-        {error && <p className="mt-3 text-note text-rose">{error}</p>}
-        <div className="mt-4">
-          <Button disabled={!dirty || update.isPending || selectedGroups.length === 0} onClick={saveGroups}>
-            {t("detail.saveGroups")}
-          </Button>
-        </div>
-      </Card>
-
-      {/* Attendance summary + read-only weekly schedule */}
-      <div className="mt-3 grid gap-3 lg:grid-cols-2">
-        <Card>
-          <div className="mb-3 flex items-center gap-2">
-            <Icon icon={ClipboardCheck} size={16} className="text-blue" />
-            <h2 className="text-section font-bold text-ink">{t("detail.attendanceTitle")}</h2>
-            {c.attendanceSummary.pct !== null && (
-              <span className={cls("rounded-pill px-2.5 py-1 text-note font-bold font-data tabular-nums", isLowAttendance(c.attendanceSummary.pct) ? "bg-rose-soft text-rose" : "bg-emerald-soft text-emerald")}>
-                {c.attendanceSummary.pct}%
+      <div className="grid grid-cols-1 items-start gap-3 xl:grid-cols-2">
+        <div className="min-w-0 space-y-3">
+        {/* Attendance summary */}
+        <BentoCard
+          title={
+            <span className="inline-flex items-center gap-2">
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-soft text-blue">
+                <Icon icon={ClipboardCheck} size={15} />
               </span>
-            )}
-            {c.attendanceSummary.marked > 0 && (
-              <a href={`${API_URL}/api/v1/courses/${courseId}/attendance.xlsx?view=list`} className="ml-auto inline-flex items-center gap-1.5 rounded-control border border-line px-3 py-1.5 text-note font-medium text-ink-soft transition-colors hover:bg-bg">
-                <Icon icon={Download} size={15} /> {t("detail.exportExcel")}
-              </a>
-            )}
-          </div>
-          {c.attendanceSummary.marked === 0 ? (
-            <p className="py-4 text-center text-note text-ink-faint">{t("detail.noAttendance")}</p>
+              {t("detail.attendanceTitle")}
+            </span>
+          }
+          right={
+            <span className="flex items-center gap-2">
+              {att.pct !== null && (
+                <span
+                  className={cls(
+                    "rounded-pill px-2.5 py-1 font-data text-note font-semibold tabular-nums",
+                    isLowAttendance(att.pct) ? "bg-rose-soft text-rose" : "bg-emerald-soft text-emerald"
+                  )}
+                >
+                  {att.pct}%
+                </span>
+              )}
+              {att.marked > 0 && (
+                <a
+                  href={`${API_URL}/api/v1/courses/${courseId}/attendance.xlsx?view=list`}
+                  className="inline-flex items-center gap-1.5 rounded-pill border border-line-raised px-3 py-1 text-note font-semibold text-ink transition-colors hover:bg-surface-raised focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                >
+                  <Icon icon={Download} size={14} /> {t("detail.exportExcel")}
+                </a>
+              )}
+            </span>
+          }
+        >
+          {att.marked === 0 ? (
+            <p className="py-4 text-center text-note text-ink-soft">{t("detail.noAttendance")}</p>
           ) : (
-            <>
+            <div className="flex flex-1 flex-col justify-end">
               <StackedBar
                 segments={[
-                  { value: c.attendanceSummary.present, tone: "emerald" },
-                  { value: c.attendanceSummary.late, tone: "amber" },
-                  { value: c.attendanceSummary.excused, tone: "blue" },
-                  { value: c.attendanceSummary.absent, tone: "rose" },
+                  { value: att.present, tone: "emerald" },
+                  { value: att.late, tone: "amber" },
+                  { value: att.excused, tone: "blue" },
+                  { value: att.absent, tone: "rose" },
                 ]}
               />
               <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1.5">
-                <LegendRow tone="emerald" label={t("detail.attPresent")} value={c.attendanceSummary.present} />
-                <LegendRow tone="amber" label={t("detail.attLate")} value={c.attendanceSummary.late} />
-                <LegendRow tone="blue" label={t("detail.attExcused")} value={c.attendanceSummary.excused} />
-                <LegendRow tone="rose" label={t("detail.attAbsent")} value={c.attendanceSummary.absent} />
+                <LegendRow tone="emerald" label={t("detail.attPresent")} value={att.present} />
+                <LegendRow tone="amber" label={t("detail.attLate")} value={att.late} />
+                <LegendRow tone="blue" label={t("detail.attExcused")} value={att.excused} />
+                <LegendRow tone="rose" label={t("detail.attAbsent")} value={att.absent} />
               </div>
-            </>
+            </div>
           )}
-        </Card>
+        </BentoCard>
 
-        <Card>
-          <div className="mb-3 flex items-center gap-2">
-            <Icon icon={CalendarDays} size={16} className="text-brand-deep" />
-            <h2 className="text-section font-bold text-ink">{t("detail.scheduleTitle")}</h2>
-          </div>
-          {c.schedule.every((g) => g.slots.length === 0) ? (
-            <p className="py-4 text-center text-note text-ink-faint">{t("detail.noSchedule")}</p>
+        {/* Manage groups */}
+        <BentoCard
+          title={t("detail.manageGroups")}
+          count={c.groups.length}
+          right={
+            <Button size="sm" disabled={!dirty || update.isPending || selectedGroups.length === 0} onClick={saveGroups}>
+              {t("detail.saveGroups")}
+            </Button>
+          }
+        >
+          <ChipSelect options={groupOptions.map((g) => ({ id: g.id, label: g.name }))} selected={selectedGroups} onToggle={toggleGroup} />
+          {error && <p className="mt-3 text-note text-rose">{error}</p>}
+        </BentoCard>
+        </div>
+
+        {/* Read-only weekly schedule */}
+        <BentoCard
+          title={
+            <span className="inline-flex items-center gap-2">
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-soft text-brand-tint">
+                <Icon icon={CalendarDays} size={15} />
+              </span>
+              {t("detail.scheduleTitle")}
+            </span>
+          }
+        >
+          {!hasSchedule ? (
+            <p className="py-4 text-center text-note text-ink-soft">{t("detail.noSchedule")}</p>
           ) : (
             <div className="space-y-3">
               {c.schedule.filter((g) => g.slots.length > 0).map((g) => (
                 <div key={g.groupId}>
-                  <p className="mb-1 text-note font-bold text-ink">{g.groupName}</p>
+                  <p className="mb-1 text-micro font-semibold uppercase tracking-wider text-ink-soft">{g.groupName}</p>
                   <div className="space-y-1">
                     {g.slots.map((s, i) => (
-                      <div key={i} className="flex items-center gap-3 rounded-control border border-line bg-surface px-3 py-1.5 text-note">
+                      <div key={i} className="flex items-center gap-3 rounded-control bg-surface-raised px-3 py-1.5 text-note">
                         <span className="w-24 shrink-0 font-semibold text-ink">{(locale === "ru" ? WEEKDAYS_RU : WEEKDAYS_UZ)[s.weekday]}</span>
-                        <span className="shrink-0 font-bold font-data tabular-nums text-brand-deep">{s.startTime}</span>
-                        {s.room && <span className="inline-flex items-center gap-1 text-ink-faint"><Icon icon={DoorClosed} size={12} /> {s.room}</span>}
+                        <span className="shrink-0 font-data font-semibold tabular-nums text-ink">{s.startTime}</span>
+                        {s.room && <span className="inline-flex items-center gap-1 text-ink-soft"><Icon icon={DoorClosed} size={12} /> {s.room}</span>}
                       </div>
                     ))}
                   </div>
@@ -195,16 +212,15 @@ export function CourseDetail() {
               ))}
             </div>
           )}
-        </Card>
+        </BentoCard>
       </div>
 
       {/* Enrolled students */}
-      <div className="mt-3">
-        <h2 className="mb-3 text-section font-bold text-ink">{t("detail.enrolledStudents")}</h2>
+      <TableCard title={t("detail.enrolledStudents")} count={c.students.length}>
         {c.students.length === 0 ? (
-          <Card>
-            <p className="py-6 text-center text-note text-ink-soft">{t("detail.noStudents")}</p>
-          </Card>
+          <div className="p-3">
+            <EmptyState icon={<Icon icon={Users} size={20} />} text={t("detail.noStudents")} />
+          </div>
         ) : (
           <DataTable headers={[t("students"), t("groups"), t("status")]}>
             {c.students.map((s) => (
@@ -212,13 +228,13 @@ export function CourseDetail() {
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-3">
                     <Avatar name={s.fullName} />
-                    <div>
-                      <p className="font-medium text-ink">{s.fullName}</p>
-                      <p className="text-note text-ink-faint">{s.email}</p>
+                    <div className="min-w-0">
+                      <p className="truncate font-semibold text-ink">{s.fullName}</p>
+                      <p className="truncate text-micro text-ink-soft">{s.email}</p>
                     </div>
                   </div>
                 </td>
-                <td className="px-4 py-3 text-ink-soft">{s.groupName ?? "—"}</td>
+                <td className="px-4 py-3 text-ink-2">{s.groupName ?? "—"}</td>
                 <td className="px-4 py-3">
                   <Badge tone={s.status === "ACTIVE" ? "emerald" : "slate"}>
                     {s.status === "ACTIVE" ? t("detail.statusActive") : t("detail.statusDropped")}
@@ -228,7 +244,7 @@ export function CourseDetail() {
             ))}
           </DataTable>
         )}
-      </div>
+      </TableCard>
     </div>
   );
 }

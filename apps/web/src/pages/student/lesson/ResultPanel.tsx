@@ -57,11 +57,11 @@ function Row({
           "transition-colors hover:bg-surface-raised focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
       )}
     >
-      <div className={cls("flex h-7 w-7 shrink-0 items-center justify-center rounded-control", tone)}>
+      <div className={cls("flex h-7 w-7 shrink-0 items-center justify-center rounded-full", tone)}>
         <Icon icon={icon} size={14} />
       </div>
       <span className="min-w-0 flex-1 truncate text-note font-bold text-ink">{label}</span>
-      <span className="shrink-0 text-note font-extrabold font-data tabular-nums text-ink">{value}</span>
+      <span className="shrink-0 text-note font-semibold font-data tabular-nums text-ink">{value}</span>
     </Wrapper>
   );
 }
@@ -156,11 +156,11 @@ export function ResultPanel({ lesson, onView }: { lesson: Lesson; onView?: (v: L
   return (
     <div ref={root} className="mx-auto max-w-[520px] space-y-3">
       {/* Yakuniy ball */}
-      <div className="flex flex-col items-center gap-2 rounded-card border border-line bg-surface-raised p-5 text-center">
+      <div className="flex flex-col items-center gap-2 rounded-card bg-brand-soft p-5 text-center">
         {hasScore ? (
           <>
             <ProgressRing value={ringValue} size={96} stroke={10} tone={passed === false ? "rose" : "brand"} />
-            <p className="text-section font-extrabold text-ink">{t("finalScore")}</p>
+            <p className="text-section font-semibold text-ink">{t("finalScore")}</p>
             {passed !== null && (
               <span
                 className={cls(
@@ -183,14 +183,14 @@ export function ResultPanel({ lesson, onView }: { lesson: Lesson; onView?: (v: L
             <div className="flex h-14 w-14 items-center justify-center rounded-card bg-emerald-soft text-emerald">
               <Icon icon={PartyPopper} size={26} />
             </div>
-            <p className="text-section font-extrabold text-ink">{t("contentOnlyDone")}</p>
+            <p className="text-section font-semibold text-ink">{t("contentOnlyDone")}</p>
             <p className="text-note text-ink-dim">{t("finalNoScore")}</p>
           </>
         )}
       </div>
 
       {/* Dars bo'yicha yakun */}
-      <div className="overflow-hidden rounded-card border border-line">
+      <div className="overflow-hidden rounded-card border border-line bg-surface">
         {sections.length > 0 && (
           <Row
             icon={BookText}
@@ -242,8 +242,8 @@ export function ResultPanel({ lesson, onView }: { lesson: Lesson; onView?: (v: L
           tugagandek his qilardi, lekin keyingi mavzu ochilmasdi va SABABI
           hech qayerda ko'rinmasdi. Endi u aynan shu yerda, tugmasi bilan. */}
       {!lesson.completed && todo.length > 0 && (
-        <div className="rounded-card border border-amber/40 bg-amber-soft/40 p-3">
-          <p className="mb-2 flex items-center gap-1.5 text-micro font-extrabold text-amber">
+        <div className="rounded-card bg-amber-soft p-3">
+          <p className="mb-2 flex items-center gap-1.5 text-micro font-semibold text-amber">
             <Icon icon={TriangleAlert} size={12} />
             {t("todoTitle")}
           </p>
@@ -285,7 +285,7 @@ export function ResultPanel({ lesson, onView }: { lesson: Lesson; onView?: (v: L
       {/* Xato javoblar tahlili */}
       {wrong.length > 0 && (
         <div className="rounded-card border border-line p-3">
-          <p className="mb-2 flex items-center gap-1.5 text-micro font-extrabold text-ink-dim">
+          <p className="mb-2 flex items-center gap-1.5 text-micro font-semibold text-ink-soft">
             <Icon icon={X} size={12} className="text-rose" strokeWidth={3} />
             {t("errorAnalysis", { count: wrong.length })}
           </p>
@@ -320,9 +320,9 @@ export function ResultPanel({ lesson, onView }: { lesson: Lesson; onView?: (v: L
       {cards && !cards.locked && cards.knownCount < cards.total && onView && (
         <button
           onClick={() => onView("flashcards")}
-          className="flex w-full items-center gap-2.5 rounded-card border border-line bg-surface-raised p-3 text-left transition-colors hover:border-brand-soft"
+          className="flex w-full items-center gap-2.5 rounded-card border border-line bg-surface p-3 text-left transition-colors hover:border-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
         >
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-control bg-violet-soft text-violet">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-violet-soft text-violet">
             <Icon icon={Sparkles} size={15} />
           </div>
           <div className="min-w-0 flex-1">
@@ -339,14 +339,14 @@ export function ResultPanel({ lesson, onView }: { lesson: Lesson; onView?: (v: L
       <div className="flex items-center gap-2">
         <button
           onClick={() => navigate(`/app/courses/${lesson.courseId}`)}
-          className="rounded-control border border-line px-3 py-2 text-note font-bold text-ink-soft transition-colors hover:bg-surface-raised hover:text-ink"
+          className="rounded-pill border border-line px-3 py-2 text-note font-semibold text-ink-2 transition-colors hover:border-ink hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
         >
           {t("backToPath")}
         </button>
         {next && nextOpen && (
           <button
             onClick={() => navigate(`/app/topics/${next.id}`)}
-            className="ml-auto inline-flex items-center gap-2 rounded-control bg-brand px-4 py-2 text-note font-extrabold text-white transition-colors hover:bg-brand-deep"
+            className="ml-auto inline-flex items-center gap-2 rounded-pill bg-ink px-4 py-2 text-note font-semibold text-surface transition-colors hover:bg-ink-2"
           >
             {t("nextTopicBtn")}
             <Icon icon={ArrowRight} size={14} />

@@ -15,9 +15,13 @@ function ConditionToggle({ on, onToggle, icon, title, hint }: { on: boolean; onT
     <button
       type="button"
       onClick={onToggle}
-      className={cls("flex w-full items-start gap-3 rounded-control border p-3.5 text-left transition-colors", on ? "border-brand bg-brand-soft/50" : "border-line hover:bg-bg")}
+      aria-pressed={on}
+      className={cls(
+        "flex w-full items-start gap-3 rounded-card border p-3.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
+        on ? "border-transparent bg-brand-soft" : "border-line hover:bg-surface-raised"
+      )}
     >
-      <span className={cls("mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-control", on ? "bg-brand text-white" : "bg-bg text-ink-faint")}>
+      <span className={cls("mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full", on ? "bg-surface text-brand-tint" : "bg-surface-raised text-ink-soft")}>
         <Icon icon={icon} size={17} />
       </span>
       <span className="min-w-0 flex-1">
@@ -25,7 +29,7 @@ function ConditionToggle({ on, onToggle, icon, title, hint }: { on: boolean; onT
         <span className="block text-micro text-ink-soft">{hint}</span>
       </span>
       {/* Checkbox holati — ikkalasini ham belgilash mumkinligini ko'rsatadi */}
-      <span className={cls("mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-[6px] border-2 transition-colors", on ? "border-brand bg-brand text-white" : "border-line")}>
+      <span className={cls("mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-colors", on ? "border-ink bg-ink text-surface" : "border-line-raised")}>
         {on && <Icon icon={Check} size={13} strokeWidth={3} />}
       </span>
     </button>
@@ -64,7 +68,7 @@ export function SettingsTab() {
     save.mutate({ defaultUnlockRuleJson: rule, sequentialUnlock, scheduleUnlock }, { onSuccess: () => show(t("saved")) });
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <p className="text-note text-ink-soft">{t("subtitle")}</p>
 
       {/* Ochilish shartlari — MUSTAQIL, ikkalasini ham tanlash mumkin */}
@@ -75,7 +79,7 @@ export function SettingsTab() {
         </div>
         <ConditionToggle on={sequentialUnlock} onToggle={() => setSequentialUnlock((v) => !v)} icon={ListChecks} title={t("modeSequential")} hint={t("modeSequentialHint")} />
         <ConditionToggle on={scheduleUnlock} onToggle={() => setScheduleUnlock((v) => !v)} icon={CalendarClock} title={t("modeSchedule")} hint={t("modeScheduleHint")} />
-        {sequentialUnlock && scheduleUnlock && <p className="rounded-control bg-brand-soft/50 px-3 py-2 text-micro font-medium text-brand-deep">{t("bothOn")}</p>}
+        {sequentialUnlock && scheduleUnlock && <p className="rounded-control bg-surface-raised px-3 py-2 text-micro font-medium text-ink-2">{t("bothOn")}</p>}
         {!sequentialUnlock && !scheduleUnlock && <p className="rounded-control bg-amber-soft px-3 py-2 text-micro font-medium text-amber">{t("noneOn")}</p>}
       </Card>
 

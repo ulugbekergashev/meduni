@@ -1,16 +1,18 @@
 import { Outlet, useLocation, useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, BarChart3, BookOpen, Settings, Users, Users2 } from "lucide-react";
-import { Card, Icon } from "@meduni/ui";
+import { BarChart3, BookOpen, Settings, Users, Users2 } from "lucide-react";
+import { Icon } from "@meduni/ui";
+import { HeaderChip, PageHeader } from "../../../components/bento";
+import { BackLink } from "../BackLink";
 import { SubNav } from "../../../components/SubNav";
 import { useTeachCourseMeta } from "../api";
 
 function HeaderSkeleton() {
   return (
     <div>
-      <div className="h-4 w-28 animate-pulse rounded bg-line" />
-      <div className="mt-3 h-7 w-64 animate-pulse rounded bg-line" />
-      <div className="mt-2 h-4 w-80 animate-pulse rounded bg-line" />
+      <div className="h-4 w-28 animate-pulse rounded-pill bg-line" />
+      <div className="mt-3 h-7 w-64 animate-pulse rounded-pill bg-line" />
+      <div className="mt-2 h-4 w-80 animate-pulse rounded-pill bg-line" />
     </div>
   );
 }
@@ -30,7 +32,7 @@ export function TeacherCourseShell() {
     return (
       <div>
         <HeaderSkeleton />
-        <div className="mt-3 h-9 w-full max-w-md animate-pulse rounded bg-line" />
+        <div className="mt-3 h-9 w-full max-w-md animate-pulse rounded-pill bg-line" />
       </div>
     );
   }
@@ -38,15 +40,10 @@ export function TeacherCourseShell() {
   if (meta.isError || !meta.data) {
     return (
       <div>
-        <button
-          onClick={() => navigate("/teach")}
-          className="inline-flex items-center gap-1.5 text-note font-medium text-brand-deep hover:underline"
-        >
-          <Icon icon={ArrowLeft} size={14} />{t("backToCourses")}
-        </button>
-        <Card className="mt-4">
+        <BackLink onClick={() => navigate("/teach/courses")}>{t("backToCourses")}</BackLink>
+        <div className="mt-3 rounded-card border border-line bg-surface">
           <p className="py-6 text-center text-note text-rose">{t("notFound")}</p>
-        </Card>
+        </div>
       </div>
     );
   }
@@ -59,36 +56,17 @@ export function TeacherCourseShell() {
   return (
     <div>
       {/* Header — stable across tab navigation */}
-      <button
-        onClick={() => navigate("/teach")}
-        className="inline-flex items-center gap-1.5 text-note font-medium text-brand-deep hover:underline"
-      >
-        <Icon icon={ArrowLeft} size={14} />{t("backToCourses")}
-      </button>
-      <h1 className="mt-3 text-h1 font-bold text-ink">{c.subjectName}</h1>
-      <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-note text-ink-soft">
-        {c.groups.length > 0 && (
-          <>
-            <span className="inline-flex items-center gap-1">
-              <Icon icon={Users} size={14} />
-              {c.groups.map((g, i) => (
-                <span key={g.id}>
-                  <button onClick={() => navigate(`/teach/groups/${g.id}`)} className="font-medium text-brand-deep hover:underline">
-                    {g.name}
-                  </button>
-                  {i < c.groups.length - 1 && ", "}
-                </span>
-              ))}
-            </span>
-            <span>·</span>
-          </>
-        )}
-        <span>{t("semesterN", { n: c.semester })}</span>
-        <span>·</span>
-        <span>{c.academicYear}</span>
-        <span>·</span>
-        <span>{t("studentsN", { n: c.studentCount })}</span>
-      </div>
+      <BackLink onClick={() => navigate("/teach/courses")}>{t("backToCourses")}</BackLink>
+      <PageHeader
+        className="mb-0 mt-2"
+        title={c.subjectName}
+        subtitle={[t("semesterN", { n: c.semester }), c.academicYear, t("studentsN", { n: c.studentCount })].join(" · ")}
+        right={c.groups.map((g) => (
+          <HeaderChip key={g.id} icon={<Icon icon={Users} size={14} />} onClick={() => navigate(`/teach/groups/${g.id}`)}>
+            {g.name}
+          </HeaderChip>
+        ))}
+      />
 
       {/* Kurs bo'limlari — yon paneldagi ikkinchi daraja (mobilda tasma).
           Panel sarlavhasi = kurs nomi (Hostinger naqshi: kontekst + bo'limlari). */}

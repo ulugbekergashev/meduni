@@ -14,7 +14,7 @@ export function LocaleSwitcher() {
           onClick={() => setLocale(l)}
           className={cls(
             "rounded-pill px-3 py-1 transition-colors",
-            current === l ? "bg-brand-soft text-brand-deep" : "text-ink-soft"
+            current === l ? "bg-ink text-surface" : "text-ink-soft"
           )}
         >
           {l.toUpperCase()}
