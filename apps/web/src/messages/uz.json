@@ -977,7 +977,7 @@
     "moveUp": "Yuqoriga",
     "moveDown": "Pastga",
     "confirmDeleteTitle": "Mavzuni oʻchirish",
-    "confirmDelete": "Bu mavzuni oʻchirasizmi? Materiallar ham oʻchadi.",
+    "confirmDelete": "Mavzu oʻchirilsa, unga tegishli hamma narsa oʻchadi: materiallar, konspekt, test, keys, taqdimot, video va podkast. Talabalarning natijasi boʻlsa, mavzu oʻchirilmaydi.",
     "status": {
       "draft": "Qoralama",
       "published": "Chop etilgan"

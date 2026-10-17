@@ -123,6 +123,18 @@ export async function deletePath(relPath: string): Promise<void> {
   }
 }
 
+/**
+ * Mavzuning BARCHA fayllari — material, slayd rasmlari, video, podkast, audio —
+ * `topics/<id>/` ostida yotadi; mavzu o'chganda ular yetim qolmasin.
+ * ⚠️ Prefiks oxiridagi `/` shart: aks holda `topics/1` → `topics/10/...` ham ketardi.
+ */
+export async function deleteTopicFiles(topicId: number): Promise<void> {
+  if (!Number.isInteger(topicId) || topicId <= 0) throw new Error("invalid topic id");
+  const prefix = `topics/${topicId}/`;
+  await prisma.fileBlob.deleteMany({ where: { path: { startsWith: prefix } } });
+  await rm(abs(prefix), { recursive: true, force: true });
+}
+
 /** Fayl haqiqatan mavjudmi (UI "bor" deb ko'rsatib, keyin 500 bermasin). */
 /**
  * "Fayl bormi?" — BAYTLARNI O'QIMASDAN.

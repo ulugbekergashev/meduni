@@ -233,6 +233,8 @@ export function TopicListSection({ scope }: { scope: TopicScope }) {
               setDeleting(null);
               show(tc("deleted"));
             },
+            // Sabab (masalan, talabalar natijasi bor) global toast'da chiqadi — dialog osilib qolmasin.
+            onError: () => setDeleting(null),
           })
         }
         onClose={() => setDeleting(null)}

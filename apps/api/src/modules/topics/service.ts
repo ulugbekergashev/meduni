@@ -4,6 +4,7 @@ import { prisma } from "../../lib/prisma";
 import { ApiError, badRequest, notFound } from "../../lib/errors";
 import { deletePath, fileExists, readText, readFileBuffer, saveBytes, saveMaterialFile, saveParsedText } from "../../lib/storage";
 import { pcmToWav } from "../../lib/wav";
+import { PURGE_TX_OPTS, hasResults, purgeTopicFiles, purgeTopicRows, resultsConflict, studentResults } from "./purge";
 import { extractText, fileTypeFromName, parseErrorMessages, pdfPageCount, type ParseErrorCode } from "./parse";
 import { generateSpeech, generateStructured } from "../../ai/gemini";
 import { assertQuota } from "../../ai/quota";
@@ -131,15 +132,17 @@ export async function setTopicUnlockRule(id: number, unlockRule: unknown, teache
   return { ok: true };
 }
 
+/** Mavzuni AI yaratgan hamma narsa bilan birga o'chiradi; talabalar natijasi bo'lsa — 409.
+ *  Mantiq va sabablar: `./purge.ts`. */
 export async function deleteTopic(id: number, teacherId: number) {
-  await topicForTeacher(id, teacherId);
-  const materials = await prisma.sourceMaterial.findMany({ where: { topicId: id } });
-  for (const m of materials) {
-    await deletePath(m.fileUrl);
-    if (m.parsedTextUrl) await deletePath(m.parsedTextUrl);
-  }
-  await prisma.sourceMaterial.deleteMany({ where: { topicId: id } });
-  await prisma.topic.delete({ where: { id } });
+  const topic = await topicForTeacher(id, teacherId);
+  const results = await studentResults([id]);
+  if (hasResults(results)) throw resultsConflict("topic", results);
+  await prisma.$transaction((tx) => purgeTopicRows(tx, [id]), PURGE_TX_OPTS);
+  await purgeTopicFiles([id]);
+  await prisma.auditLog.create({
+    data: { actorId: teacherId, action: "DELETE_TOPIC", entity: "Topic", entityId: id, detailsJson: { title: topic.title, courseId: topic.courseId } },
+  });
 }
 
 export async function reorderTopics(orderedIds: number[], teacherId: number) {

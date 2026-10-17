@@ -165,7 +165,7 @@ coursesRouter.delete(
     const scope = await adminScope(req);
     const id = parseId(req.params.id);
     await assertCourseInScope(scope, id);
-    await svc.deleteCourse(id);
+    await svc.deleteCourse(id, req.user!.id);
     res.status(204).end();
   })
 );

@@ -4,6 +4,7 @@ import { assertRuleWithinPolicy, assertSequentialAllowed, resolvePolicy } from "
 import type { UnlockRule } from "../me/rules";
 import { ApiError, badRequest, forbidden, notFound } from "../../lib/errors";
 import { buildMatrix } from "./progress";
+import { PURGE_TX_OPTS, hasResults, purgeTopicFiles, purgeTopicRows, resultsConflict, studentResults } from "../topics/purge";
 import { loadCourse } from "../me/service";
 import { attendancePct, attendanceStats, tallyByStatus, tallyOf } from "../attendance/facts";
 
@@ -195,13 +196,39 @@ export async function updateCourse(
   return getCourseOut(id);
 }
 
-export async function deleteCourse(id: number) {
-  const existing = await prisma.course.findUnique({ where: { id } });
+/**
+ * Kursni o'chiradi: mavzulari (AI kontenti bilan), guruh bog'lanishlari, yozilishlar,
+ * jadval va belgilanmagan darslar bilan birga. Talabalar natijasi YOKI davomat
+ * belgisi bo'lsa — 409 (baholar va davomat tarixi yo'qolmasin).
+ * ⚠️ Ilgari faqat enrollment+courseGroup o'chirilardi: mavzu yoki dars bo'lsa FK
+ * 500 berardi. Mantiq: `topics/purge.ts`.
+ */
+export async function deleteCourse(id: number, actorId?: number) {
+  const existing = await prisma.course.findUnique({ where: { id }, select: { id: true, name: true } });
   if (!existing) throw notFound("Kurs");
 
-  await prisma.enrollment.deleteMany({ where: { courseId: id } });
-  await prisma.courseGroup.deleteMany({ where: { courseId: id } });
-  await prisma.course.delete({ where: { id } });
+  const topicIds = (await prisma.topic.findMany({ where: { courseId: id }, select: { id: true } })).map((t) => t.id);
+  const [results, attendance] = await Promise.all([
+    studentResults(topicIds),
+    prisma.attendance.count({ where: { session: { courseId: id } } }),
+  ]);
+  if (hasResults(results) || attendance > 0) throw resultsConflict("course", results, attendance);
+
+  await prisma.$transaction(async (tx) => {
+    await purgeTopicRows(tx, topicIds);
+    await tx.lessonSession.deleteMany({ where: { courseId: id } });
+    await tx.task.updateMany({ where: { courseId: id }, data: { courseId: null } });
+    await tx.enrollment.deleteMany({ where: { courseId: id } });
+    await tx.courseGroup.deleteMany({ where: { courseId: id } });
+    // Sikllar, jadval slotlari va (eski) kurs chati — sxemada onDelete: Cascade.
+    await tx.course.delete({ where: { id } });
+  }, PURGE_TX_OPTS);
+  await purgeTopicFiles(topicIds);
+  if (actorId) {
+    await prisma.auditLog.create({
+      data: { actorId, action: "DELETE_COURSE", entity: "Course", entityId: id, detailsJson: { name: existing.name, topics: topicIds.length } },
+    });
+  }
 }
 
 export async function listCourseStudents(id: number) {
