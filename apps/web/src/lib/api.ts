@@ -37,6 +37,9 @@ export class ApiError extends Error {
 /** Bir vaqtda kelgan bir necha 401 uchun /auth/refresh BIR marta chaqiriladi. */
 let refreshing: Promise<boolean> | null = null;
 
+/** 401 bo'lsa sessiya yangilanmaydigan manzillar (o'zlari sessiyani boshqaradi). */
+const NO_REFRESH_RETRY = ["/auth/login", "/auth/refresh", "/auth/logout"];
+
 function refreshSession(): Promise<boolean> {
   if (!refreshing) {
     refreshing = fetch(`${API_URL}/auth/refresh`, { method: "POST", credentials: "include" })
@@ -62,7 +65,11 @@ function refreshSession(): Promise<boolean> {
 export async function authedFetch(url: string, init?: RequestInit): Promise<Response> {
   const send = () => fetch(url, { ...init, credentials: "include" });
   const res = await send();
-  if (res.status !== 401 || url.includes("/auth/")) return res;
+  // ⚠️ Faqat login/refresh/logout chetlatiladi (aylanib qolmasin). Ilgari BUTUN `/auth/`
+  // chetlatilardi — `/auth/me` ham: 15 daqiqadan keyin sahifaga qaytilganda u 401 olib,
+  // refresh'ga urinmasdan foydalanuvchini /login ga chiqarib yuborardi (2026-10-17,
+  // production'da takrorlandi: refresh_token yaroqli, lekin baribir chiqarib yuborilgan).
+  if (res.status !== 401 || NO_REFRESH_RETRY.some((p) => url.includes(p))) return res;
   const ok = await refreshSession();
   return ok ? send() : res;
 }
