@@ -3183,3 +3183,29 @@ Reja: `.claude/plans/dizayn-v3-pastel-2026-10.md`. Uchala rol, barcha sahifa.
 - ⚠️ Commit qilinmagan eski o'zgarishlar (`StatCard`, `TaskItemRow`,
   `LessonsBlock`, `GroupProfile` …) HEAD'dagi tuzatishlarni qaytarib yuborgan
   edi — o'qituvchi sahifalarida tiklandi; `StatCard` (packages/ui) hali eski.
+
+---
+
+## 29. ISHGA TAYYORLASH: sessiya, o'chirish, zaxira (2026-10-17)
+
+- **Sahifaga 15 daqiqadan keyin qaytilsa tizim chiqarib yuborardi.** `web/lib/api.ts`
+  401 da refresh'ni BUTUN `/auth/` uchun o'tkazib yuborardi — `/auth/me` ham shunga
+  tushardi va yaroqli refresh_token bo'lsa ham `/login` ga chiqarardi (productionda
+  Playwright bilan takrorlandi). Endi faqat `NO_REFRESH_RETRY` (login/refresh/logout).
+  Natija: `/auth/me 401 → /auth/refresh 200 → /auth/me 200`, sahifa joyida qoladi.
+- **AI kontentli mavzu/kursni o'chirib bo'lmasdi (500).** Yangi `modules/topics/purge.ts`
+  — mavzu va kurs o'chirishning UMUMIY yo'li: talabalar natijasi (test urinishi, keys
+  javobi, tugatilgan/qo'lda ochilgan progress; kursda + davomat belgisi) bo'lsa
+  **409 HAS_STUDENT_RESULTS** (baholar himoyasi); bo'lmasa bitta tranzaksiyada
+  bolalardan ota-onaga o'chiriladi (remediation → urinishlar → savollar → test/keys/
+  taqdimot/video → kontent → konspekt/progress/material → mavzu; dars va topshiriq
+  o'chmaydi, faqat `topicId=null`), keyin `lib/storage.ts::deleteTopicFiles` —
+  `topics/<id>/` prefiksi (oxiridagi `/` SHART: aks holda topics/10 ham ketadi).
+  ⚠️ Yangi FK qo'shsang `purgeTopicRows` ga ham qo'sh, aks holda o'chirish yana 500.
+  Audit: `DELETE_TOPIC`, `DELETE_COURSE`. Sinov: `smokePurge.ts` 17/17.
+- **Zaxira faqat bazani saqlardi.** `/etc/cron.daily/meduni-backup` — pg_dump (30 kun);
+  `meduni_storage` volume (material, rasm, video, podkast) hech qayerga nusxalanmasdi.
+  `scripts/backup-storage.sh` + `ikp` crontab (06:30, 14 kun, `~/meduni-backups/`).
+  ⚠️ Ikkala zaxira ham SHU serverda — server o'lsa ham yo'qoladi; tashqi nusxa kerak.
+- SSH (`ikp@213.230.64.132:7773`, kalit `~/.ssh/meduni_server`) endi Claude'dan ishlaydi;
+  `ikp` docker guruhida, sudo YO'Q (root kerak bo'lgan ishni Miraziz aka qiladi).
