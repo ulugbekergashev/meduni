@@ -3219,3 +3219,15 @@ Reja: `.claude/plans/dizayn-v3-pastel-2026-10.md`. Uchala rol, barcha sahifa.
   promptga 402 berardi — prompt 320 belgiga qisqartiriladi. ⚠️ Nano Banana Pro rasmlari va
   Gemini TTS faqat PULLIK (billing yoqilgan) kalitda ishlaydi; bepul kalitda rasm sifati past
   (pollinations), ovoz edge-tts.
+- **Zaxira rasm (pollinations) ishonchsiz:** anonim tarif server IP'si uchun limit qo'yadi —
+  bir necha o'nlab so'rovdan keyin HAR qanday promptga 402 (2026-10-17, 91 belgi ham).
+  Sifatli va barqaror slayd rasmlari uchun billing yoqilgan Gemini kaliti SHART.
+- **Video MP4 sukut bo'yicha yasalmaydi** (`VIDEO_MP4` compose'da yo'q): talaba videoni
+  "ovoz + slaydlar" pleyerida ko'radi (`/me/videos/:id/audio` + `srt`, tekshirildi);
+  o'qituvchining MP4 yuklab olishi uchun compose'ga `VIDEO_MP4: "1"` qo'shiladi.
+- **Production E2E (2026-10-17, real login, [TEST] fakulteti):** konspekt/test/keys/
+  taqdimot/video (3:20)/podkast (17 daq) yaratildi va chop etildi; talaba test topshirdi
+  (izohli tahlil), keys topshirdi (qadamlar avto 33%) → o'qituvchi baholadi (80) → talaba
+  izohni ko'rdi; sikl → avto dars → yo'qlama → talaba 100%; natijasi bor mavzu/kurs → 409.
+  Skriptlar: scratchpad `e2e3/e2e4/e2e5.mjs`. [TEST] kursi (id=4) natijalari bilan
+  ataylab qoldirilgan (o'chirib bo'lmaydi — baholar himoyasi), test akkauntlari nofaol.
