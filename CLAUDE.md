@@ -3209,3 +3209,13 @@ Reja: `.claude/plans/dizayn-v3-pastel-2026-10.md`. Uchala rol, barcha sahifa.
   ⚠️ Ikkala zaxira ham SHU serverda — server o'lsa ham yo'qoladi; tashqi nusxa kerak.
 - SSH (`ikp@213.230.64.132:7773`, kalit `~/.ssh/meduni_server`) endi Claude'dan ishlaydi;
   `ikp` docker guruhida, sudo YO'Q (root kerak bo'lgan ishni Miraziz aka qiladi).
+- **Productionda AI xarajatsiz yo'llar ishlamasdi (2026-10-17, server jurnalidan):**
+  (1) bepul kalitda `gemini-flash-latest` HAR chaqiruvda 90s osilardi → endi `ai/gemini.ts`
+  da **sovutish**: timeout/429 bo'lgan model shu KALIT uchun 15 daqiqa o'tkazib yuboriladi
+  (`keys.ts::keyFingerprint`), TTS/rasm sovushda darrov xato beradi; (2) Gemini TTS limiti
+  tugagach zaxira edge-tts `spawn python ENOENT` bilan yiqilardi — konteynerda faqat
+  `python3` (`lib/tts.ts::PYTHON`, env `PYTHON_BIN`); (3) edge-tts 7.2.8 Microsoft'dan 403
+  olardi — Dockerfile'da `edge-tts>=7.3.1`; (4) zaxira rasm (pollinations) 900+ belgili
+  promptga 402 berardi — prompt 320 belgiga qisqartiriladi. ⚠️ Nano Banana Pro rasmlari va
+  Gemini TTS faqat PULLIK (billing yoqilgan) kalitda ishlaydi; bepul kalitda rasm sifati past
+  (pollinations), ovoz edge-tts.

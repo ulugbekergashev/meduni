@@ -52,10 +52,15 @@ async function viaGemini(text: string, voice: string, dir: string, name: string,
   return Math.max(1, Math.round(pcm.length / (sampleRate * 2)));
 }
 
+/** ⚠️ Linux konteynerda (Debian) faqat `python3` bor — `python` YO'Q. Qattiq yozilgan
+ *  "python" tufayli productionda bepul ovoz zaxirasi HECH QACHON ishlamagan
+ *  (`spawn python ENOENT`, 2026-10-17): Gemini TTS limiti tugagach video va podkast yiqilardi. */
+const PYTHON = process.env.PYTHON_BIN || (process.platform === "win32" ? "python" : "python3");
+
 async function viaEdge(text: string, voice: string, dir: string, name: string): Promise<number> {
   // edge-tts faylni STDIN'dan emas, fayldan o'qiydi (uzun matn + unicode uchun).
   await writeFile(path.join(dir, `${name}.txt`), text, "utf8");
-  await run("python", ["-m", "edge_tts", "--voice", voice, "--file", `${name}.txt`, "--write-media", `${name}.mp3`], { cwd: dir });
+  await run(PYTHON, ["-m", "edge_tts", "--voice", voice, "--file", `${name}.txt`, "--write-media", `${name}.mp3`], { cwd: dir });
   await run(FFMPEG, ["-y", "-i", `${name}.mp3`, "-ar", String(TTS_RATE), "-ac", "1", `${name}.wav`], { cwd: dir });
   const size = (await readFile(path.join(dir, `${name}.wav`))).length;
   return Math.max(1, Math.round((size - 44) / (TTS_RATE * 2)));

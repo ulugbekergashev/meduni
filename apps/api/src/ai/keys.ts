@@ -85,8 +85,13 @@ export async function resolveGeminiKey(departmentId?: number | null): Promise<Re
 const MAX_CLIENTS = 50;
 const clients = new Map<string, GoogleGenAI>();
 
+/** Kalitning qaytarib bo'lmaydigan qisqa izi — kesh/sovutish kaliti (kalitning o'zi emas). */
+export function keyFingerprint(key: string): string {
+  return crypto.createHash("sha256").update(key).digest("hex").slice(0, 16);
+}
+
 export function clientFor(key: string): GoogleGenAI {
-  const id = crypto.createHash("sha256").update(key).digest("hex").slice(0, 16);
+  const id = keyFingerprint(key);
   let c = clients.get(id);
   if (!c) {
     if (clients.size >= MAX_CLIENTS) clients.delete(clients.keys().next().value as string);

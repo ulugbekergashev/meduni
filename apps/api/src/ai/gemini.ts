@@ -1,7 +1,7 @@
 import type { GoogleGenAI } from "@google/genai";
 import { ApiError } from "../lib/errors";
 import { recordAiUsage } from "./usage";
-import { AI_KEY_MISSING, clientFor, isKeyFatal, resolveGeminiKey } from "./keys";
+import { AI_KEY_MISSING, clientFor, isKeyFatal, keyFingerprint, resolveGeminiKey } from "./keys";
 import { imageProvider, openaiImageConfig, openaiTextConfig, textChain, textProviderFor, type ImageProviderName } from "./config";
 import { generateStructuredOpenAI } from "./providers/openaiText";
 import { generateImageOpenAI } from "./providers/openaiImage";
@@ -30,11 +30,26 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 /** Kafedraning O'Z kaliti (bo'lmasa serverning umumiy kaliti — zaxira). Hech biri
  *  yo'q bo'lsa aniq `ai_key_missing` xatosi: foydalanuvchi nima qilish kerakligini
  *  biladi. Mijoz kalit bo'yicha keshlanadi (kafedralar bir-biriga aralashmaydi). */
-async function getClient(departmentId?: number | null): Promise<GoogleGenAI> {
+async function getClient(departmentId?: number | null): Promise<{ ai: GoogleGenAI; keyId: string }> {
   const resolved = await resolveGeminiKey(departmentId);
   if (!resolved) throw AI_KEY_MISSING();
-  return clientFor(resolved.key);
+  return { ai: clientFor(resolved.key), keyId: keyFingerprint(resolved.key) };
 }
+
+// SOVUTISH (2026-10-17, productionda o'lchandi): bepul kalitda `gemini-flash-latest`
+// HAR chaqiruvda 90s osilib, keyin lite ishlardi (konspekt 94s, podkast 3×90s); rasm va
+// TTS modellari 429 berib, har slayd/segment 3 marta qayta urinardi. Endi model limitga
+// urilsa yoki osilib qolsa — SHU KALIT uchun 15 daqiqa o'tkazib yuboriladi (boshqa
+// kafedraning pullik kalitiga ta'sir qilmaydi). Hamma model sovushda bo'lsa ham
+// zanjir baribir sinaydi (limit tiklangan bo'lishi mumkin).
+const COOLDOWN_MS = 15 * 60_000;
+const cooling = new Map<string, number>();
+const isCooling = (keyId: string, model: string) => (cooling.get(`${keyId}:${model}`) ?? 0) > Date.now();
+function coolDown(keyId: string, model: string, why: string) {
+  cooling.set(`${keyId}:${model}`, Date.now() + COOLDOWN_MS);
+  console.warn(`[ai] ${model}: ${why} — bu kalit uchun 15 daqiqa o'tkazib yuboriladi`);
+}
+const QUOTA_COOLING = () => toApiError({ status: 429, message: "cooldown" });
 
 function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
   return Promise.race([
@@ -108,11 +123,13 @@ export async function generateStructured<T>(opts: GenerateOpts): Promise<T> {
 
 /** Calls Gemini for structured JSON, logs token usage, retries transient failures. */
 async function generateStructuredGemini<T>(opts: GenerateOpts): Promise<T> {
-  const ai = await getClient(opts.departmentId);
+  const { ai, keyId } = await getClient(opts.departmentId);
   let lastErr: unknown;
 
   // 3D: preferLite bo'lsa lite avval (arzon), flash fallback qoladi.
-  const chain = opts.preferLite ? [...MODELS].reverse() : MODELS;
+  const preferred = opts.preferLite ? [...MODELS].reverse() : MODELS;
+  const ready = preferred.filter((m) => !isCooling(keyId, m));
+  const chain = ready.length ? ready : preferred;
   // Try each model in the chain; within a model, retry transient errors with backoff.
   for (const model of chain) {
     for (let attempt = 1; attempt <= ATTEMPTS_PER_MODEL; attempt++) {
@@ -157,14 +174,20 @@ async function generateStructuredGemini<T>(opts: GenerateOpts): Promise<T> {
         if (isAuthError(err)) throw toApiError(err);
         // Model OSILIB qolgan (timeout) — xuddi shu modelni yana 90s kutish ma'nosiz,
         // darrov keyingi (lite) modelga o'tamiz.
-        if (msg === "timeout") break;
+        if (msg === "timeout") {
+          coolDown(keyId, model, "osilib qoldi (timeout)");
+          break;
+        }
         // ⚠️ 429 (2026-08-02 tuzatildi): ilgari bu ham darrov tashlanardi
         // ("kvota modelga bog'liq emas" degan taxmin bilan). Aslida limit HAR
         // MODEL uchun alohida — flash tugaganda lite hali ishlaydi. Shuning
         // uchun endi zanjirdagi keyingi modelga o'tamiz va faqat hammasi
         // 429 bergandagina xato qaytaramiz (podkast/video kabi ko'p bosqichli
         // generatsiya bitta 429 dan butunlay yiqilmasin).
-        if (status === 429) break;
+        if (status === 429) {
+          coolDown(keyId, model, "limit tugadi (429)");
+          break;
+        }
         // Transient (503 "high demand" / 500 / timeout): back off and retry the same
         // model; if it stays down, the outer loop falls back to the next model.
         if (attempt < ATTEMPTS_PER_MODEL) await sleep(1200 * attempt);
@@ -227,7 +250,8 @@ export async function generateImage(prompt: string, opts: ImageOpts): Promise<Ge
 
 /** Generates a single image via Nano Banana Pro. Logs one AiUsage row. */
 async function generateImageGemini(prompt: string, opts: ImageOpts): Promise<GeneratedImage> {
-  const ai = await getClient(opts.departmentId);
+  const { ai, keyId } = await getClient(opts.departmentId);
+  if (isCooling(keyId, IMAGE_MODEL)) throw QUOTA_COOLING();
   try {
     const res = await withTimeout(
       ai.models.generateContent({
@@ -260,6 +284,7 @@ async function generateImageGemini(prompt: string, opts: ImageOpts): Promise<Gen
       mimeType: imgPart.inlineData.mimeType ?? "image/png",
     };
   } catch (err) {
+    if ((err as { status?: number })?.status === 429) coolDown(keyId, IMAGE_MODEL, "limit tugadi (429)");
     if (err instanceof ApiError) throw err;
     throw toApiError(err);
   }
@@ -282,7 +307,9 @@ export async function generateSpeech(
   voiceName: string,
   opts: { topicId?: number; departmentId?: number | null; userId?: number | null } = {}
 ): Promise<GeneratedSpeech> {
-  const ai = await getClient(opts.departmentId);
+  const { ai, keyId } = await getClient(opts.departmentId);
+  // Sovushda — darrov xato: `lib/tts.ts` bepul edge-tts'ga o'tadi, har segment kutmaydi.
+  if (isCooling(keyId, TTS_MODEL)) throw QUOTA_COOLING();
   let lastErr: unknown;
   for (let attempt = 1; attempt <= MAX_TTS_ATTEMPTS; attempt++) {
     try {
@@ -314,6 +341,10 @@ export async function generateSpeech(
       lastErr = err;
       const status = (err as { status?: number })?.status;
       if (isAuthError(err)) throw toApiError(err);
+      if (status === 429) {
+        coolDown(keyId, TTS_MODEL, "limit tugadi (429)");
+        throw toApiError(err);
+      }
       if (attempt < MAX_TTS_ATTEMPTS) await sleep(1500 * attempt);
     }
   }

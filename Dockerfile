@@ -4,9 +4,12 @@ FROM node:20-bookworm
 
 # Tizim bog'liqliklari: ffmpeg (video montaj), python3+edge-tts (TTS fallback),
 # openssl (prisma). sharp uchun bookworm (slim emas) — prebuilt binary yetadi.
+# ⚠️ edge-tts VERSIYASI MAJBURIY: Microsoft protokolni yangilaydi va eski versiya 403
+# oladi (2026-10-17: 7.2.8 → 403, 7.3.1 → ishlaydi). Versiyasiz yozilsa Docker qatlami
+# keshlanib, yangi versiya HECH QACHON o'rnatilmaydi. Yana 403 chiqsa — pastki chegarani ko'tar.
 RUN apt-get update && apt-get install -y --no-install-recommends \
       ffmpeg python3 python3-pip openssl ca-certificates \
-    && pip3 install --break-system-packages edge-tts \
+    && pip3 install --break-system-packages "edge-tts>=7.3.1" \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app

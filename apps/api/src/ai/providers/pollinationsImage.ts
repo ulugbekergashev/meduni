@@ -30,8 +30,14 @@ interface ImageOpts {
 }
 
 /** Yorliq imlosi buzilmasin uchun prompt oxiriga qat'iy ko'rsatma qo'shiladi. */
+// ⚠️ Anonim tarif uzun promptni rad etadi: ~900+ belgida 402 (o'lchandi, 2026-10-17 —
+// slayd promptlari 1-3 ming belgi bo'lgani uchun zaxira rasm HAR safar yiqilardi).
+// Prompt boshi eng muhim qism (nima chiziladi) — shuni qoldiramiz.
+const MAX_PROMPT_CHARS = 320;
+
 function fluxPrompt(prompt: string): string {
-  return `${prompt}\n\nStyle: clean flat vector medical illustration, white background, no watermark, no signature.`;
+  const core = prompt.replace(/\s+/g, " ").trim().slice(0, MAX_PROMPT_CHARS);
+  return `${core}. Clean flat vector medical illustration, white background, no watermark.`;
 }
 
 export async function generateImagePollinations(prompt: string, opts: ImageOpts): Promise<GeneratedImage> {
