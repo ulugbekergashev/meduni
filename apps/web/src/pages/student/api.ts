@@ -18,9 +18,10 @@ export interface Requirement extends Reason {
 }
 
 export interface TopicElements {
-  video: { exists: boolean; watchedPct: number };
+  /** `met` — dvigatel hukmi (koridor bilan siqilgan bo'sag'a); UI bo'sag'ani o'zi o'ylab topmaydi. */
+  video: { exists: boolean; watchedPct: number; met: boolean; need: number };
   slides: { exists: boolean; viewed: boolean };
-  quiz: { exists: boolean; score: number | null };
+  quiz: { exists: boolean; score: number | null; met: boolean; need: number };
   case: { exists: boolean; submitted: boolean; reviewed: boolean };
 }
 
@@ -214,8 +215,10 @@ export interface QuizTabData {
   passThreshold: number;
   maxAttempts: number;
   canStart: boolean;
-  /** Nega boshlab bo'lmaydi: urinishlar tugadi yoki tanaffus. */
-  blockedBy?: "attempts_exhausted" | "cooldown" | null;
+  /** Nega boshlab bo'lmaydi: urinishlar tugadi, tanaffus yoki xatolar ustida ishlanmagan. */
+  blockedBy?: "attempts_exhausted" | "cooldown" | "remediation_required" | null;
+  /** Xatolar ustida ishlash (qayta topshirish sharti): k/N. null = talab yo'q. */
+  remediation?: { total: number; done: number } | null;
   nextAttemptAt?: string | null;
   attemptsLeft?: number;
   inProgressId: number | null;
@@ -814,6 +817,8 @@ export type PracticeItem =
   | {
       kind: "quiz";
       questionId: number;
+      /** Xato qilingan urinish — javob shu urinishning "xatolar ustida ishlash" dalili. */
+      attemptId: number;
       text: string;
       options: string[];
       correctIndex: number;
@@ -832,6 +837,24 @@ export type PracticeItem =
 
 export function usePracticeOverview() {
   return useQuery({ queryKey: ["me-practice"], queryFn: () => api<{ topics: PracticeTopic[] }>("/api/v1/me/practice") });
+}
+
+/**
+ * Mashg'ulotdagi javobni "xatolar ustida ishlash" dalili sifatida yozadi.
+ * ⚠️ 2026-10-31 gacha bu chaqiruv UMUMAN yo'q edi: server qayta topshirishni
+ * shu dalilsiz ruxsat etmasdi, ya'ni testdan yiqilgan talaba hech qachon
+ * qayta topshira olmasdi.
+ */
+export function useRecordRemediation(topicId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (v: { attemptId: number; questionId: number; selectedIndex: number }) =>
+      api<{ correct: boolean; total: number; done: number }>(`/api/v1/me/attempts/${v.attemptId}/remediation`, {
+        method: "POST",
+        body: JSON.stringify({ questionId: v.questionId, selectedIndex: v.selectedIndex }),
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["me-lesson", topicId] }),
+  });
 }
 
 export function usePracticeSet(topicId: number | null) {

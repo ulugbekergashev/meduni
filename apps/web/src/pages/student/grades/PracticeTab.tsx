@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import {
@@ -23,6 +23,7 @@ import {
   usePatientPractice,
   usePracticeOverview,
   usePracticeSet,
+  useRecordRemediation,
   type PracticeItem,
 } from "../api";
 
@@ -43,7 +44,7 @@ function ChoiceItem({
   /** Har variant izohi (bo'sh bo'lishi mumkin). */
   explanations: (string | null)[];
   sourceFragment?: string | null;
-  onAnswered: (correct: boolean) => void;
+  onAnswered: (correct: boolean, picked: number) => void;
 }) {
   const reduce = useReducedMotion();
   const [picked, setPicked] = useState<number | null>(null);
@@ -51,7 +52,7 @@ function ChoiceItem({
   const pick = (i: number) => {
     if (picked !== null) return;
     setPicked(i);
-    onAnswered(i === correctIndex);
+    onAnswered(i === correctIndex, i);
   };
 
   return (
@@ -136,6 +137,8 @@ function PracticePlayer({ topicId, onExit }: { topicId: number; onExit: () => vo
   const reduce = useReducedMotion();
   const navigate = useNavigate();
   const q = usePracticeSet(topicId);
+  const record = useRecordRemediation(topicId);
+  const [remediation, setRemediation] = useState<{ total: number; done: number } | null>(null);
 
   const [i, setI] = useState(0);
   const [flipped, setFlipped] = useState(false);
@@ -179,6 +182,18 @@ function PracticePlayer({ topicId, onExit }: { topicId: number; onExit: () => vo
           <p className="text-section font-semibold text-ink">{t("doneTitle")}</p>
           {gradedTotal > 0 && (
             <p className="mt-1 text-body text-ink-soft">{t("doneHint", { n: correct, total: gradedTotal })}</p>
+          )}
+          {remediation && remediation.total > 0 && (
+            <p
+              className={cls(
+                "mt-2 text-note font-semibold",
+                remediation.done >= remediation.total ? "text-emerald" : "text-amber"
+              )}
+            >
+              {remediation.done >= remediation.total
+                ? t("remediationDone")
+                : t("remediationLeft", { n: remediation.total - remediation.done })}
+            </p>
           )}
         </div>
         <div className="flex flex-wrap items-center justify-center gap-2">
@@ -254,9 +269,14 @@ function PracticePlayer({ topicId, onExit }: { topicId: number; onExit: () => vo
               correctIndex={item.correctIndex}
               explanations={item.explanations}
               sourceFragment={item.sourceFragment}
-              onAnswered={(ok) => {
+              onAnswered={(ok, picked) => {
                 if (ok) setCorrect((c) => c + 1);
                 setAnsweredCurrent(true);
+                // Dalil serverga: qayta topshirish shu yozuvlarsiz ochilmaydi.
+                record.mutate(
+                  { attemptId: item.attemptId, questionId: item.questionId, selectedIndex: picked },
+                  { onSuccess: (r) => setRemediation({ total: r.total, done: r.done }) }
+                );
               }}
             />
           )}
@@ -303,7 +323,12 @@ export function PracticeTab() {
   const navigate = useNavigate();
   const overviewQ = usePracticeOverview();
   const patientsQ = usePatientPractice();
-  const [activeTopic, setActiveTopic] = useState<number | null>(null);
+  // ?topic=ID — test natijasidagi "Xatolar ustida ishlash" tugmasi to'g'ridan shu mavzuni ochadi.
+  const [params] = useSearchParams();
+  const fromLink = Number(params.get("topic"));
+  const [activeTopic, setActiveTopic] = useState<number | null>(
+    Number.isInteger(fromLink) && fromLink > 0 ? fromLink : null
+  );
 
   const topics = overviewQ.data?.topics ?? [];
   const patients = patientsQ.data?.patients ?? [];

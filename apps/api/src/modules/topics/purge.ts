@@ -1,5 +1,4 @@
 import { prisma, Prisma } from "../../lib/prisma";
-import { conflict } from "../../lib/errors";
 import { deleteTopicFiles } from "../../lib/storage";
 
 /**
@@ -11,20 +10,24 @@ import { deleteTopicFiles } from "../../lib/storage";
  * foydalanuvchi **500 "Server xatosi"** ko'rardi — ya'ni AI ishlatilgan mavzuni
  * umuman o'chirib bo'lmasdi.
  *
- * Qoida (buyurtmachi bilan kelishilgan):
- *  - Talabalar NATIJASI bor (test urinishi, keys javobi, tugatilgan/qo'lda ochilgan
- *    progress) → o'chirilMAYDI, aniq 409 (baholar tasodifan yo'qolmasin).
- *  - Natija yo'q → mavzu AI yaratgan hamma narsa bilan birga o'chadi: konspekt,
- *    test, keys, taqdimot, video, podkast, materiallar va ularning fayllari.
+ * Qoida (2026-10-31, buyurtmachi: "kim nima yaratsa, o'zi o'chirsin — talaba
+ * ishlasa ham"): mavzu AI yaratgan hamma narsa va TALABALAR NATIJALARI (test
+ * urinishlari, keys javoblari, progress) bilan birga o'chadi. Ilgari natija bo'lsa
+ * 409 HAS_STUDENT_RESULTS berilardi — bu o'qituvchini xato mavzudan qutulish
+ * imkonidan mahrum qilardi.
+ *
+ * Himoya endi TAQIQ emas, OGOHLANTIRISH: UI o'chirishdan oldin `studentResults`
+ * (nechta talaba, nechta urinish) ni ko'rsatadi, o'chirilgan hajm AuditLog'ga
+ * yoziladi.
  */
 
 export interface StudentResults {
+  /** Natijasi o'chadigan TURLI talabalar soni. */
+  students: number;
   quizAttempts: number;
   caseAttempts: number;
   completed: number;
 }
-
-export const hasResults = (r: StudentResults) => r.quizAttempts + r.caseAttempts + r.completed > 0;
 
 async function contentIds(db: Prisma.TransactionClient | typeof prisma, topicIds: number[]) {
   const items = await db.contentItem.findMany({ where: { topicId: { in: topicIds } }, select: { id: true } });
@@ -37,42 +40,16 @@ async function contentIds(db: Prisma.TransactionClient | typeof prisma, topicIds
 }
 
 export async function studentResults(topicIds: number[]): Promise<StudentResults> {
-  if (topicIds.length === 0) return { quizAttempts: 0, caseAttempts: 0, completed: 0 };
+  if (topicIds.length === 0) return { students: 0, quizAttempts: 0, caseAttempts: 0, completed: 0 };
   const { quizIds, caseIds } = await contentIds(prisma, topicIds);
-  const [quizAttempts, caseAttempts, completed] = await Promise.all([
-    prisma.quizAttempt.count({ where: { quizId: { in: quizIds } } }),
-    prisma.caseAttempt.count({ where: { caseId: { in: caseIds } } }),
-    prisma.progress.count({
-      where: { topicId: { in: topicIds }, OR: [{ state: "COMPLETED" }, { overriddenAt: { not: null } }] },
-    }),
+  const progressWhere = { topicId: { in: topicIds }, OR: [{ state: "COMPLETED" as const }, { overriddenAt: { not: null } }] };
+  const [qa, ca, pr] = await Promise.all([
+    prisma.quizAttempt.findMany({ where: { quizId: { in: quizIds } }, select: { studentId: true } }),
+    prisma.caseAttempt.findMany({ where: { caseId: { in: caseIds } }, select: { studentId: true } }),
+    prisma.progress.findMany({ where: progressWhere, select: { studentId: true } }),
   ]);
-  return { quizAttempts, caseAttempts, completed };
-}
-
-export function resultsConflict(what: "topic" | "course", r: StudentResults, attendance = 0) {
-  const uz = [
-    r.quizAttempts ? `${r.quizAttempts} ta test urinishi` : null,
-    r.caseAttempts ? `${r.caseAttempts} ta keys javobi` : null,
-    r.completed ? `${r.completed} ta tugatilgan mavzu` : null,
-    attendance ? `${attendance} ta davomat belgisi` : null,
-  ].filter(Boolean).join(", ");
-  const ru = [
-    r.quizAttempts ? `попыток теста: ${r.quizAttempts}` : null,
-    r.caseAttempts ? `ответов на кейс: ${r.caseAttempts}` : null,
-    r.completed ? `завершённых тем: ${r.completed}` : null,
-    attendance ? `отметок посещаемости: ${attendance}` : null,
-  ].filter(Boolean).join(", ");
-  return what === "topic"
-    ? conflict(
-        "HAS_STUDENT_RESULTS",
-        `Mavzuni oʻchirib boʻlmaydi: talabalarning natijalari bor (${uz}). Baholar saqlanib qolishi kerak.`,
-        `Тему нельзя удалить: у студентов есть результаты (${ru}). Оценки должны сохраниться.`
-      )
-    : conflict(
-        "HAS_STUDENT_RESULTS",
-        `Kursni oʻchirib boʻlmaydi: talabalarning natijalari bor (${uz}). Baholar saqlanib qolishi kerak.`,
-        `Курс нельзя удалить: у студентов есть результаты (${ru}). Оценки должны сохраниться.`
-      );
+  const students = new Set([...qa, ...ca, ...pr].map((r) => r.studentId)).size;
+  return { students, quizAttempts: qa.length, caseAttempts: ca.length, completed: pr.length };
 }
 
 /** Mavzu qatorlarini bitta tranzaksiya ichida o'chiradi (fayllar — tranzaksiyadan KEYIN). */

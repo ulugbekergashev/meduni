@@ -6,6 +6,7 @@ import { Badge, Button, Card, Icon, Input, cls, useToast } from "@meduni/ui";
 import { AsyncSection } from "../../../components/AsyncSection";
 import { BentoCard } from "../../../components/bento";
 import { ConfirmDialog } from "../../../components/ConfirmDialog";
+import { useDeleteImpact, useImpactWarning } from "../../../components/DeleteImpact";
 import { apiErrorMessage } from "../../../lib/api";
 import { useLocale } from "../../../lib/useLocale";
 import {
@@ -98,6 +99,8 @@ export function TopicListSection({ scope }: { scope: TopicScope }) {
   const [title, setTitle] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<TopicRow | null>(null);
+  const impact = useDeleteImpact(deleting ? `/api/v1/topics/${deleting.id}/delete-impact` : null);
+  const impactWarning = useImpactWarning(impact.data);
 
   const topics = list.data ?? [];
 
@@ -225,6 +228,8 @@ export function TopicListSection({ scope }: { scope: TopicScope }) {
         open={!!deleting}
         title={t("confirmDeleteTitle")}
         message={t("confirmDelete")}
+        warning={impactWarning}
+        pending={impact.isLoading}
         loading={remove.isPending}
         onConfirm={() =>
           deleting &&
@@ -233,7 +238,7 @@ export function TopicListSection({ scope }: { scope: TopicScope }) {
               setDeleting(null);
               show(tc("deleted"));
             },
-            // Sabab (masalan, talabalar natijasi bor) global toast'da chiqadi — dialog osilib qolmasin.
+            // Xato sababi global toast'da chiqadi — dialog osilib qolmasin.
             onError: () => setDeleting(null),
           })
         }

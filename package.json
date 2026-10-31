@@ -11,7 +11,8 @@
     "build": "turbo build",
     "db:generate": "turbo generate --filter=@meduni/db",
     "db:migrate": "turbo migrate --filter=@meduni/db",
-    "db:seed": "npm run seed --workspace=packages/db"
+    "db:seed": "npm run seed --workspace=packages/db",
+    "check": "node scripts/check.mjs"
   },
   "devDependencies": {
     "turbo": "^2.10.5"

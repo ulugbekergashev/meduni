@@ -5,6 +5,7 @@ import { dateRangeFilter, dayKey, parseDayStart } from "../../lib/time";
 import { getStudentLessons } from "../courses/timetable";
 import { type AttStatus as Status, type AttTally, type AttendanceLimit, addMark, attendanceLimits, attendancePct, emptyTally, markedOf, tallyOf } from "../attendance/facts";
 import { resolvePolicy } from "../policy/service";
+import { passResolver } from "./service";
 
 /** Kurslar bo'yicha SOATLI limit (koridor kafedra siyosatidan). */
 async function courseLimitsFor(studentId: number, courseIds: number[]): Promise<Map<number, AttendanceLimit>> {
@@ -123,6 +124,7 @@ export async function getMyGrades(studentId: number) {
     }),
   ]);
 
+  const passPct = await passResolver(courseIds);
   const courses = enrollments.map((e) => {
     const sid = e.course.id;
 
@@ -137,18 +139,20 @@ export async function getMyGrades(studentId: number) {
     for (const a of quizAttempts) {
       const ci = a.quiz.contentItem;
       if (ci.topic.courseId !== sid) continue;
-      const entry = { attemptNo: a.attemptNo, scorePct: a.scorePct, passed: a.passed, finishedAt: a.finishedAt };
+      const threshold = passPct(ci.topicId, a.quiz.passThreshold);
+      const passed = a.scorePct >= threshold;
+      const entry = { attemptNo: a.attemptNo, scorePct: a.scorePct, passed, finishedAt: a.finishedAt };
       const cur = quizByTopic.get(ci.topicId);
       if (!cur) {
         quizByTopic.set(ci.topicId, {
           topicId: ci.topicId, topicTitle: ci.topic.title, orderIndex: ci.topic.orderIndex,
-          bestScore: a.scorePct, attempts: 1, passed: a.passed, lastAt: a.finishedAt,
-          passThreshold: a.quiz.passThreshold, history: [entry],
+          bestScore: a.scorePct, attempts: 1, passed, lastAt: a.finishedAt,
+          passThreshold: threshold, history: [entry],
         });
       } else {
         cur.attempts++;
         cur.bestScore = Math.max(cur.bestScore, a.scorePct);
-        cur.passed = cur.passed || a.passed;
+        cur.passed = cur.passed || passed;
         cur.lastAt = a.finishedAt;
         cur.history.push(entry);
       }
@@ -280,7 +284,9 @@ export async function getMyActivity(studentId: number): Promise<ActivityEvent[]>
       where: { studentId, finishedAt: { not: null } },
       orderBy: { finishedAt: "desc" },
       take: 15,
-      include: { quiz: { select: { contentItem: { select: { topicId: true, topic: { select: { title: true } } } } } } },
+      include: {
+        quiz: { select: { passThreshold: true, contentItem: { select: { topicId: true, topic: { select: { title: true, courseId: true } } } } } },
+      },
     }),
     prisma.caseAttempt.findMany({
       where: { studentId },
@@ -299,9 +305,11 @@ export async function getMyActivity(studentId: number): Promise<ActivityEvent[]>
       events.push({ type: "topic_activity", at: p.updatedAt, topicId: p.topicId, topic: p.topic.title, score: null });
     }
   }
+  const passPct = await passResolver(quizRows.map((q) => q.quiz.contentItem.topic.courseId));
   for (const q of quizRows) {
+    const passed = q.scorePct >= passPct(q.quiz.contentItem.topicId, q.quiz.passThreshold);
     events.push({
-      type: q.passed ? "quiz_passed" : "quiz_failed",
+      type: passed ? "quiz_passed" : "quiz_failed",
       at: q.finishedAt!,
       topicId: q.quiz.contentItem.topicId,
       topic: q.quiz.contentItem.topic.title,

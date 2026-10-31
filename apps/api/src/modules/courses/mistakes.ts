@@ -7,6 +7,8 @@
 // o'qituvchi xaritada ko'rgan raqam talabaning mashq to'plami bilan mos keladi.
 import { prisma } from "../../lib/prisma";
 import { ApiError, notFound } from "../../lib/errors";
+import { readAnswers, type StoredAnswers } from "../me/integrity";
+import { isCorrect, isStepCorrect, snapshotQuestionIds } from "../me/quizGrading";
 
 function forbidden() {
   return new ApiError(403, "forbidden", "Bu sizning kursingiz emas", "Это не ваш курс");
@@ -27,7 +29,7 @@ export async function getCourseMistakes(courseId: number, teacherId: number) {
           contentItems: {
             where: { status: "PUBLISHED", kind: { in: ["QUIZ", "CASE"] } },
             include: {
-              quiz: { include: { questions: { orderBy: { orderIndex: "asc" } } } },
+              quiz: { include: { questions: { where: { retiredAt: null }, orderBy: { orderIndex: "asc" } } } },
               clinicalCase: true,
             },
           },
@@ -58,13 +60,18 @@ export async function getCourseMistakes(courseId: number, teacherId: number) {
     ? await prisma.quizAttempt.findMany({
         where: { quizId: { in: quizIds }, studentId: { in: studentIds }, finishedAt: { not: null } },
         orderBy: { attemptNo: "desc" },
-        select: { quizId: true, studentId: true, answersJson: true, attemptNo: true },
+        select: { quizId: true, studentId: true, answersJson: true, attemptNo: true, orderJson: true },
       })
     : [];
-  const latestByStudentQuiz = new Map<string, Record<string, number>>();
+  // `seen` — urinish snimkasidagi savollar (null = snimkasiz eski urinish).
+  // Talaba KO'RMAGAN savol (test keyin qayta yaratilgan) uning xatosi emas:
+  // ilgari bunday savollar hammaga "xato" bo'lib, xarita 100% qizil chiqardi.
+  const latestByStudentQuiz = new Map<string, { answers: StoredAnswers; seen: Set<number> | null }>();
   for (const a of attempts) {
     const k = `${a.quizId}:${a.studentId}`;
-    if (!latestByStudentQuiz.has(k)) latestByStudentQuiz.set(k, (a.answersJson as Record<string, number>) ?? {});
+    if (latestByStudentQuiz.has(k)) continue;
+    // seen = urinish snimkasi (eski urinishda — javob bergan savollari).
+    latestByStudentQuiz.set(k, { answers: readAnswers(a.answersJson), seen: new Set(snapshotQuestionIds(a, [])) });
   }
 
   // Keys javoblari — bitta batch.
@@ -114,39 +121,41 @@ export async function getCourseMistakes(courseId: number, teacherId: number) {
 
       if (quizItem) {
         const answersPerStudent = studentIds
-          .map((sid) => ({ sid, answers: latestByStudentQuiz.get(`${quizItem.id}:${sid}`) }))
-          .filter((x): x is { sid: number; answers: Record<string, number> } => x.answers !== undefined);
+          .map((sid) => ({ sid, row: latestByStudentQuiz.get(`${quizItem.id}:${sid}`) }))
+          .filter((x): x is { sid: number; row: { answers: StoredAnswers; seen: Set<number> | null } } => x.row !== undefined);
         const attempted = answersPerStudent.length;
         if (attempted > 0) {
-          quizBlock = {
-            attempted,
-            questions: quizItem.questions.map((q) => {
+          const qs = quizItem.questions.map((q) => {
               const options = (q.optionsJson as string[]) ?? [];
               const distribution = options.map(() => 0);
               let noAnswer = 0;
+              let saw = 0;
               const wrongStudents: WrongStudent[] = [];
-              for (const { sid, answers } of answersPerStudent) {
-                const your = answers[String(q.id)];
-                if (Number.isInteger(your) && your >= 0 && your < options.length) distribution[your]++;
+              for (const { sid, row } of answersPerStudent) {
+                if (row.seen && !row.seen.has(q.id)) continue;
+                saw++;
+                const your = row.answers[String(q.id)];
+                if (your !== undefined && your >= 0 && your < options.length) distribution[your]++;
                 else noAnswer++;
-                if (your !== q.correctIndex) {
+                if (!isCorrect(q, row.answers)) {
                   wrongStudents.push({ id: sid, fullName: nameById.get(sid) ?? "—" });
                 }
               }
               const wrongCount = wrongStudents.length;
-              return {
+              return { saw, out: {
                 questionId: q.id,
                 text: q.text,
                 options,
                 correctIndex: q.correctIndex,
                 wrongCount,
-                wrongPct: Math.round((wrongCount / attempted) * 100),
+                wrongPct: saw === 0 ? 0 : Math.round((wrongCount / saw) * 100),
                 distribution,
                 noAnswer,
                 wrongStudents,
-              };
-            }),
-          };
+              } };
+            });
+          quizBlock = { attempted, questions: qs.filter((x) => x.saw > 0).map((x) => x.out) };
+          if (quizBlock.questions.length === 0) quizBlock = null;
         }
       }
 
@@ -178,13 +187,12 @@ export async function getCourseMistakes(courseId: number, teacherId: number) {
           caseBlock = {
             submitted,
             steps: steps.map((s, si) => {
-              const correctIdx = s.options.findIndex((o) => o.correct);
               const distribution = s.options.map(() => 0);
               const wrongStudents: WrongStudent[] = [];
               for (const { sid, picked } of perStudent) {
                 const your = picked[String(si)];
                 if (Number.isInteger(your) && your >= 0 && your < s.options.length) distribution[your]++;
-                if (your !== correctIdx) wrongStudents.push({ id: sid, fullName: nameById.get(sid) ?? "—" });
+                if (!isStepCorrect(s, your)) wrongStudents.push({ id: sid, fullName: nameById.get(sid) ?? "—" });
               }
               return {
                 index: si,

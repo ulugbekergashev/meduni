@@ -4,7 +4,7 @@ import { prisma } from "../../lib/prisma";
 import { ApiError, badRequest, notFound } from "../../lib/errors";
 import { deletePath, fileExists, readText, readFileBuffer, saveBytes, saveMaterialFile, saveParsedText } from "../../lib/storage";
 import { pcmToWav } from "../../lib/wav";
-import { PURGE_TX_OPTS, hasResults, purgeTopicFiles, purgeTopicRows, resultsConflict, studentResults } from "./purge";
+import { PURGE_TX_OPTS, purgeTopicFiles, purgeTopicRows, studentResults } from "./purge";
 import { extractText, fileTypeFromName, parseErrorMessages, pdfPageCount, type ParseErrorCode } from "./parse";
 import { generateSpeech, generateStructured } from "../../ai/gemini";
 import { assertQuota } from "../../ai/quota";
@@ -132,16 +132,27 @@ export async function setTopicUnlockRule(id: number, unlockRule: unknown, teache
   return { ok: true };
 }
 
-/** Mavzuni AI yaratgan hamma narsa bilan birga o'chiradi; talabalar natijasi bo'lsa — 409.
+/** O'chirishdan OLDIN: nechta talabaning qanday natijalari birga o'chadi (UI ogohlantirishi). */
+export async function topicDeleteImpact(id: number, teacherId: number) {
+  await topicForTeacher(id, teacherId);
+  return { ...(await studentResults([id])), attendance: 0 };
+}
+
+/** Mavzuni AI yaratgan hamma narsa VA talabalar natijalari bilan birga o'chiradi.
  *  Mantiq va sabablar: `./purge.ts`. */
 export async function deleteTopic(id: number, teacherId: number) {
   const topic = await topicForTeacher(id, teacherId);
   const results = await studentResults([id]);
-  if (hasResults(results)) throw resultsConflict("topic", results);
   await prisma.$transaction((tx) => purgeTopicRows(tx, [id]), PURGE_TX_OPTS);
   await purgeTopicFiles([id]);
   await prisma.auditLog.create({
-    data: { actorId: teacherId, action: "DELETE_TOPIC", entity: "Topic", entityId: id, detailsJson: { title: topic.title, courseId: topic.courseId } },
+    data: {
+      actorId: teacherId,
+      action: "DELETE_TOPIC",
+      entity: "Topic",
+      entityId: id,
+      detailsJson: { title: topic.title, courseId: topic.courseId, removedResults: { ...results } },
+    },
   });
 }
 

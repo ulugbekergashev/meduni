@@ -977,7 +977,7 @@
     "moveUp": "Yuqoriga",
     "moveDown": "Pastga",
     "confirmDeleteTitle": "Mavzuni oʻchirish",
-    "confirmDelete": "Mavzu oʻchirilsa, unga tegishli hamma narsa oʻchadi: materiallar, konspekt, test, keys, taqdimot, video va podkast. Talabalarning natijasi boʻlsa, mavzu oʻchirilmaydi.",
+    "confirmDelete": "Mavzu oʻchirilsa, unga tegishli hamma narsa oʻchadi: materiallar, konspekt, test, keys, taqdimot, video va podkast.",
     "status": {
       "draft": "Qoralama",
       "published": "Chop etilgan"
@@ -2129,7 +2129,10 @@
     "blockMeta_video": "{{v}} daqiqa",
     "blockMeta_podcast": "{{v}}",
     "blockMeta_flashcards": "{{v}} karta",
-    "blockMeta_mindmap": "{{v}} tarmoq"
+    "blockMeta_mindmap": "{{v}} tarmoq",
+    "remediationProgress": "Qayta topshirishdan oldin xatolaringiz ustida ishlang: {{done}} / {{total}}",
+    "remediationReady": "Xatolar ustida ishlandi — qayta topshirish ochiq.",
+    "remediationGo": "Xatolar ustida ishlash"
   },
   "search": {
     "placeholder": "Qidirish… (talaba, guruh, kurs)",
@@ -2372,7 +2375,9 @@
     "doneTitle": "Mashq tugadi!",
     "doneHint": "{{total}} savoldan {{n}} tasi toʻgʻri.",
     "again": "Yana bir bor",
-    "reread": "Konspektni qayta oʻqish"
+    "reread": "Konspektni qayta oʻqish",
+    "remediationDone": "Barcha xatolar ustida ishlandi — testni qayta topshirishingiz mumkin.",
+    "remediationLeft": "Qayta topshirish uchun yana {{n}} ta savolga toʻgʻri javob bering."
   },
   "grades": {
     "tabGrades": "Baholar",
@@ -2694,5 +2699,14 @@
       "CANCELLED": "Bekor"
     },
     "noGroups": "Guruh yoʻq"
+  },
+  "deleteImpact": {
+    "warning": "Diqqat: {{students}} ta talabaning natijalari ham butunlay oʻchadi — {{parts}}. Buni qaytarib boʻlmaydi.",
+    "warningNoStudents": "Diqqat: {{parts}} ham butunlay oʻchadi. Buni qaytarib boʻlmaydi.",
+    "quizAttempts": "{{n}} ta test urinishi",
+    "caseAttempts": "{{n}} ta keys javobi",
+    "completed": "{{n}} ta tugatilgan mavzu",
+    "attendance": "{{n}} ta davomat belgisi",
+    "loading": "Bogʻliq natijalar tekshirilmoqda…"
   }
 }

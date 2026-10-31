@@ -72,6 +72,12 @@ topicsRouter.patch(
   wrap(async (req, res) => res.json(await svc.updateTopic(parseId(req.params.id), parseBody(updateSchema, req.body), req.user!.id)))
 );
 
+// O'chirishdan oldin: nechta talabaning natijalari birga o'chadi.
+topicsRouter.get(
+  "/:id/delete-impact",
+  wrap(async (req, res) => res.json(await svc.topicDeleteImpact(parseId(req.params.id), req.user!.id)))
+);
+
 topicsRouter.delete(
   "/:id",
   wrap(async (req, res) => {

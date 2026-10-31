@@ -11,6 +11,7 @@
 import { prisma } from "../../lib/prisma";
 import { ApiError, badRequest, notFound } from "../../lib/errors";
 import type { CaseJson, CaseStep, DigestJson } from "../../ai/types";
+import { snapshotQuestionIds } from "./quizGrading";
 import { assertTopicOpen } from "./service";
 
 /** Karta turi — UI rangi/yorlig'i shunga qarab (front tomon "nima soralayapti"
@@ -100,10 +101,13 @@ async function build(studentId: number, topicId: number) {
   const quiz = topic.contentItems.find((c) => c.kind === "QUIZ")?.quiz ?? null;
   const clinicalCase = topic.contentItems.find((c) => c.kind === "CASE")?.clinicalCase ?? null;
 
-  const [finishedAttempts, caseAttempt] = await Promise.all([
+  const [finishedRows, caseAttempt] = await Promise.all([
     quiz
-      ? prisma.quizAttempt.count({ where: { studentId, quizId: quiz.id, finishedAt: { not: null } } })
-      : Promise.resolve(0),
+      ? prisma.quizAttempt.findMany({
+          where: { studentId, quizId: quiz.id, finishedAt: { not: null } },
+          select: { quizId: true, orderJson: true, answersJson: true },
+        })
+      : Promise.resolve([]),
     clinicalCase
       ? prisma.caseAttempt.findUnique({
           where: { studentId_caseId: { studentId, caseId: clinicalCase.id } },
@@ -112,7 +116,14 @@ async function build(studentId: number, topicId: number) {
       : Promise.resolve(null),
   ]);
   /** Test javoblari hali yopiqmi (shu qadar karta keyinroq qo'shiladi). */
+  const finishedAttempts = finishedRows.length;
   const quizLocked = !!quiz && finishedAttempts === 0;
+  // Karta faqat talaba yakunlangan urinishida KO'RGAN savoldan. Ilgari bitta
+  // yakunlangan urinish testning BARCHA savollarini ochardi — o'qituvchi testni
+  // qayta yaratsa, talaba hech ko'rmagan yangi savollarning to'g'ri javobini
+  // qayta topshirishdan OLDIN kartochkada o'qib olardi.
+  const activeIds = (quiz?.questions ?? []).filter((q) => q.retiredAt === null).map((q) => q.id);
+  const seenIds = new Set(finishedRows.flatMap((a) => snapshotQuestionIds(a, activeIds)));
   const caseLocked = !!clinicalCase && !caseAttempt;
 
   const cards: Flashcard[] = [];
@@ -229,7 +240,7 @@ async function build(studentId: number, topicId: number) {
 
   // ---- 7. Test savollari — faqat urinish yakunlangach ----
   if (quiz && !quizLocked) {
-    for (const q of quiz.questions) {
+    for (const q of quiz.questions.filter((x) => seenIds.has(x.id))) {
       const explanations = (q.explanationJson as string[]) ?? [];
       cards.push({
         key: `q:${q.id}`,
@@ -244,7 +255,7 @@ async function build(studentId: number, topicId: number) {
 
   const trimmed = cards.slice(0, MAX_CARDS);
   /** Keyinroq ochiladigan kartalar soni (UI "yana N ta ochiladi" deydi). */
-  const pendingQuiz = quizLocked ? quiz!.questions.length : 0;
+  const pendingQuiz = quizLocked ? activeIds.length : 0;
   return {
     cards: trimmed,
     /** To'plam butunlay bo'shmi (eski `locked` semantikasi o'rnida). */

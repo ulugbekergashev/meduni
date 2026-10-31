@@ -72,7 +72,15 @@ export interface AttemptOrder {
   q: number[];
   /** questionId → перестановка вариантов: displayed[i] = original[opt[i]]. */
   opt: Record<string, number[]>;
+  /**
+   * 2 = answersJson хранит ИСХОДНЫЕ индексы. Без метки (попытки до 2026-10-31)
+   * там лежали ЭКРАННЫЕ индексы: saveQuizAnswers не переводил их обратно, и
+   * правильный ответ засчитывался как ошибка. Чинит quizRepair.ts.
+   */
+  v?: number;
 }
+
+export const ORDER_VERSION = 2;
 
 function shuffled<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -90,30 +98,68 @@ export function buildOrder(questions: { id: number; optionsJson: unknown }[]): A
     const n = ((q.optionsJson as string[]) ?? []).length;
     opt[String(q.id)] = shuffled([...Array(n).keys()]);
   }
-  return { q: shuffled(questions.map((x) => x.id)), opt };
+  return { q: shuffled(questions.map((x) => x.id)), opt, v: ORDER_VERSION };
 }
 
 export function readOrder(raw: unknown): AttemptOrder | null {
   if (!raw || typeof raw !== "object") return null;
-  const o = raw as { q?: unknown; opt?: unknown };
+  const o = raw as { q?: unknown; opt?: unknown; v?: unknown };
   if (!Array.isArray(o.q) || typeof o.opt !== "object" || o.opt === null) return null;
-  return { q: o.q as number[], opt: o.opt as Record<string, number[]> };
+  return { q: o.q as number[], opt: o.opt as Record<string, number[]>, v: typeof o.v === "number" ? o.v : undefined };
+}
+
+// ⛔ ДВА ПРОСТРАНСТВА ИНДЕКСОВ (2026-10-31). Клиент видит варианты в своём
+// перемешанном порядке и шлёт ЭКРАННЫЙ индекс; в базе и в оценивании — только
+// ИСХОДНЫЙ (тот, на который указывает Question.correctIndex). Раньше оба были
+// просто `number`, и saveQuizAnswers сохранял экранный индекс как исходный —
+// правильный ответ засчитывался ошибкой. Теперь это разные типы: перепутать их
+// не даст компилятор, переход — только через toOriginalIndex / toShownIndex.
+declare const SHOWN: unique symbol;
+declare const ORIGINAL: unique symbol;
+export type ShownIndex = number & { readonly [SHOWN]: true };
+export type OriginalIndex = number & { readonly [ORIGINAL]: true };
+/** answersJson попытки: questionId → ИСХОДНЫЙ индекс варианта. */
+export type StoredAnswers = Record<string, OriginalIndex>;
+
+/** Индекс, пришедший от клиента (экранный порядок этой попытки). */
+export const asShown = (n: number): ShownIndex => n as ShownIndex;
+
+/** answersJson из базы. Мусор (не целые числа) отбрасывается. */
+export function readAnswers(raw: unknown): StoredAnswers {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
+  const out: StoredAnswers = {};
+  for (const [qid, v] of Object.entries(raw as Record<string, unknown>)) {
+    if (Number.isInteger(v)) out[qid] = v as OriginalIndex;
+  }
+  return out;
+}
+
+/** Ответы этой попытки сохранены в ЭКРАННЫХ индексах (старый баг). */
+export function hasShownAnswers(order: AttemptOrder | null): boolean {
+  return order !== null && order.v !== ORDER_VERSION;
+}
+
+/** Все ответы старой попытки: экранные индексы → исходные. */
+export function answersToOriginal(order: AttemptOrder | null, answers: Record<string, ShownIndex>): StoredAnswers {
+  return Object.fromEntries(
+    Object.entries(answers).map(([qid, v]) => [qid, toOriginalIndex(order, Number(qid), v)])
+  ) as StoredAnswers;
 }
 
 /** Экранный индекс → исходный (ответы всегда хранятся в исходных индексах). */
-export function toOriginalIndex(order: AttemptOrder | null, questionId: number, shown: number): number {
+export function toOriginalIndex(order: AttemptOrder | null, questionId: number, shown: ShownIndex): OriginalIndex {
   const perm = order?.opt[String(questionId)];
-  if (!perm || shown < 0 || shown >= perm.length) return shown;
-  return perm[shown];
+  if (!perm || shown < 0 || shown >= perm.length) return shown as number as OriginalIndex;
+  return perm[shown] as OriginalIndex;
 }
 
 /** Исходный индекс → экранный (чтобы подсветить выбранный ответ). */
-export function toShownIndex(order: AttemptOrder | null, questionId: number, original: number | null): number | null {
+export function toShownIndex(order: AttemptOrder | null, questionId: number, original: number | null): ShownIndex | null {
   if (original === null) return null;
   const perm = order?.opt[String(questionId)];
-  if (!perm) return original;
+  if (!perm) return original as ShownIndex;
   const i = perm.indexOf(original);
-  return i === -1 ? original : i;
+  return (i === -1 ? original : i) as ShownIndex;
 }
 
 // ---------- 3. Привязка к устройству ----------

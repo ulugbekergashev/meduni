@@ -50,15 +50,64 @@ function resolveRule(topic: TopicWithContent, course: CourseWithTopics): UnlockR
   const raw = (topic.unlockRuleJson ?? course.defaultUnlockRuleJson) as Partial<UnlockRule> | null;
   // ⛔ КОРИДОР: правило курса зажимается минимумами кафедры/факультета/вуза.
   // Преподаватель может ужесточить, но не ослабить.
-  if (course.policy) return clampRule(raw, course.policy);
-  return { ...DEFAULT_RULE, ...(raw ?? {}) };
+  const base = course.policy ? clampRule(raw, course.policy) : { ...DEFAULT_RULE, ...(raw ?? {}) };
+  // Testning O'Z o'tish balli ham hisobga olinadi (2026-10-31 auditi): ilgari
+  // test 80% talab qilsa-yu, qoida 70% bo'lsa, 75% olgan talaba natijada
+  // "o'tmadingiz" ko'rardi, mavzu esa "tugadi" bo'lardi. Endi bitta raqam.
+  const quizOwn = topic.contentItems.find((c) => c.quiz)?.quiz?.passThreshold ?? 0;
+  return { ...base, quizPassedPct: Math.max(base.quizPassedPct, quizOwn) };
 }
 
-function buildElements(facts: FullFacts) {
+/**
+ * Testning EFFEKTIV o'tish balli — YAGONA manba (2026-10-31 auditi).
+ * Ilgari uch xil raqam bor edi: "O'tdingiz" yozuvi va qayta topshirish
+ * darvozasi max(test, kafedra) ni, mavzu tugashi esa kurs/mavzu qoidasini
+ * (masalan 85%) olardi. 75% olgan talaba "O'tdingiz" ko'rardi, qayta topshira
+ * olmasdi (darvoza "o'tgan" deb yopardi), mavzu esa hech qachon tugamasdi.
+ * Endi natija ekrani, darvoza, baholash va dvigatel shu bitta raqamdan.
+ */
+export function quizPassPct(course: CourseWithTopics, topicId: number, quizThreshold: number): number {
+  const rule = resolvedRuleFor(course, topicId);
+  return Math.max(quizThreshold, course.policy?.minQuizPassedPct ?? 0, rule.quizPassedPct);
+}
+
+/**
+ * Bir nechta kurs uchun o'tish balli hisoblagichi (baholar sahifasi, faollik
+ * lentasi). Saqlangan `QuizAttempt.passed` TARIXIY: u topshirilgan paytdagi
+ * bo'sag'a bilan yozilgan (masalan 60%), keyin kafedra/kurs uni ko'targan
+ * bo'lishi mumkin. "O'tdi/o'tmadi" yorlig'i esa dvigatel bilan bir xil bo'lishi
+ * shart — shuning uchun har joyda ball HOZIRGI bo'sag'a bilan solishtiriladi.
+ */
+export async function passResolver(courseIds: number[]) {
+  const courses = await Promise.all([...new Set(courseIds)].map((id) => loadCourse(id).catch(() => null)));
+  const byTopic = new Map<number, CourseWithTopics>();
+  for (const c of courses) if (c) for (const t of c.topics) byTopic.set(t.id, c);
+  return (topicId: number, quizThreshold: number): number => {
+    const c = byTopic.get(topicId);
+    return c ? quizPassPct(c, topicId, quizThreshold) : quizThreshold;
+  };
+}
+
+/** Mavzuning koridor bilan siqilgan qoidasi — dvigatel aynan shuni ishlatadi. */
+export function resolvedRuleFor(course: CourseWithTopics, topicId: number): UnlockRule {
+  const topic = course.topics.find((t) => t.id === topicId);
+  return topic ? resolveRule(topic, course) : course.policy ? clampRule(null, course.policy) : DEFAULT_RULE;
+}
+
+/** `quizPassPct` talaba kontekstida (u yozilgan kurs bo'yicha). */
+export async function quizPassPctForStudent(studentId: number, topicId: number, quizThreshold: number): Promise<number> {
+  const courseId = await enrolledCourseIdForTopic(studentId, topicId);
+  if (courseId === null) return quizThreshold;
+  return quizPassPct(await loadCourse(courseId), topicId, quizThreshold);
+}
+
+/** `met` — dvigatel hukmi (UI o'zi bo'sag'a o'ylab topmasin: ilgari yo'l sahifasi
+ *  20% olgan testga ham yashil belgi qo'yardi, videoga esa qattiq 80%). */
+function buildElements(facts: FullFacts, rule: UnlockRule) {
   return {
-    video: { exists: facts.hasVideo, watchedPct: facts.videoWatchedPct },
+    video: { exists: facts.hasVideo, watchedPct: facts.videoWatchedPct, met: facts.videoWatchedPct >= rule.videoWatchedPct, need: rule.videoWatchedPct },
     slides: { exists: facts.hasSlides, viewed: facts.slidesViewed },
-    quiz: { exists: facts.hasQuiz, score: facts.quizScore },
+    quiz: { exists: facts.hasQuiz, score: facts.quizScore, met: facts.quizScore !== null && facts.quizScore >= rule.quizPassedPct, need: rule.quizPassedPct },
     case: { exists: facts.hasCase, submitted: facts.caseSubmitted, reviewed: facts.caseReviewed },
   };
 }
@@ -149,7 +198,7 @@ export function computeTopics(course: CourseWithTopics, factsByTopic: Map<number
       pct,
       reason,
       unmet,
-      elements: buildElements(facts),
+      elements: buildElements(facts, rule),
     });
 
     prevCompleted = completed;

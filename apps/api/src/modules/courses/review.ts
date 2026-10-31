@@ -5,6 +5,7 @@ import { syncTopicProgress } from "../me/service";
 import { Type } from "@google/genai";
 import { generateStructured } from "../../ai/gemini";
 import { departmentForTopic } from "../../ai/glossary";
+import { isStepCorrect } from "../me/quizGrading";
 import { assertQuota } from "../../ai/quota";
 
 function forbidden(): ApiError {
@@ -193,7 +194,7 @@ export async function suggestCaseScore(teacherId: number, attemptId: number, for
     .map((s, i) => {
       const correctIdx = s.options.findIndex((o) => o.correct);
       const your = picked[String(i)];
-      const okMark = your === correctIdx ? "TO'G'RI" : "XATO";
+      const okMark = isStepCorrect(s, your) ? "TO'G'RI" : "XATO";
       return `${i + 1}. ${s.title}: talaba "${s.options[your]?.text ?? "javobsiz"}" tanladi — ${okMark} (to'g'risi: "${s.options[correctIdx]?.text ?? "—"}")`;
     })
     .join("\n");

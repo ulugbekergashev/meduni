@@ -21,6 +21,7 @@ import { accountRouter } from "./modules/account/router";
 import { adminRouter } from "./modules/admin/router";
 import { tasksRouter } from "./modules/tasks/router";
 import { recoverStaleJobs } from "./modules/content/recovery";
+import { repairShuffledAnswers } from "./modules/me/quizRepair";
 
 const app = express();
 
@@ -159,4 +160,11 @@ app.listen(env.port, () => {
   // Endi server avval TINCH ko'tariladi, keyin tiklash boshlanadi.
   const delayMs = Number(process.env.RECOVERY_DELAY_MS ?? 30_000);
   setTimeout(() => void recoverStaleJobs(), delayMs).unref();
+  // Test javoblari indeksi tuzatishi (2026-10-31) — bir martalik, takror ishga
+  // tushsa hech narsa qilmaydi. Baho noto'g'ri turgani uchun kutmaymiz.
+  setTimeout(() => {
+    repairShuffledAnswers()
+      .then((r) => r.fixed > 0 && console.log(`[quizRepair] tuzatildi: ${r.fixed} urinish, qayta baholandi: ${r.regraded}`))
+      .catch((e) => console.error("[quizRepair]", e));
+  }, 5_000).unref();
 });

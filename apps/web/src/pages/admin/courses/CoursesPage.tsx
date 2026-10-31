@@ -5,6 +5,7 @@ import { GraduationCap, Plus, Search, Trash2 } from "lucide-react";
 import { Badge, Button, ChipSelect, Icon, Input, Modal, Select, useToast } from "@meduni/ui";
 import { AsyncSection } from "../../../components/AsyncSection";
 import { ConfirmDialog } from "../../../components/ConfirmDialog";
+import { useDeleteImpact, useImpactWarning } from "../../../components/DeleteImpact";
 import { DataTable } from "../../../components/DataTable";
 import { Field } from "../../../components/Field";
 import { apiErrorMessage } from "../../../lib/api";
@@ -62,6 +63,8 @@ export function CoursesPage() {
   const [formError, setFormError] = useState<string | null>(null);
 
   const [deleting, setDeleting] = useState<CourseRow | null>(null);
+  const impact = useDeleteImpact(deleting ? `/api/v1/courses/${deleting.id}/delete-impact` : null);
+  const impactWarning = useImpactWarning(impact.data);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const ready = departmentOptions.length > 0 && teacherOptions.length > 0 && groupOptions.length > 0;
@@ -330,6 +333,8 @@ export function CoursesPage() {
         title={t("confirmDeleteTitle")}
         message={t("confirmDelete")}
         errorMessage={deleteError}
+        warning={impactWarning}
+        pending={impact.isLoading}
         loading={remove.isPending}
         onConfirm={onConfirmDelete}
         onClose={() => setDeleting(null)}

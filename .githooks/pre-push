@@ -1,0 +1,4 @@
+#!/bin/sh
+# main → production avto-deploy (≤5 daqiqa). Tekshiruvdan o'tmagan kod ketmasin.
+# Yoqish (bir marta, har klonda):  git config core.hooksPath .githooks
+exec node "$(git rev-parse --show-toplevel)/scripts/check.mjs"

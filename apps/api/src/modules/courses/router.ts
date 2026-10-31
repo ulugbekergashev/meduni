@@ -159,6 +159,16 @@ coursesRouter.patch(
   })
 );
 
+coursesRouter.get(
+  "/:id/delete-impact",
+  wrap(async (req, res) => {
+    const scope = await adminScope(req);
+    const id = parseId(req.params.id);
+    await assertCourseInScope(scope, id);
+    res.json(await svc.courseDeleteImpact(id));
+  })
+);
+
 coursesRouter.delete(
   "/:id",
   wrap(async (req, res) => {

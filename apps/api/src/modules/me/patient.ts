@@ -419,10 +419,14 @@ export async function orderTest(studentId: number, topicId: number, testTypeRaw:
   // xarajati yo'q) va saqlanadi: jonli ball ham, yakuniy baho ham shundan
   // o'qiydi → ikkisi hech qachon bir-biriga zid bo'lmaydi.
   // ⚠️ Model javob bermasa `indicated=true` (shubhada talaba foydasiga).
+  // Bepul tekshiruv (hayotiy ko'rsatkichlar — fizikal ko'rikning qismi) hech qachon
+  // "ortiqcha" emas: yakuniy baho ham faqat pullik buyurtmalarni jazolaydi
+  // (finishPatient: cost > 0). Aks holda jonli ball va yakuniy ball farq qilardi.
+  const cost = costOf(testType);
   const meta: TestMeta = {
-    indicated: gen?.indicated !== false,
+    indicated: cost === 0 || gen?.indicated !== false,
     reason: (gen?.reason ?? "").toString().trim(),
-    cost: costOf(testType),
+    cost,
   };
 
   const saved = await prisma.patientMessage.create({

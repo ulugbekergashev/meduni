@@ -38,29 +38,25 @@ async function main() {
   try { await deleteTopicFiles(0); } catch { threw = true; }
   ok(threw, "noto'g'ri id (0) rad etiladi — butun topics/ o'chib ketmaydi");
 
-  // ---------- Natija bor/yo'q ----------
-  const counts = { quizAttempt: 0, caseAttempt: 0, progress: 0 };
+  // ---------- Ta'sir hisobi (o'chirish endi TO'SILMAYDI — faqat ogohlantiriladi) ----------
+  const rows = { quizAttempt: [] as { studentId: number }[], caseAttempt: [] as { studentId: number }[], progress: [] as { studentId: number }[] };
   const setModel = (name: string, impl: object) => Object.defineProperty(prisma, name, { configurable: true, value: impl });
   setModel("contentItem", { findMany: async () => [{ id: 11 }, { id: 12 }] });
   setModel("quiz", { findMany: async () => [{ id: 21 }] });
   setModel("clinicalCase", { findMany: async () => [{ id: 31 }] });
-  setModel("quizAttempt", { count: async () => counts.quizAttempt });
-  setModel("caseAttempt", { count: async () => counts.caseAttempt });
-  setModel("progress", { count: async () => counts.progress });
+  setModel("quizAttempt", { findMany: async () => rows.quizAttempt });
+  setModel("caseAttempt", { findMany: async () => rows.caseAttempt });
+  setModel("progress", { findMany: async () => rows.progress });
 
   let r = await purge.studentResults([5]);
-  ok(!purge.hasResults(r), "natija yo'q → o'chirishga ruxsat");
-  counts.quizAttempt = 3;
-  counts.caseAttempt = 1;
+  ok(r.students === 0 && r.quizAttempts === 0, "natija yo'q → ta'sir 0");
+  rows.quizAttempt = [{ studentId: 1 }, { studentId: 1 }, { studentId: 2 }];
+  rows.caseAttempt = [{ studentId: 2 }];
+  rows.progress = [{ studentId: 3 }];
   r = await purge.studentResults([5]);
-  ok(purge.hasResults(r), "test urinishi bor → o'chirish to'siladi");
-  const err = purge.resultsConflict("topic", r) as unknown as { status: number; code: string; messageUz: string };
-  ok(err.status === 409 && err.code === "HAS_STUDENT_RESULTS", "409 HAS_STUDENT_RESULTS (500 emas)");
-  ok(/3 ta test urinishi/.test(err.messageUz) && /1 ta keys javobi/.test(err.messageUz), `xabar aniq: "${err.messageUz.slice(0, 70)}…"`);
-  counts.quizAttempt = 0; counts.caseAttempt = 0; counts.progress = 2;
-  ok(purge.hasResults(await purge.studentResults([5])), "tugatilgan/qo'lda ochilgan progress ham natija hisoblanadi");
-  const courseErr = purge.resultsConflict("course", { quizAttempts: 0, caseAttempts: 0, completed: 0 }, 7) as unknown as { messageUz: string };
-  ok(/7 ta davomat belgisi/.test(courseErr.messageUz), "kurs: davomat belgisi ham sabab sifatida aytiladi");
+  ok(r.quizAttempts === 3 && r.caseAttempts === 1 && r.completed === 1, "urinish/keys/progress sanaldi");
+  ok(r.students === 3, `turli talabalar soni to'g'ri (3, keldi ${r.students})`);
+  ok(!("resultsConflict" in purge), "409 taqiq olib tashlangan");
 
   // ---------- O'chirish tartibi (bolalar ota-onadan OLDIN) ----------
   const order: string[] = [];

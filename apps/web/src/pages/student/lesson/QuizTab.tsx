@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
 import { ArrowLeft, ArrowRight, Check, ClipboardList, Clock, Flag, RotateCcw, TriangleAlert, X } from "lucide-react";
 import { Icon, Spinner, cls, useToast } from "@meduni/ui";
 import { ConfirmDialog } from "../../../components/ConfirmDialog";
@@ -39,7 +40,50 @@ function useCountdown(expiresAt: string | null, onExpire: () => void) {
   return left;
 }
 
-function Intro({ data, onStart, starting }: { data: QuizTabData; onStart: () => void; starting: boolean }) {
+/**
+ * Xatolar ustida ishlash — qayta topshirish sharti. Qancha qolgani va qayerda
+ * ishlanishi aniq yoziladi; ilgari bu yerda faqat faol "Qayta topshirish"
+ * tugmasi turardi va bosilsa server rad etardi.
+ */
+function RemediationBlock({ topicId, data }: { topicId: number; data: QuizTabData }) {
+  const { t } = useTranslation(undefined, { keyPrefix: "lesson" });
+  const r = data.remediation;
+  if (!r || r.total === 0) return null;
+  const done = r.done >= r.total;
+  return (
+    <div
+      className={cls(
+        "flex flex-wrap items-center gap-2.5 rounded-control border-l-2 px-3.5 py-2.5 text-left",
+        done ? "border-emerald bg-emerald-soft" : "border-amber bg-amber-soft"
+      )}
+    >
+      <Icon icon={done ? Check : TriangleAlert} size={15} className={cls("shrink-0", done ? "text-emerald" : "text-amber")} />
+      <p className="min-w-0 flex-1 text-note font-semibold text-ink-strong">
+        {done ? t("remediationReady") : t("remediationProgress", { done: r.done, total: r.total })}
+      </p>
+      {!done && (
+        <Link
+          to={`/app/grades?sub=mashgulot&topic=${topicId}`}
+          className="rounded-pill bg-ink px-3 py-1.5 text-note font-semibold text-surface transition-colors hover:bg-ink-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+        >
+          {t("remediationGo")}
+        </Link>
+      )}
+    </div>
+  );
+}
+
+function Intro({
+  data,
+  onStart,
+  starting,
+  topicId,
+}: {
+  data: QuizTabData;
+  onStart: () => void;
+  starting: boolean;
+  topicId: number;
+}) {
   const { t } = useTranslation(undefined, { keyPrefix: "lesson" });
   return (
     <div className="mx-auto max-w-[480px] py-6 text-center">
@@ -86,6 +130,9 @@ function Intro({ data, onStart, starting }: { data: QuizTabData; onStart: () => 
           {t("attemptsOver")}
         </div>
       )}
+      <div className="mt-3">
+        <RemediationBlock topicId={topicId} data={data} />
+      </div>
 
       <button
         onClick={onStart}
@@ -311,11 +358,13 @@ function Result({
   data,
   onStart,
   starting,
+  topicId,
 }: {
   attempt: QuizAttemptView;
   data: QuizTabData;
   onStart: () => void;
   starting: boolean;
+  topicId: number;
 }) {
   const { t } = useTranslation(undefined, { keyPrefix: "lesson" });
   const passed = attempt.passed;
@@ -349,7 +398,8 @@ function Result({
           что нужно сделать до неё. Раньше тут стояло «пересдать нельзя». */}
       {!passed && (
         <div className="space-y-2">
-          {data.canStart ? (
+          <RemediationBlock topicId={topicId} data={data} />
+          {data.blockedBy === "remediation_required" ? null : data.canStart ? (
             <>
               <div className="flex gap-2.5 rounded-control border-l-2 border-blue bg-blue-soft px-3.5 py-2.5">
                 <Icon icon={TriangleAlert} size={15} className="mt-0.5 shrink-0 text-blue" />
@@ -452,17 +502,17 @@ export function QuizTab({ topicId, data }: { topicId: number; data: QuizTabData 
 
   const onStart = () => start.mutate(data.quizId, { onSuccess: (a) => setStartedId(a.id) });
 
-  if (attemptId === null) return <Intro data={data} onStart={onStart} starting={start.isPending} />;
+  if (attemptId === null) return <Intro data={data} onStart={onStart} starting={start.isPending} topicId={topicId} />;
   if (attemptQ.isLoading)
     return (
       <div className="flex justify-center py-10">
         <Spinner size={24} />
       </div>
     );
-  if (!attemptQ.data) return <Intro data={data} onStart={onStart} starting={start.isPending} />;
+  if (!attemptQ.data) return <Intro data={data} onStart={onStart} starting={start.isPending} topicId={topicId} />;
 
   return attemptQ.data.status === "finished" ? (
-    <Result attempt={attemptQ.data} data={data} onStart={onStart} starting={start.isPending} />
+    <Result attempt={attemptQ.data} data={data} onStart={onStart} starting={start.isPending} topicId={topicId} />
   ) : (
     <Running attempt={attemptQ.data} topicId={topicId} />
   );

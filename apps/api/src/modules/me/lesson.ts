@@ -7,13 +7,21 @@ import { clampQuiz, FALLBACK_POLICY, resolvePolicy } from "../policy/service";
 import {
   assertPresence,
   assertSameDevice,
+  answersToOriginal,
+  asShown,
   buildOrder,
+  hasShownAnswers,
   integrityFlags,
+  ORDER_VERSION,
+  readAnswers,
   readIntegrity,
   readOrder,
   toOriginalIndex,
   toShownIndex,
+  type ShownIndex,
+  type StoredAnswers,
 } from "./integrity";
+import { attemptQuestions, gradeAnswers, isStepCorrect, questionLoader } from "./quizGrading";
 import { chaptersFromScript, type PodcastChapter } from "../content/podcast";
 import type { CaseJson, DigestJson, PodcastSegment, ScriptSegment, Slide } from "../../ai/types";
 import {
@@ -23,7 +31,10 @@ import {
   forbiddenLocked,
   forbiddenNotEnrolled,
   loadCourse,
+  quizPassPct,
+  quizPassPctForStudent,
   recomputeTopic,
+  resolvedRuleFor,
   studentFactsMap,
   syncTopicProgress,
   type TopicOut,
@@ -49,7 +60,7 @@ export async function getTopicLesson(studentId: number, topicId: number) {
     include: {
       contentItems: {
         where: { status: "PUBLISHED" },
-        include: { quiz: { include: { questions: { orderBy: { orderIndex: "asc" } } } }, clinicalCase: true, presentation: true, video: true },
+        include: { quiz: { include: { questions: { where: { retiredAt: null }, orderBy: { orderIndex: "asc" } } } }, clinicalCase: true, presentation: true, video: true },
       },
       materials: { orderBy: { createdAt: "asc" } },
       links: { orderBy: [{ orderIndex: "asc" }, { id: "asc" }] },
@@ -198,16 +209,29 @@ export async function getTopicLesson(studentId: number, topicId: number) {
     const latest = attempts[0] ?? null;
     // KORIDOR: haqiqiy sozlamalar = o'qituvchi sozlamasi, kafedra minimumlari
     // bilan siqilgan (urinish soni, tanaffus, vaqt, o'tish balli).
-    const effQuiz = clampQuiz(q, enrolledCourse.policy ?? FALLBACK_POLICY, q.questions.length);
+    const clamped = clampQuiz(q, enrolledCourse.policy ?? FALLBACK_POLICY, q.questions.length);
+    const effQuiz = { ...clamped, passThreshold: quizPassPct(enrolledCourse, topicId, clamped.passThreshold) };
     const gate = attemptGate(finishedList, effQuiz);
+    // Xatolar ustida ishlash — qayta topshirish sharti. Ilgari payload buni
+    // bilmasdi: "Qayta topshirish" tugmasi faol turar, bosilsa 403 qaytardi.
+    // Tanaffus paytida ham ko'rsatiladi — talaba aynan shu vaqtda xatolari ustida ishlaydi.
+    const needRemediation =
+      !inProgress &&
+      finishedCount > 0 &&
+      (gate.ok || gate.reason === "cooldown") &&
+      (enrolledCourse.policy ?? FALLBACK_POLICY).requireRemediation;
+    const remediation = needRemediation ? await remediationStatus(studentId, q.id) : null;
+    const remediationBlocks = gate.ok && remediation !== null && remediation.done < remediation.total;
     quizMeta = {
       quizId: q.id,
       questionCount: q.questions.length,
       passThreshold: effQuiz.passThreshold,
       maxAttempts: effQuiz.maxAttempts,
-      canStart: !inProgress && gate.ok,
-      /** Nega boshlab bo'lmaydi: attempts_exhausted | cooldown. */
-      blockedBy: inProgress || gate.ok ? null : gate.reason,
+      canStart: !inProgress && gate.ok && !remediationBlocks,
+      /** Nega boshlab bo'lmaydi: attempts_exhausted | cooldown | remediation_required. */
+      blockedBy: inProgress ? null : !gate.ok ? gate.reason : remediationBlocks ? ("remediation_required" as const) : null,
+      /** Xatolar ustida ishlash holati (k/N) — faqat qayta topshirish kutilayotganda. */
+      remediation: remediation ? { total: remediation.total, done: remediation.done } : null,
       nextAttemptAt: gate.nextAt ? gate.nextAt.toISOString() : null,
       attemptsLeft: Math.max(0, effQuiz.maxAttempts - finishedCount),
       inProgressId: inProgress?.id ?? null,
@@ -218,7 +242,8 @@ export async function getTopicLesson(studentId: number, topicId: number) {
             id: latest.id,
             status: latest.finishedAt ? ("finished" as const) : ("in_progress" as const),
             scorePct: latest.finishedAt ? latest.scorePct : null,
-            passed: latest.finishedAt ? latest.passed : null,
+            // Tarixiy `passed` emas — hozirgi bo'sag'a (natija ekrani bilan bir xil).
+            passed: latest.finishedAt ? latest.scorePct >= effQuiz.passThreshold : null,
             attemptNo: latest.attemptNo,
           }
         : null,
@@ -283,8 +308,10 @@ export async function getTopicLesson(studentId: number, topicId: number) {
     };
   }
 
-  const courseRule = (topic.unlockRuleJson ?? enrolledCourse?.defaultUnlockRuleJson) as Record<string, unknown> | null;
-  const videoThreshold = (courseRule?.videoWatchedPct as number) ?? 80;
+  // Dvigatel ishlatadigan AYNAN o'sha (koridor bilan siqilgan) qoida — ilgari
+  // xom qoida olinardi va video "ko'rildi" past bo'sag'ada yonib qolardi.
+  const effRule = resolvedRuleFor(enrolledCourse, topicId);
+  const videoThreshold = effRule.videoWatchedPct;
 
   // Virtual bemor (Modul 26) — keys YOKI tasdiqlangan konspekt bo'lsa amaliyot
   // bosqichi ochiq (keys shart emas; konspektdan bemor generatsiya qilinadi).
@@ -311,8 +338,8 @@ export async function getTopicLesson(studentId: number, topicId: number) {
     requirements: state.unmet,
     thresholds: {
       video: videoThreshold,
-      /** Testning O'Z o'tish balli (natijadagi "o'tdingiz" chipi shundan). */
-      quizPass: quizItem?.quiz?.passThreshold ?? 70,
+      /** EFFEKTIV o'tish balli (test · kafedra · kurs qoidasi) — "o'tdingiz" shundan. */
+      quizPass: quizMeta?.passThreshold ?? effRule.quizPassedPct,
     },
     elements: rule.elements,
     // Chap panel — o'qituvchi materiallari ("PDF · 24 bet · 2.1 MB").
@@ -484,18 +511,39 @@ interface QuizRow {
   }[];
 }
 
+type QuizQuestion = QuizRow["questions"][number];
+
+/**
+ * Urinish ko'rgan savollar (snimka tartibida, eskirganlari ham) — natija
+ * ekrani, baholash va javob validatsiyasi HAMMASI shundan foydalanadi.
+ * Ilgari ular testning HOZIRGI savollarini olardi: o'qituvchi testni qayta
+ * yaratsa, davom etayotgan urinish bo'sh ekranga aylanib 0% ga baholanardi.
+ */
+function snapshotOf(attempt: AttemptRow, quiz: QuizRow & { id?: number }): Promise<QuizQuestion[]> {
+  return attemptQuestions<QuizQuestion>(attempt, quiz.questions, questionLoader(attempt.quizId));
+}
+
+/** serializeAttempt + snimka yuklash — tashqi chaqiruvlar shuni ishlatadi. */
+async function attemptView(attempt: AttemptRow & { studentId: number }, quiz: QuizRow & { contentItem: { topicId: number } }) {
+  // Bo'sag'a faqat yakunlangan urinishga kerak ("o'tdi" yorlig'i) — jarayonda kursni yuklamaymiz.
+  const passPct = attempt.finishedAt
+    ? await quizPassPctForStudent(attempt.studentId, quiz.contentItem.topicId, quiz.passThreshold)
+    : quiz.passThreshold;
+  return serializeAttempt(attempt, quiz, await snapshotOf(attempt, quiz), passPct);
+}
+
 /** Serialize an attempt: public (no answers/explanations) while running; full analysis once finished. */
-function serializeAttempt(attempt: AttemptRow, quiz: QuizRow) {
-  const answers = (attempt.answersJson as Record<string, number>) ?? {};
+function serializeAttempt(attempt: AttemptRow, quiz: QuizRow, questions: QuizQuestion[], passPct: number) {
+  const answers = readAnswers(attempt.answersJson);
   const finished = attempt.finishedAt !== null;
-  const total = quiz.questions.length;
-  const correctCount = quiz.questions.filter((q) => answers[String(q.id)] === q.correctIndex).length;
+  const total = questions.length;
+  const correctCount = gradeAnswers(questions, answers).correct;
 
   // SNIMOK: har urinishning O'Z tartibi. Yonidagi talaba boshqa ekran ko'radi,
-  // qayta topshirishda tartib yana boshqacha bo'ladi.
+  // qayta topshirishda tartib yana boshqacha bo'ladi. `questions` allaqachon
+  // snimka tartibida (snapshotOf).
   const order = readOrder(attempt.orderJson);
-  const byId = new Map(quiz.questions.map((q) => [q.id, q]));
-  const ordered = order ? order.q.map((id) => byId.get(id)).filter(Boolean) : quiz.questions;
+  const ordered = questions;
   const shownOptions = (q: { id: number; optionsJson: unknown }) => {
     const opts = questionOptions(q.optionsJson);
     const perm = order?.opt[String(q.id)];
@@ -508,14 +556,16 @@ function serializeAttempt(attempt: AttemptRow, quiz: QuizRow) {
   // ma'nosiz qator va "20 ta xato javob" ro'yxati chiqardi (o'lchandi:
   // attempt 1 — javoblar 1,2,3; hozirgi savollar 49..68). Bunday holatda
   // saqlangan ball haqiqat, tahlil esa YO'Q — UI uni ko'rsatmaydi.
-  const stale = finished && Object.keys(answers).length > 0 && !quiz.questions.some((q) => String(q.id) in answers);
+  // Snimkali urinishda bu endi bo'lmaydi (savollar snimkadan olinadi) — faqat
+  // 2026-08-11 dan oldingi, savollari fizik o'chirilgan urinishlar uchun.
+  const stale = finished && Object.keys(answers).length > 0 && !questions.some((q) => String(q.id) in answers);
 
   return {
     id: attempt.id,
     quizId: attempt.quizId,
     status: finished ? ("finished" as const) : ("in_progress" as const),
     attemptNo: attempt.attemptNo,
-    passThreshold: quiz.passThreshold,
+    passThreshold: passPct,
     total,
     answers: Object.fromEntries(
       Object.entries(answers).map(([qid, v]) => [qid, toShownIndex(order, Number(qid), v) ?? v])
@@ -525,11 +575,12 @@ function serializeAttempt(attempt: AttemptRow, quiz: QuizRow) {
     /** Vaqt tugash momenti (ISO) yoki null — cheklanmagan. Timer shundan hisoblanadi. */
     expiresAt: attempt.expiresAt ? attempt.expiresAt.toISOString() : null,
     scorePct: finished ? attempt.scorePct : null,
-    passed: finished ? attempt.passed : null,
+    // HOZIRGI bo'sag'a bilan (saqlangan `passed` tarixiy — eski bo'sag'ada yozilgan).
+    passed: finished ? attempt.scorePct >= passPct : null,
     correctCount: finished && !stale ? correctCount : null,
     /** Test urinishdan keyin qayta yaratilgan — javoblar tahlili mavjud emas. */
     stale,
-    questions: (ordered as typeof quiz.questions).map((q) => ({
+    questions: ordered.map((q) => ({
       id: q.id,
       text: q.text,
       options: shownOptions(q),
@@ -587,39 +638,31 @@ async function departmentOfQuiz(quizId: number): Promise<number | null> {
  * xato savolga to'g'ri javob (RemediationAnswer). Xato bo'lmasa — ishlash shart emas.
  */
 async function remediationDone(studentId: number, quizId: number): Promise<boolean> {
+  const s = await remediationStatus(studentId, quizId);
+  return s.done >= s.total;
+}
+
+/**
+ * Oxirgi yakunlangan urinishning XATO savollari — o'sha urinish ko'rgan
+ * savollar ichidan (snimka). Ilgari testning HOZIRGI savollari olinardi:
+ * o'qituvchi testni qayta yaratsa, talaba hech ko'rmagan 20 ta yangi savol
+ * "xato" deb hisoblanib, ularni yechmaguncha qayta topshira olmasdi.
+ */
+async function lastAttemptWrong(studentId: number, quizId: number) {
   const last = await prisma.quizAttempt.findFirst({
     where: { studentId, quizId, finishedAt: { not: null } },
     orderBy: { finishedAt: "desc" },
   });
-  if (!last) return true;
-  const questions = await prisma.question.findMany({
-    where: { quizId, retiredAt: null },
-    select: { id: true, correctIndex: true },
-  });
-  const answers = (last.answersJson as Record<string, number>) ?? {};
-  const wrong = questions.filter((q) => answers[String(q.id)] !== q.correctIndex).map((q) => q.id);
-  if (wrong.length === 0) return true;
-  const fixed = await prisma.remediationAnswer.findMany({
-    where: { studentId, attemptId: last.id, questionId: { in: wrong }, correct: true },
-    select: { questionId: true },
-    distinct: ["questionId"],
-  });
-  return fixed.length >= wrong.length;
+  if (!last) return null;
+  const questions = await attemptQuestions(last, [], questionLoader(quizId));
+  return { last, wrong: gradeAnswers(questions, readAnswers(last.answersJson)).wrongIds };
 }
 
 /** Xatolar ustida ishlash holati (UI "yana N ta qoldi" deb ko'rsatadi). */
 export async function remediationStatus(studentId: number, quizId: number) {
-  const last = await prisma.quizAttempt.findFirst({
-    where: { studentId, quizId, finishedAt: { not: null } },
-    orderBy: { finishedAt: "desc" },
-  });
-  if (!last) return { required: false, total: 0, done: 0, attemptId: null as number | null };
-  const questions = await prisma.question.findMany({
-    where: { quizId, retiredAt: null },
-    select: { id: true, correctIndex: true },
-  });
-  const answers = (last.answersJson as Record<string, number>) ?? {};
-  const wrong = questions.filter((q) => answers[String(q.id)] !== q.correctIndex).map((q) => q.id);
+  const lw = await lastAttemptWrong(studentId, quizId);
+  if (!lw) return { required: false, total: 0, done: 0, attemptId: null as number | null };
+  const { last, wrong } = lw;
   const fixed = await prisma.remediationAnswer.findMany({
     where: { studentId, attemptId: last.id, questionId: { in: wrong }, correct: true },
     select: { questionId: true },
@@ -639,6 +682,11 @@ export async function recordRemediation(
   if (!attempt || attempt.studentId !== studentId) throw notFound("Urinish");
   const q = await prisma.question.findUnique({ where: { id: questionId }, select: { id: true, correctIndex: true, quizId: true } });
   if (!q || q.quizId !== attempt.quizId) throw notFound("Savol");
+  // Faqat O'SHA urinishda xato qilingan savol. Aks holda endpoint "orakul"ga
+  // aylanardi: talaba hali ko'rmagan (qayta yaratilgan) savolga 0..3 variantni
+  // yuborib, to'g'risini qayta topshirishdan OLDIN bilib olardi.
+  const lw = await lastAttemptWrong(studentId, attempt.quizId);
+  if (!lw || lw.last.id !== attempt.id || !lw.wrong.includes(questionId)) throw notFound("Savol");
   const correct = q.correctIndex === selectedIndex;
   await prisma.remediationAnswer.create({
     data: { studentId, attemptId, questionId, selectedIndex, correct },
@@ -655,7 +703,7 @@ export async function startQuizAttempt(studentId: number, quizId: number, device
   if (inProgress) {
     // Boshlangan urinishni BOSHQA qurilmada davom ettirib bo'lmaydi.
     if (device) assertSameDevice(inProgress.deviceHash, device);
-    return serializeAttempt(inProgress, quiz); // resume, not a new attempt
+    return attemptView(inProgress, quiz); // resume, not a new attempt
   }
 
   const finished = attempts.filter((a) => a.finishedAt !== null);
@@ -665,7 +713,11 @@ export async function startQuizAttempt(studentId: number, quizId: number, device
   // Ilgari bu yerda qat'iy maxAttempts = 1 turardi — test provali BOSHI BERK
   // KO'CHA edi, yagona chiqish esa "bilmaganni o'tkazib yuborish".
   const policy = await resolvePolicy(await departmentOfQuiz(quizId));
-  const eff = clampQuiz(quiz, policy, quiz.questions.length);
+  const clampedQuiz = clampQuiz(quiz, policy, quiz.questions.length);
+  const eff = {
+    ...clampedQuiz,
+    passThreshold: await quizPassPctForStudent(studentId, quiz.contentItem.topicId, clampedQuiz.passThreshold),
+  };
 
   // OCHIQ REJIM: yakuniy imtihonlar faqat auditoriyada. Bu — "o'zi topshirdimi"
   // degan savolga yagona haqiqiy javob (qolgani faqat narxini oshiradi).
@@ -714,20 +766,20 @@ export async function startQuizAttempt(studentId: number, quizId: number, device
       deviceHash: device ?? null,
     },
   });
-  return serializeAttempt(created, quiz);
+  return attemptView(created, quiz);
 }
 
 /** Urinishni baholab yakunlaydi (finish va vaqt tugaganda ishlatiladi). */
 async function gradeAndFinish(studentId: number, attempt: AttemptRow, quiz: QuizRow & { contentItem: { topicId: number } }) {
-  const answers = (attempt.answersJson as Record<string, number>) ?? {};
-  const total = quiz.questions.length;
-  const correct = quiz.questions.filter((q) => answers[String(q.id)] === q.correctIndex).length;
-  const scorePct = total === 0 ? 0 : Math.round((correct / total) * 100);
+  // Baho — urinish KO'RGAN savollar bo'yicha (snimka), testning hozirgi holati emas.
+  const questions = await snapshotOf(attempt, quiz);
+  const { scorePct } = gradeAnswers(questions, readAnswers(attempt.answersJson));
   // "O'tdingiz" ham koridor bo'sag'asiga qarab yoziladi — ekran va dvigatel
   // bir xil raqamdan qaror qilishi shart.
-  const effPass = Math.max(
-    quiz.passThreshold,
-    (await resolvePolicy(await departmentOfQuiz(attempt.quizId))).minQuizPassedPct
+  const effPass = await quizPassPctForStudent(
+    studentId,
+    quiz.contentItem.topicId,
+    Math.max(quiz.passThreshold, (await resolvePolicy(await departmentOfQuiz(attempt.quizId))).minQuizPassedPct)
   );
   const passed = scorePct >= effPass;
 
@@ -736,7 +788,7 @@ async function gradeAndFinish(studentId: number, attempt: AttemptRow, quiz: Quiz
     data: { scorePct, passed, finishedAt: new Date() },
   });
   const topic = await persistAndReport(studentId, quiz.contentItem.topicId);
-  return { attempt: serializeAttempt(finished, quiz), topic };
+  return { attempt: serializeAttempt(finished, quiz, questions, effPass), topic };
 }
 
 async function ownAttempt(studentId: number, attemptId: number) {
@@ -766,7 +818,7 @@ export async function setQuizFlag(studentId: number, attemptId: number, question
   if (expired) return expired.attempt;
   if (attempt.finishedAt) throw new ApiError(403, "attempt_finished", "Urinish yakunlangan", "Попытка завершена");
 
-  const exists = quiz.questions.some((q) => q.id === questionId);
+  const exists = (await snapshotOf(attempt, quiz)).some((q) => q.id === questionId);
   if (!exists) throw notFound("Savol");
 
   const cur = new Set(((attempt.flaggedJson as number[]) ?? []).filter((n) => Number.isInteger(n)));
@@ -777,7 +829,7 @@ export async function setQuizFlag(studentId: number, attemptId: number, question
     where: { id: attemptId },
     data: { flaggedJson: [...cur] },
   });
-  return serializeAttempt(updated, quiz);
+  return attemptView(updated, quiz);
 }
 
 export async function saveQuizAnswers(studentId: number, attemptId: number, answers: Record<string, number>) {
@@ -786,21 +838,39 @@ export async function saveQuizAnswers(studentId: number, attemptId: number, answ
   if (expired) return expired.attempt; // vaqt tugagan — javob qabul qilinmaydi
   if (attempt.finishedAt) throw new ApiError(403, "attempt_finished", "Urinish yakunlangan", "Попытка завершена");
 
-  // Keep only valid question ids / option indexes.
-  const valid: Record<string, number> = { ...((attempt.answersJson as Record<string, number>) ?? {}) };
-  const byId = new Map(quiz.questions.map((q) => [String(q.id), questionOptions(q.optionsJson).length]));
+  // ⛔ Klient EKRAN tartibidagi indeksni yuboradi (variantlar har urinishda
+  // aralashtiriladi), bazada esa ASL indeks saqlanadi. Ilgari bu o'girish
+  // yo'q edi: to'g'ri javob xato deb baholanardi (2026-10-31, buyurtmachi).
+  // `ShownIndex`/`OriginalIndex` turlari bu qatorni qaytadan buzib bo'lmaydigan
+  // qiladi: ekran indeksini to'g'ridan-to'g'ri `valid` ga yozish — tsc xatosi.
+  const order = readOrder(attempt.orderJson);
+  // Tuzatishdan OLDIN boshlangan urinish: uning eski javoblari ham ekran indeksida.
+  const legacy = hasShownAnswers(order);
+  const valid: StoredAnswers = legacy
+    ? answersToOriginal(order, readAnswers(attempt.answersJson) as unknown as Record<string, ShownIndex>)
+    : { ...readAnswers(attempt.answersJson) };
+  const questions = await snapshotOf(attempt, quiz);
+  const byId = new Map(questions.map((q) => [String(q.id), questionOptions(q.optionsJson).length]));
   for (const [qid, idx] of Object.entries(answers ?? {})) {
     const optCount = byId.get(qid);
-    if (optCount !== undefined && Number.isInteger(idx) && idx >= 0 && idx < optCount) valid[qid] = idx;
+    if (optCount !== undefined && Number.isInteger(idx) && idx >= 0 && idx < optCount) {
+      valid[qid] = toOriginalIndex(order, Number(qid), asShown(idx));
+    }
   }
-  const updated = await prisma.quizAttempt.update({ where: { id: attemptId }, data: { answersJson: valid } });
-  return serializeAttempt(updated, quiz);
+  const updated = await prisma.quizAttempt.update({
+    where: { id: attemptId },
+    data: {
+      answersJson: valid,
+      ...(legacy && order ? { orderJson: { ...order, v: ORDER_VERSION } } : {}),
+    },
+  });
+  return serializeAttempt(updated, quiz, questions, quiz.passThreshold); // jarayondagi urinish
 }
 
 export async function finishQuizAttempt(studentId: number, attemptId: number) {
   const { attempt, quiz } = await ownAttempt(studentId, attemptId);
   if (attempt.finishedAt)
-    return { attempt: serializeAttempt(attempt, quiz), topic: await recomputeTopic(studentId, quiz.contentItem.topicId) };
+    return { attempt: await attemptView(attempt, quiz), topic: await recomputeTopic(studentId, quiz.contentItem.topicId) };
   return gradeAndFinish(studentId, attempt, quiz);
 }
 
@@ -808,7 +878,7 @@ export async function getQuizAttempt(studentId: number, attemptId: number) {
   const { attempt, quiz } = await ownAttempt(studentId, attemptId);
   const expired = await autoFinishIfExpired(studentId, attempt, quiz);
   if (expired) return expired.attempt;
-  return serializeAttempt(attempt, quiz);
+  return attemptView(attempt, quiz);
 }
 
 // ---------- Case lifecycle ----------
@@ -876,7 +946,7 @@ export async function submitCase(
         throw badRequest("Barcha qadamda qaror qabul qiling", "Примите решение на всех шагах");
       }
       picked[String(i)] = idx!;
-      if (defs[i].options[idx!].correct) correct++;
+      if (isStepCorrect(defs[i], idx!)) correct++;
     }
     autoScore = Math.round((correct / defs.length) * 100);
   }

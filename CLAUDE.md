@@ -3231,3 +3231,77 @@ Reja: `.claude/plans/dizayn-v3-pastel-2026-10.md`. Uchala rol, barcha sahifa.
   izohni ko'rdi; sikl → avto dars → yo'qlama → talaba 100%; natijasi bor mavzu/kurs → 409.
   Skriptlar: scratchpad `e2e3/e2e4/e2e5.mjs`. [TEST] kursi (id=4) natijalari bilan
   ataylab qoldirilgan (o'chirib bo'lmaydi — baholar himoyasi), test akkauntlari nofaol.
+
+---
+
+## 30. TEST BAHOLASH XATOSI + NATIJALI MAVZUNI O'CHIRISH (2026-10-31, buyurtmachi)
+
+**(A) To'g'ri javob xato deb baholanardi.** 2026-08-11 dan (halollik: variantlar
+har urinishda aralashtiriladi) `saveQuizAnswers` talaba bosgan EKRAN indeksini
+aslga o'girmay saqlardi — `toOriginalIndex` import qilingan, lekin HECH QAYERDA
+chaqirilmagan. Natija: baho noto'g'ri, tahlilda "sizning javobingiz" boshqa
+variantga tushardi. Tuzatish: saqlashda `toOriginalIndex`; `orderJson.v = 2`
+belgisi (`ORDER_VERSION`) — javoblar asl indeksda ekanini bildiradi.
+**Eski urinishlar** `modules/me/quizRepair.ts` bilan tuzatiladi — server ishga
+tushgach 5s da avtomatik (idempotent: `v` belgisiz urinishlarni topadi, javoblarni
+o'giradi, yakunlanganini O'SHA urinishning savollar to'plami `orderJson.q` bilan
+qayta baholaydi, ball o'zgarsa `AuditLog REGRADE_QUIZ_ATTEMPT` + progress qayta
+hisob). Tugallanmagan eski urinish birinchi saqlashda ham o'giriladi.
+⚠️ Variant tartibiga tegadigan yangi kod yozsang: bazada DOIM asl indeks.
+Sinov: `scripts/smokeQuizShuffle.ts` 12/12 (mahalliy baza).
+
+**(B) Mavzu/kurs talabalar natijasi bo'lsa ham o'chadi** (buyurtmachi: "kim nima
+yaratsa o'zi o'chirsin, talaba ishlasa ham"). §29 dagi 409 HAS_STUDENT_RESULTS
+OLIB TASHLANDI. Himoya endi taqiq emas, OGOHLANTIRISH: `GET /topics/:id/delete-impact`
+va `GET /courses/:id/delete-impact` → `{students, quizAttempts, caseAttempts,
+completed, attendance}`; `ConfirmDialog` `warning` blokida "N ta talabaning
+natijalari ham o'chadi" (`components/DeleteImpact.ts`, i18n `deleteImpact.*`).
+Kurs o'chirilganda davomat belgilari ham o'chadi (tuzatish jurnali/otrabotka —
+Cascade; spravkalar qoladi). O'chirilgan hajm `DELETE_TOPIC`/`DELETE_COURSE`
+audit `removedResults` ida. Egalik tekshiruvi o'zgarmadi (o'qituvchi — o'z kursi
+mavzusi; kurs — admin scope). Sinov: `smokeDeleteWithResults.ts` 7/7, `smokePurge.ts` 15/15.
+
+---
+
+## 31. TEST BAHOLASH AUDITI — "bitta haqiqat" qoidalari (2026-11-01)
+
+§30 dagi xatodan keyin butun baholash yo'li tekshirildi (2 ta mustaqil audit
+agenti + qo'lda). Xato yolg'iz emas edi: bir savolga kod turli joyda turli
+javob berardi. Endi har biri uchun BITTA manba bor — yangi kod shulardan oladi:
+
+| Savol | Yagona manba |
+|---|---|
+| Urinishga qaysi savollar tegishli? | `me/quizGrading.ts::attemptQuestions` (snimka `orderJson.q`, eskirganlari ham; snimkasiz eski urinish → javob bergan savollari) |
+| Javob qaysi indeksda? | `integrity.ts` — `ShownIndex` (ekran) / `OriginalIndex` (baza) turlari; aralashtirib yozish **tsc xatosi** |
+| Ball qanday? | `quizGrading.ts::gradeAnswers` / `isCorrect` |
+| Keys qadami to'g'rimi? | `quizGrading.ts::isStepCorrect` (ikkita to'g'ri variant bo'lishi mumkin) |
+| O'tish balli? | `me/service.ts::quizPassPct` = max(test, kafedra, kurs/mavzu qoidasi); dvigatel (`resolveRule`) ham testning o'z balini oladi |
+| "O'tdi" yorlig'i? | ball ≥ HOZIRGI bo'sag'a. `QuizAttempt.passed` — TARIXIY, ekranga chiqarilmaydi |
+| Element bajarildimi (chip)? | `elements.*.met` — dvigatel hukmi; UI bo'sag'ani o'zi yozmaydi |
+
+**Tuzatilgan haqiqiy xatolar:** (1) ⛔ **qayta topshirish hech qachon ochilmasdi** —
+siyosat "xatolar ustida ishlash"ni talab qiladi, lekin frontend uni serverga
+umuman yozmasdi (`useRecordRemediation` yo'q edi); endi mashg'ulot har javobni
+yozadi, test sahifasida "k/N + Xatolar ustida ishlash" bloki, payload
+`blockedBy: remediation_required`. (2) Test qayta yaratilsa davom etayotgan
+urinish bo'sh ekran + 0% bo'lardi → snimka. (3) Mashg'ulot va **kartochkalar
+talaba ko'rmagan yangi savollarning to'g'ri javobini ochardi** → faqat ko'rilgan
+savollar. (4) Remediation endpointi "orakul" edi (istalgan savolga to'g'ri/xato
+qaytarardi) → faqat o'sha urinishning xato savollari. (5) O'tish balli 3 xil edi —
+75% olgan talaba "O'tdingiz" ko'rardi, qayta topshira olmasdi, mavzu tugamasdi.
+(6) O'qituvchi xatolar xaritasi ko'rilmagan savollarni 100% xato derdi.
+(7) Yo'l sahifasi 20% olgan testga yashil belgi qo'yardi. (8) Keys qadamida
+ikkita to'g'ri variant — baho "to'g'ri", mashg'ulot/xarita "xato". (9) Bepul
+tekshiruv (vitals) virtual bemorda jonli ballni tushirardi, yakuniy esa yo'q.
+
+**Kelajakdagi himoya:** `npm run check` (`scripts/check.mjs`) — API+web tsc va
+9 ta regressiya sinovi MAHALLIY bazada (jonli bazaga hech qachon ulanmaydi).
+`.githooks/pre-push` uni har push oldidan ishga tushiradi — **yoqish bir marta,
+qo'lda**: `git config core.hooksPath .githooks`. Yangi sinov:
+`smokeQuizIntegrity.ts` (14 band, har biri yuqoridagi xatolardan biri).
+
+⚠️ **Hali tuzatilmagan (audit topdi, alohida ish):** keys tahrirlansa eski
+javoblar yangi qadamlarga tushadi (CaseAttempt'ga snimka kerak — migratsiya);
+"dars bo'lmadi" belgilangan darsdagi yo'qlama ko'p joyda hali hisoblanadi
+(faqat jurnal va dekanat chiqaradi); admin profilidagi o'rtacha test va progress
+% boshqa ekranlardan boshqacha formula; fleshkarta kalitlari pozitsion.

@@ -63,10 +63,10 @@ function ElementChips({ topic }: { topic: StudentTopic }) {
   const go = topic.state === "LOCKED" ? undefined : (tab: string) => () => navigate(`/app/topics/${topic.id}?tab=${tab}`);
   const chips = [];
   if (e.video.exists)
-    chips.push(<Chip key="v" icon={Video} label={t("elVideo")} done={complete || e.video.watchedPct >= 80} hint={!complete && e.video.watchedPct > 0 && e.video.watchedPct < 80 ? `${e.video.watchedPct}%` : undefined} onClick={go?.("video")} />);
+    chips.push(<Chip key="v" icon={Video} label={t("elVideo")} done={complete || e.video.met} hint={!complete && e.video.watchedPct > 0 && !e.video.met ? `${e.video.watchedPct}%` : undefined} onClick={go?.("video")} />);
   if (e.slides.exists) chips.push(<Chip key="s" icon={FileText} label={t("elSlides")} done={complete || e.slides.viewed} onClick={go?.("slides")} />);
   if (e.quiz.exists)
-    chips.push(<Chip key="q" icon={ClipboardList} label={t("elQuiz")} done={complete || e.quiz.score !== null} hint={e.quiz.score !== null ? `${e.quiz.score}%` : undefined} onClick={go?.("quiz")} />);
+    chips.push(<Chip key="q" icon={ClipboardList} label={t("elQuiz")} done={complete || e.quiz.met} hint={e.quiz.score !== null ? `${e.quiz.score}%` : undefined} onClick={go?.("quiz")} />);
   if (e.case.exists) chips.push(<Chip key="c" icon={Stethoscope} label={t("elCase")} done={complete || e.case.reviewed} onClick={go?.("case")} />);
   if (chips.length === 0) return null;
   return <div className="flex flex-wrap gap-1.5">{chips}</div>;

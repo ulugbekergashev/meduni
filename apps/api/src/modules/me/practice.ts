@@ -12,10 +12,14 @@ import { ApiError, notFound } from "../../lib/errors";
 import type { CaseJson } from "../../ai/types";
 import { computeTopics, enrolledCourseIds, loadCourse, studentFactsMap } from "./service";
 import { getFlashcards } from "./flashcards";
+import { readAnswers } from "./integrity";
+import { attemptQuestions, isCorrect, isStepCorrect, questionLoader } from "./quizGrading";
 
 interface WrongQuizQ {
   kind: "quiz";
   questionId: number;
+  /** Xato qilingan urinish — javob shu urinish uchun "xatolar ustida ishlash" dalili bo'lib yoziladi. */
+  attemptId: number;
   text: string;
   options: string[];
   correctIndex: number;
@@ -54,21 +58,27 @@ async function topicMistakes(studentId: number, topicId: number, includeItems: b
       quiz: { contentItem: { topicId, status: "PUBLISHED" } },
     },
     orderBy: { attemptNo: "desc" },
-    include: { quiz: { include: { questions: { orderBy: { orderIndex: "asc" } } } } },
+    include: { quiz: { include: { questions: { where: { retiredAt: null }, orderBy: { orderIndex: "asc" } } } } },
   });
 
   const wrongQuiz: WrongQuizQ[] = [];
   let wrongQuizCount = 0;
   if (attempt) {
-    const answers = (attempt.answersJson as Record<string, number>) ?? {};
-    for (const q of attempt.quiz.questions) {
+    // FAQAT o'sha urinish ko'rgan savollar (snimka). Ilgari testning BARCHA
+    // savollari (eskirganlari ham) olinardi: o'qituvchi testni qayta yaratsa,
+    // mashg'ulot talaba hech ko'rmagan yangi savollarni "xato" deb ko'rsatib,
+    // ularning TO'G'RI javobini qayta topshirishdan oldin ochib berardi.
+    const answers = readAnswers(attempt.answersJson);
+    const seen = await attemptQuestions(attempt, attempt.quiz.questions, questionLoader(attempt.quizId));
+    for (const q of seen) {
       const your = answers[String(q.id)];
-      if (your === q.correctIndex) continue;
+      if (isCorrect(q, answers)) continue;
       wrongQuizCount++;
       if (!includeItems) continue;
       wrongQuiz.push({
         kind: "quiz",
         questionId: q.id,
+        attemptId: attempt.id,
         text: q.text,
         options: (q.optionsJson as string[]) ?? [],
         correctIndex: q.correctIndex,
@@ -90,9 +100,8 @@ async function topicMistakes(studentId: number, topicId: number, includeItems: b
     const caseJson = caseAttempt.clinicalCase.caseJson as unknown as CaseJson;
     const picked = (caseAttempt.stepsJson as Record<string, number>) ?? {};
     (caseJson.steps ?? []).forEach((s, i) => {
-      const correctIdx = s.options.findIndex((o) => o.correct);
       const your = picked[String(i)];
-      if (your === correctIdx) return;
+      if (isStepCorrect(s, your)) return;
       wrongStepCount++;
       if (!includeItems) return;
       wrongSteps.push({
