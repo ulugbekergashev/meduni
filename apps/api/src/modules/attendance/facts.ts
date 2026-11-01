@@ -116,15 +116,28 @@ export function poolTallies(list: Iterable<AttTally>): AttTally {
 
 // ---------- Bazadan sanoq ----------
 
+/**
+ * SANALADIGAN belgi — faqat O'TKAZILGAN (HELD) darsdagi (2026-11-01 auditi).
+ * "Dars bo'lmadi" (CANCELLED) yoki ko'chirilgan (MOVED) darsdagi belgilar
+ * o'chirilmaydi (tarix), lekin foizga kirmaydi. Ilgari buni faqat jurnal va
+ * dekanat hisobga olardi: o'qituvchi jurnalida 100%, talaba va admin esa 75%
+ * ko'rardi, talabaga esa "davomatingiz past" vazifasi chiqardi.
+ * Davomat foizini hisoblaydigan HAR so'rov shu filtr orqali o'tadi.
+ */
+export const HELD_SESSION = { status: "HELD" } as const;
+export function countedMarks(where: Prisma.AttendanceWhereInput): Prisma.AttendanceWhereInput {
+  return { AND: [where, { session: HELD_SESSION }] };
+}
+
 /** Bitta kesim bo'yicha sanoq (kurs / guruh / universitet darajasi). */
 export async function tallyByStatus(where: Prisma.AttendanceWhereInput): Promise<AttTally> {
-  const rows = await prisma.attendance.groupBy({ by: ["status"], where, _count: true });
+  const rows = await prisma.attendance.groupBy({ by: ["status"], where: countedMarks(where), _count: true });
   return tallyOf(rows.map((r) => ({ status: r.status as string, _count: r._count })));
 }
 
 /** Talabalar kesimida sanoq — bitta so'rovda (N+1 emas). */
 export async function tallyByStudent(where: Prisma.AttendanceWhereInput): Promise<Map<number, AttTally>> {
-  const rows = await prisma.attendance.groupBy({ by: ["studentId", "status"], where, _count: true });
+  const rows = await prisma.attendance.groupBy({ by: ["studentId", "status"], where: countedMarks(where), _count: true });
   const out = new Map<number, AttTally>();
   for (const r of rows) {
     let t = out.get(r.studentId);
@@ -144,7 +157,7 @@ export async function tallyByCourse(where: Prisma.AttendanceWhereInput): Promise
   // shuning uchun ikkita ustunni o'qib JS'da yig'amiz — bu baribir har kurs uchun
   // alohida so'rov yuborishdan (N+1) arzon.
   const marks = await prisma.attendance.findMany({
-    where,
+    where: countedMarks(where),
     select: { status: true, session: { select: { courseId: true } } },
   });
   const out = new Map<number, AttTally>();

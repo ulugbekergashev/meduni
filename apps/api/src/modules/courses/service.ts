@@ -6,7 +6,7 @@ import { ApiError, badRequest, forbidden, notFound } from "../../lib/errors";
 import { buildMatrix } from "./progress";
 import { PURGE_TX_OPTS, purgeTopicFiles, purgeTopicRows, studentResults } from "../topics/purge";
 import { loadCourse } from "../me/service";
-import { attendancePct, attendanceStats, tallyByStatus, tallyOf } from "../attendance/facts";
+import { HELD_SESSION, attendancePct, attendanceStats, tallyByStatus, tallyOf } from "../attendance/facts";
 
 const courseInclude = {
   department: true,
@@ -525,7 +525,7 @@ export async function getTeacherGroup(groupId: number, teacherId: number) {
   const attRows = studentIds.length
     ? await prisma.attendance.groupBy({
         by: ["studentId", "status"],
-        where: { studentId: { in: studentIds }, session: { courseId: { in: courseIds } } },
+        where: { studentId: { in: studentIds }, session: { courseId: { in: courseIds }, ...HELD_SESSION } },
         _count: true,
       })
     : [];

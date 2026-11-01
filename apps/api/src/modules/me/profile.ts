@@ -3,7 +3,7 @@ import { prisma } from "../../lib/prisma";
 import { ApiError, badRequest, notFound } from "../../lib/errors";
 import { dateRangeFilter, dayKey, parseDayStart } from "../../lib/time";
 import { getStudentLessons } from "../courses/timetable";
-import { type AttStatus as Status, type AttTally, type AttendanceLimit, addMark, attendanceLimits, attendancePct, emptyTally, markedOf, tallyOf } from "../attendance/facts";
+import { type AttStatus as Status, type AttTally, type AttendanceLimit, addMark, attendanceLimits, attendancePct, emptyTally, markedOf, tallyOf, HELD_SESSION, countedMarks } from "../attendance/facts";
 import { resolvePolicy } from "../policy/service";
 import { passResolver } from "./service";
 
@@ -38,7 +38,8 @@ export async function getMyAttendance(studentId: number, opts: { courseId?: numb
   const rows = await prisma.attendance.findMany({
     where: {
       studentId, // only my own records — no cross-student leak possible
-      session: { ...(opts.courseId ? { courseId: opts.courseId } : {}), ...(range ? { date: range } : {}) },
+      // "Dars bo'lmadi" darslari talaba davomatida ko'rinmaydi va foizga kirmaydi.
+      session: { ...HELD_SESSION, ...(opts.courseId ? { courseId: opts.courseId } : {}), ...(range ? { date: range } : {}) },
     },
     include: { session: { include: { course: true, topic: true } } },
     orderBy: { session: { date: "desc" } },
@@ -215,7 +216,7 @@ export async function getMyProfile(studentId: number) {
   const [coursesCount, completedTopics, attendance, currentEnrollment] = await Promise.all([
     prisma.enrollment.count({ where: { studentId, status: "ACTIVE" } }),
     prisma.progress.count({ where: { studentId, state: "COMPLETED" } }),
-    prisma.attendance.groupBy({ by: ["status"], where: { studentId }, _count: true }),
+    prisma.attendance.groupBy({ by: ["status"], where: countedMarks({ studentId }), _count: true }),
     // Joriy o'quv davri — eng yangi ACTIVE yozilishdan (ma'lumotnoma uchun).
     prisma.enrollment.findFirst({
       where: { studentId, status: "ACTIVE" },

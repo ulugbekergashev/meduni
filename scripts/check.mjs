@@ -23,6 +23,7 @@ const web = path.join(root, "apps", "web");
 // ⛔ Sinovlar ma'lumot yozadi — shuning uchun FAQAT mahalliy baza. apps/api/.env
 // jonli bazaga qaraydi, u bu yerda ataylab almashtiriladi.
 const LOCAL_DB = process.env.CHECK_DATABASE_URL ?? "postgresql://meduni:meduni@localhost:5432/meduni";
+const API_URL = process.env.SMOKE_BASE ?? "http://localhost:8000";
 
 /** Har biri mustaqil, o'zidan keyin tozalaydi, xatoda nol bo'lmagan kod bilan chiqadi. */
 const SMOKES = [
@@ -35,6 +36,7 @@ const SMOKES = [
   "smokeStorage",
   "smokeAttendance", // davomat foizi bitta joyda
   "smokeExcuseMakeup",
+  "smokeAttendanceCounted", // bekor qilingan dars foizga kirmaydi; admin = talaba raqami
 ];
 
 const isWin = process.platform === "win32";
@@ -75,6 +77,10 @@ if (!(await dbReachable(LOCAL_DB))) {
   console.log(`  ✗ Mahalliy Postgres ishlamayapti (${new URL(LOCAL_DB).host}).`);
   console.log("    Ishga tushiring (Windows: postgresql-x64-17 xizmati) va qayta urining.");
   failed.push("local db");
+} else if (!(await dbReachable(API_URL))) {
+  // smokeAttendance HTTP orqali ishlaydi — mahalliy API (mahalliy bazaga ulangan) kerak.
+  console.log(`  ✗ Mahalliy API ishlamayapti (${API_URL}). apps/api ichida: DATABASE_URL=${LOCAL_DB} npm run dev`);
+  failed.push("local api");
 } else {
   const env = { ...process.env, DATABASE_URL: LOCAL_DB, STORAGE_DRIVER: "disk" };
   for (const s of SMOKES) {

@@ -1,7 +1,7 @@
 import type { Prisma } from "../../lib/prisma";
 import { prisma } from "../../lib/prisma";
 import type { AdminScope } from "../../middleware/adminScope";
-import { type AttTally, addMark, attendancePct, emptyTally } from "../attendance/facts";
+import { countedMarks, type AttTally, addMark, attendancePct, emptyTally } from "../attendance/facts";
 
 const PAGE_SIZE = 20;
 
@@ -52,14 +52,16 @@ export async function listStudents(
           where: { studentId: { in: ids }, status: "ACTIVE" },
           select: { studentId: true, courseId: true },
         }),
-        prisma.progress.groupBy({
-          by: ["studentId"],
-          where: { studentId: { in: ids }, state: "COMPLETED" },
-          _count: true,
+        // Faqat FAOL kurslardagi, chop etilgan kontentli mavzular — maxraj bilan bir
+        // xil to'plam. Ilgari surat hamma tugatilgan mavzularni (tashlangan kursdan
+        // ham) sanardi, maxraj esa faqat faol kurslarni — foiz 100% dan oshardi.
+        prisma.progress.findMany({
+          where: { studentId: { in: ids }, state: "COMPLETED", topic: { contentItems: { some: { status: "PUBLISHED" } } } },
+          select: { studentId: true, topic: { select: { courseId: true } } },
         }),
         prisma.attendance.groupBy({
           by: ["studentId", "status"],
-          where: { studentId: { in: ids } },
+          where: countedMarks({ studentId: { in: ids } }),
           _count: true,
         }),
       ])
@@ -81,7 +83,12 @@ export async function listStudents(
     if (!coursesByStudent.has(e.studentId)) coursesByStudent.set(e.studentId, []);
     coursesByStudent.get(e.studentId)!.push(e.courseId);
   }
-  const completedByStudent = new Map(completed.map((c) => [c.studentId, c._count]));
+  // Surat faqat talabaning FAOL kurslaridan (maxraj bilan bir xil to'plam).
+  const completedByStudent = new Map<number, number>();
+  for (const c of completed) {
+    if (!(coursesByStudent.get(c.studentId) ?? []).includes(c.topic.courseId)) continue;
+    completedByStudent.set(c.studentId, (completedByStudent.get(c.studentId) ?? 0) + 1);
+  }
 
   // Sanoq va foiz — umumiy `attendance/facts.ts` (formula bir joyda).
   const attByStudent = new Map<number, AttTally>();

@@ -3,7 +3,7 @@ import { prisma } from "../../lib/prisma";
 import { clampQuiz, resolvePolicy } from "../policy/service";
 import { ApiError, notFound } from "../../lib/errors";
 import { computeTopics, loadCourse, studentFactsMap, type CourseWithTopics, type FullFacts, type TopicOut } from "../me/service";
-import { addMark, attendanceLimits, attendancePct, emptyTally, tallyOf } from "../attendance/facts";
+import { HELD_SESSION, addMark, attendanceLimits, attendancePct, emptyTally, tallyOf } from "../attendance/facts";
 
 function forbidden(): ApiError {
   return new ApiError(403, "forbidden", "Bu sizning kursingiz emas", "Это не ваш курс");
@@ -320,7 +320,7 @@ export async function getStudentDetail(teacherId: number, studentId: number) {
 
     const [attendance, caseAttempts] = await Promise.all([
       prisma.attendance.findMany({
-        where: { studentId, session: { courseId: enr.courseId } },
+        where: { studentId, session: { courseId: enr.courseId, ...HELD_SESSION } },
         include: { session: { select: { date: true, groupId: true, topic: { select: { title: true } } } } },
         orderBy: { session: { date: "desc" } },
       }),
@@ -477,7 +477,7 @@ export async function getTeacherDashboard(teacherId: number) {
     prisma.topic.count({ where: { courseId: inCourses } }),
     prisma.contentItem.count({ where: { status: "PUBLISHED", topic: { courseId: inCourses } } }),
     prisma.caseAttempt.count({ where: { reviewedById: teacherId } }),
-    prisma.attendance.groupBy({ by: ["status"], where: { session: { courseId: inCourses } }, _count: true }),
+    prisma.attendance.groupBy({ by: ["status"], where: { session: { courseId: inCourses, ...HELD_SESSION } }, _count: true }),
   ]);
 
   // Distinct groups the teacher teaches.

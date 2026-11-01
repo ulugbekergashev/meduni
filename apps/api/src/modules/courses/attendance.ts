@@ -16,7 +16,7 @@ import ExcelJS from "exceljs";
 import { prisma } from "../../lib/prisma";
 import { ApiError, notFound } from "../../lib/errors";
 import { dateRangeFilter } from "../../lib/time";
-import { type AttStatus, type AttTally, addMark, attendancePct, emptyTally } from "../attendance/facts";
+import { HELD_SESSION, type AttStatus, type AttTally, addMark, attendancePct, emptyTally } from "../attendance/facts";
 
 function forbidden(): ApiError {
   return new ApiError(403, "forbidden", "Bu sizning kursingiz emas", "Это не ваш курс");
@@ -64,7 +64,8 @@ async function buildReport(courseId: number, opts: { from?: string; to?: string;
   // hisobotdan tushib qolardi.
   const range = dateRangeFilter(opts.from, opts.to);
   const sessions = await prisma.lessonSession.findMany({
-    where: { courseId, ...(range ? { date: range } : {}) },
+    // Hisobot (va Excel) faqat o'tkazilgan darslardan — jurnal bilan bir xil raqam.
+    where: { courseId, ...HELD_SESSION, ...(range ? { date: range } : {}) },
     orderBy: { date: "asc" },
     include: { topic: true },
   });

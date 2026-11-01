@@ -5,7 +5,7 @@ import type { Role } from "../../lib/prisma";
 import { buildMatrix } from "../courses/progress";
 import { getTeacherLessons } from "../courses/timetable";
 import { computeTopics, enrolledCourseIds, loadCourse, studentFactsMap } from "../me/service";
-import { attendanceLimits, attendancePct, tallyOf } from "../attendance/facts";
+import { attendanceLimits, attendancePct, tallyOf, countedMarks } from "../attendance/facts";
 import { ensureMakeups } from "../attendance/excuse";
 import { resolvePolicy } from "../policy/service";
 
@@ -431,7 +431,7 @@ export async function computeStudentAutoTasks(studentId: number): Promise<AutoTa
         },
       },
     }),
-    prisma.attendance.groupBy({ by: ["status"], where: { studentId }, _count: true }),
+    prisma.attendance.groupBy({ by: ["status"], where: countedMarks({ studentId }), _count: true }),
   ]);
 
   // ⚠️ TUZATILDI (2026-09-08): belgilanmagan holatda ilgari 100 qaytarardi —

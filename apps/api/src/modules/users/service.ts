@@ -4,7 +4,8 @@ import { prisma } from "../../lib/prisma";
 import { badRequest, conflict, notFound } from "../../lib/errors";
 import { generatePassword } from "../../lib/password";
 import type { AdminScope } from "../../middleware/adminScope";
-import { attendanceStats, tallyOf } from "../attendance/facts";
+import { countedMarks, attendanceStats, tallyOf } from "../attendance/facts";
+import { computeTopics, loadCourse, studentFactsMap } from "../me/service";
 
 const PAGE_SIZE = 20;
 
@@ -341,22 +342,25 @@ export async function getUserProfile(id: number) {
       include: { course: true },
       orderBy: { courseId: "asc" },
     });
-    const progressRows = await prisma.progress.findMany({ where: { studentId: id, state: "COMPLETED" }, select: { topic: { select: { courseId: true } } } });
-    const completedByCourse = new Map<number, number>();
-    for (const p of progressRows) {
-      completedByCourse.set(p.topic.courseId, (completedByCourse.get(p.topic.courseId) ?? 0) + 1);
-    }
-    const courseIds = enrollments.map((e) => e.course.id);
-    const topicTotals = await prisma.topic.groupBy({
-      by: ["courseId"],
-      where: { courseId: { in: courseIds }, contentItems: { some: { status: "PUBLISHED" } } },
-      _count: true,
-    });
-    const totalByCourse = new Map(topicTotals.map((t) => [t.courseId, t._count]));
+    // ⛔ DVIGATEL orqali (2026-11-01 auditi). Ilgari admin profili saqlangan
+    // Progress qatorlarini sanardi va testlar bo'yicha BARCHA urinishlar
+    // o'rtachasini olardi (40% va 90% → 65%), talaba va o'qituvchi esa har
+    // mavzuning ENG YAXSHI balini (90%) ko'rardi — bitta talaba haqida uch xil raqam.
+    // Endi uchala rol bir xil computeTopics/studentFactsMap'dan o'qiydi.
+    const perCourse = await Promise.all(
+      enrollments.map(async (e) => {
+        const course = await loadCourse(e.courseId);
+        const facts = await studentFactsMap(id, course);
+        const topics = computeTopics(course, facts);
+        const best = [...facts.values()].map((f) => f.quizScore).filter((x): x is number => x !== null);
+        return { courseId: e.courseId, done: topics.filter((t) => t.state === "COMPLETED").length, total: topics.length, best };
+      })
+    );
+    const byCourse = new Map(perCourse.map((c) => [c.courseId, c]));
+    const bestScores = perCourse.flatMap((c) => c.best);
 
-    const [att, quizAgg, lastProgress] = await Promise.all([
-      prisma.attendance.groupBy({ by: ["status"], where: { studentId: id }, _count: true }),
-      prisma.quizAttempt.aggregate({ where: { studentId: id, finishedAt: { not: null } }, _avg: { scorePct: true } }),
+    const [att, lastProgress] = await Promise.all([
+      prisma.attendance.groupBy({ by: ["status"], where: countedMarks({ studentId: id }), _count: true }),
       prisma.progress.aggregate({ where: { studentId: id }, _max: { updatedAt: true } }),
     ]);
     // Sanoq va foiz — umumiy `attendance/facts.ts`.
@@ -367,11 +371,11 @@ export async function getUserProfile(id: number) {
       kind: "student" as const,
       attendancePct: attStats.pct,
       attendance: { present: attStats.present, absent: attStats.absent, late: attStats.late, excused: attStats.excused, marked: attStats.marked },
-      avgQuizScore: quizAgg._avg.scorePct === null ? null : Math.round(quizAgg._avg.scorePct),
+      avgQuizScore: bestScores.length ? Math.round(bestScores.reduce((a, b) => a + b, 0) / bestScores.length) : null,
       lastActiveAt: lastProgress._max.updatedAt,
       courses: enrollments.map((e) => {
-        const total = totalByCourse.get(e.courseId) ?? 0;
-        const done = completedByCourse.get(e.courseId) ?? 0;
+        const total = byCourse.get(e.courseId)?.total ?? 0;
+        const done = byCourse.get(e.courseId)?.done ?? 0;
         return {
           id: e.courseId,
           name: e.course.name,

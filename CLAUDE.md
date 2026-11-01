@@ -3300,8 +3300,23 @@ tekshiruv (vitals) virtual bemorda jonli ballni tushirardi, yakuniy esa yo'q.
 qo'lda**: `git config core.hooksPath .githooks`. Yangi sinov:
 `smokeQuizIntegrity.ts` (14 band, har biri yuqoridagi xatolardan biri).
 
-⚠️ **Hali tuzatilmagan (audit topdi, alohida ish):** keys tahrirlansa eski
-javoblar yangi qadamlarga tushadi (CaseAttempt'ga snimka kerak — migratsiya);
-"dars bo'lmadi" belgilangan darsdagi yo'qlama ko'p joyda hali hisoblanadi
-(faqat jurnal va dekanat chiqaradi); admin profilidagi o'rtacha test va progress
-% boshqa ekranlardan boshqacha formula; fleshkarta kalitlari pozitsion.
+**Ikkinchi bosqich (o'sha kun):** (10) "Dars bo'lmadi" (CANCELLED/MOVED) darsidagi
+yo'qlama endi HECH QAYERDA foizga kirmaydi — `attendance/facts.ts::countedMarks` /
+`HELD_SESSION` yagona filtr (tally* yordamchilari + talaba profili/davomati, admin,
+vazifalar, o'qituvchi hisoboti/Excel). Davomat foizini hisoblaydigan yangi so'rov
+SHU filtrdan o'tsin. (11) Admin profili endi dvigateldan (computeTopics/
+studentFactsMap): o'rtacha test = mavzu bo'yicha ENG YAXSHI ball (ilgari barcha
+urinishlar o'rtachasi), progress = dvigatel COMPLETED. Admin talabalar ro'yxatida
+surat faqat FAOL kurslardan (ilgari 100% dan oshishi mumkin edi).
+Sinov: `smokeAttendanceCounted.ts` (6/6), `npm run check` ro'yxatida.
+⚠️ `npm run check` uchun mahalliy Postgres VA mahalliy API (8000, mahalliy bazaga
+ulangan) ishlab tursin.
+
+⚠️ **Hali tuzatilmagan:** keys tahrirlansa/qayta yaratilsa eski javoblar
+(`CaseAttempt.stepsJson` — pozitsion indekslar) yangi qadamlarga tushadi. To'g'ri
+yechim — `CaseAttempt`ga keys snimkasi ustuni. Bu MIGRATSIYA, productionda esa
+migratsiya deploy bilan avtomatik qo'llanmaydi (Dockerfile'da `prisma migrate
+deploy` yo'q): ustun qo'shilmay turib kod push qilinsa, keys so'rovlari yiqiladi.
+Shuningdek: fleshkarta kalitlari pozitsion (konspekt tahrirlansa takror holati
+boshqa kartaga o'tadi); keys "darhol izoh" bloki hech qachon ko'rinmaydi (payload
+tanlovdan oldin yashiradi).
