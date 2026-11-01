@@ -18,7 +18,7 @@ import { buildOrder, toShownIndex } from "../modules/me/integrity";
 import { finishQuizAttempt, recordRemediation, remediationStatus, saveQuizAnswers } from "../modules/me/lesson";
 import { getPracticeSet } from "../modules/me/practice";
 import { getFlashcards } from "../modules/me/flashcards";
-import { isStepCorrect } from "../modules/me/quizGrading";
+import { attemptCase, isStepCorrect, readStepPicks, stepsWithSnapshot } from "../modules/me/quizGrading";
 import { assertTopicOpen, quizPassPct, resolvedRuleFor, syncTopicProgress, type CourseWithTopics } from "../modules/me/service";
 
 let pass = 0;
@@ -46,6 +46,14 @@ async function main() {
   const twoRight = { options: [{ correct: false }, { correct: true }, { correct: true }] };
   ok(isStepCorrect(twoRight, 2) && isStepCorrect(twoRight, 1) && !isStepCorrect(twoRight, 0), "keys: ikkala to'g'ri variant ham to'g'ri");
   ok(!isStepCorrect(twoRight, undefined) && !isStepCorrect(twoRight, 9), "keys: javobsiz/diapazondan tashqari → xato");
+
+  // Keys snimkasi: o'qituvchi keyin keysni o'zgartirsa ham javob O'Z versiyasiga bog'liq.
+  const v1 = { steps: [{ prompt: "A" }, { prompt: "B" }] };
+  const v2 = { steps: [{ prompt: "B" }, { prompt: "C" }, { prompt: "A" }] };
+  const stored = JSON.parse(JSON.stringify(stepsWithSnapshot({ "0": 1, "1": 0 }, v1)));
+  ok(attemptCase(stored, v2) === stored.__case && attemptCase(stored, v2).steps[0].prompt === "A", "keys: javob yechilgan versiya bilan o'qiladi (tahrirdan keyin ham)");
+  ok(JSON.stringify(readStepPicks(stored)) === JSON.stringify({ "0": 1, "1": 0 }), "keys: snimka tanlovlarga aralashmaydi");
+  ok(attemptCase({ "0": 1 }, v2) === v2, "keys: snimkasiz eski javob → hozirgi versiya");
 
   // ---------- Bazadagi oqim ----------
   const student = await prisma.user.findUniqueOrThrow({ where: { email: "student@meduni.uz" } });

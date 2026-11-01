@@ -13,7 +13,7 @@ import type { CaseJson } from "../../ai/types";
 import { computeTopics, enrolledCourseIds, loadCourse, studentFactsMap } from "./service";
 import { getFlashcards } from "./flashcards";
 import { readAnswers } from "./integrity";
-import { attemptQuestions, isCorrect, isStepCorrect, questionLoader } from "./quizGrading";
+import { attemptCase, attemptQuestions, isCorrect, isStepCorrect, questionLoader, readStepPicks } from "./quizGrading";
 
 interface WrongQuizQ {
   kind: "quiz";
@@ -97,8 +97,8 @@ async function topicMistakes(studentId: number, topicId: number, includeItems: b
   const wrongSteps: WrongCaseStep[] = [];
   let wrongStepCount = 0;
   if (caseAttempt) {
-    const caseJson = caseAttempt.clinicalCase.caseJson as unknown as CaseJson;
-    const picked = (caseAttempt.stepsJson as Record<string, number>) ?? {};
+    const caseJson = attemptCase(caseAttempt.stepsJson, caseAttempt.clinicalCase.caseJson as unknown as CaseJson);
+    const picked = readStepPicks(caseAttempt.stepsJson);
     (caseJson.steps ?? []).forEach((s, i) => {
       const your = picked[String(i)];
       if (isStepCorrect(s, your)) return;

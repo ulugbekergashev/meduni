@@ -3312,11 +3312,16 @@ Sinov: `smokeAttendanceCounted.ts` (6/6), `npm run check` ro'yxatida.
 ⚠️ `npm run check` uchun mahalliy Postgres VA mahalliy API (8000, mahalliy bazaga
 ulangan) ishlab tursin.
 
-⚠️ **Hali tuzatilmagan:** keys tahrirlansa/qayta yaratilsa eski javoblar
-(`CaseAttempt.stepsJson` — pozitsion indekslar) yangi qadamlarga tushadi. To'g'ri
-yechim — `CaseAttempt`ga keys snimkasi ustuni. Bu MIGRATSIYA, productionda esa
-migratsiya deploy bilan avtomatik qo'llanmaydi (Dockerfile'da `prisma migrate
-deploy` yo'q): ustun qo'shilmay turib kod push qilinsa, keys so'rovlari yiqiladi.
-Shuningdek: fleshkarta kalitlari pozitsion (konspekt tahrirlansa takror holati
-boshqa kartaga o'tadi); keys "darhol izoh" bloki hech qachon ko'rinmaydi (payload
-tanlovdan oldin yashiradi).
+(12) **Keys snimkasi** — keys tahrirlansa/qayta yaratilsa eski javoblar (pozitsion
+indekslar) yangi qadamlarga tushardi. Endi topshirishda keys nusxasi
+`CaseAttempt.stepsJson.__case` ichida saqlanadi (`quizGrading.ts::stepsWithSnapshot`)
+— YANGI USTUN/MIGRATSIYASIZ (productionda migratsiya deploy bilan avtomatik
+qo'llanmaydi: Dockerfile'da `prisma migrate deploy` yo'q). O'qish:
+`attemptCase` (keys) + `readStepPicks` (tanlovlar, `__case` ni chiqarib tashlaydi).
+Talaba ko'rinishi, o'qituvchi tekshiruvi + AI tavsiyasi, mashg'ulot va xatolar
+xaritasi shundan foydalanadi. ⚠️ `stepsJson` ni XOM holda o'qima yoki klientga
+yuborma — har doim shu ikki funksiya orqali.
+
+⚠️ **Hali tuzatilmagan (kichik):** fleshkarta kalitlari pozitsion (konspekt
+tahrirlansa takror holati boshqa kartaga o'tadi); keys "darhol izoh" bloki hech
+qachon ko'rinmaydi (payload tanlovdan oldin yashiradi).

@@ -106,3 +106,37 @@ export { readAnswers };
 export function isStepCorrect(step: { options: { correct: boolean }[] }, picked: number | undefined): boolean {
   return picked !== undefined && Number.isInteger(picked) && step.options[picked]?.correct === true;
 }
+
+// ---------- Klinik keys: javob bilan birga keys SNIMKASI ----------
+//
+// Keys javobi (`stepsJson` — qadam indeksi → variant indeksi, `answersJson` —
+// savollar tartibida) POZITSION. O'qituvchi keysni keyin tahrirlasa yoki qayta
+// yaratsa, eski javoblar yangi qadam/savollarga tushib qolardi: talaba boshqa
+// savolga javob bergandek ko'rinar, o'qituvchi uni noto'g'ri savol bo'yicha
+// baholardi. Endi topshirishda keysning o'sha paytdagi nusxasi `stepsJson`
+// ichida (`__case` kaliti) saqlanadi — yangi ustun/migratsiyasiz. Javobni
+// ko'rsatadigan va baholaydigan HAR joy keysni `attemptCase` dan oladi.
+
+const CASE_SNAPSHOT_KEY = "__case";
+
+/** stepsJson'dagi qadam tanlovlari (faqat raqamli kalitlar). */
+export function readStepPicks(stepsJson: unknown): Record<string, number> {
+  if (!stepsJson || typeof stepsJson !== "object" || Array.isArray(stepsJson)) return {};
+  const out: Record<string, number> = {};
+  for (const [k, v] of Object.entries(stepsJson as Record<string, unknown>)) {
+    if (/^\d+$/.test(k) && Number.isInteger(v)) out[k] = v as number;
+  }
+  return out;
+}
+
+/** Talaba yechgan keys versiyasi; snimkasiz eski javob → keysning hozirgi holati. */
+export function attemptCase<T>(stepsJson: unknown, current: T): T {
+  if (!stepsJson || typeof stepsJson !== "object" || Array.isArray(stepsJson)) return current;
+  const snap = (stepsJson as Record<string, unknown>)[CASE_SNAPSHOT_KEY];
+  return snap && typeof snap === "object" ? (snap as T) : current;
+}
+
+/** Topshirishda yoziladigan stepsJson: tanlovlar + keys nusxasi. */
+export function stepsWithSnapshot(picks: Record<string, number>, caseJson: unknown): Record<string, unknown> {
+  return { ...picks, [CASE_SNAPSHOT_KEY]: caseJson };
+}

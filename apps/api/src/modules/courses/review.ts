@@ -5,7 +5,7 @@ import { syncTopicProgress } from "../me/service";
 import { Type } from "@google/genai";
 import { generateStructured } from "../../ai/gemini";
 import { departmentForTopic } from "../../ai/glossary";
-import { isStepCorrect } from "../me/quizGrading";
+import { attemptCase, isStepCorrect, readStepPicks } from "../me/quizGrading";
 import { assertQuota } from "../../ai/quota";
 
 function forbidden(): ApiError {
@@ -119,7 +119,8 @@ export async function getCaseAttemptForReview(teacherId: number, attemptId: numb
   if (!a) throw notFound("Keys javobi");
   const courseOf = await resolveAttemptCourses([a], teacherId);
   if (!courseOf.has(a.id)) throw forbidden();
-  const caseJson = a.clinicalCase.caseJson as unknown as CaseJson;
+  // O'qituvchi talaba YECHGAN versiyani baholaydi (keys keyin tahrirlangan bo'lsa ham).
+  const caseJson = attemptCase(a.stepsJson, a.clinicalCase.caseJson as unknown as CaseJson);
 
   // Modul 28: talabaning virtual bemor suhbati (o'sha mavzu) — o'qituvchi
   // anamnez qanday yig'ilganini ko'radi. Read-only.
@@ -186,9 +187,10 @@ export async function suggestCaseScore(teacherId: number, attemptId: number, for
   const departmentId = await departmentForTopic(topicId);
   if (departmentId) await assertQuota(departmentId);
 
-  const caseJson = a.clinicalCase.caseJson as unknown as CaseJson;
+  // O'qituvchi talaba YECHGAN versiyani baholaydi (keys keyin tahrirlangan bo'lsa ham).
+  const caseJson = attemptCase(a.stepsJson, a.clinicalCase.caseJson as unknown as CaseJson);
   const answers = (a.answersJson as string[]) ?? [];
-  const picked = (a.stepsJson as Record<string, number>) ?? {};
+  const picked = readStepPicks(a.stepsJson);
   const steps = caseJson.steps ?? [];
   const stepSummary = steps
     .map((s, i) => {

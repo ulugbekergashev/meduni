@@ -21,7 +21,15 @@ import {
   type ShownIndex,
   type StoredAnswers,
 } from "./integrity";
-import { attemptQuestions, gradeAnswers, isStepCorrect, questionLoader } from "./quizGrading";
+import {
+  attemptCase,
+  attemptQuestions,
+  gradeAnswers,
+  isStepCorrect,
+  questionLoader,
+  readStepPicks,
+  stepsWithSnapshot,
+} from "./quizGrading";
 import { chaptersFromScript, type PodcastChapter } from "../content/podcast";
 import type { CaseJson, DigestJson, PodcastSegment, ScriptSegment, Slide } from "../../ai/types";
 import {
@@ -254,10 +262,11 @@ export async function getTopicLesson(studentId: number, topicId: number) {
   let caseTab = null;
   if (caseItem?.clinicalCase) {
     const cc = caseItem.clinicalCase;
-    const caseJson = cc.caseJson as unknown as CaseJson;
     const attempt = await caseAttemptPromise;
+    // Topshirilgan bo'lsa — talaba YECHGAN versiya (o'qituvchi keyin tahrirlagan bo'lsa ham).
+    const caseJson = attemptCase(attempt?.stepsJson, cc.caseJson as unknown as CaseJson);
     const steps = caseJson.steps ?? [];
-    const picked = (attempt?.stepsJson as Record<string, number>) ?? {};
+    const picked = readStepPicks(attempt?.stepsJson);
     const submitted = !!attempt;
 
     caseTab = {
@@ -956,7 +965,8 @@ export async function submitCase(
       caseId,
       studentId,
       answersJson: answers.map((a) => a.trim()),
-      stepsJson: picked,
+      // Tanlovlar + keysning SHU paytdagi nusxasi (keyingi tahrir javobni buzmasin).
+      stepsJson: stepsWithSnapshot(picked, caseJson) as object,
       autoScore,
     },
   });
@@ -971,7 +981,7 @@ export async function getCaseAttempt(studentId: number, attemptId: number) {
   });
   if (!attempt) throw notFound("Keys javobi");
   if (attempt.studentId !== studentId) throw new ApiError(403, "forbidden", "Ruxsat yoʻq", "Нет доступа");
-  return serializeCaseAttempt(attempt, attempt.clinicalCase.caseJson as unknown as CaseJson);
+  return serializeCaseAttempt(attempt, attemptCase(attempt.stepsJson, attempt.clinicalCase.caseJson as unknown as CaseJson));
 }
 
 // ---------- Student media (published + enrolled + unlocked) ----------

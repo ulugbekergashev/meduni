@@ -8,7 +8,7 @@
 import { prisma } from "../../lib/prisma";
 import { ApiError, notFound } from "../../lib/errors";
 import { readAnswers, type StoredAnswers } from "../me/integrity";
-import { isCorrect, isStepCorrect, snapshotQuestionIds } from "../me/quizGrading";
+import { attemptCase, isCorrect, isStepCorrect, readStepPicks, snapshotQuestionIds } from "../me/quizGrading";
 
 function forbidden() {
   return new ApiError(403, "forbidden", "Bu sizning kursingiz emas", "Это не ваш курс");
@@ -81,9 +81,11 @@ export async function getCourseMistakes(courseId: number, teacherId: number) {
         select: { caseId: true, studentId: true, stepsJson: true },
       })
     : [];
-  const caseByStudent = new Map<string, Record<string, number>>();
+  // `steps` — talaba yechgan keys versiyasining qadamlari (snimkasiz eski javob → null = hozirgisi).
+  const caseByStudent = new Map<string, { picks: Record<string, number>; steps: { prompt: string; options: { text: string }[] }[] | null }>();
   for (const a of caseAttempts) {
-    caseByStudent.set(`${a.caseId}:${a.studentId}`, (a.stepsJson as Record<string, number>) ?? {});
+    const snap = attemptCase<{ steps?: { prompt: string; options: { text: string }[] }[] } | null>(a.stepsJson, null);
+    caseByStudent.set(`${a.caseId}:${a.studentId}`, { picks: readStepPicks(a.stepsJson), steps: snap?.steps ?? null });
   }
 
   // "Bilmayman" kartalar — mavzu kesimida jami (guruh bo'ylab).
@@ -180,8 +182,8 @@ export async function getCourseMistakes(courseId: number, teacherId: number) {
         };
         const steps = caseJson.steps ?? [];
         const perStudent = studentIds
-          .map((sid) => ({ sid, picked: caseByStudent.get(`${caseItem.id}:${sid}`) }))
-          .filter((x): x is { sid: number; picked: Record<string, number> } => x.picked !== undefined);
+          .map((sid) => ({ sid, row: caseByStudent.get(`${caseItem.id}:${sid}`) }))
+          .filter((x): x is { sid: number; row: NonNullable<typeof x.row> } => x.row !== undefined);
         const submitted = perStudent.length;
         if (submitted > 0 && steps.length > 0) {
           caseBlock = {
@@ -189,8 +191,14 @@ export async function getCourseMistakes(courseId: number, teacherId: number) {
             steps: steps.map((s, si) => {
               const distribution = s.options.map(() => 0);
               const wrongStudents: WrongStudent[] = [];
-              for (const { sid, picked } of perStudent) {
-                const your = picked[String(si)];
+              let saw = 0;
+              for (const { sid, row } of perStudent) {
+                // Keys keyin tahrirlangan bo'lsa — talaba bu qadamni ko'rmagan (yoki boshqacha
+                // ko'rgan): uning tanlovi bu qadamga tegishli emas, sanalmaydi.
+                const seen = row.steps ? row.steps[si] : s;
+                if (!seen || seen.prompt !== s.prompt || seen.options.map((o) => o.text).join("") !== s.options.map((o) => o.text).join("")) continue;
+                saw++;
+                const your = row.picks[String(si)];
                 if (Number.isInteger(your) && your >= 0 && your < s.options.length) distribution[your]++;
                 if (!isStepCorrect(s, your)) wrongStudents.push({ id: sid, fullName: nameById.get(sid) ?? "—" });
               }
@@ -200,7 +208,7 @@ export async function getCourseMistakes(courseId: number, teacherId: number) {
                 prompt: s.prompt,
                 options: s.options.map((o) => ({ text: o.text, correct: o.correct })),
                 wrongCount: wrongStudents.length,
-                wrongPct: Math.round((wrongStudents.length / submitted) * 100),
+                wrongPct: saw === 0 ? 0 : Math.round((wrongStudents.length / saw) * 100),
                 distribution,
                 wrongStudents,
               };
